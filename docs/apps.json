@@ -13,6 +13,14 @@
       "tintColor": "34C759",
       "versions": [
         {
+          "version": "1.3.2",
+          "date": "2026-10-12T22:15:13Z",
+          "localizedDescription": "Massimali 1.3.2: rifirma dell'app su AltStore",
+          "downloadURL": "https://github.com/gabrieleforgheri/massimali/releases/download/v1.3.2/Massimali.ipa",
+          "size": 906877,
+          "minOSVersion": "17.0"
+        },
+        {
           "version": "1.3.1",
           "date": "2026-10-07T09:25:04Z",
           "localizedDescription": "Massimali 1.3.1: scegli solo l'esercizio nella sessione",
