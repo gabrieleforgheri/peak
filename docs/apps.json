@@ -1,22 +1,22 @@
 {
-  "name": "Massimali",
+  "name": "Peak",
   "identifier": "com.gabrieleforghieri.massimali.altstore",
-  "sourceURL": "https://gabrieleforgheri.github.io/massimali/apps.json",
+  "sourceURL": "https://gabrieleforgheri.github.io/peak/apps.json",
   "apps": [
     {
-      "name": "Massimali",
+      "name": "Peak",
       "bundleIdentifier": "com.gabrieleforghieri.massimali",
       "developerName": "Gabriele Forghieri",
       "subtitle": "Massimali di palestra, storico e progressi",
-      "localizedDescription": "App per tenere traccia dei massimali su ogni macchinario della palestra: storico, grafici dei progressi, riscaldamento consigliato e log degli allenamenti. Dati tutti in locale.",
-      "iconURL": "https://gabrieleforgheri.github.io/massimali/icon.png",
+      "localizedDescription": "App per tenere traccia dei massimali su ogni macchinario della palestra: storico, grafici dei progressi, riscaldamento consigliato e log degli allenamenti. I dati stanno sul telefono; con l'account yG si sincronizzano anche con il web (peak.yrb4g.com).",
+      "iconURL": "https://gabrieleforgheri.github.io/peak/icon.png",
       "tintColor": "34C759",
       "versions": [
         {
           "version": "1.3.2",
           "date": "2026-10-12T22:15:13Z",
           "localizedDescription": "Massimali 1.3.2: rifirma dell'app su AltStore",
-          "downloadURL": "https://github.com/gabrieleforgheri/massimali/releases/download/v1.3.2/Massimali.ipa",
+          "downloadURL": "https://github.com/gabrieleforgheri/peak/releases/download/v1.3.2/Massimali.ipa",
           "size": 906877,
           "minOSVersion": "17.0"
         },
@@ -24,7 +24,7 @@
           "version": "1.3.1",
           "date": "2026-10-07T09:25:04Z",
           "localizedDescription": "Massimali 1.3.1: scegli solo l'esercizio nella sessione",
-          "downloadURL": "https://github.com/gabrieleforgheri/massimali/releases/download/v1.3.1/Massimali.ipa",
+          "downloadURL": "https://github.com/gabrieleforgheri/peak/releases/download/v1.3.1/Massimali.ipa",
           "size": 906882,
           "minOSVersion": "17.0"
         },
@@ -32,7 +32,7 @@
           "version": "1.3",
           "date": "2026-10-06T23:39:56Z",
           "localizedDescription": "Massimali 1.3: riscaldamento sulla griglia, recupero, progressione, dischi",
-          "downloadURL": "https://github.com/gabrieleforgheri/massimali/releases/download/v1.3/Massimali.ipa",
+          "downloadURL": "https://github.com/gabrieleforgheri/peak/releases/download/v1.3/Massimali.ipa",
           "size": 904121,
           "minOSVersion": "17.0"
         },
@@ -40,7 +40,7 @@
           "version": "1.2",
           "date": "2026-09-30T10:35:58Z",
           "localizedDescription": "Massimali 1.2: nome dell'allenamento",
-          "downloadURL": "https://github.com/gabrieleforgheri/massimali/releases/download/v1.2/Massimali.ipa",
+          "downloadURL": "https://github.com/gabrieleforgheri/peak/releases/download/v1.2/Massimali.ipa",
           "size": 819414,
           "minOSVersion": "17.0"
         },
@@ -48,7 +48,7 @@
           "version": "1.1",
           "date": "2026-09-30T10:18:14Z",
           "localizedDescription": "Massimali 1.1: Salute e Liquid Glass via AltStore, focus, Live Activity",
-          "downloadURL": "https://github.com/gabrieleforgheri/massimali/releases/download/v1.1/Massimali.ipa",
+          "downloadURL": "https://github.com/gabrieleforgheri/peak/releases/download/v1.1/Massimali.ipa",
           "size": 810960,
           "minOSVersion": "17.0"
         },
@@ -56,7 +56,7 @@
           "version": "1.0",
           "date": "2026-09-22T09:42:29Z",
           "localizedDescription": "Prima release.",
-          "downloadURL": "https://github.com/gabrieleforgheri/massimali/releases/download/v1.0/Massimali.ipa",
+          "downloadURL": "https://github.com/gabrieleforgheri/peak/releases/download/v1.0/Massimali.ipa",
           "size": 758910,
           "minOSVersion": "17.0"
         }
