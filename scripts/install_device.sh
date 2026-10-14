@@ -19,6 +19,8 @@
 #
 # Uso: ./scripts/install_device.sh            (dispositivi trovati da soli)
 #      IPHONE_ID=… WATCH_ID=… ./scripts/install_device.sh
+#      SENZA_WATCH=1 ./scripts/install_device.sh   (solo iPhone, con l'orologio non raggiungibile: l'app
+#                                                   Watch si ricollega rilanciando lo script con l'orologio sbloccato)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -43,7 +45,7 @@ EOF
 IPHONE_ID=${IPHONE_ID:-$(pick iPhone)}
 WATCH_ID=${WATCH_ID:-$(pick appleWatch)}
 [ -n "$IPHONE_ID" ] || { echo "Nessun iPhone collegato." >&2; exit 1; }
-[ -n "$WATCH_ID" ] || { echo "Nessun Apple Watch collegato." >&2; exit 1; }
+[ -n "$WATCH_ID" ] || [ -n "${SENZA_WATCH:-}" ] || { echo "Nessun Apple Watch collegato (SENZA_WATCH=1 per installare solo l'iPhone)." >&2; exit 1; }
 echo "iPhone $IPHONE_ID · Watch $WATCH_ID · team $TEAM"
 
 rsync -a --exclude build --exclude '*.xcodeproj' --exclude graphify-out --exclude brag-output --exclude .git ./ "$WORK/src/"
@@ -77,7 +79,11 @@ echo "Installo sull'iPhone…"
 xcrun devicectl device install app --device "$IPHONE_ID" "$APP" >/dev/null
 # Installata sopra una copia vecchia, l'app Watch non viene ricollegata all'iPhone:
 # va tolta e rimessa. I dati veri stanno sull'iPhone, sull'orologio non si perde nulla.
-echo "Installo sul Watch…"
-xcrun devicectl device uninstall app --device "$WATCH_ID" "$BASE_ID.$TEAM.watchkitapp" >/dev/null 2>&1 || true
-xcrun devicectl device install app --device "$WATCH_ID" "$APP/Watch/Peak.app" >/dev/null
-echo "Fatto. Apri Peak su iPhone: in Impostazioni → Apple Watch deve comparire «collegato»."
+if [ -n "$WATCH_ID" ]; then
+    echo "Installo sul Watch…"
+    xcrun devicectl device uninstall app --device "$WATCH_ID" "$BASE_ID.$TEAM.watchkitapp" >/dev/null 2>&1 || true
+    xcrun devicectl device install app --device "$WATCH_ID" "$APP/Watch/Peak.app" >/dev/null
+    echo "Fatto. Apri Peak su iPhone: in Impostazioni → Apple Watch deve comparire «collegato»."
+else
+    echo "Fatto, solo iPhone. Per l'orologio rilancia lo script con il Watch sbloccato."
+fi
