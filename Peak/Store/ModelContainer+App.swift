@@ -38,9 +38,15 @@ enum AppStore {
             assertionFailure("Store non apribile: \(error)")
             // Ultima spiaggia: sessione volatile, così l'app resta usabile e i dati
             // possono essere reimportati da un backup.
+            isFallback = true
             return try! makeContainer(inMemory: true)
         }
     }
+
+    /// `true` se lo store vero non si è aperto e si lavora in memoria. In quel caso NIENTE deve
+    /// uscire dall'app: né il backup automatico (scriverebbe un file vuoto sopra quello buono) né la
+    /// sincronizzazione (spingerebbe al server un "tutto cancellato").
+    private(set) static var isFallback = false
 
     /// Inserisce il catalogo iniziale solo la prima volta in assoluto.
     static func seedIfNeeded(context: ModelContext, settings: AppSettings) {

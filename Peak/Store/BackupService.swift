@@ -33,16 +33,28 @@ enum BackupService {
 
     // MARK: - Codifica
 
+    /// Date ISO 8601 a **secondi interi**, come le scrive e le legge il server di Peak: i
+    /// millisecondi non servono a niente e un confronto fra due dispositivi non deve dipendere da loro.
     static func encoder() -> JSONEncoder {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        encoder.dateEncodingStrategy = .iso8601
+        encoder.dateEncodingStrategy = .custom { date, encoder in
+            var container = encoder.singleValueContainer()
+            try container.encode(PeakDates.string(date))
+        }
         return encoder
     }
 
+    /// Legge anche le date con i millisecondi (un file passato dal sito o da un altro programma).
     static func decoder() -> JSONDecoder {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let text = try decoder.singleValueContainer().decode(String.self)
+            guard let date = PeakDates.date(text) else {
+                throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "data non valida: \(text)"))
+            }
+            return date
+        }
         return decoder
     }
 
@@ -107,7 +119,8 @@ enum BackupService {
                             isWarmup: set.isWarmup,
                             order: set.order,
                             createdAt: set.createdAt,
-                            isPersonalRecord: set.isPersonalRecord
+                            isPersonalRecord: set.isPersonalRecord,
+                            excludedFromRecords: set.excludedFromRecords ? true : nil
                         )
                     }
                 )
@@ -236,7 +249,7 @@ enum BackupService {
                 )
                 set.uuid = setDTO.uuid
                 set.createdAt = setDTO.createdAt
-                set.isPersonalRecord = setDTO.isPersonalRecord
+                set.excludedFromRecords = setDTO.excludedFromRecords ?? false
                 context.insert(set)
                 set.exercise = setDTO.exerciseUUID.flatMap { exercisesByUUID[$0] }
                 set.workout = workout
@@ -255,12 +268,14 @@ enum BackupService {
         }
 
         try context.save()
+        // I record "da allenamento" non si importano: si ricalcolano dalle serie (RecordService).
+        RecordService.recomputeAll(context: context)
         return file
     }
 
     private static func addMissingRecords(from dto: ExerciseDTO, to exercise: Exercise, context: ModelContext) {
         let existing = Set(exercise.recordList.map(\.uuid))
-        for recordDTO in dto.records where !existing.contains(recordDTO.uuid) {
+        for recordDTO in dto.records where !recordDTO.isEstimated && !existing.contains(recordDTO.uuid) {
             let record = MaxRecord(
                 weight: recordDTO.weight,
                 reps: recordDTO.reps,

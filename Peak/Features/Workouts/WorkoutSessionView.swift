@@ -332,15 +332,15 @@ struct WorkoutSessionView: View {
         addSet(to: exercise, weight: last.weight, reps: last.reps, isWarmup: last.isWarmup)
     }
 
-    /// Applica la correzione e ricalcola il record: una serie corretta al ribasso
-    /// non deve lasciarsi dietro il massimale che aveva fatto scattare.
+    /// Applica la correzione e ricalcola i record del macchinario: una serie corretta al ribasso
+    /// non deve lasciarsi dietro il massimale che aveva fatto scattare, e le serie dopo di lei
+    /// si ricontrollano (una che prima non lo era può diventarlo).
     private func update(_ set: WorkoutSet, weight: Double, reps: Int, isWarmup: Bool) {
-        RecordService.removeAutomaticRecord(for: set, context: context)
         set.weight = weight
         set.reps = reps
         set.isWarmup = isWarmup
-
-        let isRecord = RecordService.evaluatePersonalRecord(for: set, context: context)
+        if let exercise = set.exercise { RecordService.recompute(exercise, context: context) }
+        let isRecord = set.isPersonalRecord
         try? context.save()
         WorkoutActivity.update(for: workout, unit: settings.unit)
         if isRecord { Haptics.personalRecord() } else { Haptics.commit() }
@@ -375,9 +375,7 @@ struct WorkoutSessionView: View {
 
     private func delete(_ set: WorkoutSet) {
         withAnimation {
-            RecordService.removeAutomaticRecord(for: set, context: context)
-            context.delete(set)
-            try? context.save()
+            RecordService.delete(set, context: context)
         }
         WorkoutActivity.update(for: workout, unit: settings.unit)
         Haptics.warning()

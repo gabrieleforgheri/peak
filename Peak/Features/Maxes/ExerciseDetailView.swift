@@ -400,8 +400,7 @@ struct ExerciseDetailView: View {
 
     private func delete(_ record: MaxRecord) {
         withAnimation {
-            context.delete(record)
-            try? context.save()
+            RecordService.delete(record, context: context)
         }
         Haptics.warning()
     }

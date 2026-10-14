@@ -66,6 +66,8 @@ struct WorkoutSetDTO: Codable {
     var order: Int
     var createdAt: Date
     var isPersonalRecord: Bool
+    /// Opzionale: assente = la serie conta per i record. Le versioni 1.x lo ignorano.
+    var excludedFromRecords: Bool?
 }
 
 struct BodyWeightDTO: Codable {

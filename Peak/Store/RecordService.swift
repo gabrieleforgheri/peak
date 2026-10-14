@@ -1,15 +1,18 @@
 import Foundation
 import SwiftData
 
-/// Regole di creazione dei massimali a partire dagli allenamenti.
+/// Massimali e record a partire dagli allenamenti.
+///
+/// I record "da allenamento" (`MaxRecord.isEstimated`) non sono dati ma una conseguenza delle
+/// serie: dopo ogni modifica si ricalcolano da zero per quel macchinario (`recompute`), con
+/// la regola di `RecordRules`. Un massimale inserito a mano (`isEstimated == false`) non si
+/// tocca mai. Per questo cancellare una serie, correggerla o eliminare un intero allenamento
+/// lascia sempre i record giusti, anche per le serie successive.
 enum RecordService {
 
-    /// Tolleranza per evitare che un arrotondamento faccia scattare un falso record.
-    private static let epsilon = MaxRanking.epsilon
-
-    /// Registra una serie in coda all'allenamento e valuta subito il record.
+    /// Registra una serie in coda all'allenamento e ricalcola i record del macchinario.
     /// Unico percorso sia per la sessione sull'iPhone sia per le serie dal Watch.
-    /// Restituisce `true` se è scattato un nuovo record.
+    /// Restituisce `true` se la serie è un nuovo massimale.
     @discardableResult
     static func addSet(
         to workout: Workout,
@@ -24,56 +27,84 @@ enum RecordService {
         context.insert(set)
         set.exercise = exercise
         set.workout = workout
-        let isRecord = evaluatePersonalRecord(for: set, context: context)
+        recompute(exercise, context: context)
         try? context.save()
-        return isRecord
+        return set.isPersonalRecord
     }
 
-    /// Valuta una serie appena registrata: se batte il massimo vero fatto finora sul
-    /// macchinario (più carico, o stesso carico con più ripetizioni), crea un
-    /// `MaxRecord` automatico e marca la serie come PR.
-    /// Restituisce `true` se è scattato un nuovo record.
-    @discardableResult
-    static func evaluatePersonalRecord(
-        for set: WorkoutSet,
-        context: ModelContext
-    ) -> Bool {
-        guard let exercise = set.exercise, !set.isWarmup, set.weight > 0, set.reps >= 1 else {
-            return false
+    /// Ricalcola i record di un macchinario: via i record automatici, poi uno per ogni serie
+    /// che batte il migliore fino a quel momento (il suo uuid è quello della serie).
+    static func recompute(_ exercise: Exercise, context: ModelContext) {
+        let records = exercise.recordList.filter { !$0.isDeleted }
+        let manual = records.filter { !$0.isEstimated }
+        for record in records where record.isEstimated { context.delete(record) }
+
+        // Solo le serie di un allenamento che esiste ancora.
+        let sets = exercise.setList.filter { !$0.isDeleted && $0.workout != nil }
+        let winners = Set(RecordRules.personalRecordSets(
+            manual: manual.map {
+                RecordRules.ManualRecord(uuid: $0.uuid.uuidString, date: $0.date, weight: $0.weight, reps: $0.reps)
+            },
+            sets: sets.map {
+                RecordRules.SetEntry(
+                    uuid: $0.uuid.uuidString, createdAt: $0.createdAt, order: $0.order, weight: $0.weight,
+                    reps: $0.reps, isWarmup: $0.isWarmup, excludedFromRecords: $0.excludedFromRecords
+                )
+            }
+        ))
+
+        for set in sets {
+            let isRecord = winners.contains(set.uuid.uuidString)
+            if set.isPersonalRecord != isRecord { set.isPersonalRecord = isRecord }
+            guard isRecord else { continue }
+            let record = MaxRecord(
+                weight: set.weight, reps: set.reps, date: set.createdAt, isEstimated: true, note: "Da allenamento"
+            )
+            record.uuid = set.uuid
+            context.insert(record)
+            record.exercise = exercise
         }
-
-        let best = exercise.bestRecord.map { (weight: $0.weight, reps: $0.reps) }
-        guard MaxRanking.beats(weight: set.weight, reps: set.reps, than: best) else { return false }
-
-        // Prima l'inserimento, poi la relazione: così l'oggetto è già gestito dal
-        // contesto quando viene agganciato all'esercizio.
-        let record = MaxRecord(
-            weight: set.weight,
-            reps: set.reps,
-            date: set.createdAt,
-            isEstimated: true,
-            note: "Da allenamento"
-        )
-        context.insert(record)
-        record.exercise = exercise
-        set.isPersonalRecord = true
-        return true
     }
 
-    /// Rimuove il record automatico nato da questa serie, se esiste.
-    /// Serve quando si cancella una serie per non lasciare in giro un massimale fantasma.
-    static func removeAutomaticRecord(for set: WorkoutSet, context: ModelContext) {
-        guard set.isPersonalRecord, let exercise = set.exercise else { return }
-        let match = exercise.recordList.first { record in
-            record.isEstimated
-                && record.reps == set.reps
-                && abs(record.weight - set.weight) < epsilon
-                && abs(record.date.timeIntervalSince(set.createdAt)) < 1
+    /// Tutti i macchinari: dopo un ripristino, una sincronizzazione o l'aggiornamento a Peak 2.0.
+    static func recomputeAll(context: ModelContext) {
+        for exercise in (try? context.fetch(FetchDescriptor<Exercise>())) ?? [] {
+            recompute(exercise, context: context)
         }
-        if let match {
-            context.delete(match)
+        try? context.save()
+    }
+
+    /// Elimina una serie e ricalcola: se era un record, torna quello di prima (o il successivo).
+    static func delete(_ set: WorkoutSet, context: ModelContext) {
+        let exercise = set.exercise
+        context.delete(set)
+        try? context.save()
+        if let exercise { recompute(exercise, context: context) }
+        try? context.save()
+    }
+
+    /// Elimina un allenamento con le sue serie: i record che aveva fatto nascere spariscono con lui.
+    static func delete(_ workout: Workout, context: ModelContext) {
+        let exercises = Set(workout.setList.compactMap(\.exercise))
+        context.delete(workout)
+        try? context.save()
+        for exercise in exercises { recompute(exercise, context: context) }
+        try? context.save()
+    }
+
+    /// Elimina un massimale dallo storico. Uno inserito a mano sparisce. Uno "da allenamento"
+    /// non si cancella da solo (si ricalcolerebbe): la serie che l'ha fatto nascere smette di
+    /// contare per i record, e resta nell'allenamento.
+    static func delete(_ record: MaxRecord, context: ModelContext) {
+        guard let exercise = record.exercise else { context.delete(record); try? context.save(); return }
+        if record.isEstimated {
+            if let set = exercise.setList.first(where: { $0.uuid == record.uuid }) { set.excludedFromRecords = true }
+        } else {
+            context.delete(record)
+            try? context.save()
         }
-        set.isPersonalRecord = false
+        recompute(exercise, context: context)
+        try? context.save()
     }
 
     /// Massimali toccati durante una sessione, per il riepilogo di fine allenamento.

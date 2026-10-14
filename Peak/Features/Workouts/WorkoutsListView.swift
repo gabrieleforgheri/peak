@@ -137,8 +137,7 @@ struct WorkoutsListView: View {
 
     private func delete(_ workout: Workout) {
         withAnimation {
-            context.delete(workout)
-            try? context.save()
+            RecordService.delete(workout, context: context)
         }
         Haptics.warning()
     }
