@@ -15,7 +15,7 @@
         {
           "version": "2.0",
           "date": "2026-10-14T21:36:10Z",
-          "localizedDescription": "install_device.sh: opzione SENZA_WATCH per installare solo l'iPhone",
+          "localizedDescription": "Peak 2.0: accesso con yG e sincronizzazione col web, passi e dischi in lb, massimali ricalcolati dalle serie, pesate modificabili",
           "downloadURL": "https://github.com/gabrieleforgheri/peak/releases/download/v2.0/Peak.ipa",
           "size": 1086346,
           "minOSVersion": "17.0"
