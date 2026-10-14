@@ -27,6 +27,9 @@ final class SyncService {
     enum State: Equatable {
         /// Nessun account collegato: l'app funziona in locale, come sempre.
         case disconnected
+        /// Login fatto ma scelta non ancora completata (server vuoto o in conflitto): il token non è
+        /// salvato e non si sincronizza, così un'interruzione a metà non unisce i dati a caso.
+        case onboarding
         case connected
         /// Il server non riconosce più questo iPhone: i dati restano qui, serve collegare di nuovo.
         case expired
@@ -73,7 +76,7 @@ final class SyncService {
     private var context: ModelContext { container!.mainContext }
     private var api: PeakAPI? { credentials.map { PeakAPI(token: $0.token) } }
 
-    var isConnected: Bool { state != .disconnected }
+    var isConnected: Bool { state == .connected || state == .expired }
 
     // MARK: - Avvio
 
@@ -275,14 +278,31 @@ final class SyncService {
 
     // MARK: - Collegare e scollegare
 
-    /// Dopo il login: il token è dell'iPhone, e lo stato di sincronizzazione riparte da zero.
+    /// Dopo il login: il token è dell'iPhone, e lo stato di sincronizzazione riparte da zero. Resta in
+    /// memoria (stato `onboarding`) finché `completeConnection()` non lo salva nel portachiavi.
     func connect(_ credentials: PeakCredentials) {
-        PeakKeychain.save(credentials)
         self.credentials = credentials
         store = SyncStore(sub: credentials.sub)
-        state = .connected
+        state = .onboarding
         lastError = nil
+    }
+
+    /// La scelta è andata a buon fine: da qui in poi l'iPhone sincronizza.
+    func completeConnection() {
+        guard state == .onboarding, let credentials else { return }
+        PeakKeychain.save(credentials)
+        settings?.didSeedCatalog = true
+        state = .connected
         persist()
+        updatePending()
+    }
+
+    /// Annullato (o fallito) a metà: l'iPhone torna com'era, senza account.
+    func cancelConnection() {
+        guard state == .onboarding else { return }
+        credentials = nil
+        store = SyncStore()
+        state = .disconnected
     }
 
     /// Scollega questo iPhone: i dati restano com'erano, come prima del collegamento. Il token
@@ -301,7 +321,7 @@ final class SyncService {
 
     /// Dopo la scadenza: un nuovo login dello stesso account riprende da dove si era, senza domande.
     func renew(_ credentials: PeakCredentials) -> Bool {
-        guard credentials.sub == store.sub else { return false }
+        guard state == .expired, credentials.sub == store.sub else { return false }
         PeakKeychain.save(credentials)
         self.credentials = credentials
         state = .connected
@@ -330,6 +350,10 @@ final class SyncService {
         let records = (try? context.fetchCount(FetchDescriptor<MaxRecord>())) ?? 0
         let weights = (try? context.fetchCount(FetchDescriptor<BodyWeightEntry>())) ?? 0
         return workouts + records + weights > 0
+    }
+
+    var localHasExercises: Bool {
+        ((try? context.fetchCount(FetchDescriptor<Exercise>())) ?? 0) > 0
     }
 
     var hasActiveWorkout: Bool {

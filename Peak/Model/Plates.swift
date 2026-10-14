@@ -6,6 +6,31 @@ enum Plates {
     /// Tutti i dischi selezionabili nelle impostazioni, dal più pesante.
     static let catalog: [Double] = [25, 20, 15, 10, 5, 2.5, 1.25, 0.5]
 
+    private static let kilogramsPerPound = 0.45359237
+    /// I dischi americani, in kg (si salva sempre in kg): 45 / 35 / 25 / 10 / 5 / 2,5 lb.
+    static let poundCatalog: [Double] = [45, 35, 25, 10, 5, 2.5].map { $0 * kilogramsPerPound }
+
+    /// I tagli che le impostazioni mostrano nell'unità scelta.
+    static func catalog(for unit: WeightUnit) -> [Double] { unit == .kg ? catalog : poundCatalog }
+    /// Dischi di serie dell'unità.
+    static func defaults(for unit: WeightUnit) -> [Double] { unit == .kg ? [25, 20, 15, 10, 5, 2.5, 1.25] : poundCatalog }
+    /// Bilanciere di serie: 20 kg, 45 lb.
+    static func defaultBar(for unit: WeightUnit) -> Double { unit == .kg ? 20 : 45 * kilogramsPerPound }
+
+    /// Il calcolatore compare dove si carica a dischi: bilanciere, panche e rack (con il bilanciere),
+    /// plate loaded (senza). Non con i manubri: «Panca piana manubri» ha il pittogramma della panca.
+    /// `nil` = niente calcolatore. Stessa regola del web (`plateMode` in common/domain.ts).
+    static func barBase(glyph: MachineGlyph, name: String, barWeight: Double) -> Double? {
+        switch glyph {
+        case .plateLoaded:
+            return 0
+        case .barbell, .benchFlat, .benchIncline, .squatRack:
+            return name.lowercased().contains("manubri") ? nil : barWeight
+        default:
+            return nil
+        }
+    }
+
     struct Load: Equatable {
         /// Dischi su un lato, dal più pesante (il primo infilato) al più leggero.
         let perSide: [Double]

@@ -25,6 +25,18 @@ enum WeightUnit: String, CaseIterable, Identifiable, Codable {
 
     /// Passo di default degli stepper quando l'esercizio non ne ha uno suo.
     var defaultStep: Double { self == .kg ? 2.5 : 5 }
+
+    private static let poundStepForKilogramStep: [Double: Double] = [1.25: 2.5, 2: 5, 2.5: 5, 5: 10, 10: 20]
+
+    /// Il passo del macchinario (salvato in kg) nel passo nativo dell'unità: in lb 2,5 kg diventa 5 lb,
+    /// non 5,51. Stessa tabella del web (`displayStep` in common/domain.ts).
+    func displayStep(forKilograms step: Double) -> Double {
+        guard self == .lb else { return step }
+        return Self.poundStepForKilogramStep[step] ?? max(2.5, (step * Self.poundsPerKilogram / 2.5).rounded() * 2.5)
+    }
+
+    /// Passo della pesata corporea.
+    var bodyWeightStep: Double { self == .kg ? 0.1 : 0.2 }
 }
 
 /// Tinte selezionabili per l'accento dell'app.
@@ -83,12 +95,23 @@ final class AppSettings {
         static let watchMode = "settings.watchMode"
         static let watchAutoEnd = "settings.watchAutoEndSeconds"
         static let watchSensitivity = "settings.watchSensitivity"
+        static let didSeeWelcome = "settings.didSeeWelcome"
+        static let didRecomputeRecords = "settings.didRecomputeRecords2"
     }
 
     private let defaults: UserDefaults
 
     var unit: WeightUnit {
-        didSet { defaults.set(unit.rawValue, forKey: Key.unit) }
+        didSet {
+            defaults.set(unit.rawValue, forKey: Key.unit)
+            guard oldValue != unit else { return }
+            // Dischi e bilanciere ancora «di serie» passano a quelli di serie della nuova unità (45 lb, dischi americani).
+            let old = Plates.defaults(for: oldValue)
+            if availablePlates.count == old.count, zip(availablePlates.sorted(), old.sorted()).allSatisfy({ abs($0 - $1) < 0.001 }) {
+                availablePlates = Plates.defaults(for: unit)
+            }
+            if abs(barWeight - Plates.defaultBar(for: oldValue)) < 0.001 { barWeight = Plates.defaultBar(for: unit) }
+        }
     }
 
     var formula: OneRepMaxFormula {
@@ -174,6 +197,16 @@ final class AppSettings {
         didSet { defaults.set(watchSensitivity, forKey: Key.watchSensitivity) }
     }
 
+    /// La pagina «Collega a yG» si mostra una volta sola, anche a chi aggiorna dalla 1.x. Resta di questo iPhone.
+    var didSeeWelcome: Bool {
+        didSet { defaults.set(didSeeWelcome, forKey: Key.didSeeWelcome) }
+    }
+
+    /// I massimali «da allenamento» si ricalcolano dalle serie una volta alla prima apertura della 2.0.
+    var didRecomputeRecords: Bool {
+        didSet { defaults.set(didRecomputeRecords, forKey: Key.didRecomputeRecords) }
+    }
+
     var lastBackupDate: Date? {
         didSet { defaults.set(lastBackupDate, forKey: Key.lastBackup) }
     }
@@ -208,6 +241,8 @@ final class AppSettings {
         self.watchAutoEndSeconds = defaults.object(forKey: Key.watchAutoEnd) as? Double ?? 4
         self.watchSensitivity = defaults.object(forKey: Key.watchSensitivity) as? Double ?? 1
         self.lastExportDate = defaults.object(forKey: Key.lastExport) as? Date
+        self.didSeeWelcome = defaults.bool(forKey: Key.didSeeWelcome)
+        self.didRecomputeRecords = defaults.bool(forKey: Key.didRecomputeRecords)
     }
 
     var accentColor: Color { accent.color }

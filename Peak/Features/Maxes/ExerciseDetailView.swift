@@ -53,7 +53,7 @@ struct ExerciseDetailView: View {
             }
     }
 
-    private var warmupPlan: [Warmup.Step] { exercise.warmupPlan }
+    private var warmupPlan: [Warmup.Step] { exercise.warmupPlan(unit: settings.unit) }
 
     /// Ultime serie eseguite in allenamento su questo macchinario.
     private var recentSets: [WorkoutSet] {
@@ -67,7 +67,7 @@ struct ExerciseDetailView: View {
         ScrollView {
             VStack(spacing: 14) {
                 heroCard
-                if settings.progressionEnabled, let next = exercise.progression(range: settings.repRange) {
+                if settings.progressionEnabled, let next = exercise.progression(range: settings.repRange, unit: settings.unit) {
                     GlassCard(padding: 16) {
                         HStack {
                             SectionHeader(title: "Prossima volta")
@@ -209,7 +209,7 @@ struct ExerciseDetailView: View {
                     }
                 }
 
-                Text("Pesi sulla griglia del macchinario, a passi (\(Fmt.weight(exercise.incrementStep, unit: settings.unit))).")
+                Text("Pesi sulla griglia del macchinario, a passi (\(Fmt.weight(settings.unit.toKilograms(settings.unit.displayStep(forKilograms: exercise.incrementStep)), unit: settings.unit))).")
                     .font(Theme.rounded(11, .medium))
                     .foregroundStyle(Theme.textTertiary)
             }

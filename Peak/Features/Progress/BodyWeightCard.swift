@@ -11,6 +11,7 @@ struct BodyWeightCard: View {
     @Query(sort: \BodyWeightEntry.date, order: .reverse) private var entries: [BodyWeightEntry]
 
     @State private var showingEditor = false
+    @State private var editing: BodyWeightEntry?
     @State private var importing = false
     @State private var importMessage: String?
 
@@ -139,10 +140,38 @@ struct BodyWeightCard: View {
                         .font(Theme.rounded(11, .medium))
                         .foregroundStyle(Theme.textTertiary)
                 }
+
+                // Le ultime pesate: toccane una per correggerla o cancellarla.
+                if !entries.isEmpty {
+                    Divider().overlay(Theme.stroke)
+                    ForEach(entries.prefix(5)) { entry in
+                        Button {
+                            editing = entry
+                        } label: {
+                            HStack {
+                                Text(Fmt.date(entry.date))
+                                    .font(Theme.rounded(12, .medium))
+                                    .foregroundStyle(Theme.textTertiary)
+                                Spacer()
+                                Text(Fmt.weight(entry.weight, unit: settings.unit))
+                                    .font(Theme.rounded(13, .semibold))
+                                    .foregroundStyle(Theme.textPrimary)
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(Theme.textTertiary)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
         }
         .sheet(isPresented: $showingEditor) {
             BodyWeightSheet(lastWeight: latest?.weight)
+        }
+        .sheet(item: $editing) { entry in
+            BodyWeightSheet(lastWeight: entry.weight, entry: entry)
         }
     }
 
@@ -178,6 +207,8 @@ struct BodyWeightSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let lastWeight: Double?
+    /// Se c'è, la sheet corregge (o cancella) questa pesata invece di crearne una.
+    var entry: BodyWeightEntry?
 
     @State private var weight: Double = 75
     @State private var date = Date()
@@ -192,9 +223,10 @@ struct BodyWeightSheet: View {
                             SectionHeader(title: "Peso")
                             WeightStepper(
                                 kilograms: $weight,
-                                step: settings.unit == .kg ? 0.1 : 0.2,
+                                step: 0,
                                 unit: settings.unit,
-                                tint: settings.accentColor
+                                tint: settings.accentColor,
+                                nativeStep: settings.unit.bodyWeightStep
                             )
                         }
                     }
@@ -204,17 +236,33 @@ struct BodyWeightSheet: View {
                             .font(Theme.rounded(14, .medium))
                     }
 
-                    if settings.healthSyncEnabled {
+                    if settings.healthSyncEnabled, entry == nil {
                         Text("La pesata verrà scritta anche in Salute.")
                             .font(Theme.rounded(11, .medium))
                             .foregroundStyle(Theme.textTertiary)
+                    }
+
+                    if let entry {
+                        Button(role: .destructive) {
+                            context.delete(entry)
+                            try? context.save()
+                            Haptics.warning()
+                            dismiss()
+                        } label: {
+                            Label("Cancella pesata", systemImage: "trash")
+                                .font(Theme.rounded(14, .semibold))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Theme.negative)
+                        .padding(.top, 6)
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)
             }
             .screenBackground(settings.accentColor)
-            .navigationTitle("Pesata")
+            .navigationTitle(entry == nil ? "Pesata" : "Modifica pesata")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -230,11 +278,20 @@ struct BodyWeightSheet: View {
                 guard !didPrefill else { return }
                 didPrefill = true
                 if let lastWeight { weight = lastWeight }
+                if let entry { date = entry.date }
             }
         }
     }
 
     private func save() {
+        if let entry {
+            entry.weight = weight
+            entry.date = date
+            try? context.save()
+            Haptics.commit()
+            dismiss()
+            return
+        }
         let entry = BodyWeightEntry(weight: weight, date: date)
         context.insert(entry)
         try? context.save()

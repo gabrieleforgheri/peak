@@ -33,21 +33,17 @@ struct AddSetSheet: View {
         settings.formula.oneRepMax(weight: weight, reps: reps)
     }
 
-    private var warmupPlan: [Warmup.Step] { exercise.warmupPlan }
+    private var warmupPlan: [Warmup.Step] { exercise.warmupPlan(unit: settings.unit) }
 
-    /// Peso senza dischi, se l'esercizio si carica a dischi: bilanciere o leva plate loaded.
+    /// Peso senza dischi, se l'esercizio si carica a dischi: bilanciere (anche panche e rack) o leva plate loaded.
     private var plateBase: Double? {
         guard settings.plateCalculatorEnabled else { return nil }
-        switch exercise.glyph {
-        case .barbell: return settings.barWeight
-        case .plateLoaded: return 0
-        default: return nil
-        }
+        return Plates.barBase(glyph: exercise.glyph, name: exercise.name, barWeight: settings.barWeight)
     }
 
     private var suggestion: Progression.Suggestion? {
         guard settings.progressionEnabled, !isWarmup, !isEditing else { return nil }
-        return exercise.progression(range: settings.repRange)
+        return exercise.progression(range: settings.repRange, unit: settings.unit)
     }
 
     /// Il carico da battere, oppure — se lo stai già battendo — quello che stai facendo.

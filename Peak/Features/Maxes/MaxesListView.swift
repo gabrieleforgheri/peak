@@ -11,6 +11,8 @@ struct MaxesListView: View {
     @State private var search = ""
     @State private var showingNewExercise = false
     @State private var selectedGroup: MuscleGroup?
+    @State private var showingConnect = false
+    private let sync = SyncService.shared
 
     private var visibleExercises: [Exercise] {
         allExercises.filter { exercise in
@@ -34,13 +36,16 @@ struct MaxesListView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if allExercises.filter({ !$0.isArchived }).isEmpty {
-                    emptyCatalog
-                } else if grouped.isEmpty {
-                    ContentUnavailableView.search(text: search)
-                } else {
-                    list
+            VStack(spacing: 0) {
+                connectionBanner
+                Group {
+                    if allExercises.filter({ !$0.isArchived }).isEmpty {
+                        emptyCatalog
+                    } else if grouped.isEmpty {
+                        ContentUnavailableView.search(text: search)
+                    } else {
+                        list
+                    }
                 }
             }
             .screenBackground(settings.accentColor)
@@ -60,6 +65,29 @@ struct MaxesListView: View {
             .sheet(isPresented: $showingNewExercise) {
                 ExerciseEditorView(exercise: nil)
             }
+            .sheet(isPresented: $showingConnect) { ConnectSheet() }
+        }
+    }
+
+    /// Fisso finché l'iPhone non è collegato a yG (o il collegamento è scaduto): senza account i dati
+    /// vivono solo qui e non compaiono sul web.
+    @ViewBuilder
+    private var connectionBanner: some View {
+        if sync.state == .disconnected || sync.state == .expired {
+            let expired = sync.state == .expired
+            WarningBanner(
+                symbol: expired ? "link.badge.plus" : "icloud.slash",
+                title: expired ? "Collegamento a yG scaduto" : "Non sei collegato a yG",
+                message: expired
+                    ? "I tuoi dati restano qui, ma non si sincronizzano più finché non accedi di nuovo."
+                    : "I dati sono solo su questo iPhone. Collegati per averli anche sul web e al sicuro sul server.",
+                tint: settings.accentColor,
+                actionTitle: expired ? "Accedi di nuovo" : "Collega a yG"
+            ) {
+                showingConnect = true
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 6)
         }
     }
 
@@ -167,7 +195,7 @@ private struct ExerciseRow: View {
 
     private var best: MaxRecord? { exercise.bestRecord }
 
-    private var warmup: Warmup.Step? { exercise.warmupPlan.first }
+    private var warmup: Warmup.Step? { exercise.warmupPlan(unit: settings.unit).first }
 
     private var deltaPercent: Double? {
         guard let best else { return nil }
