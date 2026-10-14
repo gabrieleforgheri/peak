@@ -7,8 +7,8 @@
  * - Le foto dei macchinari (/api/foto/<sha256>) non cambiano mai: prima la cache.
  * - L'API non si tocca: i dati stanno in IndexedDB e li sincronizza l'app. */
 
-const SHELL = ["/","/assets/index-BfAVY-oC.js","/assets/index-DboYFKJ5.css","/manifest.webmanifest","/icon-192.png"]
-const VERSION = "5a8587df5c"
+const SHELL = ["/","/assets/index-BQFsAr0Y.js","/assets/index-DboYFKJ5.css","/manifest.webmanifest","/icon-192.png"]
+const VERSION = "88016a1359"
 const SHELL_CACHE = `peak-guscio-${VERSION}`
 const PHOTOS = 'peak-foto'
 
