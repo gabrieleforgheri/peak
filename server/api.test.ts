@@ -22,6 +22,7 @@ before(async () => {
   dir = mkdtempSync(join(tmpdir(), 'peak-api-'))
   mkdirSync(join(dir, 'dist'))
   writeFileSync(join(dir, 'dist/index.html'), '<!doctype html><title>Peak</title>')
+  writeFileSync(join(dir, 'dist/sw.js'), '// sw')
   idp = createServer((req, res) => {
     const url = new URL(req.url!, idpUrl)
     if (url.pathname.endsWith('/.well-known/openid-configuration')) {
@@ -223,6 +224,9 @@ test('pagina e statici: senza sessione si va al login; gli asset sono pubblici',
   const page = await call('/', { h: { cookie: h.cookie } })
   assert.equal(page.status, 200)
   assert.match(page.headers.get('content-security-policy')!, /default-src 'self'/)
+  const sw = await call('/sw.js')
+  assert.equal(sw.status, 200)
+  assert.equal(sw.headers.get('cache-control'), 'no-store', 'il service worker non va mai in cache')
   assert.equal((await call('/segreto.txt')).status, 404)
   assert.equal((await call('/..%2f..%2fpackage.json')).status, 404)
   assert.equal((await call('/api/inesistente', { h })).status, 404)

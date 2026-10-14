@@ -1,3 +1,48 @@
+# Peak — stato al 14 ottobre 2026 (leggere per primo)
+
+Massimali diventa **Peak**: l'app web su `peak.yrb4g.com` (stessi dati dell'iPhone, sul server, col login di yG) e
+l'iPhone che sincronizza con lo stesso server. Le decisioni prese con l'utente stanno nel piano approvato
+(`~/.claude/plans/the-task-is-to-gentle-planet.md`, fuori dal repo).
+
+## Fatto e verificato (ramo `main`)
+
+| Pezzo | Dove | Prova |
+|---|---|---|
+| Logica condivisa web+server (1RM, record derivati, riscaldamento, progressione, dischi, statistiche, pittogrammi, catalogo da 98, formati) | `common/` | `npm test` |
+| Server senza dipendenze (`node:http`, `node:sqlite`): login yG (OIDC+PKCE a mano), sync, foto, import/export backup, dispositivi, Web Push, portale per yG | `server/` | `npm test` (58 test, con un finto authentik) |
+| Client web offline (Svelte 5, IndexedDB, service worker), tutte le schermate, IT+EN | `web/` (build committata in `web/dist`) | `cd web && npx svelte-check && node scripts/check-i18n.mjs && npx vite build`; prova nel browser con coda offline e secondo dispositivo |
+| Pagina `/account/peak`, tile, blueprint 210, script dei segreti, selftest | repo **yG** (commit `c01f50a`, spinto e deployato il 14 ott) | `npm test` in yG, 100 controlli |
+| App iPhone rinominata Peak (cartelle, target, nome visibile, 2.0) | `main` | compila per dispositivo (senza simulatore) |
+
+Bundle id, nome dello store SwiftData, chiavi UserDefaults e **modulo Swift (`PRODUCT_MODULE_NAME: Massimali`)** non sono
+cambiati di proposito: i dati degli utenti non si toccano.
+
+## Da fare
+
+1. **Sito online dal 14 ott** (peak.yrb4g.com): server Pelican, proxy NPM, blueprint 210 + `svc-peak`, segreti, deploy di yG e cron notturno
+   (`peak-sincronizza-accessi.sh --locale`, 03:30 sull'Oracle) sono a posto. Mancano due cose che solo l'utente può fare: **Restart del server
+   in Pelican** (porta `/sw.js` con `no-store`: Cloudflare lo teneva 4 ore; poi `curl -sI https://peak.yrb4g.com/sw.js` non deve dire `HIT`)
+   e **un primo login** con un utente in `svc-peak`. Dopo il login: `/account/peak` su yG deve mostrare i dati, e si lancia una volta a mano
+   `peak-sincronizza-accessi.sh`. Il `sub` è lo stesso in yG e Peak (entrambi i provider usano `hashed_user_id`); l'email è solo il ripiego.
+2. **iPhone** (ramo `ios-sync`, incompleto e non compilato): vedi il messaggio del commit. Manca: collegare `SyncService`
+   in `PeakApp`/`RootView`, pagina di benvenuto («Collega a yG» grande, «Salta» piccolo), `ConnectFlowView` (prima scelta su
+   account vuoto, conflitto «usa il server / unisci»), banner fisso nella lista, sezione «Account yG» nelle impostazioni,
+   «Cancella tutto» anche per le pesate, correzioni lb (passi e dischi in lb), calcolatore dischi per panca/squat, pittogramma
+   dedotto dal nome anche per i nuovi, pesate modificabili. Poi `xcodegen generate` e build per dispositivo.
+3. Rinominare il repo GitHub in `peak` **insieme** a `docs/apps.json` e a `lib/studio.js` di yG (GitHub Pages non fa redirect).
+4. Tag `v2.0` (pubblica su AltStore) e installazione sul telefono vero **con un backup prima**.
+
+## Trappole
+
+- Il codice TypeScript sta in `common/`, non in `shared/`: su macOS `shared/` e `Shared/` (Swift) sono la stessa cartella.
+- Su Pelican (egg 1) ogni riavvio è anche un deploy: `git pull --ff-only` e `node server/index.ts`, **niente npm**. Il server stampa
+  `Server avviato sulla porta N`: Wings lo cerca per segnare il server come avviato.
+- Provato solo con Node 26; l'egg usa `nodejs_24`.
+- Mai `xcodebuild test` o simulatore senza chiedere (blocca il Mac). La regola dei record in Swift si prova con
+  `scripts/check_records.sh` (solo swiftc) sugli stessi vettori di `common/fixtures/records.json`.
+
+---
+
 # Handoff — Massimali 1.3 (ottobre 2026)
 
 Stato del lavoro per chi riprende, persona o agente. Il "come funziona" sta nel README;

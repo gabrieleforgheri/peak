@@ -80,7 +80,8 @@ export function createApp({ dataDir, env = process.env, staticDir = join(ROOT, '
       throw new HttpError(404, 'non trovato')
     }
     res.writeHead(200, {
-      'content-type': file.type, 'cache-control': isShell ? 'no-store' : file.cache,
+      // sw.js mai in cache, nemmeno su Cloudflare (che ignora `no-cache` sui .js): un aggiornamento deve arrivare subito
+      'content-type': file.type, 'cache-control': isShell || path === '/sw.js' ? 'no-store' : file.cache,
       'content-security-policy': APP_CSP, ...SECURITY_HEADERS,
       ...(path === '/sw.js' ? { 'service-worker-allowed': '/' } : {}),
     })
