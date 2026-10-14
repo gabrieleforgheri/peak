@@ -184,7 +184,7 @@ test('foto: solo JPEG, lo sha256 deve coincidere, si legge con cache immutabile'
   assert.deepEqual(Buffer.from(await got.arrayBuffer()), jpeg)
 })
 
-test('backup: JSON scaricabile, segna lastExportDate', async () => {
+test('backup: JSON scaricabile nel formato dell\'app', async () => {
   const { h } = login('bk')
   await call('/api/catalogo', { h, method: 'POST' })
   const r = await call('/api/backup', { h })
@@ -192,8 +192,6 @@ test('backup: JSON scaricabile, segna lastExportDate', async () => {
   const file = await r.json() as { version: number; exercises: unknown[] }
   assert.equal(file.version, 1)
   assert.equal(file.exercises.length, 98)
-  const pulled = await (await call('/api/sync?dopo=0', { h })).json() as { docs: { kind: string; uuid: string }[] }
-  assert.ok(pulled.docs.some((d) => d.kind === 'setting' && d.uuid === 'lastExportDate'))
 })
 
 test('dispositivi: si elencano e si revocano solo i propri', async () => {

@@ -7,6 +7,7 @@ import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createApi } from './api.ts'
 import { createAuth, loadAuthConfig } from './auth.ts'
+import { createPortal } from './portale.ts'
 import { APP_CSP, HttpError, SECURITY_HEADERS, sendJson } from './http.ts'
 import { openStore } from './store.ts'
 
@@ -55,6 +56,7 @@ export function createApp({ dataDir, env = process.env, staticDir = join(ROOT, '
   const auth = createAuth(store, loadAuthConfig(env), dataDir)
   const api = createApi(store, auth, commitOf)
   const files = loadStatic(staticDir)
+  const portal = createPortal(store, env.YG_PORTAL_TOKEN)
 
   async function route(req: IncomingMessage, res: ServerResponse) {
     const url = new URL(req.url ?? '/', 'http://x')
@@ -100,7 +102,7 @@ export function createApp({ dataDir, env = process.env, staticDir = join(ROOT, '
     return store.sweepPhotos()
   }
 
-  return { server, store, auth, nightly }
+  return { server, portal, store, auth, nightly }
 }
 
 function msUntil(hour: number, now = new Date()): number {
@@ -114,7 +116,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (existsSync(join(ROOT, '.env'))) process.loadEnvFile(join(ROOT, '.env'))
   process.env.TZ ??= 'Europe/Rome'
   const dataDir = process.env.DATA_DIR ?? join(ROOT, 'data')
-  const { server, nightly } = createApp({ dataDir })
+  const { server, portal, nightly } = createApp({ dataDir })
   const port = Number(process.env.PORT ?? process.env.SERVER_PORT ?? 3016)
   server.listen(port, '0.0.0.0', () => {
     // La stringa «Server avviato» è quella che Wings cerca per segnare il server come avviato (egg 1): non cambiarla.
@@ -122,5 +124,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   })
   const tick = () => setTimeout(() => { try { nightly() } catch (e) { console.error('notturno', e) } tick() }, msUntil(4)).unref()
   tick()
-  for (const sig of ['SIGTERM', 'SIGINT'] as const) process.on(sig, () => server.close(() => process.exit(0)))
+  // il portale per yG: una porta a parte, che NPM non pubblica (solo se YG_PORTAL_TOKEN è impostato)
+  const portalPort = Number(process.env.PORTAL_PORT ?? 3017)
+  portal?.listen(portalPort, '0.0.0.0', () => console.log(`Portale per yG sulla porta ${portalPort}`))
+  for (const sig of ['SIGTERM', 'SIGINT'] as const) process.on(sig, () => { portal?.close(); server.close(() => process.exit(0)) })
 }
