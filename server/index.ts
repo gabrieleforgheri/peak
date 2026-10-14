@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { createApi } from './api.ts'
 import { createAuth, loadAuthConfig } from './auth.ts'
 import { createPortal } from './portale.ts'
+import { createPush, type Send } from './push.ts'
 import { APP_CSP, HttpError, SECURITY_HEADERS, sendJson } from './http.ts'
 import { openStore } from './store.ts'
 
@@ -48,13 +49,14 @@ function loadStatic(dir: string): Map<string, { body: Buffer; type: string; cach
   return out
 }
 
-export interface AppOptions { dataDir: string; env?: NodeJS.ProcessEnv; staticDir?: string }
+export interface AppOptions { dataDir: string; env?: NodeJS.ProcessEnv; staticDir?: string; /** Per i test: al posto della vera chiamata al servizio push. */ send?: Send }
 
 /** Costruisce il server senza metterlo in ascolto (i test lo avviano su una porta a caso). */
-export function createApp({ dataDir, env = process.env, staticDir = join(ROOT, 'web/dist') }: AppOptions) {
+export function createApp({ dataDir, env = process.env, staticDir = join(ROOT, 'web/dist'), send }: AppOptions) {
   const store = openStore(dataDir)
   const auth = createAuth(store, loadAuthConfig(env), dataDir)
-  const api = createApi(store, auth, commitOf)
+  const push = createPush(store, dataDir, (env.BASE_URL ?? 'https://peak.yrb4g.com').replace(/\/+$/, ''), send)
+  const api = createApi(store, auth, push, commitOf)
   const files = loadStatic(staticDir)
   const portal = createPortal(store, env.YG_PORTAL_TOKEN)
 
@@ -102,7 +104,7 @@ export function createApp({ dataDir, env = process.env, staticDir = join(ROOT, '
     return store.sweepPhotos()
   }
 
-  return { server, portal, store, auth, nightly }
+  return { server, portal, store, auth, push, nightly }
 }
 
 function msUntil(hour: number, now = new Date()): number {
@@ -116,7 +118,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (existsSync(join(ROOT, '.env'))) process.loadEnvFile(join(ROOT, '.env'))
   process.env.TZ ??= 'Europe/Rome'
   const dataDir = process.env.DATA_DIR ?? join(ROOT, 'data')
-  const { server, portal, nightly } = createApp({ dataDir })
+  const { server, portal, push, nightly } = createApp({ dataDir })
+  push.boot()
   const port = Number(process.env.PORT ?? process.env.SERVER_PORT ?? 3016)
   server.listen(port, '0.0.0.0', () => {
     // La stringa «Server avviato» è quella che Wings cerca per segnare il server come avviato (egg 1): non cambiarla.

@@ -2,6 +2,7 @@
 // Il suono suona solo con la pagina aperta; la notifica a telefono bloccato è il Web Push (push.ts).
 
 import { t } from './i18n.ts'
+import { cancelRestPush, pushEnabled, scheduleRestPush } from './push.ts'
 
 const KEY = 'peak.rest'
 
@@ -16,6 +17,7 @@ function update() {
 }
 
 function finish(ring: boolean) {
+	if (!ring && R.endsAt) void cancelRestPush()
 	clearInterval(tick); tick = undefined
 	R.endsAt = 0; R.left = 0
 	try { localStorage.removeItem(KEY) } catch { /* modalità privata */ }
@@ -26,6 +28,7 @@ export function startRest(seconds: number, ended?: () => void) {
 	onEnd = ended
 	R.endsAt = Date.now() + seconds * 1000
 	try { localStorage.setItem(KEY, String(R.endsAt)) } catch { /* come sopra */ }
+	void scheduleRestPush(R.endsAt)
 	clearInterval(tick)
 	tick = setInterval(update, 250)
 	update()
@@ -35,6 +38,7 @@ export function shiftRest(seconds: number) {
 	if (!R.endsAt) return
 	R.endsAt = Math.max(Date.now() + 1000, R.endsAt + seconds * 1000)
 	try { localStorage.setItem(KEY, String(R.endsAt)) } catch { /* come sopra */ }
+	void scheduleRestPush(R.endsAt)
 	update()
 }
 
@@ -58,6 +62,6 @@ function beep() {
 		}
 		setTimeout(() => ctx.close(), 800)
 	} catch { /* senza audio */ }
-	if (document.visibilityState === 'hidden' && 'Notification' in window && Notification.permission === 'granted')
+	if (!pushEnabled() && document.visibilityState === 'hidden' && 'Notification' in window && Notification.permission === 'granted')
 		navigator.serviceWorker?.ready.then((r) => r.showNotification(t('Recupero finito'), { body: t('Tocca alla prossima serie.'), tag: 'recupero' })).catch(() => {})
 }

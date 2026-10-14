@@ -127,7 +127,7 @@ export async function resync() {
 export async function boot() {
 	onWrite(schedule)
 	let sub = localStorage.getItem('peak.sub')
-	let info: { sub: string; nome: string; username: string } | null = null
+	let info: { sub: string; nome: string; username: string; vapid: string } | null = null
 	try {
 		const res = await fetch('/api/io', { credentials: 'same-origin' })
 		if (res.status === 401) {

@@ -7,6 +7,7 @@
 	import { t, tn } from '../lib/i18n.ts'
 	import { go } from '../lib/router.svelte.ts'
 	import { S, getModel } from '../lib/store.svelte.ts'
+	import { disablePush, enablePush, pushState, type PushState } from '../lib/push.ts'
 	import { call, resync, syncNow } from '../lib/sync.ts'
 	import { toast } from '../lib/toast.svelte.ts'
 	import Icon from '../components/Icon.svelte'
@@ -20,7 +21,11 @@
 
 	let devices = $state<{ id: number; name: string; created_at: number; used_at: number | null }[]>([])
 	const loadDevices = async () => { try { const r = await call('/api/dispositivi'); if (r.ok) devices = (await r.json()).dispositivi } catch { /* offline */ } }
-	onMount(loadDevices)
+	let push = $state<PushState>('unsupported')
+	onMount(() => { void loadDevices(); void pushState().then((p) => (push = p)) })
+	async function togglePush(on: boolean) {
+		try { push = on ? await enablePush(S.user?.vapid ?? '') : await disablePush() } catch { toast(t('Non è andata: riprova.')); push = await pushState() }
+	}
 
 	// ---- backup ----
 	const daysSince = (iso: string | null) => (iso ? (Date.now() - Date.parse(iso)) / 86_400_000 : Infinity)
@@ -119,7 +124,11 @@
 	<div class="sec-title">{t('Allenamento')}</div>
 	<div class="card stack">
 		<label class="row between"><span>{t('Timer di recupero')}</span><input class="toggle" type="checkbox" checked={s.restTimerEnabled} onchange={(e) => setSetting('restTimerEnabled', e.currentTarget.checked)} /></label>
-		{#if s.restTimerEnabled}<Stepper value={s.restSeconds} step={15} min={15} max={600} unit={t('secondi')} onchange={(v) => setSetting('restSeconds', v)} />{/if}
+		{#if s.restTimerEnabled}<Stepper value={s.restSeconds} step={15} min={15} max={600} unit={t('secondi')} onchange={(v) => setSetting('restSeconds', v)} />
+			{#if push !== 'unsupported'}
+				<label class="row between"><span>{t('Avviso a fine recupero')}<br /><span class="small muted">{push === 'needs-install' ? t('Su iPhone serve Peak aggiunta alla schermata Home (Condividi → Aggiungi alla schermata Home).') : push === 'denied' ? t('Le notifiche sono bloccate: riattivale dalle impostazioni del browser.') : t('Arriva anche a telefono bloccato. Con la rete assente suona solo con la pagina aperta.')}</span></span>
+					<input class="toggle" type="checkbox" checked={push === 'on'} disabled={push === 'needs-install' || push === 'denied'} onchange={(e) => togglePush(e.currentTarget.checked)} /></label>
+			{/if}{/if}
 		<hr style="border:0;border-top:1px solid var(--stroke);width:100%;margin:0" />
 		<label class="row between"><span>{t('Prossimo carico consigliato')}</span><input class="toggle" type="checkbox" checked={s.progressionEnabled} onchange={(e) => setSetting('progressionEnabled', e.currentTarget.checked)} /></label>
 		{#if s.progressionEnabled}

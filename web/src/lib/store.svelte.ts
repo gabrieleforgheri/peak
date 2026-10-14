@@ -20,7 +20,7 @@ export const S = $state({
 	online: true,
 	syncing: false,
 	auth: 'ok' as AuthState,
-	user: null as { sub: string; nome: string; username: string } | null,
+	user: null as { sub: string; nome: string; username: string; vapid: string } | null,
 	lastSync: 0,
 	dirty: 0,
 	error: '' as string,

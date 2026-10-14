@@ -7,6 +7,7 @@ import { isoSec, newUuid, type Kind, type MuscleGroup } from '../common/docs.ts'
 import { CATALOG } from '../common/catalog.ts'
 import { exportBackup, parseBackup, planImport, serializeBackup } from './backup.ts'
 import type { Auth } from './auth.ts'
+import { endpointOk, type Push } from './push.ts'
 import { HttpError, readBody, readJson, sendJson, SECURITY_HEADERS } from './http.ts'
 import type { Store, WireDoc } from './store.ts'
 
@@ -16,7 +17,7 @@ const MAX_IMPORT_BODY = 32_000_000
 const MAX_PHOTO = 1_000_000
 const MAX_PHOTOS_PER_USER = 500
 
-export function createApi(store: Store, auth: Auth, commit: () => string) {
+export function createApi(store: Store, auth: Auth, push: Push, commit: () => string) {
   /** Gestisce /api/*. Restituisce false se il percorso non è suo. */
   return async function handle(req: IncomingMessage, res: ServerResponse, path: string, query: URLSearchParams): Promise<boolean> {
     if (!path.startsWith('/api/')) return false
@@ -29,7 +30,7 @@ export function createApi(store: Store, auth: Auth, commit: () => string) {
     const { user } = who
 
     if (path === '/api/io' && method === 'GET') {
-      sendJson(res, 200, { sub: user.sub, nome: user.name || user.username, username: user.username, vapid: null })
+      sendJson(res, 200, { sub: user.sub, nome: user.name || user.username, username: user.username, vapid: push.publicKey })
       return true
     }
 
@@ -110,6 +111,24 @@ export function createApi(store: Store, auth: Auth, commit: () => string) {
     const dev = /^\/api\/dispositivi\/(\d+)$/.exec(path)
     if (dev && method === 'DELETE') {
       if (!store.deleteDevice(user.id, Number(dev[1]))) throw new HttpError(404, 'dispositivo')
+      sendJson(res, 200, { ok: true })
+      return true
+    }
+
+    // Web Push: iscrizione del browser e orario di fine del recupero
+    if (path === '/api/push' && (method === 'POST' || method === 'DELETE')) {
+      const { endpoint } = (await readJson(req, 4096)) as { endpoint?: unknown }
+      if (!endpointOk(endpoint)) throw new HttpError(400, 'endpoint')
+      if (method === 'POST') push.subscribe(user.id, endpoint)
+      else push.unsubscribe(user.id, endpoint)
+      sendJson(res, 200, { ok: true })
+      return true
+    }
+    if (path === '/api/recupero' && (method === 'POST' || method === 'DELETE')) {
+      const { endpoint, fine } = (await readJson(req, 4096)) as { endpoint?: unknown; fine?: unknown }
+      if (!endpointOk(endpoint)) throw new HttpError(400, 'endpoint')
+      if (method === 'DELETE') { push.cancel(user.id, endpoint); sendJson(res, 200, { ok: true }); return true }
+      if (typeof fine !== 'number' || !push.schedule(user.id, endpoint, fine)) throw new HttpError(400, 'fine')
       sendJson(res, 200, { ok: true })
       return true
     }
