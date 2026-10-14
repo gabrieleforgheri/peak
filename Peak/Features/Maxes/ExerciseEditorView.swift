@@ -28,7 +28,9 @@ struct ExerciseEditorView: View {
     @State private var photoData: Data?
     @State private var pickerItem: PhotosPickerItem?
     @State private var showingCamera = false
-    @State private var glyph: MachineGlyph = .machine
+    /// Il pittogramma scelto a mano; finché è `nil` lo deduce il nome (e cambia con lui).
+    @State private var pickedGlyph: MachineGlyph?
+    private var glyph: MachineGlyph { pickedGlyph ?? MachineGlyph.suggested(for: name, group: group) }
     @State private var photoOffset: Double = 0
     @State private var dragStart: Double = 0
 
@@ -282,7 +284,7 @@ struct ExerciseEditorView: View {
                     HStack(spacing: 8) {
                         ForEach(MachineGlyph.allCases) { candidate in
                             Button {
-                                glyph = candidate
+                                pickedGlyph = candidate
                                 Haptics.tap()
                             } label: {
                                 MachineGlyphView(
@@ -444,10 +446,7 @@ struct ExerciseEditorView: View {
     private func load() {
         guard !didLoad else { return }
         didLoad = true
-        guard let exercise else {
-            glyph = MachineGlyph.suggested(for: "", group: group)
-            return
-        }
+        guard let exercise else { return }
         name = exercise.name
         group = exercise.muscleGroup
         step = exercise.incrementStep
@@ -459,7 +458,7 @@ struct ExerciseEditorView: View {
         photoData = exercise.photo
         photoOffset = exercise.photoOffset
         dragStart = exercise.photoOffset
-        glyph = exercise.glyph
+        pickedGlyph = exercise.hasCustomGlyph ? exercise.glyph : nil
     }
 
     private func save() {
@@ -474,7 +473,7 @@ struct ExerciseEditorView: View {
             exercise.isArchived = isArchived
             exercise.photo = photoData
             exercise.photoOffset = photoOffset
-            exercise.glyph = glyph
+            exercise.glyphRaw = pickedGlyph?.rawValue ?? ""
         } else {
             let nextIndex = (allExercises.map(\.sortIndex).max() ?? 0) + 1
             let new = Exercise(
@@ -487,7 +486,7 @@ struct ExerciseEditorView: View {
             context.insert(new)
             new.photo = photoData
             new.photoOffset = photoOffset
-            new.glyph = glyph
+            new.glyphRaw = pickedGlyph?.rawValue ?? ""
             new.isUnilateral = isUnilateral
             new.restSeconds = restSeconds
         }

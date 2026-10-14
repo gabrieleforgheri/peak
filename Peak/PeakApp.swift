@@ -12,7 +12,10 @@ struct PeakApp: App {
                 .environment(settings)
                 .tint(settings.accentColor)
                 .preferredColorScheme(.dark)
-                .task { WatchBridge.shared.activate(container: container, settings: settings) }
+                .task {
+                    SyncService.shared.configure(container: container, settings: settings)
+                    WatchBridge.shared.activate(container: container, settings: settings)
+                }
         }
         .modelContainer(container)
     }

@@ -23,6 +23,10 @@ struct SettingsView: View {
     @State private var showingEraseConfirm = false
     @State private var healthMessage: String?
     @State private var alert: AlertPayload?
+    @State private var showingConnect = false
+    @State private var showingDisconnectConfirm = false
+    @State private var isImporting = false
+    private let sync = SyncService.shared
 
     private struct AlertPayload: Identifiable {
         let id = UUID()
@@ -48,6 +52,8 @@ struct SettingsView: View {
                             exportBackup()
                         }
                     }
+
+                    accountCard
 
                     // Unità
                     GlassCard {
@@ -142,6 +148,17 @@ struct SettingsView: View {
             } message: {
                 Text("«Unisci» aggiunge solo ciò che manca. «Sostituisci» cancella i dati attuali e riparte dal file.")
             }
+            .sheet(isPresented: $showingConnect) { ConnectSheet() }
+            .confirmationDialog(
+                "Scollegare questo iPhone?",
+                isPresented: $showingDisconnectConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Scollega", role: .destructive) { sync.disconnect() }
+                Button("Annulla", role: .cancel) {}
+            } message: {
+                Text("I dati restano su questo iPhone e su Peak, ma non si sincronizzano più. Per togliere l'accesso a questo iPhone usa anche yrb4g.com/account/peak.")
+            }
             .confirmationDialog(
                 "Cancellare tutti i dati?",
                 isPresented: $showingEraseConfirm,
@@ -150,7 +167,9 @@ struct SettingsView: View {
                 Button("Cancella tutto", role: .destructive) { eraseAll() }
                 Button("Annulla", role: .cancel) {}
             } message: {
-                Text("Macchinari, massimali e allenamenti verranno eliminati. Esporta un backup prima di procedere.")
+                Text(sync.isConnected
+                    ? "Macchinari, massimali, allenamenti e pesate verranno eliminati da questo iPhone, da Peak sul server e da ogni dispositivo collegato. Esporta un backup prima di procedere."
+                    : "Macchinari, massimali, allenamenti e pesate verranno eliminati. Esporta un backup prima di procedere.")
             }
             .alert(
                 alert?.title ?? "",
@@ -160,6 +179,84 @@ struct SettingsView: View {
             } message: {
                 Text(alert?.message ?? "")
             }
+        }
+    }
+
+    // MARK: - Account yG
+
+    private var accountCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "Account yG", trailing: accountStatus)
+
+                switch sync.state {
+                case .connected, .expired:
+                    let expired = sync.state == .expired
+                    Text(expired
+                        ? "Il collegamento è scaduto: i dati restano qui ma non si sincronizzano."
+                        : "Collegato come \(sync.credentials?.name.isEmpty == false ? sync.credentials!.name : "il tuo account yG"). Allenamenti e massimali sono anche su peak.yrb4g.com.")
+                        .font(Theme.rounded(12, .medium))
+                        .foregroundStyle(Theme.textSecondary)
+
+                    if let lastSync = sync.lastSync {
+                        Text("Ultima sincronizzazione \(Fmt.dateTime(lastSync))")
+                            .font(Theme.rounded(11, .medium))
+                            .foregroundStyle(Theme.textTertiary)
+                    }
+                    if sync.pendingCount > 0 {
+                        Text("\(sync.pendingCount) modifiche in attesa di essere inviate")
+                            .font(Theme.rounded(11, .medium))
+                            .foregroundStyle(Theme.textTertiary)
+                    }
+                    if let error = sync.lastError {
+                        Text(error)
+                            .font(Theme.rounded(11, .medium))
+                            .foregroundStyle(.orange)
+                    }
+
+                    if expired {
+                        Button { showingConnect = true } label: {
+                            Label("Accedi di nuovo", systemImage: "person.crop.circle.badge.checkmark")
+                        }
+                        .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
+                    } else {
+                        Button {
+                            Task { await sync.syncNow() }
+                        } label: {
+                            Label(sync.isSyncing ? "Sincronizzo…" : "Sincronizza adesso", systemImage: "arrow.triangle.2.circlepath")
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .disabled(sync.isSyncing)
+                    }
+
+                    Button(role: .destructive) {
+                        showingDisconnectConfirm = true
+                    } label: {
+                        Label("Scollega questo iPhone", systemImage: "link.badge.plus")
+                            .font(Theme.rounded(14, .semibold))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Theme.negative)
+
+                default:
+                    Text("Con l'account yG i tuoi dati si sincronizzano con il web e restano al sicuro sul server. Senza, Peak funziona solo su questo iPhone.")
+                        .font(Theme.rounded(12, .medium))
+                        .foregroundStyle(Theme.textSecondary)
+                    Button { showingConnect = true } label: {
+                        Label("Collega a yG", systemImage: "person.crop.circle.badge.checkmark")
+                    }
+                    .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
+                }
+            }
+        }
+    }
+
+    private var accountStatus: String {
+        switch sync.state {
+        case .connected: return "collegato"
+        case .expired: return "scaduto"
+        default: return "non collegato"
         }
     }
 
@@ -227,7 +324,14 @@ struct SettingsView: View {
                 .tint(settings.accentColor)
 
                 if settings.plateCalculatorEnabled {
-                    Stepper(value: $settings.barWeight, in: 0...30, step: 2.5) {
+                    Stepper(
+                        value: Binding(
+                            get: { settings.unit.fromKilograms(settings.barWeight) },
+                            set: { settings.barWeight = settings.unit.toKilograms($0) }
+                        ),
+                        in: 0...(settings.unit == .kg ? 30 : 66),
+                        step: settings.unit == .kg ? 2.5 : 5
+                    ) {
                         Text("Bilanciere: \(Fmt.weight(settings.barWeight, unit: settings.unit))")
                             .font(Theme.rounded(14, .medium))
                     }
@@ -235,17 +339,17 @@ struct SettingsView: View {
                         .font(Theme.rounded(12, .semibold))
                         .foregroundStyle(Theme.textTertiary)
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 58), spacing: 8)], spacing: 8) {
-                        ForEach(Plates.catalog, id: \.self) { plate in
-                            let isOn = settings.availablePlates.contains(plate)
+                        ForEach(Plates.catalog(for: settings.unit), id: \.self) { plate in
+                            let isOn = settings.availablePlates.contains { abs($0 - plate) < 0.001 }
                             Button {
                                 if isOn {
-                                    settings.availablePlates.removeAll { $0 == plate }
+                                    settings.availablePlates.removeAll { abs($0 - plate) < 0.001 }
                                 } else {
                                     settings.availablePlates.append(plate)
                                 }
                                 Haptics.tap()
                             } label: {
-                                Text(Fmt.weightValue(plate, unit: .kg))
+                                Text(Fmt.weightValue(plate, unit: settings.unit))
                                     .font(Theme.rounded(13, .bold))
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 8)
@@ -362,7 +466,9 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 SectionHeader(title: "Backup")
 
-                Text("I dati vivono solo su questo iPhone. Esporta un file ogni tanto e tienilo su iCloud Drive: è l'unico modo per non perderli se l'app viene disinstallata.")
+                Text(sync.isConnected
+                    ? "I dati sono anche su Peak, sul server. Un file ogni tanto, su iCloud Drive, resta comunque una copia in più."
+                    : "I dati vivono solo su questo iPhone. Esporta un file ogni tanto e tienilo su iCloud Drive: è l'unico modo per non perderli se l'app viene disinstallata.")
                     .font(Theme.rounded(12, .medium))
                     .foregroundStyle(Theme.textSecondary)
 
@@ -554,6 +660,10 @@ struct SettingsView: View {
     private func performImport(mode: RestoreMode) {
         guard let data = pendingImport else { return }
         pendingImport = nil
+        if sync.state == .connected {
+            importThroughServer(data, replace: mode == .replace)
+            return
+        }
         do {
             let file = try BackupService.restore(from: data, context: context, mode: mode)
             settings.didSeedCatalog = true
@@ -565,6 +675,25 @@ struct SettingsView: View {
         } catch {
             Haptics.warning()
             alert = AlertPayload(title: "Import non riuscito", message: error.localizedDescription)
+        }
+    }
+
+    /// Collegato: il backup passa dal server (che unisce i macchinari con lo stesso nome) e poi l'iPhone si riallinea.
+    private func importThroughServer(_ data: Data, replace: Bool) {
+        guard !isImporting else { return }
+        isImporting = true
+        Task {
+            defer { isImporting = false }
+            do {
+                try sync.writePreConnectionBackup()
+                try await sync.uploadBackup(data, replace: replace, first: false)
+                try await sync.replaceLocalWithServer()
+                Haptics.success()
+                alert = AlertPayload(title: "Backup importato", message: "I dati sono su Peak e su questo iPhone.")
+            } catch {
+                Haptics.warning()
+                alert = AlertPayload(title: "Import non riuscito", message: error.localizedDescription)
+            }
         }
     }
 
@@ -602,6 +731,9 @@ struct SettingsView: View {
             try context.delete(model: Workout.self)
             try context.delete(model: MaxRecord.self)
             try context.delete(model: Exercise.self)
+            try context.delete(model: BodyWeightEntry.self)
+            // collegato, la cancellazione deve arrivare al server: la guardia contro le cancellazioni di massa non la ferma
+            sync.permitMassDeletion()
             try context.save()
             settings.didSeedCatalog = false
             Haptics.warning()

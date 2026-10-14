@@ -13,6 +13,9 @@ final class WorkoutSet {
     var createdAt: Date = Date()
     /// `true` se questa serie ha fatto scattare un nuovo massimale.
     var isPersonalRecord: Bool = false
+    /// `true` se questa serie non deve contare per i massimali (era un record da allenamento
+    /// che hai eliminato dallo storico). La serie resta nell'allenamento e nel volume.
+    var excludedFromRecords: Bool = false
 
     var exercise: Exercise?
     var workout: Workout?

@@ -24,11 +24,15 @@ cambiati di proposito: i dati degli utenti non si toccano.
    in Pelican** (porta `/sw.js` con `no-store`: Cloudflare lo teneva 4 ore; poi `curl -sI https://peak.yrb4g.com/sw.js` non deve dire `HIT`)
    e **un primo login** con un utente in `svc-peak`. Dopo il login: `/account/peak` su yG deve mostrare i dati, e si lancia una volta a mano
    `peak-sincronizza-accessi.sh`. Il `sub` è lo stesso in yG e Peak (entrambi i provider usano `hashed_user_id`); l'email è solo il ripiego.
-2. **iPhone** (ramo `ios-sync`, incompleto e non compilato): vedi il messaggio del commit. Manca: collegare `SyncService`
-   in `PeakApp`/`RootView`, pagina di benvenuto («Collega a yG» grande, «Salta» piccolo), `ConnectFlowView` (prima scelta su
-   account vuoto, conflitto «usa il server / unisci»), banner fisso nella lista, sezione «Account yG» nelle impostazioni,
-   «Cancella tutto» anche per le pesate, correzioni lb (passi e dischi in lb), calcolatore dischi per panca/squat, pittogramma
-   dedotto dal nome anche per i nuovi, pesate modificabili. Poi `xcodegen generate` e build per dispositivo.
+2. **iPhone** (ramo `ios-sync`): scritto e **compila per dispositivo** (app e target dei test, senza simulatore; i test non sono stati eseguiti).
+   Collegato: `SyncService` in `PeakApp`/`RootView` (avvio, ritorno in primo piano, dopo ogni salvataggio), `WelcomeView` («Collega a yG»
+   grande, «Salta» piccolo, una volta sola anche per chi aggiorna), `ConnectFlow`/`ConnectFlowView` (login, server vuoto, conflitto «Unisci /
+   Usa i dati del server», copia `Peak-prima-del-collegamento.json` prima di toccare qualcosa; il token si salva solo a scelta finita), banner
+   fisso nella lista, sezione «Account yG» nelle impostazioni, import via server da collegati, «Cancella tutto» anche per le pesate e fino al
+   server. Correzioni: passi e dischi in lb (dischi americani, bilanciere 45 lb), calcolatore dischi anche per panche e rack (non «manubri»),
+   pittogramma dedotto dal nome finché non lo scegli a mano, pesate modificabili e cancellabili, riscaldamento e progressione nell'unità
+   scelta. **Da provare sul telefono vero** (dopo un backup): migrazione SwiftData, login, le due scelte del conflitto, una serie offline che
+   si sincronizza, `RecordRulesTests`/`RecordServiceTests` (mai eseguiti: serve il via libera per il simulatore).
 3. Rinominare il repo GitHub in `peak` **insieme** a `docs/apps.json` e a `lib/studio.js` di yG (GitHub Pages non fa redirect).
 4. Tag `v2.0` (pubblica su AltStore) e installazione sul telefono vero **con un backup prima**.
 

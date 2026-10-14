@@ -104,9 +104,12 @@ struct StatTile: View {
 /// scelta avviene solo per la visualizzazione e per l'input.
 struct WeightStepper: View {
     @Binding var kilograms: Double
+    /// Passo del macchinario, in kg: nell'unità scelta diventa il passo nativo (2,5 kg → 5 lb).
     var step: Double
     var unit: WeightUnit
     var tint: Color = .white
+    /// Passo già nell'unità scelta (la pesata corporea: 0,1 kg o 0,2 lb), da usare al posto di `step`.
+    var nativeStep: Double?
 
     private var displayValue: Binding<Double> {
         Binding(
@@ -115,9 +118,10 @@ struct WeightStepper: View {
         )
     }
 
+    /// Si sale e si scende nel passo dell'unità scelta: in lb 5, non i 2,5 kg convertiti.
     private func bump(_ direction: Double) {
-        let next = kilograms + direction * step
-        kilograms = max(0, (next * 100).rounded() / 100)
+        let next = unit.fromKilograms(kilograms) + direction * (nativeStep ?? unit.displayStep(forKilograms: step))
+        kilograms = unit.toKilograms(max(0, (next * 100).rounded() / 100))
         Haptics.tap()
     }
 

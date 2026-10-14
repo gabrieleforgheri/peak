@@ -98,17 +98,26 @@ final class Exercise {
         Warmup.plan(base: currentMax, step: incrementStep)
     }
 
+    /// La rampa sulla griglia dell'unità scelta: in lb si calcola in lb (passo di 5 lb, non 2,5 kg) e si riporta in kg.
+    func warmupPlan(unit: WeightUnit) -> [Warmup.Step] {
+        guard unit == .lb, let base = currentMax else { return warmupPlan }
+        let rounded = (unit.fromKilograms(base) * 100).rounded() / 100
+        return Warmup.plan(base: rounded, step: unit.displayStep(forKilograms: incrementStep)).map {
+            Warmup.Step(percent: $0.percent, reps: $0.reps, weight: unit.toKilograms($0.weight))
+        }
+    }
+
     /// Prossimo carico consigliato secondo la doppia progressione, calcolato
     /// sull'ultima sessione **conclusa** in cui hai fatto serie allenanti qui.
-    func progression(range: ClosedRange<Int>) -> Progression.Suggestion? {
+    func progression(range: ClosedRange<Int>, unit: WeightUnit = .kg) -> Progression.Suggestion? {
         let working = setList.filter { !$0.isWarmup && $0.workout?.endedAt != nil }
         guard let last = working.compactMap(\.workout).max(by: { $0.date < $1.date }) else { return nil }
         let session = working.filter { $0.workout?.persistentModelID == last.persistentModelID }
-        return Progression.next(
-            lastSession: session.map { (weight: $0.weight, reps: $0.reps) },
-            step: incrementStep,
-            range: range
-        )
+        let converted = session.map { (weight: (unit.fromKilograms($0.weight) * 100).rounded() / 100, reps: $0.reps) }
+        guard let next = Progression.next(lastSession: converted, step: unit.displayStep(forKilograms: incrementStep), range: range) else {
+            return nil
+        }
+        return Progression.Suggestion(weight: unit.toKilograms(next.weight), reps: next.reps)
     }
 
     /// Miglior carico registrato prima di una certa data, per i badge di variazione.

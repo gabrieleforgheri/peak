@@ -145,6 +145,7 @@ struct EditMaxSheet: View {
         )
         context.insert(record)
         record.exercise = exercise
+        RecordService.recompute(exercise, context: context)
         try? context.save()
         if isRecord { Haptics.personalRecord() } else { Haptics.commit() }
         dismiss()
