@@ -11,7 +11,7 @@ l'iPhone che sincronizza con lo stesso server. Le decisioni prese con l'utente s
 | Logica condivisa web+server (1RM, record derivati, riscaldamento, progressione, dischi, statistiche, pittogrammi, catalogo da 98, formati) | `common/` | `npm test` |
 | Server senza dipendenze (`node:http`, `node:sqlite`): login yG (OIDC+PKCE a mano), sync, foto, import/export backup, dispositivi, Web Push, portale per yG | `server/` | `npm test` (58 test, con un finto authentik) |
 | Client web offline (Svelte 5, IndexedDB, service worker), tutte le schermate, IT+EN | `web/` (build committata in `web/dist`) | `cd web && npx svelte-check && node scripts/check-i18n.mjs && npx vite build`; prova nel browser con coda offline e secondo dispositivo |
-| Pagina `/account/peak`, tile, blueprint 210, script dei segreti, selftest | repo **yG** (commit `c01f50a`, spinto, NON deployato) | `npm test` in yG, 100 controlli |
+| Pagina `/account/peak`, tile, blueprint 210, script dei segreti, selftest | repo **yG** (commit `c01f50a`, spinto e deployato il 14 ott) | `npm test` in yG, 100 controlli |
 | App iPhone rinominata Peak (cartelle, target, nome visibile, 2.0) | `main` | compila per dispositivo (senza simulatore) |
 
 Bundle id, nome dello store SwiftData, chiavi UserDefaults e **modulo Swift (`PRODUCT_MODULE_NAME: Massimali`)** non sono
@@ -19,10 +19,11 @@ cambiati di proposito: i dati degli utenti non si toccano.
 
 ## Da fare
 
-1. **Mettere online il sito** (serve l'OK dell'utente a ogni passo): server Pelican + proxy host NPM (li crea l'utente),
-   blueprint 210 + `svc-peak` su authentik, `deploy/bin/peak-credenziali-oidc.sh` e `peak-token-portale.sh` (repo yG),
-   deploy di yG, riga di cron di `peak-sincronizza-accessi.sh`. Poi: confrontare il `sub` che arriva da authentik con quello della
-   sessione di yG (il portale ripiega sull'email se sono diversi).
+1. **Sito online dal 14 ott** (peak.yrb4g.com): server Pelican, proxy NPM, blueprint 210 + `svc-peak`, segreti, deploy di yG e cron notturno
+   (`peak-sincronizza-accessi.sh --locale`, 03:30 sull'Oracle) sono a posto. Mancano due cose che solo l'utente può fare: **Restart del server
+   in Pelican** (porta `/sw.js` con `no-store`: Cloudflare lo teneva 4 ore; poi `curl -sI https://peak.yrb4g.com/sw.js` non deve dire `HIT`)
+   e **un primo login** con un utente in `svc-peak`. Dopo il login: `/account/peak` su yG deve mostrare i dati, e si lancia una volta a mano
+   `peak-sincronizza-accessi.sh`. Il `sub` è lo stesso in yG e Peak (entrambi i provider usano `hashed_user_id`); l'email è solo il ripiego.
 2. **iPhone** (ramo `ios-sync`, incompleto e non compilato): vedi il messaggio del commit. Manca: collegare `SyncService`
    in `PeakApp`/`RootView`, pagina di benvenuto («Collega a yG» grande, «Salta» piccolo), `ConnectFlowView` (prima scelta su
    account vuoto, conflitto «usa il server / unisci»), banner fisso nella lista, sezione «Account yG» nelle impostazioni,
