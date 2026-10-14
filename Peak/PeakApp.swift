@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct MassimaliApp: App {
+struct PeakApp: App {
     @State private var settings = AppSettings()
     private let container = AppStore.sharedContainer()
 

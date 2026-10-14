@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Massimali</string>
+	<string>Peak</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,26 +15,15 @@
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
-	<string>APPL</string>
+	<string>XPC!</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>NSHealthShareUsageDescription</key>
-	<string>Per tenere attivo il conteggio delle ripetizioni durante la serie.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>Per tenere attivo il conteggio delle ripetizioni durante la serie. L'allenamento in Salute lo registra l'iPhone.</string>
-	<key>NSMotionUsageDescription</key>
-	<string>Per contare le ripetizioni dal movimento del polso.</string>
-	<key>WKApplication</key>
-	<true/>
-	<key>WKBackgroundModes</key>
-	<array>
-		<string>workout-processing</string>
-	</array>
-	<key>WKCompanionAppBundleIdentifier</key>
-	<string>com.gabrieleforghieri.massimali.HKR6AKCLPA</string>
-	<key>WKRunsIndependentlyOfCompanionApp</key>
-	<true/>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.widgetkit-extension</string>
+	</dict>
 </dict>
 </plist>

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Installa Massimali **con l'app Watch** su iPhone e Apple Watch, dal Mac, via rete o cavo.
+# Installa Peak **con l'app Watch** su iPhone e Apple Watch, dal Mac, via rete o cavo.
 #
 # Perché non AltStore: WatchConnectivity lega le due app solo se l'app iPhone installata
 # contiene l'app Watch in Watch/, e AltSign (ldid) quella cartella la rifirma male: la
@@ -54,7 +54,7 @@ base, team = sys.argv[1], sys.argv[2]
 s = open("project.yml").read()
 s = s.replace(f"PRODUCT_BUNDLE_IDENTIFIER: {base}\n", f"PRODUCT_BUNDLE_IDENTIFIER: {base}.{team}\n")
 s = s.replace(f"PRODUCT_BUNDLE_IDENTIFIER: {base}.widgets", f"PRODUCT_BUNDLE_IDENTIFIER: {base}.{team}.widgets")
-s = s.replace("      - target: MassimaliWidgets\n", "      - target: MassimaliWidgets\n      - target: MassimaliWatch\n", 1)
+s = s.replace("      - target: PeakWidgets\n", "      - target: PeakWidgets\n      - target: PeakWatch\n", 1)
 open("project.yml", "w").write(s)
 EOF
 grep -q "$BASE_ID.$TEAM.watchkitapp" project.yml \
@@ -62,16 +62,16 @@ grep -q "$BASE_ID.$TEAM.watchkitapp" project.yml \
 
 xcodegen generate --quiet
 xcodebuild build \
-    -project Massimali.xcodeproj \
-    -scheme Massimali \
+    -project Peak.xcodeproj \
+    -scheme Peak \
     -configuration Release \
     -destination "id=$IPHONE_ID" \
     -derivedDataPath "$WORK/dd" \
     -allowProvisioningUpdates \
     -quiet
 
-APP="$WORK/dd/Build/Products/Release-iphoneos/Massimali.app"
-[ -d "$APP/Watch/Massimali.app" ] || { echo "L'app Watch non è stata incorporata." >&2; exit 1; }
+APP="$WORK/dd/Build/Products/Release-iphoneos/Peak.app"
+[ -d "$APP/Watch/Peak.app" ] || { echo "L'app Watch non è stata incorporata." >&2; exit 1; }
 
 echo "Installo sull'iPhone…"
 xcrun devicectl device install app --device "$IPHONE_ID" "$APP" >/dev/null
@@ -79,5 +79,5 @@ xcrun devicectl device install app --device "$IPHONE_ID" "$APP" >/dev/null
 # va tolta e rimessa. I dati veri stanno sull'iPhone, sull'orologio non si perde nulla.
 echo "Installo sul Watch…"
 xcrun devicectl device uninstall app --device "$WATCH_ID" "$BASE_ID.$TEAM.watchkitapp" >/dev/null 2>&1 || true
-xcrun devicectl device install app --device "$WATCH_ID" "$APP/Watch/Massimali.app" >/dev/null
-echo "Fatto. Apri Massimali su iPhone: in Impostazioni → Apple Watch deve comparire «collegato»."
+xcrun devicectl device install app --device "$WATCH_ID" "$APP/Watch/Peak.app" >/dev/null
+echo "Fatto. Apri Peak su iPhone: in Impostazioni → Apple Watch deve comparire «collegato»."

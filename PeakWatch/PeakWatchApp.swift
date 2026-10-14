@@ -3,7 +3,7 @@ import SwiftUI
 import WatchKit
 
 @main
-struct MassimaliWatchApp: App {
+struct PeakWatchApp: App {
     @WKApplicationDelegateAdaptor private var delegate: AppDelegate
 
     var body: some Scene {

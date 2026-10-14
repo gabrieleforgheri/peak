@@ -91,7 +91,7 @@ private struct ExerciseView: View {
                 }
             }
         }
-        .navigationTitle("Massimali")
+        .navigationTitle("Peak")
     }
 
     @ViewBuilder

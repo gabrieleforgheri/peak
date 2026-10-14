@@ -1,6 +1,6 @@
 // Genera common/catalog.ts dal catalogo Swift. Una tantum: il Swift resta la fonte finché l'app iPhone non cambia.
 import { readFileSync, writeFileSync } from 'node:fs'
-const src = readFileSync('Massimali/Model/SeedCatalog.swift', 'utf8')
+const src = readFileSync('Peak/Model/SeedCatalog.swift', 'utf8')
 const re = /Entry\(name: "((?:[^"\\]|\\.)*)", group: \.(\w+), step: ([\d.]+)(?:,\s*notes: "((?:[^"\\]|\\.)*)")?\)/g
 const rows = [...src.matchAll(re)].map(([, name, group, step, notes]) => ({ name, group, step: Number(step), notes: notes ?? '' }))
 if (rows.length !== 98) throw new Error(`attese 98 voci, trovate ${rows.length}`)

@@ -20,7 +20,7 @@ enum HealthService {
             case .unavailable:
                 return "Salute non è disponibile su questo dispositivo."
             case .workoutsNotAuthorized:
-                return "Salute non ha il permesso di registrare gli allenamenti. Apri Salute › Condivisione › App › Massimali e attiva Allenamenti."
+                return "Salute non ha il permesso di registrare gli allenamenti. Apri Salute › Condivisione › App › Peak e attiva Allenamenti."
             case .emptyWorkout:
                 return "L'allenamento non ha serie da registrare."
             }

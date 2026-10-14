@@ -150,7 +150,7 @@ enum BackupService {
         let payload = try data(context: context)
         let stamp = Date().formatted(.iso8601.year().month().day())
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("Massimali-\(stamp).json")
+            .appendingPathComponent("Peak-\(stamp).json")
         try payload.write(to: url, options: .atomic)
         return url
     }

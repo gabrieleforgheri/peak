@@ -8,10 +8,10 @@ rm -rf build
 xcodegen generate
 
 xcodebuild archive \
-  -project Massimali.xcodeproj \
-  -scheme Massimali \
+  -project Peak.xcodeproj \
+  -scheme Peak \
   -configuration Release \
-  -archivePath build/Massimali.xcarchive \
+  -archivePath build/Peak.xcarchive \
   -destination "generic/platform=iOS" \
   -skipPackagePluginValidation \
   CODE_SIGNING_ALLOWED=NO \
@@ -20,12 +20,12 @@ xcodebuild archive \
   AD_HOC_CODE_SIGNING_ALLOWED=YES
 
 mkdir -p build/Payload
-cp -r build/Massimali.xcarchive/Products/Applications/Massimali.app build/Payload/
+cp -r build/Peak.xcarchive/Products/Applications/Peak.app build/Payload/
 
 # Firma ad-hoc solo per incidere gli entitlement nel binario: AltStore rifirma
 # con quelli che trova qui. Senza, HealthKit manca e Salute non si collega.
-codesign -f -s - build/Payload/Massimali.app/PlugIns/MassimaliWidgets.appex
-codesign -f -s - --entitlements Massimali/Massimali.entitlements build/Payload/Massimali.app
-(cd build && zip -qry Massimali.ipa Payload)
+codesign -f -s - build/Payload/Peak.app/PlugIns/PeakWidgets.appex
+codesign -f -s - --entitlements Peak/Peak.entitlements build/Payload/Peak.app
+(cd build && zip -qry Peak.ipa Payload)
 
-echo "build/Massimali.ipa"
+echo "build/Peak.ipa"

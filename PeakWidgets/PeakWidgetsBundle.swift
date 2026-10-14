@@ -2,7 +2,7 @@ import SwiftUI
 import WidgetKit
 
 @main
-struct MassimaliWidgetsBundle: WidgetBundle {
+struct PeakWidgetsBundle: WidgetBundle {
     var body: some Widget {
         WorkoutLiveActivity()
     }

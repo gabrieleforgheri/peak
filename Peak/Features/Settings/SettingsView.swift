@@ -396,7 +396,7 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.textTertiary)
                 }
 
-                Text("Lo trovi in File › Sul mio iPhone › Massimali › \(BackupService.autoBackupFilename)")
+                Text("Lo trovi in File › Sul mio iPhone › Peak › \(BackupService.autoBackupFilename)")
                     .font(Theme.rounded(11, .medium))
                     .foregroundStyle(Theme.textTertiary)
 
@@ -489,7 +489,7 @@ struct SettingsView: View {
     }
 
     private var infoCard: some View {
-        Text("Massimali \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
+        Text("Peak \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
             .font(Theme.rounded(11, .medium))
             .foregroundStyle(Theme.textTertiary)
             .frame(maxWidth: .infinity)
