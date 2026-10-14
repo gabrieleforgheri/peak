@@ -8,6 +8,8 @@ import { sessionCount, weeklyStreak, workoutVolume } from '../common/stats.ts'
 const DAY = 86_400_000
 
 export interface Summary {
+  /** L'unità che l'utente ha scelto in Peak: yG mostra i pesi come li vede lui. */
+  unita: 'kg' | 'lb'
   ultimo: { data: string; durataSec: number; volumeKg: number; record: number; nome: string } | null
   trentaGiorni: { sessioni: number; volumeKg: number; record: number; settimane: number }
   ultimiRecord: { esercizio: string; pesoKg: number; rip: number; data: string; auto: boolean }[]
@@ -33,7 +35,9 @@ export function summarize(docs: Iterable<LiveDoc>, now = Date.now()): Summary {
 
   const all = [...manual.map((r) => ({ ...r, auto: false })), ...auto.map((r) => ({ ...r, auto: true }))]
   const last = finished[0]
+  const unit = d.settings.find((x) => x.uuid === 'unit')?.data.value
   return {
+    unita: unit === 'lb' ? 'lb' : 'kg',
     ultimo: last ? {
       data: new Date(last.date).toISOString(), durataSec: Math.max(0, Math.round((last.ended - last.date) / 1000)),
       volumeKg: workoutVolume(stat[0]), record: last.sets.filter((s) => prSets.has(s.uuid)).length, nome: last.name,

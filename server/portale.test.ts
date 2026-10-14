@@ -50,7 +50,7 @@ test('summarize: ultimo allenamento, numeri dei 30 giorni, ultimi record', () =>
   assert.equal(s.ultimo?.record, 1)
   assert.deepEqual(s.trentaGiorni, { sessioni: 1, volumeKg: 300, record: 1, settimane: 1 })
   assert.deepEqual(s.ultimiRecord.map((r) => [r.esercizio, r.pesoKg, r.auto]), [['Chest Press', 60, true], ['Chest Press', 50, true]])
-  assert.deepEqual(summarize([]), { ultimo: null, trentaGiorni: { sessioni: 0, volumeKg: 0, record: 0, settimane: 0 }, ultimiRecord: [] })
+  assert.deepEqual(summarize([]), { unita: 'kg', ultimo: null, trentaGiorni: { sessioni: 0, volumeKg: 0, record: 0, settimane: 0 }, ultimiRecord: [] })
 })
 
 test('portale: token obbligatorio, utente cercato per sub e poi per email, mai creato', async () => {
