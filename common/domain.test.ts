@@ -6,10 +6,12 @@ import {
 } from './domain.ts'
 import { suggestedGlyph, SHAPES, GLYPH_TITLES, glyphSvg } from './glyph.ts'
 import { GLYPHS } from './docs.ts'
-import { CATALOG } from './catalog.ts'
+import { readFileSync } from 'node:fs'
+import type { CatalogEntry } from './catalog.ts'
 import { weeklyVolume, volumeByGroup, topMovers, tickIndices, weeklyStreak, weekStart } from './stats.ts'
 import * as fmt from './format.ts'
 
+const CATALOG = JSON.parse(readFileSync(new URL('./catalog.json', import.meta.url), 'utf8')) as CatalogEntry[]
 const near = (a: number, b: number, eps = 0.01) => assert.ok(Math.abs(a - b) <= eps, `${a} ≠ ${b}`)
 
 test('1RM', () => {
@@ -92,8 +94,8 @@ test('calcolatore dischi: bilanciere e plate loaded, non manubri né multipower'
   assert.equal(plateMode('legPress', 'Leg Press 45°'), null)
   // i nomi veri del catalogo: nessun manubri riceve il calcolatore
   for (const e of CATALOG) {
-    const g = suggestedGlyph(e.name, e.group)
-    if (e.name.toLowerCase().includes('manubri')) assert.equal(plateMode(g, e.name), null, e.name)
+    const g = suggestedGlyph(e.it, e.group)
+    if (e.it.toLowerCase().includes('manubri')) assert.equal(plateMode(g, e.it), null, e.it)
   }
 })
 
@@ -153,7 +155,7 @@ test('pittogrammi', () => {
   assert.equal(g('Attrezzo Sconosciuto', 'gambe'), 'legLever')
   assert.equal(g('Attrezzo Sconosciuto', 'schiena'), 'seatedRow')
   assert.equal(g('', 'petto'), 'seatedPush')
-  for (const e of CATALOG) { const x = g(e.name, e.group); assert.ok(SHAPES[x].length > 0, e.name); assert.ok(GLYPH_TITLES[x]) }
+  for (const e of CATALOG) { const x = g(e.it, e.group); assert.equal(x, e.glyph, e.it); assert.ok(SHAPES[x].length > 0, e.it); assert.ok(GLYPH_TITLES[x]) }
   assert.equal(GLYPHS.length, 22)
   for (const name of GLYPHS) {
     for (const s of SHAPES[name]) {
@@ -166,13 +168,6 @@ test('pittogrammi', () => {
     }
     assert.ok(glyphSvg(name).startsWith('<'))
   }
-})
-
-test('catalogo: 98 voci, sei gruppi', () => {
-  assert.equal(CATALOG.length, 98)
-  const per: Record<string, number> = {}
-  for (const e of CATALOG) per[e.group] = (per[e.group] ?? 0) + 1
-  assert.deepEqual(per, { petto: 15, schiena: 19, gambe: 22, spalle: 15, braccia: 16, core: 11 })
 })
 
 test('statistiche', () => {

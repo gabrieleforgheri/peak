@@ -6,9 +6,11 @@ import { createHash, randomBytes } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  KINDS, LEGACY_SETTINGS, SETTING_DEFAULTS, normUuid, parseDoc, upgradeDoc, type DocDataMap, type Kind, type LiveDoc,
+  KEEP_IF_ABSENT, KINDS, LEGACY_SETTINGS, SETTING_DEFAULTS, normUuid, parseDoc, upgradeDoc, type DocDataMap, type Kind, type LiveDoc,
 } from '../common/docs.ts'
+import { matchByName } from '../common/catalog.ts'
 import type { ImportPlan } from './backup.ts'
+import { CATALOG } from './catalog.ts'
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS users (
@@ -100,6 +102,20 @@ export function openStore(dataDir: string) {
     m: Number(r.m), deleted: r.deleted === 1,
   })
 
+  /**
+   * Un client vecchio non manda i campi nati dopo di lui (`catalog`, `hidden`): non devono sparire. Si tiene il valore del
+   * server; per un esercizio nuovo senza `catalog` lo si ricava dal nome.
+   */
+  const keepMissing = (kind: Kind, raw: Record<string, unknown>, data: Record<string, unknown>, row: Record<string, unknown> | undefined) => {
+    const before = row?.data ? (JSON.parse(row.data as string) as Record<string, unknown>) : null
+    for (const key of KEEP_IF_ABSENT[kind] ?? []) {
+      if (key in raw) continue
+      if (before && key in before) data[key] = before[key]
+      else if (key === 'catalog') data[key] = matchByName(CATALOG, String(data.name))?.id ?? ''
+    }
+    return data
+  }
+
   const write = (userId: number, kind: Kind, uuid: string, data: unknown, m: number, deleted: boolean) => {
     q.putDoc.run(userId, kind, uuid, deleted ? null : JSON.stringify(data), m, ++rev, deleted ? 1 : 0)
   }
@@ -189,11 +205,29 @@ export function openStore(dataDir: string) {
           }
           const row = q.getDoc.get(userId, d.kind, uuid) as Record<string, unknown> | undefined
           if (row && d.m < Number(row.m)) { out.rifiutati.push(toWire(row)); continue }
+          if (data) data = keepMissing(d.kind, d.data as Record<string, unknown>, data as Record<string, unknown>, row)
           write(userId, d.kind, uuid, data, d.m, !!d.deleted)
         }
       })
       out.rev = rev
       return out
+    },
+
+    /**
+     * Collega al catalogo gli esercizi che non hanno mai avuto il campo `catalog` (per nome). Una volta sola per esercizio:
+     * poi il campo c'è, anche vuoto. Ritorna quanti ne ha toccati.
+     */
+    migrateCatalog(now = Date.now()): number {
+      const rows = db.prepare("SELECT user_id, uuid, data, m FROM docs WHERE kind = 'exercise' AND deleted = 0 AND json_extract(data, '$.catalog') IS NULL").all() as
+        { user_id: number; uuid: string; data: string; m: number }[]
+      tx(() => {
+        for (const r of rows) {
+          const data = JSON.parse(r.data) as Record<string, unknown>
+          data.catalog = matchByName(CATALOG, String(data.name))?.id ?? ''
+          write(r.user_id, 'exercise', r.uuid, data, Math.max(Number(r.m) + 1, now), false)
+        }
+      })
+      return rows.length
     },
 
     live(userId: number): LiveDoc[] {

@@ -242,5 +242,16 @@
   "È già in lista.": "Already in the list.",
   "1RM stimato": "Estimated 1RM",
   "Dati": "Data",
-  "Nessun macchinario: li aggiungi cercando nel catalogo.": "No machines yet: you add them by searching the catalog."
+  "Nessun macchinario: li aggiungi cercando nel catalogo.": "No machines yet: you add them by searching the catalog.",
+  "Cambia": "Change",
+  "Catalogo": "Catalog",
+  "Ce l'hai già": "You have it",
+  "Cerca nel catalogo": "Search the catalog",
+  "Collega": "Link",
+  "Collega al catalogo": "Link to the catalog",
+  "Il catalogo non si carica: serve la connessione.": "The catalog did not load: you need a connection.",
+  "Non c'è: crea un macchinario personalizzato": "Not there: create a custom machine",
+  "Non collegato: resta fuori dalle classifiche.": "Not linked: it stays out of the leaderboards.",
+  "Scegli il macchinario": "Choose the machine",
+  "Scegli il più vicino se puoi: solo i macchinari del catalogo entrano nelle classifiche con gli amici.": "Pick the closest one if you can: only catalog machines count in the leaderboards with friends."
 }

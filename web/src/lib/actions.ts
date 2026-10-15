@@ -102,7 +102,7 @@ export function saveTemplate(id: string | null, name: string, items: TemplateIte
 	const uuid = id ?? newUuid()
 	const prev = getModel().tplById.get(uuid)
 	const top = getModel().templates.reduce((m, x) => Math.max(m, x.sortIndex), -1)
-	put('template', uuid, { name: name.trim(), items, sortIndex: prev?.sortIndex ?? top + 1, createdAt: prev?.createdAt ?? now() })
+	put('template', uuid, { name: name.trim(), items, sortIndex: prev?.sortIndex ?? top + 1, createdAt: prev?.createdAt ?? now(), hidden: prev?.hidden ?? false })
 	return uuid
 }
 

@@ -342,3 +342,43 @@ test('login iPhone: percorso completo', async () => {
   const devices = app.store.listDevices(app.store.userBySub('oidc-4')!.id)
   assert.deepEqual(devices.map((d) => d.name), ['Peak · iPhone'], 'un nuovo login dallo stesso dispositivo sostituisce il token')
 })
+
+const exFull = (name: string, extra: Record<string, unknown> = {}) => ({ ...exDoc(name), ...extra })
+
+test('catalogo: /catalogo.json pubblico con ETag, 304 se non è cambiato', async () => {
+  const r = await call('/catalogo.json')
+  assert.equal(r.status, 200)
+  const list = await r.json() as { id: string }[]
+  assert.ok(list.length >= 250 && list.some((e) => e.id === 'bench-press-barbell'))
+  const etag = r.headers.get('etag')!
+  assert.equal((await call('/catalogo.json', { h: { 'if-none-match': etag } })).status, 304)
+})
+
+test('catalogo: id e nascosto validati; un client vecchio non li cancella; un esercizio nuovo senza id si collega per nome', async () => {
+  const { h } = login('cat1')
+  const id = U(70)
+  let out = await (await call('/api/sync', { h, body: { docs: [{ kind: 'exercise', uuid: id, data: exFull('Mio', { catalog: 'Non Valido' }), m: NOW(), deleted: false }] } })).json() as { scartati: { errore: string }[] }
+  assert.equal(out.scartati[0].errore, 'catalog')
+  out = await (await call('/api/sync', { h, body: { docs: [{ kind: 'exercise', uuid: id, data: exFull('Mio', { catalog: 'pec-deck', hidden: true }), m: NOW(), deleted: false }] } })).json()
+  assert.deepEqual(out.scartati, [])
+  // l'app 2.1 modifica il nome e rimanda il documento senza i campi nuovi
+  await call('/api/sync', { h, body: { docs: [{ kind: 'exercise', uuid: id, data: exFull('Rinominato'), m: NOW() + 10, deleted: false }] } })
+  // e crea un esercizio nuovo con un nome del catalogo, sempre senza id
+  await call('/api/sync', { h, body: { docs: [{ kind: 'exercise', uuid: U(71), data: exFull('Panca Piana Bilanciere'), m: NOW(), deleted: false }] } })
+  const docs = (await (await call('/api/sync?dopo=0', { h })).json() as { docs: { uuid: string; data: { name: string; catalog: string; hidden: boolean } }[] }).docs
+  const mine = docs.find((d) => d.uuid === id)!.data
+  assert.deepEqual([mine.name, mine.catalog, mine.hidden], ['Rinominato', 'pec-deck', true])
+  assert.equal(docs.find((d) => d.uuid === U(71))!.data.catalog, 'bench-press-barbell')
+})
+
+test('catalogo: all\'avvio gli esercizi senza id si collegano per nome, una volta sola', async () => {
+  const u = app.store.upsertUser('mig', 'mig@x.it', 'mig', 'mig')
+  const rows: [string, string][] = [[U(80), 'Lat Machine'], [U(81), 'Attrezzo Mio']]
+  for (const [uuid, name] of rows) {
+    app.store.db.prepare("INSERT INTO docs (user_id, kind, uuid, data, m, rev, deleted) VALUES (?, 'exercise', ?, ?, 1, 1, 0)").run(u.id, uuid, JSON.stringify(exDoc(name)))
+  }
+  assert.equal(app.store.migrateCatalog(), 2)
+  assert.equal(app.store.migrateCatalog(), 0)
+  const live = app.store.live(u.id).map((d) => (d.data as { catalog: string }).catalog)
+  assert.deepEqual(live, ['lat-pulldown', ''])
+})

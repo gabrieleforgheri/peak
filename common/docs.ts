@@ -50,11 +50,15 @@ export interface ExerciseDoc {
   name: string; muscleGroup: MuscleGroup; notes: string; incrementStep: number; sortIndex: number
   isArchived: boolean; createdAt: string; glyph: '' | GlyphName; photo: string; photoOffset: number
   isUnilateral: boolean; restSeconds: number
+  /** Id della voce del catalogo (vedi `catalog.json`); '' = esercizio personalizzato, fuori dalle classifiche. */
+  catalog: string
+  /** Nascosto agli amici. */
+  hidden: boolean
 }
 export interface RecordDoc { exercise: string; date: string; weight: number; reps: number; note: string }
 /** Una riga di scheda: sets/reps 0 = non indicato; weight in kg, null = si mostra l'ultimo usato. */
 export interface TemplateItem { exercise: string; sets: number; repsMin: number; repsMax: number; weight: number | null }
-export interface TemplateDoc { name: string; items: TemplateItem[]; sortIndex: number; createdAt: string }
+export interface TemplateDoc { name: string; items: TemplateItem[]; sortIndex: number; createdAt: string; hidden: boolean }
 /** `template`: la scheda da cui è partito (uuid o ''); `plan`: copia delle sue righe, poi modificata in sessione. */
 export interface WorkoutDoc {
   date: string; endedAt: string | null; note: string; name: string; focus: string; template: string; plan: TemplateItem[]
@@ -123,6 +127,9 @@ export function cleanFocus(raw: unknown): string | null {
   return MUSCLE_GROUPS.filter((g) => parts.includes(g)).join(',')
 }
 
+/** Forma di un id del catalogo (slug inglese). */
+export const CATALOG_ID_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/
+
 export const MAX_ITEMS = 60
 
 /** Righe di scheda/piano: null se qualcosa non torna. */
@@ -170,6 +177,8 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
       if (photo !== '' && !(typeof photo === 'string' && /^[0-9a-f]{64}$/.test(photo))) return fail('photo')
       const photoOffset = num(o.photoOffset ?? 0, -1, 1)
       const restSeconds = int(o.restSeconds ?? 0, 0, 3600)
+      const catalog = o.catalog ?? ''
+      if (catalog !== '' && !(typeof catalog === 'string' && catalog.length <= 80 && CATALOG_ID_RE.test(catalog))) return fail('catalog')
       if (notes === null) return fail('notes')
       if (incrementStep === null) return fail('incrementStep')
       if (sortIndex === null) return fail('sortIndex')
@@ -181,6 +190,7 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
           name, muscleGroup: o.muscleGroup as MuscleGroup, notes, incrementStep, sortIndex,
           isArchived: o.isArchived === true, createdAt: isoSec(createdAt), glyph: glyph as ExerciseDoc['glyph'],
           photo: photo as string, photoOffset, isUnilateral: o.isUnilateral === true, restSeconds,
+          catalog: catalog as string, hidden: o.hidden === true,
         },
       }
     }
@@ -245,7 +255,7 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
       if (items === null) return fail('items')
       if (sortIndex === null) return fail('sortIndex')
       if (createdAt === null) return fail('createdAt')
-      return { data: { name, items, sortIndex, createdAt: isoSec(createdAt) } }
+      return { data: { name, items, sortIndex, createdAt: isoSec(createdAt), hidden: o.hidden === true } }
     }
     case 'bodyweight': {
       const date = parseIso(o.date)
@@ -259,8 +269,15 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
 
 /** Documenti salvati prima delle schede: i campi nuovi mancano, qui prendono il valore di partenza. */
 export function upgradeDoc<T>(kind: Kind, data: T): T {
-  return kind === 'workout' && data ? ({ template: '', plan: [], ...data } as T) : data
+  if (!data) return data
+  if (kind === 'workout') return { template: '', plan: [], ...data } as T
+  if (kind === 'exercise') return { catalog: '', hidden: false, ...data } as T
+  if (kind === 'template') return { hidden: false, ...data } as T
+  return data
 }
+
+/** Campi aggiunti dopo la 2.1: un client vecchio non li manda, e il server non deve cancellarli. */
+export const KEEP_IF_ABSENT: Partial<Record<Kind, readonly string[]>> = { exercise: ['catalog', 'hidden'], template: ['hidden'] }
 
 /** Chiave unica di un documento, per mappe in memoria. */
 export const docKey = (kind: Kind, uuid: string): string => `${kind}:${uuid}`

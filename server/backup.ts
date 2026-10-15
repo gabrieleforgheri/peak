@@ -4,11 +4,13 @@
 
 import { createHash } from 'node:crypto'
 import {
-  isoSec, normUuid, parseDoc, parseIso, split, MUSCLE_GROUPS, GLYPHS,
+  CATALOG_ID_RE, isoSec, normUuid, parseDoc, parseIso, split, MUSCLE_GROUPS, GLYPHS,
   type DocDataMap, type ExerciseDoc, type Kind, type LiveDoc, type MuscleGroup, type TemplateItem,
 } from '../common/docs.ts'
 import { deriveRecords, type RecManual, type RecSet } from '../common/records.ts'
 import { EPSILON } from '../common/domain.ts'
+import { matchByName } from '../common/catalog.ts'
+import { CATALOG } from './catalog.ts'
 
 export const BACKUP_VERSION = 1
 const MAX_PHOTO = 1_000_000
@@ -21,11 +23,11 @@ export interface SetDTO {
 export interface ExerciseDTO {
   uuid: string; name: string; muscleGroup: string; notes: string; incrementStep: number; sortIndex: number
   isArchived: boolean; createdAt: string; glyph?: string; photo?: string; photoOffset?: number
-  isUnilateral?: boolean; restSeconds?: number; records: RecordDTO[]
+  isUnilateral?: boolean; restSeconds?: number; catalogID?: string; isHidden?: boolean; records: RecordDTO[]
 }
 /** Riga di scheda; `weight` assente = si mostra l'ultimo usato. */
 export interface ItemDTO { exerciseUUID: string; sets: number; repsMin: number; repsMax: number; weight?: number }
-export interface TemplateDTO { uuid: string; name: string; sortIndex: number; createdAt: string; items: ItemDTO[] }
+export interface TemplateDTO { uuid: string; name: string; sortIndex: number; createdAt: string; isHidden?: boolean; items: ItemDTO[] }
 export interface WorkoutDTO {
   uuid: string; date: string; endedAt?: string; note: string; focus: string; name: string; sets: SetDTO[]
   template?: string; plan?: ItemDTO[]
@@ -83,6 +85,8 @@ export function exportBackup(docs: Iterable<LiveDoc>, photo: (sha: string) => Ui
       if (e.photoOffset !== 0) dto.photoOffset = e.photoOffset
       if (e.isUnilateral) dto.isUnilateral = true
       if (e.restSeconds) dto.restSeconds = e.restSeconds
+      if (e.catalog) dto.catalogID = e.catalog
+      if (e.hidden) dto.isHidden = true
       return dto
     })
 
@@ -116,7 +120,7 @@ export function exportBackup(docs: Iterable<LiveDoc>, photo: (sha: string) => Ui
 
   const templates: TemplateDTO[] = [...d.templates]
     .sort((a, b) => a.data.sortIndex - b.data.sortIndex || cmp(a.data.createdAt, b.data.createdAt) || cmp(a.uuid, b.uuid))
-    .map(({ uuid, data: t }) => ({ uuid, name: t.name, sortIndex: t.sortIndex, createdAt: t.createdAt, items: toItemDTOs(t.items, liveEx) }))
+    .map(({ uuid, data: t }) => ({ uuid, name: t.name, sortIndex: t.sortIndex, createdAt: t.createdAt, ...(t.hidden ? { isHidden: true } : {}), items: toItemDTOs(t.items, liveEx) }))
 
   return { version: BACKUP_VERSION, exportedAt: isoSec(now), exercises, workouts, bodyWeights, templates }
 }
@@ -165,6 +169,7 @@ export function parseBackup(raw: unknown): ParseResult {
       glyph: typeof e.glyph === 'string' ? e.glyph : undefined, photo: typeof e.photo === 'string' ? e.photo : undefined,
       photoOffset: typeof e.photoOffset === 'number' ? e.photoOffset : undefined, isUnilateral: e.isUnilateral === true ? true : undefined,
       restSeconds: typeof e.restSeconds === 'number' ? e.restSeconds : undefined, records,
+      catalogID: typeof e.catalogID === 'string' && CATALOG_ID_RE.test(e.catalogID) ? e.catalogID : undefined, isHidden: e.isHidden === true ? true : undefined,
     })
   }
   /** Righe di scheda del file: tollerante, una riga rotta si scarta (non invalida tutto il backup). */
@@ -225,7 +230,7 @@ export function parseBackup(raw: unknown): ParseResult {
     const createdAt = parseIso(t.createdAt)
     const items = readItems(t.items)
     if (!uuid || typeof t.name !== 'string' || createdAt === null || items === null) return bad
-    templates.push({ uuid, name: t.name, sortIndex: typeof t.sortIndex === 'number' ? t.sortIndex : 0, createdAt: isoSec(createdAt), items })
+    templates.push({ uuid, name: t.name, sortIndex: typeof t.sortIndex === 'number' ? t.sortIndex : 0, createdAt: isoSec(createdAt), isHidden: t.isHidden === true ? true : undefined, items })
   }
   const exportedAt = parseIso(raw.exportedAt)
   return { file: { version: raw.version, exportedAt: isoSec(exportedAt ?? 0), exercises, workouts, bodyWeights, templates } }
@@ -303,6 +308,8 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
       glyph: (GLYPHS as readonly string[]).includes(ex.glyph ?? '') ? (ex.glyph as ExerciseDoc['glyph']) : '',
       photo: photo?.sha ?? '', photoOffset: Math.min(1, Math.max(-1, ex.photoOffset ?? 0)),
       isUnilateral: ex.isUnilateral === true, restSeconds: ex.restSeconds ?? 0,
+      // un backup vecchio non ha l'id: lo si ricava dal nome
+      catalog: ex.catalogID ?? matchByName(CATALOG, ex.name)?.id ?? '', hidden: ex.isHidden === true,
     })
     let target = ex.uuid
     let isNew = true
@@ -366,7 +373,7 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
 
   for (const t of file.templates ?? []) {
     if (merge && liveTpl.has(t.uuid)) continue
-    add('template', t.uuid, { name: t.name.trim() || 'Senza nome', items: mapItems(t.items), sortIndex: t.sortIndex, createdAt: t.createdAt }, 'schede')
+    add('template', t.uuid, { name: t.name.trim() || 'Senza nome', items: mapItems(t.items), sortIndex: t.sortIndex, createdAt: t.createdAt, hidden: t.isHidden === true }, 'schede')
   }
 
   if (!merge) {

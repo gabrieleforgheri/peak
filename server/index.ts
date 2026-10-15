@@ -12,6 +12,7 @@ import { createPortal } from './portale.ts'
 import { createPush, type Send } from './push.ts'
 import { APP_CSP, HttpError, SECURITY_HEADERS, sendJson } from './http.ts'
 import { openStore } from './store.ts'
+import { CATALOG_BODY, CATALOG_ETAG } from './catalog.ts'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const TYPES: Record<string, string> = {
@@ -73,6 +74,7 @@ export interface AppOptions { dataDir: string; env?: NodeJS.ProcessEnv; staticDi
 /** Costruisce il server senza metterlo in ascolto (i test lo avviano su una porta a caso). */
 export function createApp({ dataDir, env = process.env, staticDir = join(ROOT, 'web/dist'), send }: AppOptions) {
   const store = openStore(dataDir)
+  store.migrateCatalog() // collega al catalogo gli esercizi che non hanno ancora l'id (una volta per esercizio)
   const auth = createAuth(store, loadAuthConfig(env), dataDir)
   const push = createPush(store, dataDir, (env.BASE_URL ?? 'https://peak.yrb4g.com').replace(/\/+$/, ''), send)
   const api = createApi(store, auth, push, commitOf)
@@ -92,6 +94,13 @@ export function createApp({ dataDir, env = process.env, staticDir = join(ROOT, '
       res.writeHead(302, { location: '/benvenuto.html', 'cache-control': 'no-store', ...SECURITY_HEADERS })
       res.end()
       return
+    }
+    // il catalogo per i client (l'iPhone se lo tiene aggiornato): pubblico, con ETag
+    if (path === '/catalogo.json') {
+      const headers = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache', etag: CATALOG_ETAG, ...SECURITY_HEADERS }
+      if (req.headers['if-none-match'] === CATALOG_ETAG) { res.writeHead(304, headers); return void res.end() }
+      res.writeHead(200, headers)
+      return void res.end(req.method === 'HEAD' ? undefined : CATALOG_BODY)
     }
     const file = files.get(isShell ? '/index.html' : path)
     if (!file) {

@@ -7,6 +7,9 @@
 	import { t } from '../lib/i18n.ts'
 	import { getModel } from '../lib/store.svelte.ts'
 	import { photoUrl, preparePhoto } from '../lib/photo.ts'
+	import type { CatalogEntry } from '@common/catalog.ts'
+	import { entryName, loadCatalog } from '../lib/catalog.ts'
+	import CatalogPicker from './CatalogPicker.svelte'
 	import Glyph from './Glyph.svelte'
 	import Icon from './Icon.svelte'
 	import Sheet from './Sheet.svelte'
@@ -29,6 +32,24 @@
 	let rest = $state(existing?.restSeconds ?? 0)
 	let archived = $state(existing?.isArchived ?? false)
 	let custom = $state(![1, 1.25, 2, 2.5, 5, 10].includes(existing?.incrementStep ?? 2.5))
+
+	// il catalogo: un macchinario nuovo parte dalla ricerca; uno esistente può essere (ri)collegato
+	let catalog = $state(existing?.catalog ?? '')
+	let picking = $state<'new' | 'link' | null>(id ? null : 'new')
+	let linked = $state<CatalogEntry | null>(null)
+	$effect(() => { const c = catalog; if (!c) { linked = null; return } void loadCatalog().then((l) => { if (catalog === c) linked = l.find((e) => e.id === c) ?? null }) })
+
+	function chosen(e: CatalogEntry | null) {
+		const wasNew = picking === 'new'
+		picking = null
+		catalog = e?.id ?? ''
+		if (!e) return
+		if (wasNew) {
+			// precompila: il nome si può cambiare subito con uno familiare
+			name = startName.trim() || entryName(e); group = e.group; step = e.step; notes = e.notes; glyph = e.glyph
+			custom = ![1, 1.25, 2, 2.5, 5, 10].includes(e.step)
+		}
+	}
 
 	const auto = $derived(suggestedGlyph(name, group))
 	let src = $state('')
@@ -58,6 +79,7 @@
 		const uuid = saveExercise(id, {
 			name: name.trim(), muscleGroup: group, notes, incrementStep: step, isArchived: archived, glyph, photo,
 			photoOffset: Math.round(offset * 1000) / 1000, isUnilateral: unilateral, restSeconds: rest,
+			catalog, hidden: existing?.hidden ?? false,
 		})
 		onsaved?.(uuid)
 		onclose()
@@ -70,10 +92,21 @@
 	}
 </script>
 
+{#if picking}
+	<CatalogPicker title={picking === 'new' ? t('Nuovo macchinario') : t('Collega al catalogo')} custom={picking === 'new'} onpick={chosen} onclose={() => { if (picking === 'new') onclose(); picking = null }} />
+{:else}
 <Sheet title={id ? t('Modifica macchinario') : t('Nuovo macchinario')} {onclose}>
 	{#snippet action()}<button class="btn primary small" onclick={save} disabled={!valid}>{t('Salva')}</button>{/snippet}
 	<div class="stack">
 		<label class="field"><span>{t('Nome')}</span><input class="input" bind:value={name} placeholder={t('es. Chest Press')} maxlength="80" /></label>
+
+		<div class="field">
+			<span class="sec-title" style="margin:0 4px 6px">{t('Catalogo')}</span>
+			<div class="row card">
+				<div class="grow">{#if catalog}<b>{linked ? entryName(linked) : catalog}</b>{:else}<span class="muted">{t('Non collegato: resta fuori dalle classifiche.')}</span>{/if}</div>
+				<button class="btn small" onclick={() => (picking = 'link')}>{catalog ? t('Cambia') : t('Collega')}</button>
+			</div>
+		</div>
 
 		<div class="field">
 			<span class="sec-title" style="margin:0 4px 6px">{t('Immagine')}</span>
@@ -153,3 +186,4 @@
 		{/if}
 	</div>
 </Sheet>
+{/if}

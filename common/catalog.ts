@@ -1,105 +1,48 @@
-// Generato da scripts/gen-catalog.mjs dal catalogo Swift (98 voci). Non modificare a mano.
-import type { MuscleGroup } from './docs.ts'
+// Il catalogo degli esercizi: `catalog.json` è la fonte (id stabili, mai cambiati né riusati). Qui solo i tipi e la ricerca,
+// così il client carica il JSON a parte e solo quando serve.
+import type { GlyphName, MuscleGroup } from './docs.ts'
+export { CATALOG_ID_RE } from './docs.ts'
 
-export interface CatalogEntry { name: string; group: MuscleGroup; step: number; notes: string }
+export interface CatalogEntry {
+  /** Slug inglese, per sempre lo stesso: è ciò che fa combaciare gli esercizi di persone diverse. */
+  id: string
+  it: string
+  en: string
+  alias: string[]
+  group: MuscleGroup
+  /** Incremento tipico del carico, in kg. */
+  step: number
+  glyph: GlyphName
+  notes: string
+}
 
-export const CATALOG: CatalogEntry[] = [
-  {"name":"Chest Press","group":"petto","step":5,"notes":""},
-  {"name":"Chest Press Plate Loaded","group":"petto","step":5,"notes":"Dischi da caricare a mano, uno per lato."},
-  {"name":"Pectoral Machine","group":"petto","step":5,"notes":"La butterfly: seduto, chiudi le braccia davanti al petto."},
-  {"name":"Panca Piana Bilanciere","group":"petto","step":2.5,"notes":""},
-  {"name":"Panca Piana Manubri","group":"petto","step":2,"notes":"Il carico è per manubrio."},
-  {"name":"Panca Inclinata Bilanciere","group":"petto","step":2.5,"notes":""},
-  {"name":"Panca Inclinata Manubri","group":"petto","step":2,"notes":"Il carico è per manubrio."},
-  {"name":"Panca Declinata","group":"petto","step":2.5,"notes":""},
-  {"name":"Panca Piana al Multipower","group":"petto","step":2.5,"notes":"Il bilanciere guidato dai binari verticali."},
-  {"name":"Croci ai Cavi","group":"petto","step":2.5,"notes":"In piedi fra due puleggie alte, chiudi le braccia davanti."},
-  {"name":"Croci su Panca Manubri","group":"petto","step":2,"notes":""},
-  {"name":"Pullover con Manubrio","group":"petto","step":2.5,"notes":""},
-  {"name":"Dip alle Parallele","group":"petto","step":2.5,"notes":"A corpo libero: segna l'eventuale zavorra in cintura."},
-  {"name":"Dip Machine Assistita","group":"petto","step":5,"notes":"Il carico è l'assistenza: più peso = più aiuto."},
-  {"name":"Piegamenti","group":"petto","step":2.5,"notes":"A corpo libero: segna l'eventuale zavorra."},
-  {"name":"Lat Machine","group":"schiena","step":5,"notes":""},
-  {"name":"Lat Machine Presa Stretta","group":"schiena","step":5,"notes":"Con il triangolo o la presa supina."},
-  {"name":"Lat Machine a un Braccio","group":"schiena","step":5,"notes":"Il carico è per braccio."},
-  {"name":"Pulley Basso","group":"schiena","step":5,"notes":"Seduto, tirata orizzontale al cavo basso."},
-  {"name":"Rematore Machine","group":"schiena","step":5,"notes":""},
-  {"name":"Rematore Plate Loaded","group":"schiena","step":5,"notes":"Braccia orizzontali, dischi da caricare a mano."},
-  {"name":"Rematore ai Cavi","group":"schiena","step":5,"notes":""},
-  {"name":"Rematore ai Cavi a un Braccio","group":"schiena","step":5,"notes":"Panca sotto la puleggia, seduto al contrario, tirata a mezza altezza un braccio per volta. Il carico è per braccio."},
-  {"name":"Rematore Bilanciere","group":"schiena","step":2.5,"notes":""},
-  {"name":"Rematore con Manubrio","group":"schiena","step":2,"notes":"Un ginocchio sulla panca, il carico è per braccio."},
-  {"name":"Rematore T-Bar","group":"schiena","step":5,"notes":""},
-  {"name":"Pullover Machine","group":"schiena","step":5,"notes":""},
-  {"name":"Trazioni alla Sbarra","group":"schiena","step":2.5,"notes":"A corpo libero: segna l'eventuale zavorra in cintura."},
-  {"name":"Trazioni Assistite","group":"schiena","step":5,"notes":"Il gravitron: il carico è l'assistenza, più peso = più aiuto."},
-  {"name":"Stacco da Terra","group":"schiena","step":5,"notes":""},
-  {"name":"Stacco Rumeno","group":"schiena","step":2.5,"notes":""},
-  {"name":"Good Morning","group":"schiena","step":2.5,"notes":""},
-  {"name":"Iperestensioni","group":"schiena","step":2.5,"notes":"Panca a 45° o orizzontale: segna l'eventuale disco al petto."},
-  {"name":"Face Pull ai Cavi","group":"schiena","step":2.5,"notes":""},
-  {"name":"Leg Press 45°","group":"gambe","step":10,"notes":""},
-  {"name":"Leg Press Orizzontale","group":"gambe","step":5,"notes":""},
-  {"name":"Leg Extension","group":"gambe","step":5,"notes":""},
-  {"name":"Leg Curl Seduto","group":"gambe","step":5,"notes":""},
-  {"name":"Leg Curl Sdraiato","group":"gambe","step":5,"notes":""},
-  {"name":"Squat con Bilanciere","group":"gambe","step":2.5,"notes":""},
-  {"name":"Front Squat","group":"gambe","step":2.5,"notes":""},
-  {"name":"Squat al Multipower","group":"gambe","step":2.5,"notes":""},
-  {"name":"Hack Squat","group":"gambe","step":10,"notes":""},
-  {"name":"Pressa a Cuneo","group":"gambe","step":10,"notes":""},
-  {"name":"Affondi con Manubri","group":"gambe","step":2,"notes":"Il carico è per manubrio."},
-  {"name":"Affondi al Multipower","group":"gambe","step":2.5,"notes":""},
-  {"name":"Bulgarian Split Squat","group":"gambe","step":2,"notes":"Piede posteriore sulla panca, il carico è per manubrio."},
-  {"name":"Step Up","group":"gambe","step":2,"notes":""},
-  {"name":"Stacco a Gambe Tese","group":"gambe","step":2.5,"notes":""},
-  {"name":"Hip Thrust","group":"gambe","step":5,"notes":"Schiena appoggiata alla panca, bilanciere sul bacino."},
-  {"name":"Glute Machine","group":"gambe","step":5,"notes":"La slanciata indietro, il carico è per gamba."},
-  {"name":"Adductor Machine","group":"gambe","step":5,"notes":"Seduto, chiudi le gambe contro i cuscinetti."},
-  {"name":"Abductor Machine","group":"gambe","step":5,"notes":"Seduto, apri le gambe contro i cuscinetti."},
-  {"name":"Calf Machine in Piedi","group":"gambe","step":5,"notes":""},
-  {"name":"Calf Machine Seduto","group":"gambe","step":5,"notes":""},
-  {"name":"Calf alla Pressa","group":"gambe","step":10,"notes":""},
-  {"name":"Shoulder Press","group":"spalle","step":5,"notes":""},
-  {"name":"Shoulder Press Plate Loaded","group":"spalle","step":5,"notes":"Dischi da caricare a mano, uno per lato."},
-  {"name":"Lento Avanti Bilanciere","group":"spalle","step":2.5,"notes":""},
-  {"name":"Lento Avanti Manubri","group":"spalle","step":2,"notes":"Il carico è per manubrio."},
-  {"name":"Lento Avanti al Multipower","group":"spalle","step":2.5,"notes":""},
-  {"name":"Arnold Press","group":"spalle","step":2,"notes":"Il carico è per manubrio."},
-  {"name":"Alzate Laterali","group":"spalle","step":2,"notes":"Il carico è per manubrio."},
-  {"name":"Alzate Laterali ai Cavi","group":"spalle","step":2.5,"notes":"Il carico è per braccio."},
-  {"name":"Alzate Laterali Machine","group":"spalle","step":5,"notes":""},
-  {"name":"Alzate Frontali","group":"spalle","step":2,"notes":""},
-  {"name":"Reverse Butterfly","group":"spalle","step":5,"notes":"La pectoral machine al contrario, per i deltoidi posteriori."},
-  {"name":"Alzate Posteriori su Panca","group":"spalle","step":2,"notes":""},
-  {"name":"Tirate al Mento","group":"spalle","step":2.5,"notes":""},
-  {"name":"Scrollate Bilanciere","group":"spalle","step":5,"notes":""},
-  {"name":"Scrollate Manubri","group":"spalle","step":2,"notes":"Il carico è per manubrio."},
-  {"name":"Curl Bilanciere","group":"braccia","step":2.5,"notes":""},
-  {"name":"Curl Bilanciere EZ","group":"braccia","step":2.5,"notes":""},
-  {"name":"Curl Manubri","group":"braccia","step":2,"notes":"Il carico è per manubrio."},
-  {"name":"Curl Alternato","group":"braccia","step":2,"notes":""},
-  {"name":"Curl Martello","group":"braccia","step":2,"notes":""},
-  {"name":"Curl Machine","group":"braccia","step":5,"notes":""},
-  {"name":"Panca Scott","group":"braccia","step":2.5,"notes":"Braccia appoggiate al leggio inclinato."},
-  {"name":"Curl ai Cavi","group":"braccia","step":2.5,"notes":""},
-  {"name":"Curl Concentrato","group":"braccia","step":2,"notes":"Seduto, gomito appoggiato all'interno coscia."},
-  {"name":"Pushdown ai Cavi","group":"braccia","step":2.5,"notes":"Con la barra o la corda al cavo alto."},
-  {"name":"French Press Bilanciere","group":"braccia","step":2.5,"notes":""},
-  {"name":"French Press Manubri","group":"braccia","step":2,"notes":""},
-  {"name":"Triceps Machine","group":"braccia","step":5,"notes":""},
-  {"name":"Panca Stretta","group":"braccia","step":2.5,"notes":"Panca piana con presa stretta, per i tricipiti."},
-  {"name":"Kickback ai Cavi","group":"braccia","step":2.5,"notes":"Il carico è per braccio."},
-  {"name":"Curl ai Polsi","group":"braccia","step":2.5,"notes":"Per gli avambracci."},
-  {"name":"Crunch Machine","group":"core","step":5,"notes":""},
-  {"name":"Cable Crunch","group":"core","step":5,"notes":"In ginocchio davanti al cavo alto, con la corda."},
-  {"name":"Rotary Torso","group":"core","step":5,"notes":"Seduto, ruoti il busto contro il carico."},
-  {"name":"Sedia Romana","group":"core","step":2.5,"notes":"Il castello: appeso sugli avambracci, porti le ginocchia al petto."},
-  {"name":"Leg Raise alla Sbarra","group":"core","step":2.5,"notes":""},
-  {"name":"Panca Addominali Inclinata","group":"core","step":2.5,"notes":"Segna l'eventuale disco tenuto al petto."},
-  {"name":"Crunch a Terra","group":"core","step":2.5,"notes":""},
-  {"name":"Russian Twist","group":"core","step":2,"notes":""},
-  {"name":"Side Bend con Manubrio","group":"core","step":2,"notes":""},
-  {"name":"Ab Wheel","group":"core","step":2.5,"notes":""},
-  {"name":"Plank","group":"core","step":2.5,"notes":"A corpo libero: qui conviene segnare i secondi al posto delle ripetizioni."}
-]
+/** Minuscole, senza accenti né punteggiatura, spazi singoli: "Leg Press 45°" → "leg press 45". */
+export const norm = (s: string): string =>
+  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+
+const names = (e: CatalogEntry): string[] => [e.it, e.en, ...e.alias].map(norm)
+
+/** La voce che ha esattamente questo nome (italiano, inglese o sinonimo), se c'è. Serve a collegare gli esercizi che esistono già. */
+export function matchByName(list: readonly CatalogEntry[], name: string): CatalogEntry | null {
+  const n = norm(name)
+  if (!n) return null
+  return list.find((e) => norm(e.it) === n) ?? list.find((e) => names(e).includes(n)) ?? null
+}
+
+/**
+ * Ricerca per più parole, in qualsiasi ordine: ognuna deve comparire in un nome o sinonimo. Prima le voci il cui nome inizia
+ * con la ricerca, poi quelle con una parola che inizia così, poi il resto; a parità, l'ordine del catalogo.
+ */
+export function searchCatalog(list: readonly CatalogEntry[], query: string, limit = 40): CatalogEntry[] {
+  const q = norm(query)
+  if (!q) return list.slice(0, limit)
+  const words = q.split(' ')
+  const scored: { e: CatalogEntry; score: number; i: number }[] = []
+  list.forEach((e, i) => {
+    const hay = names(e)
+    if (!words.every((w) => hay.some((h) => h.includes(w)))) return
+    const best = hay.some((h) => h.startsWith(q)) ? 0 : hay.some((h) => h.split(' ').some((x) => x.startsWith(words[0]))) ? 1 : 2
+    scored.push({ e, score: best, i })
+  })
+  return scored.sort((a, b) => a.score - b.score || a.i - b.i).slice(0, limit).map((x) => x.e)
+}
