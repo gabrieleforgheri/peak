@@ -33,6 +33,13 @@ private struct ExerciseView: View {
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
 
+                if let target = exercise.target {
+                    Text(target)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
                 Text(model.displayWeight(model.weight))
                     .font(.title3.weight(.semibold))
                     .monospacedDigit()

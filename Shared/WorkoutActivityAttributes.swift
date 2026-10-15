@@ -11,6 +11,8 @@ struct WorkoutActivityAttributes: ActivityAttributes {
         var volume: String
         /// Fine del recupero in corso, se c'è.
         var restEnd: Date? = nil
+        /// Il prossimo esercizio della lista di oggi, ancora senza serie. `nil` se non c'è.
+        var next: String? = nil
     }
 
     var startDate: Date

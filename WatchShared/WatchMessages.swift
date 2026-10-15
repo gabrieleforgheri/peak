@@ -31,6 +31,8 @@ struct WatchExercise: Codable, Equatable {
     var isUnilateral: Bool
     /// Esercizio di gambe: il polso non si muove, niente conteggio automatico.
     var worksLegs: Bool
+    /// Obiettivo della scheda già scritto («2/4 serie · 8–10 rip · 60 kg»). `nil` se l'allenamento non ne ha.
+    var target: String? = nil
 }
 
 /// Stato che l'iPhone tiene aggiornato sul Watch (application context:

@@ -33,14 +33,22 @@ struct WorkoutLiveActivity: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    HStack {
-                        Text(context.state.exercise.isEmpty ? "Allenamento in corso" : context.state.exercise)
-                            .lineLimit(1)
-                        Spacer()
-                        Text(context.state.volume)
-                            .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack {
+                            Text(context.state.exercise.isEmpty ? "Allenamento in corso" : context.state.exercise)
+                                .lineLimit(1)
+                            Spacer()
+                            Text(context.state.volume)
+                                .foregroundStyle(.secondary)
+                        }
+                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                        if let next = context.state.next {
+                            Text("Poi: \(next)")
+                                .font(.system(.caption, design: .rounded).weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
                     }
-                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
                 }
             } compactLeading: {
                 Image(systemName: "figure.strengthtraining.traditional")
@@ -94,6 +102,12 @@ private struct LockScreenView: View {
                      : "Recupero · \(context.state.sets) serie")
                     .font(.system(.caption, design: .rounded).weight(.medium))
                     .foregroundStyle(.secondary)
+                if let next = context.state.next {
+                    Text("Poi: \(next)")
+                        .font(.system(.caption, design: .rounded).weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
             }
 
             Spacer()

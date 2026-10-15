@@ -1,5 +1,6 @@
 import ActivityKit
 import Foundation
+import SwiftData
 
 /// La sessione in corso sulla schermata di blocco e nella Dynamic Island.
 /// Una sola alla volta: se ne esiste già una, si aggiorna quella.
@@ -14,8 +15,22 @@ enum WorkoutActivity {
             exercise: workout.orderedSets.last?.exercise?.name ?? "",
             sets: workout.workingSetCount,
             volume: Fmt.volume(workout.totalVolume, unit: unit),
-            restEnd: RestTimer.shared.end
+            restEnd: RestTimer.shared.end,
+            next: next(for: workout)
         )
+    }
+
+    /// Il primo esercizio della lista di oggi ancora senza serie.
+    private static func next(for workout: Workout) -> String? {
+        guard let context = workout.modelContext else { return nil }
+        let done = Set(workout.setList.compactMap { $0.exercise?.uuid })
+        for item in workout.plan where !done.contains(item.exercise) {
+            let id = item.exercise
+            var descriptor = FetchDescriptor<Exercise>(predicate: #Predicate { $0.uuid == id })
+            descriptor.fetchLimit = 1
+            if let exercise = try? context.fetch(descriptor).first { return exercise.name }
+        }
+        return nil
     }
 
     /// Avvia l'attività se manca, altrimenti la aggiorna. Va bene anche alla

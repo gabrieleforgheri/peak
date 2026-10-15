@@ -95,8 +95,19 @@ final class WatchBridge: NSObject, WCSessionDelegate {
             weight: weight,
             step: exercise.incrementStep,
             isUnilateral: exercise.isUnilateral,
-            worksLegs: exercise.worksLegs
+            worksLegs: exercise.worksLegs,
+            target: target(for: exercise, in: workout)
         )
+    }
+
+    /// L'obiettivo di questo esercizio nella lista di oggi, se l'allenamento ne ha una e dice qualcosa.
+    @MainActor
+    private func target(for exercise: Exercise, in workout: Workout) -> String? {
+        guard let settings, let item = workout.plan.first(where: { $0.exercise == exercise.uuid }) else { return nil }
+        let done = workout.sets(for: exercise).filter { !$0.isWarmup }.count
+        let last = exercise.setList.max(by: { $0.createdAt < $1.createdAt })?.weight
+        let line = Plan.targetLine(item, done: done, lastKilograms: last, settings: settings)
+        return line.isEmpty ? nil : line
     }
 
     // MARK: - Dal Watch
