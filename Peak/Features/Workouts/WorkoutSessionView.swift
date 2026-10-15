@@ -9,8 +9,13 @@ struct WorkoutSessionView: View {
 
     @Bindable var workout: Workout
 
-    /// Esercizi scelti ma ancora senza serie: esistono solo finché la vista è aperta.
-    @State private var pendingExercises: [Exercise] = []
+    @Query private var allExercises: [Exercise]
+    @Query private var templates: [WorkoutTemplate]
+    /// Scambio di un esercizio ancora senza serie.
+    @State private var replacing: Exercise?
+    @State private var showingSaveTemplate = false
+    /// La scheda da cui si è partiti, quando a fine allenamento la lista è diversa: si chiede se aggiornarla.
+    @State private var templateToUpdate: WorkoutTemplate?
     /// L'esercizio che stai facendo adesso: è quello mostrato sul Watch.
     @State private var currentExerciseID: PersistentIdentifier?
     @State private var showingPicker = false
@@ -30,13 +35,21 @@ struct WorkoutSessionView: View {
         workout.setList.filter(\.isPersonalRecord).count
     }
 
-    private var exercises: [Exercise] {
-        var list = workout.exercisesInOrder
-        for exercise in pendingExercises
-        where !list.contains(where: { $0.persistentModelID == exercise.persistentModelID }) {
-            list.append(exercise)
-        }
-        return list
+    private var exerciseByUUID: [UUID: Exercise] {
+        Dictionary(allExercises.map { ($0.uuid, $0) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    /// La lista di oggi: il piano (scheda o esercizi aggiunti) e, in coda, gli esercizi con serie che nel piano non ci sono.
+    private var items: [TemplateItem] {
+        let known = exerciseByUUID
+        return workout.items(exists: { known[$0] != nil })
+    }
+
+    /// Scrive la lista di oggi nel piano (anche gli esercizi fuori piano diventano righe).
+    private func editPlan(_ change: ([TemplateItem]) -> [TemplateItem]) {
+        withAnimation(.snappy) { workout.plan = change(items) }
+        try? context.save()
+        WorkoutActivity.update(for: workout, unit: settings.unit)
     }
 
     var body: some View {
@@ -48,10 +61,22 @@ struct WorkoutSessionView: View {
                     restCard(until: restEnd)
                 }
 
-                ForEach(exercises) { exercise in
+                ForEach(items) { item in
+                    if let exercise = exerciseByUUID[item.exercise] {
+                    let sets = workout.sets(for: exercise)
+                    let last = exercise.setList.sorted { $0.createdAt > $1.createdAt }.first
                     ExerciseSessionCard(
                         exercise: exercise,
-                        sets: workout.sets(for: exercise),
+                        goal: Plan.targetLine(
+                            item,
+                            done: sets.filter { !$0.isWarmup }.count,
+                            lastKilograms: last?.weight,
+                            settings: settings
+                        ),
+                        sets: sets,
+                        onMove: workout.isActive ? { step in editPlan { Plan.moving($0, exercise.uuid, by: step) } } : nil,
+                        onReplace: workout.isActive && sets.isEmpty ? { replacing = exercise } : nil,
+                        onRemove: workout.isActive && sets.isEmpty ? { editPlan { Plan.removing($0, exercise.uuid) } } : nil,
                         isCurrent: exercise.persistentModelID == currentExerciseID,
                         onSelect: { select(exercise) },
                         onAddSet: { addSetTarget = exercise },
@@ -60,6 +85,7 @@ struct WorkoutSessionView: View {
                         onEditSet: { editingSet = $0 },
                         onDeleteSet: { delete($0) }
                     )
+                    }
                 }
 
                 Button {
@@ -68,6 +94,15 @@ struct WorkoutSessionView: View {
                     Label("Aggiungi esercizio", systemImage: "plus")
                 }
                 .buttonStyle(SecondaryButtonStyle())
+
+                if !items.isEmpty {
+                    Button {
+                        showingSaveTemplate = true
+                    } label: {
+                        Label("Salva come scheda", systemImage: "list.bullet")
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                }
 
                 noteCard
 
@@ -102,12 +137,23 @@ struct WorkoutSessionView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingPicker) {
             ExercisePickerSheet(focus: workout.focus) { exercise in
-                if !exercises.contains(where: { $0.persistentModelID == exercise.persistentModelID }) {
-                    pendingExercises.append(exercise)
-                }
+                editPlan { Plan.adding($0, exercise.uuid) }
                 // Solo la scelta: peso e ripetizioni li decidi dopo, sul Watch o con "+ Serie".
                 select(exercise)
             }
+        }
+        .sheet(item: $replacing) { old in
+            ExercisePickerSheet(focus: workout.focus) { new in
+                if items.contains(where: { $0.exercise == new.uuid }) {
+                    Haptics.warning()
+                } else {
+                    editPlan { Plan.replacing($0, from: old.uuid, to: new.uuid) }
+                    select(new)
+                }
+            }
+        }
+        .sheet(isPresented: $showingSaveTemplate) {
+            TemplateEditorView(initialName: workout.name, initialItems: workout.items(.done, exists: { exerciseByUUID[$0] != nil }))
         }
         .sheet(item: $addSetTarget) { exercise in
             AddSetSheet(
@@ -141,6 +187,16 @@ struct WorkoutSessionView: View {
         }
         .sheet(isPresented: $showingSummary) {
             WorkoutSummaryView(workout: workout) { dismiss() }
+        }
+        .alert(
+            "Aggiornare la scheda «\(templateToUpdate?.name ?? "")» con le modifiche di oggi?",
+            isPresented: Binding(get: { templateToUpdate != nil }, set: { if !$0 { templateToUpdate = nil } })
+        ) {
+            Button("Aggiorna") {
+                if let template = templateToUpdate { update(template) }
+                showingSummary = true
+            }
+            Button("No", role: .cancel) { showingSummary = true }
         }
         .alert(
             "App Salute",
@@ -271,9 +327,6 @@ struct WorkoutSessionView: View {
         currentExerciseID = exercise.persistentModelID
         WatchBridge.shared.show(exercise, in: workout)
 
-        withAnimation(.snappy) {
-            pendingExercises.removeAll { $0.persistentModelID == exercise.persistentModelID }
-        }
         if isRecord { Haptics.personalRecord() } else { Haptics.commit() }
     }
 
@@ -381,7 +434,17 @@ struct WorkoutSessionView: View {
         Haptics.warning()
     }
 
+    /// La scheda di partenza, se la lista di oggi è diversa da lei (e lei esiste ancora).
+    private func changedTemplate() -> WorkoutTemplate? {
+        let known = exerciseByUUID
+        let exists: (UUID) -> Bool = { known[$0] != nil }
+        guard let id = workout.templateUUID, let template = templates.first(where: { $0.uuid == id }),
+              Plan.differs(today: workout.items(.targets, exists: exists), template: template.items, exists: exists) else { return nil }
+        return template
+    }
+
     private func finish() {
+        let changed = changedTemplate()
         workout.endedAt = Date()
         try? context.save()
         RestTimer.shared.stop()
@@ -395,7 +458,14 @@ struct WorkoutSessionView: View {
         }
 
         Haptics.success()
-        showingSummary = true
+        if let changed { templateToUpdate = changed } else { showingSummary = true }
+    }
+
+    /// Aggiorna la scheda con la lista di oggi, tenendo gli obiettivi scritti.
+    private func update(_ template: WorkoutTemplate) {
+        let known = exerciseByUUID
+        template.items = workout.items(.targets, exists: { known[$0] != nil })
+        try? context.save()
     }
 }
 
@@ -405,7 +475,14 @@ private struct ExerciseSessionCard: View {
     @Environment(AppSettings.self) private var settings
 
     let exercise: Exercise
+    /// Obiettivo della scheda («2/4 serie · 8–10 rip · 60 kg»), vuoto se non c'è.
+    let goal: String
     let sets: [WorkoutSet]
+    /// Menu dell'esercizio: `nil` = voce non disponibile (sposta solo a sessione in corso, sostituisci e togli
+    /// solo senza serie).
+    let onMove: ((Int) -> Void)?
+    let onReplace: (() -> Void)?
+    let onRemove: (() -> Void)?
     /// `true` se è l'esercizio che stai facendo (quello sul Watch).
     let isCurrent: Bool
     let onSelect: () -> Void
@@ -436,8 +513,34 @@ private struct ExerciseSessionCard: View {
                                 .font(Theme.rounded(11, .medium))
                                 .foregroundStyle(Theme.textTertiary)
                         }
+                        if !goal.isEmpty {
+                            Text(goal)
+                                .font(Theme.rounded(11, .semibold))
+                                .foregroundStyle(Theme.textSecondary)
+                        }
                     }
                     Spacer(minLength: 0)
+                    if onMove != nil || onReplace != nil || onRemove != nil {
+                        Menu {
+                            if let onMove {
+                                Button { onMove(-1) } label: { Label("Su", systemImage: "chevron.up") }
+                                Button { onMove(1) } label: { Label("Giù", systemImage: "chevron.down") }
+                            }
+                            if let onReplace {
+                                Button(action: onReplace) { Label("Sostituisci", systemImage: "arrow.left.arrow.right") }
+                            }
+                            if let onRemove {
+                                Button(role: .destructive, action: onRemove) { Label("Togli dalla lista", systemImage: "trash") }
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .font(.system(size: 14, weight: .bold))
+                                .frame(width: 34, height: 34)
+                                .background(Theme.card, in: Circle())
+                        }
+                        .foregroundStyle(Theme.textSecondary)
+                        .accessibilityLabel("Altro")
+                    }
                     if let onStartOnWatch {
                         Button {
                             onStartOnWatch()

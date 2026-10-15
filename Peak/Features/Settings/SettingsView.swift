@@ -2,6 +2,39 @@ import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 
+/// Le sottopagine delle impostazioni.
+enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
+    case general, training, templates, account, watch, health, backup, catalog
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .general: return "Generale"
+        case .training: return "Allenamento"
+        case .templates: return "Schede"
+        case .account: return "Account yG"
+        case .watch: return "Apple Watch"
+        case .health: return "App Salute"
+        case .backup: return "Backup"
+        case .catalog: return "Catalogo"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .general: return "slider.horizontal.3"
+        case .training: return "dumbbell"
+        case .templates: return "list.bullet"
+        case .account: return "icloud"
+        case .watch: return "applewatch"
+        case .health: return "heart"
+        case .backup: return "externaldrive"
+        case .catalog: return "archivebox"
+        }
+    }
+}
+
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Environment(AppSettings.self) private var settings
@@ -53,68 +86,7 @@ struct SettingsView: View {
                         }
                     }
 
-                    accountCard
-
-                    // Unità
-                    GlassCard {
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "Unità di misura")
-                            Picker("Unità", selection: $settings.unit) {
-                                ForEach(WeightUnit.allCases) { Text($0.symbol.uppercased()).tag($0) }
-                            }
-                            .pickerStyle(.segmented)
-                            Text("I dati restano sempre salvati in chilogrammi: cambia solo come vengono mostrati.")
-                                .font(Theme.rounded(11, .medium))
-                                .foregroundStyle(Theme.textTertiary)
-                        }
-                    }
-
-                    // Formula
-                    GlassCard {
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "Formula del 1RM stimato")
-                            Picker("Formula", selection: $settings.formula) {
-                                ForEach(OneRepMaxFormula.allCases) { Text($0.title).tag($0) }
-                            }
-                            .pickerStyle(.segmented)
-                            Text("\(settings.formula.subtitle). Il massimale dell'app resta il carico vero che hai sollevato: questa formula serve solo alla stima scritta in piccolo accanto.")
-                                .font(Theme.rounded(11, .medium))
-                                .foregroundStyle(Theme.textTertiary)
-                        }
-                    }
-
-                    // Accento
-                    GlassCard {
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "Colore accento")
-                            HStack(spacing: 10) {
-                                ForEach(AccentPalette.allCases) { palette in
-                                    Button {
-                                        settings.accent = palette
-                                        Haptics.tap()
-                                    } label: {
-                                        Circle()
-                                            .fill(palette.color)
-                                            .frame(width: 34, height: 34)
-                                            .overlay(
-                                                Circle()
-                                                    .strokeBorder(.white.opacity(settings.accent == palette ? 0.9 : 0), lineWidth: 2)
-                                                    .padding(-4)
-                                            )
-                                    }
-                                    .buttonStyle(.plain)
-                                    .accessibilityLabel(palette.title)
-                                }
-                                Spacer()
-                            }
-                        }
-                    }
-
-                    trainingCard
-                    watchCard
-                    healthCard
-                    backupCard
-                    catalogCard
+                    categoryList
                     infoCard
                 }
                 .padding(.horizontal, 16)
@@ -122,6 +94,16 @@ struct SettingsView: View {
             }
             .screenBackground(settings.accentColor)
             .navigationTitle("Impostazioni")
+            .navigationDestination(for: SettingsCategory.self) { category in
+                ScrollView {
+                    VStack(spacing: 14) { page(category) }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 28)
+                }
+                .screenBackground(settings.accentColor)
+                .navigationTitle(category.title)
+                .navigationBarTitleDisplayMode(.inline)
+            }
             .sheet(item: $shareFile) { file in
                 ShareSheet(items: [file.url]) { completed in
                     if completed {
@@ -178,6 +160,144 @@ struct SettingsView: View {
                 Button("Ok", role: .cancel) {}
             } message: {
                 Text(alert?.message ?? "")
+            }
+        }
+    }
+
+    // MARK: - Categorie
+
+    private var unitCard: some View {
+        @Bindable var settings = settings
+        return GlassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "Unità di misura")
+                Picker("Unità", selection: $settings.unit) {
+                    ForEach(WeightUnit.allCases) { Text($0.symbol.uppercased()).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                Text("I dati restano sempre salvati in chilogrammi: cambia solo come vengono mostrati.")
+                    .font(Theme.rounded(11, .medium))
+                    .foregroundStyle(Theme.textTertiary)
+            }
+        }
+    }
+
+    private var formulaCard: some View {
+        @Bindable var settings = settings
+        return GlassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "Formula del 1RM stimato")
+                Picker("Formula", selection: $settings.formula) {
+                    ForEach(OneRepMaxFormula.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                Text("\(settings.formula.subtitle). Il massimale dell'app resta il carico vero che hai sollevato: questa formula serve solo alla stima scritta in piccolo accanto.")
+                    .font(Theme.rounded(11, .medium))
+                    .foregroundStyle(Theme.textTertiary)
+            }
+        }
+    }
+
+    private var accentCard: some View {
+        @Bindable var settings = settings
+        return GlassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "Colore accento")
+                HStack(spacing: 10) {
+                    ForEach(AccentPalette.allCases) { palette in
+                        Button {
+                            settings.accent = palette
+                            Haptics.tap()
+                        } label: {
+                            Circle()
+                                .fill(palette.color)
+                                .frame(width: 34, height: 34)
+                                .overlay(
+                                    Circle()
+                                        .strokeBorder(.white.opacity(settings.accent == palette ? 0.9 : 0), lineWidth: 2)
+                                        .padding(-4)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(palette.title)
+                    }
+                    Spacer()
+                }
+            }
+        }
+    }
+
+    /// Cosa mostrare nelle schede e nella lista dell'allenamento: segue l'account, come unità e formula.
+    private var templatesCard: some View {
+        @Bindable var settings = settings
+        return GlassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "Schede")
+                Text("Cosa mostrare nelle schede e nella lista dell'allenamento. Valgono su tutti i tuoi dispositivi.")
+                    .font(Theme.rounded(11, .medium))
+                    .foregroundStyle(Theme.textTertiary)
+
+                Toggle("Serie", isOn: $settings.templateSets)
+                    .font(Theme.rounded(15, .semibold))
+                    .tint(settings.accentColor)
+                Toggle("Ripetizioni", isOn: $settings.templateReps)
+                    .font(Theme.rounded(15, .semibold))
+                    .tint(settings.accentColor)
+                Toggle("Peso", isOn: $settings.templateWeight)
+                    .font(Theme.rounded(15, .semibold))
+                    .tint(settings.accentColor)
+
+                Text("Senza peso scritto nella scheda si vede l'ultimo usato. Gli obiettivi sono solo un promemoria: il foglio della serie non cambia. Le schede si creano da Allenamenti.")
+                    .font(Theme.rounded(11, .medium))
+                    .foregroundStyle(Theme.textTertiary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func page(_ category: SettingsCategory) -> some View {
+        switch category {
+        case .general:
+            unitCard
+            formulaCard
+            accentCard
+        case .training: trainingCard
+        case .templates: templatesCard
+        case .account: accountCard
+        case .watch: watchCard
+        case .health: healthCard
+        case .backup: backupCard
+        case .catalog: catalogCard
+        }
+    }
+
+    private var categoryList: some View {
+        GlassCard(padding: 6) {
+            VStack(spacing: 0) {
+                ForEach(SettingsCategory.allCases) { category in
+                    NavigationLink(value: category) {
+                        HStack(spacing: 12) {
+                            Image(systemName: category.symbol)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(settings.accentColor)
+                                .frame(width: 28)
+                            Text(category.title)
+                                .font(Theme.rounded(16, .semibold))
+                                .foregroundStyle(Theme.textPrimary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Theme.textTertiary)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 13)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    if category != SettingsCategory.allCases.last {
+                        Divider().overlay(Theme.stroke).padding(.leading, 52)
+                    }
+                }
             }
         }
     }

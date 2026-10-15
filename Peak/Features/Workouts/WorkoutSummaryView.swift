@@ -1,9 +1,13 @@
 import SwiftUI
+import SwiftData
 
 /// Riepilogo di fine sessione, con i record ottenuti.
 struct WorkoutSummaryView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(\.dismiss) private var dismiss
+
+    @Query private var exercises: [Exercise]
+    @State private var showingSaveTemplate = false
 
     let workout: Workout
     let onDone: () -> Void
@@ -90,6 +94,16 @@ struct WorkoutSummaryView: View {
                         }
                     }
 
+                    if !workout.setList.isEmpty {
+                        Button {
+                            showingSaveTemplate = true
+                        } label: {
+                            Label("Salva come scheda", systemImage: "list.bullet")
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .padding(.top, 4)
+                    }
+
                     Button {
                         dismiss()
                         onDone()
@@ -105,6 +119,10 @@ struct WorkoutSummaryView: View {
             .screenBackground(settings.accentColor)
             .navigationBarTitleDisplayMode(.inline)
             .interactiveDismissDisabled()
+            .sheet(isPresented: $showingSaveTemplate) {
+                let known = Set(exercises.map(\.uuid))
+                TemplateEditorView(initialName: workout.name, initialItems: workout.items(.done, exists: { known.contains($0) }))
+            }
         }
     }
 }

@@ -1,16 +1,18 @@
 import SwiftUI
 import SwiftData
 
-/// "Cosa alleni oggi?": nome della sessione e gruppi. I gruppi filtrano il
-/// selettore degli esercizi; nessun gruppo scelto = nessun filtro.
+/// "Cosa alleni oggi?": le schede (tocco = si parte con la loro lista), oppure nome della sessione e gruppi.
+/// I gruppi filtrano il selettore degli esercizi; nessun gruppo scelto = nessun filtro.
 struct FocusPickerSheet: View {
     @Environment(AppSettings.self) private var settings
     @Environment(\.dismiss) private var dismiss
 
-    @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
+    @Query(sort: \WorkoutTemplate.sortIndex) private var templates: [WorkoutTemplate]
 
     let confirmTitle: String
     let onConfirm: (String, Set<MuscleGroup>) -> Void
+    /// Solo all'avvio: toccare una scheda parte subito con la sua lista. In modifica di una sessione è `nil`.
+    let onStartTemplate: ((WorkoutTemplate) -> Void)?
 
     @State private var name: String
     @State private var selection: Set<MuscleGroup>
@@ -19,27 +21,58 @@ struct FocusPickerSheet: View {
         initialName: String = "",
         initial: Set<MuscleGroup> = [],
         confirmTitle: String,
+        onStartTemplate: ((WorkoutTemplate) -> Void)? = nil,
         onConfirm: @escaping (String, Set<MuscleGroup>) -> Void
     ) {
         self.confirmTitle = confirmTitle
         self.onConfirm = onConfirm
+        self.onStartTemplate = onStartTemplate
         _name = State(initialValue: initialName)
         _selection = State(initialValue: initial)
-    }
-
-    /// Le sessioni con nome più recenti, una per nome: toccarne una ripropone
-    /// nome e gruppi, così "Push 1" non va riscritto ogni settimana.
-    private var recentNamed: [Workout] {
-        var seen = Set<String>()
-        return workouts.filter { !$0.name.isEmpty && seen.insert($0.name.lowercased()).inserted }
-            .prefix(6)
-            .map { $0 }
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
+                    if let onStartTemplate, !templates.isEmpty {
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: 4) {
+                                SectionHeader(title: "Le tue schede")
+                                ForEach(templates) { template in
+                                    Button {
+                                        onStartTemplate(template)
+                                        dismiss()
+                                    } label: {
+                                        HStack {
+                                            VStack(alignment: .leading, spacing: 1) {
+                                                Text(template.name)
+                                                    .font(Theme.rounded(16, .semibold))
+                                                    .foregroundStyle(Theme.textPrimary)
+                                                Text(template.items.count == 1 ? "1 esercizio" : "\(template.items.count) esercizi")
+                                                    .font(Theme.rounded(11, .medium))
+                                                    .foregroundStyle(Theme.textTertiary)
+                                            }
+                                            Spacer()
+                                            Image(systemName: "chevron.right")
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundStyle(Theme.textTertiary)
+                                        }
+                                        .padding(.vertical, 8)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+
+                        Text("Oppure scegli i gruppi")
+                            .font(Theme.rounded(12, .semibold))
+                            .foregroundStyle(Theme.textTertiary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 4)
+                    }
+
                     GlassCard {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "Nome")
@@ -47,27 +80,6 @@ struct FocusPickerSheet: View {
                                 .font(Theme.rounded(17, .semibold))
                                 .textInputAutocapitalization(.words)
                                 .submitLabel(.done)
-
-                            if !recentNamed.isEmpty {
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 8) {
-                                        ForEach(recentNamed) { workout in
-                                            Button(workout.name) {
-                                                name = workout.name
-                                                selection = workout.focus
-                                                Haptics.tap()
-                                            }
-                                            .font(Theme.rounded(13, .semibold))
-                                            .foregroundStyle(Theme.textSecondary)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 7)
-                                            .background(Theme.card, in: Capsule())
-                                            .overlay(Capsule().strokeBorder(Theme.stroke, lineWidth: 1))
-                                            .buttonStyle(.plain)
-                                        }
-                                    }
-                                }
-                            }
                         }
                     }
 

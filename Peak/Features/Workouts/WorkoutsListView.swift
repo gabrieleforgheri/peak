@@ -6,9 +6,13 @@ struct WorkoutsListView: View {
     @Environment(AppSettings.self) private var settings
 
     @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
+    @Query(sort: \WorkoutTemplate.sortIndex) private var templates: [WorkoutTemplate]
+    @Query private var exercises: [Exercise]
 
     @State private var path: [Workout] = []
     @State private var showingFocusPicker = false
+    @State private var editingTemplate: WorkoutTemplate?
+    @State private var showingNewTemplate = false
 
     private var activeWorkout: Workout? { workouts.first(where: \.isActive) }
     private var finishedWorkouts: [Workout] { workouts.filter { !$0.isActive } }
@@ -20,6 +24,50 @@ struct WorkoutsListView: View {
                     startCard
                         .plainListRow()
                         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 10, trailing: 16))
+                }
+
+                Section {
+                    if templates.isEmpty {
+                        Text("Una scheda è una lista di esercizi con serie e ripetizioni: la scegli quando inizi e li trovi già pronti.")
+                            .font(Theme.rounded(13, .medium))
+                            .foregroundStyle(Theme.textTertiary)
+                            .plainListRow()
+                    } else {
+                        ForEach(templates) { template in
+                            Button {
+                                editingTemplate = template
+                            } label: {
+                                GlassCard(padding: 14) {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            Text(template.name)
+                                                .font(Theme.rounded(15, .bold))
+                                                .foregroundStyle(Theme.textPrimary)
+                                            Text(template.items.count == 1 ? "1 esercizio" : "\(template.items.count) esercizi")
+                                                .font(Theme.rounded(11, .medium))
+                                                .foregroundStyle(Theme.textTertiary)
+                                        }
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundStyle(Theme.textTertiary)
+                                    }
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .plainListRow()
+                        }
+                    }
+                } header: {
+                    HStack {
+                        SectionHeader(title: "Schede")
+                        Button("Nuova scheda") { showingNewTemplate = true }
+                            .font(Theme.rounded(13, .bold))
+                            .foregroundStyle(settings.accentColor)
+                            .buttonStyle(.plain)
+                    }
+                    .textCase(nil)
+                    .padding(.horizontal, 2)
                 }
 
                 if finishedWorkouts.isEmpty {
@@ -62,7 +110,15 @@ struct WorkoutsListView: View {
                 WorkoutSessionView(workout: workout)
             }
             .sheet(isPresented: $showingFocusPicker) {
-                FocusPickerSheet(confirmTitle: "Inizia", onConfirm: startWorkout)
+                FocusPickerSheet(confirmTitle: "Inizia", onStartTemplate: { startWorkout(template: $0) }) { name, focus in
+                    startWorkout(name: name, focus: focus)
+                }
+            }
+            .sheet(item: $editingTemplate) { template in
+                TemplateEditorView(template: template)
+            }
+            .sheet(isPresented: $showingNewTemplate) {
+                TemplateEditorView()
             }
         }
     }
@@ -128,6 +184,22 @@ struct WorkoutsListView: View {
         let workout = Workout()
         workout.name = name
         workout.focus = focus
+        begin(workout)
+    }
+
+    /// Con una scheda: lista già pronta (una copia), il suo nome, i gruppi presi dagli esercizi.
+    private func startWorkout(template: WorkoutTemplate) {
+        let known = Dictionary(exercises.map { ($0.uuid, $0) }, uniquingKeysWith: { first, _ in first })
+        let items = template.items.filter { known[$0.exercise] != nil }
+        let workout = Workout()
+        workout.name = template.name
+        workout.templateRaw = template.uuid.uuidString
+        workout.plan = items
+        workout.focus = Set(items.compactMap { known[$0.exercise]?.muscleGroup })
+        begin(workout)
+    }
+
+    private func begin(_ workout: Workout) {
         context.insert(workout)
         try? context.save()
         WorkoutActivity.start(for: workout, unit: settings.unit)
