@@ -47,6 +47,7 @@ struct SettingsPage<Content: View>: View {
 
 struct SettingsView: View {
     @Environment(AppSettings.self) private var settings
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -60,6 +61,7 @@ struct SettingsView: View {
             }
             .screenBackground(settings.accentColor)
             .navigationTitle("Impostazioni")
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Fine") { dismiss() } } }
             .navigationDestination(for: SettingsCategory.self) { category in
                 page(category)
                     .navigationTitle(category.title)

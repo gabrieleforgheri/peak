@@ -106,9 +106,13 @@
 	const stepBar = $derived(s.unit === 'kg' ? 2.5 : 5)
 </script>
 
-<main class="screen" class:no-tabs={!!cat}>
+<main class="screen no-tabs">
 {#if !cat}
-	<div class="bar"><h1>{t('Impostazioni')}</h1></div>
+	<div class="bar">
+		<button class="icon-btn" onclick={() => go('home')} aria-label={t('Indietro')}><Icon name="left" /></button>
+		<h1 class="small">{t('Impostazioni')}</h1>
+		<span style="width:40px"></span>
+	</div>
 
 	<div class="card list">
 		{#each CATS as c (c.id)}

@@ -108,7 +108,7 @@
 </script>
 
 <main class="screen">
-	<SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={finished.filter((w) => w.dateMs >= weekStart(Date.now())).length} goal={m.settings.weeklyGoal || weeklyGoal(stat)} onchangegoal={() => (choosing = true)} onavatar={() => go('impostazioni/account')} />
+	<SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={finished.filter((w) => w.dateMs >= weekStart(Date.now())).length} goal={m.settings.weeklyGoal || weeklyGoal(stat)} onchangegoal={() => (choosing = true)} onavatar={() => go('impostazioni')} />
 
 	{#if choosing}<GoalPicker current={m.settings.weeklyGoal} suggested={weeklyGoal(stat)} onclose={() => (choosing = false)} />{/if}
 

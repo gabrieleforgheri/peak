@@ -97,15 +97,17 @@ struct HomeHero: View {
                             .background(Circle().fill(LinearGradient(colors: [settings.accentColor, settings.accentColor.opacity(0.55)], startPoint: .topLeading, endPoint: .bottomTrailing)))
                     }
                     .buttonStyle(.plain)
+                    .tourTarget("avatar")
+                    .accessibilityLabel("Impostazioni")
                 }
 
-                Text(Motivation.phrases[index])
+                Text(Motivation.phrases[index].replacingOccurrences(of: ", ", with: ",\n"))
                     .id(index)
                     .font(Theme.rounded(28, .heavy))
                     .tracking(-0.8)
                     .lineSpacing(-2)
                     .shadow(color: settings.accentColor.opacity(0.45), radius: 14)
-                    .frame(maxWidth: 270, alignment: .leading)
+                    .frame(maxWidth: 230, alignment: .leading)
                     .frame(minHeight: 96, alignment: .topLeading)
                     .padding(.top, 22)
                     .transition(.opacity.combined(with: .offset(y: 10)))

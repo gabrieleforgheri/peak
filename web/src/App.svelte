@@ -31,7 +31,6 @@
 		{ id: 'progressi', icon: 'chart', label: 'Progressi' },
 		{ id: 'macchinari', icon: 'machine', label: 'Macchinari' },
 		{ id: 'amici', icon: 'users', label: 'Amici' },
-		{ id: 'impostazioni', icon: 'sliders', label: 'Impostazioni' },
 	]
 
 	$effect(() => { document.documentElement.dataset.accent = m.settings.accent })
@@ -74,7 +73,7 @@
 				<Settings />
 			{/if}
 		{/key}
-		{#if !deep}
+		{#if !deep && tab !== 'impostazioni'}
 			<nav class="tabbar"><div class="tabbar-in">
 				{#each tabs as x}
 					<button class="tab" class:on={tab === x.id} onclick={() => go(x.id)} data-tour="tab-{x.id}"><Icon name={x.icon} />{t(x.label)}</button>

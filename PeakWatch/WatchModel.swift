@@ -27,6 +27,8 @@ final class WatchModel: NSObject, WCSessionDelegate {
         -(anchorWeight / step).rounded(.down)...(300 / step).rounded()
     }
     var reps = 0
+    /// Serie di riscaldamento: non conta per i record.
+    var isWarmup = false
     /// Ultima serie inviata, per conferma a schermo.
     private(set) var lastSent: WatchSet?
 
@@ -52,7 +54,7 @@ final class WatchModel: NSObject, WCSessionDelegate {
     /// Manda la serie all'iPhone: subito se raggiungibile, altrimenti in coda garantita.
     func send() {
         guard let exercise, reps > 0 else { return }
-        let set = WatchSet(exerciseUUID: exercise.uuid, weight: weight, reps: reps)
+        let set = WatchSet(exerciseUUID: exercise.uuid, weight: weight, reps: reps, isWarmup: isWarmup)
         let payload = set.watchPayload(key: WatchSet.key)
         let session = WCSession.default
         if session.isReachable {
@@ -64,6 +66,7 @@ final class WatchModel: NSObject, WCSessionDelegate {
         }
         lastSent = set
         reps = 0
+        isWarmup = false
         WKInterfaceDevice.current().play(.success)
     }
 

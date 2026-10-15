@@ -46,22 +46,22 @@ struct TourOverlay: View {
              text: "Un minuto per fare il giro: ti mostro dove sta ogni cosa e ti faccio creare il primo macchinario e la prima scheda."),
         Step(id: "home", tab: .home, target: nil, tabIndex: 0, title: "La tua Home",
              text: "Qui trovi la tua settimana, i grafici, le medaglie e le novità dei tuoi amici. La barra sotto la frase è il tuo obiettivo."),
-        Step(id: "machines", tab: .machines, target: nil, tabIndex: 3, title: "Macchinari",
-             text: "Qui tieni i tuoi macchinari e i loro massimali. Si aggiungono cercando in un catalogo: così il tuo «Chest Press» è lo stesso dei tuoi amici e potete fare la classifica."),
-        Step(id: "add-machine", tab: .machines, target: "add-machine", tabIndex: nil, title: "Aggiungi il primo macchinario",
-             text: "Tocca + e cerca nel catalogo. Poi gli puoi dare un nome tuo.", done: { $0.hasMachine }),
+        Step(id: "settings", tab: .home, target: "avatar", tabIndex: nil, title: "Impostazioni",
+             text: "Toccando la tua iniziale in alto a destra apri le impostazioni: unità, colore, timer di recupero, backup e il tuo account yG. Il tutorial lo rivedi da Generale."),
         Step(id: "workout", tab: .workouts, target: nil, tabIndex: 1, title: "Allenamento",
              text: "Qui alleni: scegli una scheda o parti a mano e registra le serie una per una."),
         Step(id: "template", tab: .workouts, target: "new-template", tabIndex: nil, title: "Crea la tua prima scheda",
              text: "Una scheda è una lista di esercizi con serie e ripetizioni: la scegli quando inizi e li trovi già pronti.", done: { $0.hasTemplate }),
         Step(id: "progress", tab: .progress, target: nil, tabIndex: 2, title: "Progressi",
              text: "I tuoi numeri nel tempo: volume, record, peso corporeo."),
+        Step(id: "machines", tab: .machines, target: nil, tabIndex: 3, title: "Macchinari",
+             text: "Qui tieni i tuoi macchinari e i loro massimali. Si aggiungono cercando in un catalogo: così il tuo «Chest Press» è lo stesso dei tuoi amici e potete fare la classifica."),
+        Step(id: "add-machine", tab: .machines, target: "add-machine", tabIndex: nil, title: "Aggiungi il primo macchinario",
+             text: "Tocca + e cerca nel catalogo. Poi gli puoi dare un nome tuo.", done: { $0.hasMachine }),
         Step(id: "friends", tab: .friends, target: nil, tabIndex: 4, title: "Amici",
              text: "Invita gli amici con un link o un QR: vedete i massimali e le schede l'uno dell'altro e fate la classifica."),
         Step(id: "invite", tab: .friends, target: "invite", tabIndex: nil, title: "Invita un amico",
-             text: "Quando vuoi. Il link vale una volta sola.", optional: true),
-        Step(id: "settings", tab: .settings, target: nil, tabIndex: 5, title: "Impostazioni",
-             text: "Unità, colore, timer di recupero, backup e il tuo account yG. Il tutorial lo rivedi da Generale.")
+             text: "Quando vuoi. Il link vale una volta sola.", optional: true)
     ]
 
     @State private var at = 0
@@ -71,6 +71,10 @@ struct TourOverlay: View {
     private var step: Step { steps[min(at, steps.count - 1)] }
     private var isLast: Bool { at == steps.count - 1 }
 
+    private var safeTop: CGFloat {
+        UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?.keyWindow?.safeAreaInsets.top ?? 0
+    }
+
     private var bottomInset: CGFloat {
         UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?.keyWindow?.safeAreaInsets.bottom ?? 0
     }
@@ -78,11 +82,25 @@ struct TourOverlay: View {
     /// Il riquadro da evidenziare, in coordinate dello schermo.
     private var hole: CGRect? {
         if let id = step.target, let rect = rects[id] { return rect }
+        // il «+» sta nella barra del titolo, che non sempre passa il suo riquadro: in alto a destra, sotto la barra di stato
+        if step.target == "add-machine" { return CGRect(x: size.width - 68, y: safeTop, width: 52, height: 44) }
         if let index = step.tabIndex {
-            let width = size.width / 6
-            return CGRect(x: width * CGFloat(index), y: size.height - 49 - bottomInset, width: width, height: 49)
+            return tabButtonFrame(index)
         }
         return nil
+    }
+
+    /// Dove sta davvero la scheda `index` nella barra (che su iOS 26 è una capsula flottante): si legge dai pulsanti veri.
+    private func tabButtonFrame(_ index: Int) -> CGRect? {
+        guard let window = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first?.keyWindow else { return nil }
+        var buttons: [UIView] = []
+        func walk(_ view: UIView) {
+            if String(describing: type(of: view)).contains("TabBarButton") { buttons.append(view) } else { view.subviews.forEach(walk) }
+        }
+        walk(window)
+        let sorted = buttons.sorted { $0.convert($0.bounds, to: nil).minX < $1.convert($1.bounds, to: nil).minX }
+        guard sorted.indices.contains(index) else { return nil }
+        return sorted[index].convert(sorted[index].bounds, to: nil)
     }
 
     var body: some View {
@@ -136,7 +154,7 @@ struct TourOverlay: View {
                 Button("Salta il tutorial") { finish() }.font(Theme.rounded(14, .bold)).foregroundStyle(settings.accentColor)
                 Spacer()
                 if step.done == nil || step.optional {
-                    Button(isLast ? "Fine" : "Avanti") { advance() }.buttonStyle(PrimaryButtonStyle(tint: settings.accentColor)).fixedSize()
+                    Button { advance() } label: { Text(isLast ? "Fine" : "Avanti").padding(.horizontal, 22) }.buttonStyle(PrimaryButtonStyle(tint: settings.accentColor)).fixedSize()
                 } else {
                     Text("Fallo per continuare").font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textTertiary)
                 }

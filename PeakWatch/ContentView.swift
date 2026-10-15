@@ -40,32 +40,16 @@ private struct ExerciseView: View {
                         .multilineTextAlignment(.center)
                 }
 
-                Text(model.displayWeight(model.weight))
-                    .font(.title3.weight(.semibold))
-                    .monospacedDigit()
-                    .focusable()
-                    .contentTransition(.numericText())
-                    .animation(.snappy, value: model.weight)
-                    .digitalCrownRotation(
-                        $model.weightSteps,
-                        from: model.weightStepRange.lowerBound,
-                        through: model.weightStepRange.upperBound,
-                        by: 1,
-                        sensitivity: .low,
-                        isContinuous: false,
-                        isHapticFeedbackEnabled: true
-                    )
+                stepper(model.displayWeight(model.weight), size: 22,
+                        minus: { model.weightSteps = max(model.weightSteps - 1, model.weightStepRange.lowerBound) },
+                        plus: { model.weightSteps = min(model.weightSteps + 1, model.weightStepRange.upperBound) })
+                stepper("\(model.reps)", size: 40,
+                        minus: { if model.reps > 0 { model.reps -= 1 } },
+                        plus: { model.reps += 1 })
 
-                Text("\(model.reps)")
-                    .font(.system(size: 54, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                    .animation(.snappy, value: model.reps)
+                Toggle("Riscaldamento", isOn: $model.isWarmup)
+                    .font(.footnote)
 
-                HStack {
-                    Button { if model.reps > 0 { model.reps -= 1 } } label: { Image(systemName: "minus") }
-                    Button { model.reps += 1 } label: { Image(systemName: "plus") }
-                }
                 Button("Registra") { model.send() }
                     .tint(.green)
                     .disabled(model.reps == 0)
@@ -78,5 +62,19 @@ private struct ExerciseView: View {
             }
         }
         .navigationTitle("Peak")
+    }
+
+    /// Valore al centro, − e + ai lati.
+    private func stepper(_ value: String, size: CGFloat, minus: @escaping () -> Void, plus: @escaping () -> Void) -> some View {
+        HStack {
+            Button(action: minus) { Image(systemName: "minus") }
+            Text(value)
+                .font(.system(size: size, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .minimumScaleFactor(0.6)
+                .frame(maxWidth: .infinity)
+            Button(action: plus) { Image(systemName: "plus") }
+        }
+        .buttonStyle(.bordered)
     }
 }

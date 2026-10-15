@@ -48,10 +48,10 @@
 
 	<div class="top">
 		<div><div class="small muted">{greeting}</div><div class="who">{name}</div></div>
-		<button class="avatar" onclick={onavatar} aria-label={t('Account yG')}>{name.slice(0, 1).toUpperCase()}</button>
+		<button class="avatar" onclick={onavatar} aria-label={t('Impostazioni')} data-tour="avatar">{name.slice(0, 1).toUpperCase()}</button>
 	</div>
 
-	<div class="quote">{#key i}<p>{PHRASES[i]}</p>{/key}</div>
+	<div class="quote">{#key i}<p>{PHRASES[i].replace(', ', ',\n')}</p>{/key}</div>
 
 	<!-- l'obiettivo della settimana: un segmento per allenamento -->
 	<button class="goal" onclick={onchangegoal} aria-label="{t('Obiettivo della settimana')}: {Math.min(weekSessions, goal)} / {goal}. {t('Cambia l\'obiettivo della settimana')}">
@@ -73,8 +73,8 @@
 	.top { position: relative; display: flex; align-items: center; justify-content: space-between; }
 	.who { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
 	.avatar { width: 40px; height: 40px; border-radius: 50%; border: 0; font-weight: 800; font-size: 17px; color: var(--on-accent); background: linear-gradient(135deg, var(--accent), rgba(var(--accent-rgb), .55)); box-shadow: 0 6px 18px rgba(var(--accent-rgb), .35); }
-	.quote { position: relative; margin-top: 22px; max-width: 74%; min-height: 96px; }
-	.quote p { margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.08; text-shadow: 0 4px 30px rgba(var(--accent-rgb), .45); animation: in .7s cubic-bezier(.22, 1, .36, 1); }
+	.quote { position: relative; margin-top: 22px; max-width: 62%; min-height: 96px; }
+	.quote p { margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.08; white-space: pre-line; text-shadow: 0 4px 30px rgba(var(--accent-rgb), .45); animation: in .7s cubic-bezier(.22, 1, .36, 1); }
 	@keyframes in { from { opacity: 0; transform: translateY(10px); } }
 	@media (prefers-reduced-motion: reduce) { .quote p { animation: none; } }
 	.goal { position: relative; margin-top: auto; padding: 14px 0 0; border: 0; background: none; color: inherit; text-align: left; width: 100%; }

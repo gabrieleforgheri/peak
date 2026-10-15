@@ -30,6 +30,7 @@ struct WatchSet: Codable, Equatable {
     var exerciseUUID: UUID
     var weight: Double
     var reps: Int
+    var isWarmup = false
 
     static let key = "set"
 }

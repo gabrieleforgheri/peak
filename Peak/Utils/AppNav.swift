@@ -8,7 +8,7 @@ final class AppNav {
     static let shared = AppNav()
 
     enum Tab: String, Hashable, CaseIterable {
-        case home, workouts, progress, machines, friends, settings
+        case home, workouts, progress, machines, friends
     }
 
     var tab: Tab = .home

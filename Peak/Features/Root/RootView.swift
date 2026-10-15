@@ -66,10 +66,6 @@ struct RootView: View {
             FriendsView()
                 .tabItem { Label("Amici", systemImage: "person.2.fill") }
                 .tag(AppNav.Tab.friends)
-
-            SettingsView()
-                .tabItem { Label("Impostazioni", systemImage: "slider.horizontal.3") }
-                .tag(AppNav.Tab.settings)
         }
         .tint(settings.accentColor)
         .overlayPreferenceValue(TourTargetKey.self) { anchors in

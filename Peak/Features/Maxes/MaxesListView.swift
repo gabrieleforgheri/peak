@@ -38,7 +38,6 @@ struct MaxesListView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 connectionBanner
-                addButton
                 unlinkedBanner
                 Group {
                     if allExercises.filter({ !$0.isArchived }).isEmpty {
@@ -61,6 +60,7 @@ struct MaxesListView: View {
                         Image(systemName: "plus")
                             .font(.system(size: 15, weight: .bold))
                     }
+                    .tourTarget("add-machine")
                     .accessibilityLabel("Nuovo macchinario")
                 }
             }
@@ -69,22 +69,6 @@ struct MaxesListView: View {
             }
             .sheet(isPresented: $showingConnect) { ConnectSheet() }
         }
-    }
-
-    /// Sempre in vista: i macchinari si aggiungono cercando nel catalogo.
-    private var addButton: some View {
-        Button { showingNewExercise = true } label: {
-            Label("Aggiungi un macchinario", systemImage: "plus.circle.fill")
-                .font(Theme.rounded(15, .bold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(settings.accentColor.opacity(0.14)))
-                .foregroundStyle(settings.accentColor)
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 6)
-        .tourTarget("add-machine")
     }
 
     /// I macchinari fuori catalogo non entrano nelle classifiche con gli amici.

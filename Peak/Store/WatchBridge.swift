@@ -144,7 +144,7 @@ final class WatchBridge: NSObject, WCSessionDelegate {
             exercise: exercise,
             weight: watchSet.weight,
             reps: watchSet.reps,
-            isWarmup: false,
+            isWarmup: watchSet.isWarmup,
             context: context
         )
         if settings.restTimerEnabled {

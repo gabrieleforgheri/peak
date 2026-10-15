@@ -375,7 +375,6 @@
   "Un allenamento alla volta.": "One workout at a time.",
   "Un minuto per fare il giro: ti mostro dove sta ogni cosa e ti faccio creare il primo macchinario e la prima scheda.": "One minute for the tour: I show you where everything is and you create your first machine and routine.",
   "Un record nasce da una serie normale.": "A record starts as an ordinary set.",
-  "Unità, colore, timer di recupero, backup e il tuo account yG. Il tutorial lo rivedi da Generale.": "Units, color, rest timer, backup and your yG account. You can replay the tutorial from General.",
   "Rivedi il tutorial": "Replay the tutorial",
   "1 macchinario fuori catalogo": "1 machine outside the catalog",
   "{0} macchinari fuori catalogo": "{0} machines outside the catalog",
@@ -401,5 +400,6 @@
   "{0} a settimana": "{0} a week",
   "Continua": "Continue",
   "Cambia l'obiettivo della settimana": "Change the weekly goal",
-  "allenamenti": "workouts"
+  "allenamenti": "workouts",
+  "Toccando la tua iniziale in alto a destra apri le impostazioni: unità, colore, timer di recupero, backup e il tuo account yG. Il tutorial lo rivedi da Generale.": "Tap your initial at the top right to open settings: units, color, rest timer, backup and your yG account. You can replay the tutorial from General."
 }

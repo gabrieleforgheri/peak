@@ -14,6 +14,7 @@ struct HomeView: View {
 
     @State private var stats: HomeStats?
     @State private var choosingGoal = false
+    @State private var showSettings = false
 
     private var active: Workout? { workouts.first(where: \.isActive) }
     /// La scheda che tocca: quella dopo l'ultima usata, a rotazione.
@@ -47,7 +48,7 @@ struct HomeView: View {
             ScrollView {
                 VStack(spacing: 14) {
                     if let s = stats {
-                        HomeHero(name: displayName, streak: s.streak, weekSessions: s.weekSessions, goal: s.goal, onAvatar: { nav.tab = .settings }, onChangeGoal: { choosingGoal = true })
+                        HomeHero(name: displayName, streak: s.streak, weekSessions: s.weekSessions, goal: s.goal, onAvatar: { showSettings = true }, onChangeGoal: { choosingGoal = true })
                         nextBar
                         StatStrip(stats: s)
 
@@ -70,6 +71,7 @@ struct HomeView: View {
             stats = HomeStats(workouts: workouts, exercises: exercises, chosenGoal: settings.weeklyGoal)
         }
         .onChange(of: settings.weeklyGoal) { stats = HomeStats(workouts: workouts, exercises: exercises, chosenGoal: settings.weeklyGoal) }
+        .fullScreenCover(isPresented: $showSettings) { SettingsView() }
         .fullScreenCover(isPresented: $choosingGoal) {
             GoalPickerView(current: settings.weeklyGoal, suggested: Stats.weeklyGoal(workouts: workouts.filter { !$0.isActive })) { choosingGoal = false }
         }
