@@ -10,7 +10,7 @@ import { createApi } from './api.ts'
 import { createAuth, loadAuthConfig } from './auth.ts'
 import { createPortal } from './portale.ts'
 import { createPush, type Send } from './push.ts'
-import { APP_CSP, HttpError, SECURITY_HEADERS, sendJson } from './http.ts'
+import { APP_CSP, cookies, HttpError, SECURITY_HEADERS, sendJson } from './http.ts'
 import { openStore } from './store.ts'
 import { CATALOG_BODY, CATALOG_ETAG } from './catalog.ts'
 
@@ -90,7 +90,17 @@ export function createApp({ dataDir, env = process.env, staticDir = join(ROOT, '
 
     // la pagina dell'app solo con una sessione: senza, al benvenuto (con «Accedi con yG»). Il resto (asset, manifest, sw) è pubblico.
     const isShell = path === '/' || path === '/index.html'
-    if (isShell && !auth.userOf(req, 'page')) {
+    const me = auth.userOf(req, 'page')
+    const go = (to: string, setCookie?: string) => {
+      res.writeHead(302, { location: to, 'cache-control': 'no-store', ...(setCookie ? { 'set-cookie': setCookie } : {}), ...SECURITY_HEADERS })
+      res.end()
+    }
+    // il link d'invito: con la sessione va dritto all'app, senza si ricorda il codice (un'ora) e lo riprende dopo il login
+    const invite = /^\/invito\/([A-Za-z0-9_-]{20,64})$/.exec(path)
+    if (invite) return me ? go(`/#/invito/${invite[1]}`) : go('/benvenuto.html', auth.cookie('peak_invito', invite[1], '/', 3600))
+    const pending = cookies(req).peak_invito
+    if (isShell && me && pending && /^[A-Za-z0-9_-]{20,64}$/.test(pending)) return go(`/#/invito/${pending}`, auth.cookie('peak_invito', '', '/', 0))
+    if (isShell && !me) {
       res.writeHead(302, { location: '/benvenuto.html', 'cache-control': 'no-store', ...SECURITY_HEADERS })
       res.end()
       return

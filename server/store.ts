@@ -31,9 +31,18 @@ CREATE TABLE IF NOT EXISTS photos (
   created_at INTEGER NOT NULL, UNIQUE(user_id, sha));
 CREATE TABLE IF NOT EXISTS push_subs (
   id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, endpoint TEXT NOT NULL UNIQUE, due_at INTEGER);
+CREATE TABLE IF NOT EXISTS friends (
+  a INTEGER NOT NULL REFERENCES users(id), b INTEGER NOT NULL REFERENCES users(id),
+  status TEXT NOT NULL CHECK (status IN ('richiesta', 'amici')), created_at INTEGER NOT NULL, PRIMARY KEY (a, b));
+CREATE INDEX IF NOT EXISTS friends_b ON friends(b);
+CREATE TABLE IF NOT EXISTS invites (
+  code_hash TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), expires_at INTEGER NOT NULL);
 `
 
 export interface User { id: number; sub: string; email: string; username: string; name: string }
+/** Chi si mostra agli altri: l'username di yG, mai l'email. */
+export interface Person { id: number; username: string; name: string }
+export type FriendState = 'nessuno' | 'amici' | 'inviata' | 'ricevuta'
 export interface Device { id: number; name: string; created_at: number; used_at: number | null }
 export interface WireDoc { kind: Kind; uuid: string; data: unknown; m: number; deleted: boolean }
 export interface PushResult {
@@ -90,6 +99,19 @@ export function openStore(dataDir: string) {
     allUsers: db.prepare('SELECT * FROM users'),
     delUserSessions: db.prepare('DELETE FROM sessions WHERE user_id = ?'),
     delUserDevices: db.prepare('DELETE FROM devices WHERE user_id = ?'),
+    pair: db.prepare('SELECT a, b, status FROM friends WHERE (a = ? AND b = ?) OR (a = ? AND b = ?)'),
+    insertFriend: db.prepare("INSERT INTO friends (a, b, status, created_at) VALUES (?, ?, ?, ?)"),
+    acceptFriend: db.prepare("UPDATE friends SET status = 'amici' WHERE a = ? AND b = ? AND status = 'richiesta'"),
+    delPair: db.prepare('DELETE FROM friends WHERE (a = ? AND b = ?) OR (a = ? AND b = ?)'),
+    friendsOf: db.prepare(`SELECT u.id, u.username, u.name FROM friends f JOIN users u ON u.id = CASE WHEN f.a = ?1 THEN f.b ELSE f.a END
+      WHERE (f.a = ?1 OR f.b = ?1) AND f.status = 'amici' ORDER BY lower(u.username)`),
+    receivedFrom: db.prepare("SELECT u.id, u.username, u.name FROM friends f JOIN users u ON u.id = f.a WHERE f.b = ? AND f.status = 'richiesta' ORDER BY f.created_at"),
+    sentTo: db.prepare("SELECT u.id, u.username, u.name FROM friends f JOIN users u ON u.id = f.b WHERE f.a = ? AND f.status = 'richiesta' ORDER BY f.created_at"),
+    findUsers: db.prepare("SELECT id, username, name FROM users WHERE id != ? AND username != '' AND (lower(username) = lower(?) OR lower(username) LIKE lower(?) ESCAPE '\\') ORDER BY lower(username) LIMIT 10"),
+    insertInvite: db.prepare('INSERT INTO invites (code_hash, user_id, expires_at) VALUES (?, ?, ?)'),
+    getInvite: db.prepare('SELECT user_id, expires_at FROM invites WHERE code_hash = ?'),
+    delInvite: db.prepare('DELETE FROM invites WHERE code_hash = ?'),
+    delOldInvites: db.prepare('DELETE FROM invites WHERE expires_at < ? OR (user_id = ? AND code_hash NOT IN (SELECT code_hash FROM invites WHERE user_id = ? ORDER BY expires_at DESC LIMIT 20))'),
   }
 
   const tx = <T>(fn: () => T): T => {
@@ -162,6 +184,62 @@ export function openStore(dataDir: string) {
     },
     listDevices: (userId: number) => q.listDevices.all(userId) as unknown as Device[],
     deleteDevice: (userId: number, id: number) => Number(q.delDevice.run(id, userId).changes) > 0,
+
+    // ---- amici ----
+    /** Com'è il rapporto di `me` con `other`. */
+    friendState(me: number, other: number): FriendState {
+      const r = q.pair.get(me, other, other, me) as { a: number; status: string } | undefined
+      return !r ? 'nessuno' : r.status === 'amici' ? 'amici' : r.a === me ? 'inviata' : 'ricevuta'
+    },
+    areFriends(x: number, y: number): boolean { return this.friendState(x, y) === 'amici' },
+    /** Richiesta di amicizia; se l'altro l'aveva già fatta a te, siete amici. Ritorna lo stato che ne risulta. */
+    requestFriend(from: number, to: number, now = Date.now()): FriendState {
+      if (from === to || !q.userById.get(to)) return 'nessuno'
+      return tx(() => {
+        const state = this.friendState(from, to)
+        if (state === 'ricevuta') { q.acceptFriend.run(to, from); return 'amici' }
+        if (state === 'nessuno') q.insertFriend.run(from, to, 'richiesta', now)
+        return state === 'nessuno' ? 'inviata' : state
+      })
+    },
+    acceptFriend: (me: number, other: number) => Number(q.acceptFriend.run(other, me).changes) > 0,
+    /** Rifiuta, annulla o toglie dagli amici: in ogni caso la coppia sparisce. */
+    removeFriend: (me: number, other: number) => Number(q.delPair.run(me, other, other, me).changes) > 0,
+    friends: (me: number) => ({
+      amici: q.friendsOf.all(me) as unknown as Person[],
+      ricevute: q.receivedFrom.all(me) as unknown as Person[],
+      inviate: q.sentTo.all(me) as unknown as Person[],
+    }),
+    person: (id: number) => (q.userById.get(id) as unknown as User | undefined),
+    /** Per username: esatto, oppure l'inizio (almeno 3 caratteri). Solo chi ha già usato Peak, al massimo 10. */
+    searchUsers(me: number, text: string): Person[] {
+      const t = text.trim().replace(/^@/, '')
+      if (t.length < 2) return []
+      const prefix = t.length >= 3 ? t.replace(/[\\%_]/g, '\\$&') + '%' : '\u0000'
+      return (q.findUsers.all(me, t, prefix) as unknown as User[]).map((u) => ({ id: u.id, username: u.username, name: u.name }))
+    },
+    /** Un invito monouso: in chiaro solo qui, nel database c'è l'hash. Ne restano al massimo 20 per utente. */
+    createInvite(userId: number, now = Date.now()): { code: string; expiresAt: number } {
+      const code = newToken()
+      const expiresAt = now + 7 * DAY
+      tx(() => { q.insertInvite.run(hash(code), userId, expiresAt); q.delOldInvites.run(now, userId, userId) })
+      return { code, expiresAt }
+    },
+    /** Usa un invito: chi lo apre e chi l'ha fatto diventano amici, il codice si consuma. `null` se non vale più o è il proprio. */
+    useInvite(code: string, me: number, now = Date.now()): Person | null {
+      return tx(() => {
+        const row = q.getInvite.get(hash(code)) as { user_id: number; expires_at: number } | undefined
+        if (!row || row.expires_at < now || row.user_id === me) return null
+        const owner = q.userById.get(row.user_id) as unknown as User | undefined
+        if (!owner) return null
+        q.delInvite.run(hash(code))
+        const state = this.friendState(me, owner.id)
+        if (state === 'ricevuta') q.acceptFriend.run(owner.id, me)
+        else if (state === 'inviata') { q.delPair.run(me, owner.id, owner.id, me); q.insertFriend.run(me, owner.id, 'amici', now) }
+        else if (state === 'nessuno') q.insertFriend.run(owner.id, me, 'amici', now)
+        return { id: owner.id, username: owner.username, name: owner.name }
+      })
+    },
 
     /** Toglie sessioni e dispositivi a chi non è fra le email date. Non tocca mai utenti o dati. */
     revokeAccessExcept(emails: Iterable<string>): { utenti: number } {

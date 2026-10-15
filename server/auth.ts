@@ -287,7 +287,7 @@ export function createAuth(store: Store, cfg: AuthConfig | null, dataDir: string
     return user ? { user, via: 'cookie' } : null
   }
 
-  return { handle, userOf, configured: !!cfg }
+  return { handle, userOf, configured: !!cfg, cookie }
 }
 
 export type Auth = ReturnType<typeof createAuth>
