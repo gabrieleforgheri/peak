@@ -6,11 +6,7 @@ struct RootView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(\.scenePhase) private var scenePhase
 
-    @State private var selection: Tab = .maxes
-
-    enum Tab: Hashable {
-        case maxes, workouts, progress, settings
-    }
+    private let nav = AppNav.shared
 
     var body: some View {
         ZStack {
@@ -23,6 +19,10 @@ struct RootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.25), value: settings.didSeeWelcome)
+        // la prima volta: prima l'obiettivo, poi il tutorial
+        .fullScreenCover(isPresented: .constant(settings.didSeeWelcome && settings.weeklyGoal == 0)) {
+            GoalPickerView(current: 0, suggested: 3) {}
+        }
         .task {
             runAutoBackup()
             linkCatalogOnce()
@@ -37,25 +37,49 @@ struct RootView: View {
         }
     }
 
+    /// L'icona dei macchinari: il pittogramma di un macchinario a pacco pesi, lo stesso disegno che si vede nelle liste.
+    private var machinesIcon: Image {
+        let renderer = ImageRenderer(content: MachineGlyphView(glyph: .latPulldown, tint: .white, size: 26))
+        renderer.scale = 3
+        return Image(uiImage: renderer.uiImage ?? UIImage()).renderingMode(.template)
+    }
+
     private var tabs: some View {
-        TabView(selection: $selection) {
-            MaxesListView()
-                .tabItem { Label("Massimali", systemImage: "trophy.fill") }
-                .tag(Tab.maxes)
+        @Bindable var nav = nav
+        return TabView(selection: $nav.tab) {
+            HomeView()
+                .tabItem { Label("Home", systemImage: "house.fill") }
+                .tag(AppNav.Tab.home)
 
             WorkoutsListView()
-                .tabItem { Label("Allenamenti", systemImage: "figure.strengthtraining.traditional") }
-                .tag(Tab.workouts)
+                .tabItem { Label("Allenamento", systemImage: "figure.strengthtraining.traditional") }
+                .tag(AppNav.Tab.workouts)
 
             ProgressDashboardView()
                 .tabItem { Label("Progressi", systemImage: "chart.line.uptrend.xyaxis") }
-                .tag(Tab.progress)
+                .tag(AppNav.Tab.progress)
+
+            MaxesListView()
+                .tabItem { Label { Text("Macchinari") } icon: { machinesIcon } }
+                .tag(AppNav.Tab.machines)
+
+            FriendsView()
+                .tabItem { Label("Amici", systemImage: "person.2.fill") }
+                .tag(AppNav.Tab.friends)
 
             SettingsView()
-                .tabItem { Label("Impostazioni", systemImage: "gearshape.fill") }
-                .tag(Tab.settings)
+                .tabItem { Label("Impostazioni", systemImage: "slider.horizontal.3") }
+                .tag(AppNav.Tab.settings)
         }
         .tint(settings.accentColor)
+        .overlayPreferenceValue(TourTargetKey.self) { anchors in
+            GeometryReader { geo in
+                if settings.didSeeWelcome, settings.weeklyGoal > 0, !settings.tutorialDone, !AppStore.isFallback {
+                    TourOverlay(rects: anchors.mapValues { geo[$0] }, size: geo.size)
+                }
+            }
+            .ignoresSafeArea()
+        }
     }
 
     /// Gli esercizi che c'erano prima del catalogo si collegano per nome, una volta sola; gli altri restano personalizzati.

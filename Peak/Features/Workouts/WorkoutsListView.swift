@@ -65,6 +65,7 @@ struct WorkoutsListView: View {
                             .font(Theme.rounded(13, .bold))
                             .foregroundStyle(settings.accentColor)
                             .buttonStyle(.plain)
+                            .tourTarget("new-template")
                     }
                     .textCase(nil)
                     .padding(.horizontal, 2)
@@ -114,6 +115,9 @@ struct WorkoutsListView: View {
                     startWorkout(name: name, focus: focus)
                 }
             }
+            .onAppear(perform: consumeNavRequests)
+            .onChange(of: AppNav.shared.templateToStart) { consumeNavRequests() }
+            .onChange(of: AppNav.shared.resumeActive) { consumeNavRequests() }
             .sheet(item: $editingTemplate) { template in
                 TemplateEditorView(template: template)
             }
@@ -177,6 +181,19 @@ struct WorkoutsListView: View {
                     .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
                 }
             }
+        }
+    }
+
+    /// La Home chiede di riprendere la sessione o di avviare una scheda: si fa appena questa scheda è in vista.
+    private func consumeNavRequests() {
+        let nav = AppNav.shared
+        if nav.resumeActive {
+            nav.resumeActive = false
+            if let activeWorkout, path.last !== activeWorkout { path.append(activeWorkout) }
+        }
+        if let id = nav.templateToStart {
+            nav.templateToStart = nil
+            if let template = templates.first(where: { $0.uuid == id }) { startWorkout(template: template) } else { showingFocusPicker = true }
         }
     }
 

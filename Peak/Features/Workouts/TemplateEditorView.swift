@@ -28,11 +28,13 @@ struct TemplateEditorView: View {
     @State private var rows: [Row]
     @State private var showingPicker = false
     @State private var confirmingDelete = false
+    @State private var isHidden = false
 
     init(template: WorkoutTemplate? = nil, initialName: String = "", initialItems: [TemplateItem] = [], onSaved: (() -> Void)? = nil) {
         self.template = template
         self.onSaved = onSaved
         _name = State(initialValue: template?.name ?? initialName)
+        _isHidden = State(initialValue: template?.isHidden ?? false)
         // i pesi si scrivono nell'unità scelta: la conversione in `rowsFor` serve ai kg salvati
         _rows = State(initialValue: (template?.items ?? initialItems).map { Row(exercise: $0.exercise) })
         pendingItems = template?.items ?? initialItems
@@ -76,6 +78,12 @@ struct TemplateEditorView: View {
                         Text("Senza peso scritto si vede l'ultimo usato.")
                             .font(Theme.rounded(11, .medium))
                             .foregroundStyle(Theme.textTertiary)
+                    }
+
+                    GlassCard {
+                        Toggle("Nascondi agli amici", isOn: $isHidden)
+                            .font(Theme.rounded(15, .semibold))
+                            .tint(settings.accentColor)
                     }
 
                     if template != nil {
@@ -227,9 +235,12 @@ struct TemplateEditorView: View {
         if let template {
             template.name = trimmed
             template.items = items()
+            template.isHidden = isHidden
         } else {
             let top = templates.map(\.sortIndex).max() ?? -1
-            context.insert(WorkoutTemplate(name: trimmed, items: items(), sortIndex: top + 1))
+            let created = WorkoutTemplate(name: trimmed, items: items(), sortIndex: top + 1)
+            created.isHidden = isHidden
+            context.insert(created)
         }
         try? context.save()
         Haptics.commit()

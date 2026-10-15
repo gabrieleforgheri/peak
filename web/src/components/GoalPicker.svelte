@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { setSetting } from '../lib/actions.ts'
 	import { t } from '../lib/i18n.ts'
+	import Icon from './Icon.svelte'
 
 	/** La scelta dell'obiettivo, a tutto schermo: quanti allenamenti a settimana. Si apre la prima volta e dalla Home. */
 	let { current = 0, suggested = 3, onclose }: { current?: number; suggested?: number; onclose: () => void } = $props()
@@ -18,7 +19,7 @@
 <div class="goal" role="dialog" aria-modal="true" aria-label={t('Il tuo obiettivo')}>
 	<div class="in">
 		{#if current}<button class="x link" onclick={onclose}>{t('Annulla')}</button>{/if}
-		<div class="mount" aria-hidden="true">⛰️</div>
+		<div class="mount" aria-hidden="true"><Icon name="mountain" size={64} /></div>
 		<h2>{t('Quanti allenamenti a settimana?')}</h2>
 		<p class="muted">{t('Scegli un obiettivo che puoi mantenere. Lo cambi quando vuoi.')}</p>
 		<div class="opts" role="radiogroup">
@@ -38,7 +39,7 @@
 	.goal { position: fixed; inset: 0; z-index: 50; overflow-y: auto; background: radial-gradient(circle 360px at 50% -5%, rgba(var(--accent-rgb), .3), transparent), #0b0d14; animation: fade .25s; }
 	.in { max-width: 480px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 32px) 20px calc(env(safe-area-inset-bottom) + 28px); text-align: center; }
 	.x { position: absolute; left: 20px; top: calc(env(safe-area-inset-top) + 18px); }
-	.mount { font-size: 64px; line-height: 1; margin-bottom: 14px; }
+	.mount { color: var(--accent); line-height: 0; margin-bottom: 14px; filter: drop-shadow(0 6px 22px rgba(var(--accent-rgb), .5)); }
 	h2 { font-size: 28px; font-weight: 900; letter-spacing: -.03em; line-height: 1.1; margin: 0 0 8px; }
 	.opts { display: flex; flex-direction: column; gap: 10px; margin: 24px 0 22px; text-align: left; }
 	.opt { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; border-radius: 18px; color: inherit; background: var(--card); border: 2px solid var(--stroke); transition: transform .12s, border-color .15s, background .15s; }

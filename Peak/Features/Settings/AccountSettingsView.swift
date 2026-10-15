@@ -9,7 +9,10 @@ struct AccountSettingsView: View {
     private let sync = SyncService.shared
 
     var body: some View {
-        SettingsPage { accountCard }
+        SettingsPage {
+            accountCard
+            manageCard
+        }
             .sheet(isPresented: $showingConnect) { ConnectSheet() }
             .confirmationDialog(
                 "Scollegare questo iPhone?",
@@ -88,6 +91,33 @@ struct AccountSettingsView: View {
                     .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
                 }
             }
+        }
+    }
+
+    /// Dall'account yG si gestiscono profilo, password, accessi e dispositivi.
+    var manageCard: some View {
+        GlassCard(padding: 6) {
+            VStack(spacing: 0) {
+                link("Il tuo account yG", "Profilo, password, accessi e le altre app", "https://yrb4g.com/account", symbol: "icloud")
+                Divider().overlay(Theme.stroke).padding(.leading, 52)
+                link("Accessi di Peak", "Dispositivi collegati e dati salvati", "https://yrb4g.com/account/peak", symbol: "iphone")
+            }
+        }
+    }
+
+    private func link(_ title: String, _ subtitle: String, _ url: String, symbol: String) -> some View {
+        Link(destination: URL(string: url)!) {
+            HStack(spacing: 12) {
+                Image(systemName: symbol).font(.system(size: 15, weight: .semibold)).foregroundStyle(settings.accentColor).frame(width: 28)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title).font(Theme.rounded(15, .semibold)).foregroundStyle(Theme.textPrimary)
+                    Text(subtitle).font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
+                }
+                Spacer()
+                Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.textTertiary)
+            }
+            .padding(.horizontal, 12).padding(.vertical, 12)
+            .contentShape(Rectangle())
         }
     }
 

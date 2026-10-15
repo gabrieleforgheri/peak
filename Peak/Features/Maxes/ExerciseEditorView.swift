@@ -23,6 +23,7 @@ struct ExerciseEditorView: View {
     @State private var isUnilateral = false
     @State private var restSeconds = 0
     @State private var isArchived = false
+    @State private var isHidden = false
     @State private var showingDeleteConfirm = false
     @State private var didLoad = false
     @State private var photoData: Data?
@@ -193,6 +194,19 @@ struct ExerciseEditorView: View {
                                 .font(Theme.rounded(14, .regular))
                                 .lineLimit(2...5)
                         }
+                    }
+
+                    GlassCard {
+                        Toggle(isOn: $isHidden) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Nascondi agli amici")
+                                    .font(Theme.rounded(15, .semibold))
+                                Text("Non compare nel tuo profilo né nelle classifiche.")
+                                    .font(Theme.rounded(11, .medium))
+                                    .foregroundStyle(Theme.textTertiary)
+                            }
+                        }
+                        .tint(settings.accentColor)
                     }
 
                     if !isNew {
@@ -508,6 +522,7 @@ struct ExerciseEditorView: View {
         isUnilateral = exercise.isUnilateral
         restSeconds = exercise.restSeconds
         isArchived = exercise.isArchived
+        isHidden = exercise.isHidden
         photoData = exercise.photo
         photoOffset = exercise.photoOffset
         dragStart = exercise.photoOffset
@@ -524,6 +539,7 @@ struct ExerciseEditorView: View {
             exercise.isUnilateral = isUnilateral
             exercise.restSeconds = restSeconds
             exercise.isArchived = isArchived
+            exercise.isHidden = isHidden
             exercise.photo = photoData
             exercise.photoOffset = photoOffset
             exercise.glyphRaw = pickedGlyph?.rawValue ?? ""
@@ -544,6 +560,7 @@ struct ExerciseEditorView: View {
             new.isUnilateral = isUnilateral
             new.restSeconds = restSeconds
             new.catalogID = catalogID
+            new.isHidden = isHidden
         }
         try? context.save()
         Haptics.commit()

@@ -38,6 +38,8 @@ struct MaxesListView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 connectionBanner
+                addButton
+                unlinkedBanner
                 Group {
                     if allExercises.filter({ !$0.isArchived }).isEmpty {
                         emptyCatalog
@@ -49,7 +51,7 @@ struct MaxesListView: View {
                 }
             }
             .screenBackground(settings.accentColor)
-            .navigationTitle("Massimali")
+            .navigationTitle("Macchinari")
             .searchable(text: $search, prompt: "Cerca macchinario")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -66,6 +68,35 @@ struct MaxesListView: View {
                 ExerciseEditorView(exercise: nil)
             }
             .sheet(isPresented: $showingConnect) { ConnectSheet() }
+        }
+    }
+
+    /// Sempre in vista: i macchinari si aggiungono cercando nel catalogo.
+    private var addButton: some View {
+        Button { showingNewExercise = true } label: {
+            Label("Aggiungi un macchinario", systemImage: "plus.circle.fill")
+                .font(Theme.rounded(15, .bold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(settings.accentColor.opacity(0.14)))
+                .foregroundStyle(settings.accentColor)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 6)
+        .tourTarget("add-machine")
+    }
+
+    /// I macchinari fuori catalogo non entrano nelle classifiche con gli amici.
+    @ViewBuilder
+    private var unlinkedBanner: some View {
+        let count = allExercises.filter { !$0.isArchived && $0.catalogID.isEmpty }.count
+        if count > 0 {
+            Text("\(count == 1 ? "1 macchinario fuori catalogo" : "\(count) macchinari fuori catalogo"): aprine uno → Modifica → Collega, così entra nelle classifiche con gli amici.")
+                .font(Theme.rounded(11, .medium))
+                .foregroundStyle(Theme.textTertiary)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 6)
         }
     }
 
@@ -173,7 +204,7 @@ struct MaxesListView: View {
         ContentUnavailableView {
             Label("Nessun macchinario", systemImage: "dumbbell")
         } description: {
-            Text("Aggiungi il primo macchinario oppure ripristina il catalogo iniziale dalle impostazioni.")
+            Text("Cerca nel catalogo e aggiungi il primo macchinario: poi gli puoi dare un nome tuo.")
         } actions: {
             Button("Aggiungi macchinario") { showingNewExercise = true }
                 .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor, fullWidth: false))

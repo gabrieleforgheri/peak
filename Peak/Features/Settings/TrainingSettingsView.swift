@@ -15,6 +15,13 @@ struct TrainingSettingsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 SectionHeader(title: "Allenamento")
 
+                Stepper(value: Binding(get: { max(1, settings.weeklyGoal) }, set: { settings.weeklyGoal = $0 }), in: 1...7) {
+                    Text("Obiettivo della settimana: \(max(1, settings.weeklyGoal)) allenamenti")
+                        .font(Theme.rounded(14, .medium))
+                }
+
+                Divider().overlay(Theme.stroke)
+
                 Toggle(isOn: $settings.restTimerEnabled) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Timer di recupero")

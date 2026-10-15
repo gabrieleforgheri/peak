@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Icon from './Icon.svelte'
+
 	/** I primi tre sul podio (di meno, se siete in pochi): il primo al centro, il più alto. `you` = la tua riga. */
 	let { rows, onpick }: { rows: { id: number; name: string; value: string; you: boolean }[]; onpick?: (id: number) => void } = $props()
 	// ordine di disegno: secondo, primo, terzo
@@ -9,7 +11,7 @@
 <div class="podium">
 	{#each order as { r, rank } (r.id)}
 		<button class="slot" data-rank={rank} class:you={r.you} onclick={() => !r.you && onpick?.(r.id)}>
-			<div class="who"><div class="av">{r.name.replace(/^@/, '').slice(0, 1).toUpperCase()}</div><div class="nm">{r.you ? '★ ' : ''}{r.name}</div><div class="val">{r.value}</div></div>
+			<div class="who"><div class="av">{r.name.replace(/^@/, '').slice(0, 1).toUpperCase()}</div><div class="nm">{#if r.you}<Icon name="star" size={12} />{/if} {r.name}</div><div class="val">{r.value}</div></div>
 			<div class="ped" style="height:{H[rank]}px"><span>{rank}</span></div>
 		</button>
 	{/each}

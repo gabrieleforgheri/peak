@@ -62,6 +62,35 @@ struct ExerciseDetailView: View {
             .map { $0 }
     }
 
+    @State private var board: [BoardRow]?
+
+    /// La classifica con gli amici: solo per i macchinari del catalogo, e solo se hai degli amici.
+    @ViewBuilder
+    private var leaderboardCard: some View {
+        if exercise.catalogID.isEmpty {
+            GlassCard(padding: 16) {
+                Text("Per la classifica con gli amici collega questo macchinario al catalogo (Modifica → Catalogo).")
+                    .font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textTertiary)
+            }
+        } else if SocialStore.shared.friendCount > 0, let board, board.count > 1 {
+            GlassCard(padding: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    SectionHeader(title: "Classifica amici")
+                    ForEach(Array(board.enumerated()), id: \.element.id) { i, row in
+                        HStack {
+                            Text("\(i + 1)").font(Theme.rounded(14, .heavy)).foregroundStyle(i == 0 ? tint : Theme.textTertiary).frame(width: 22, alignment: .leading)
+                            Text(row.isMe ? "Tu" : "@\(row.username)").font(Theme.rounded(15, row.isMe ? .heavy : .semibold))
+                            Spacer()
+                            Text(Fmt.weight(row.oneRm, unit: settings.unit)).font(Theme.rounded(15, .heavy))
+                            Text("1RM").font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
+                        }
+                    }
+                    Text("1RM stimato dalle serie migliori.").font(Theme.rounded(10, .medium)).foregroundStyle(Theme.textTertiary)
+                }
+            }
+        }
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
@@ -77,6 +106,7 @@ struct ExerciseDetailView: View {
                         }
                     }
                 }
+                leaderboardCard
                 if !warmupPlan.isEmpty { warmupCard }
                 if chartPoints.count >= 2 { chartCard }
                 if !records.isEmpty { recordsCard }
@@ -87,6 +117,12 @@ struct ExerciseDetailView: View {
             .padding(.bottom, 28)
         }
         .screenBackground(settings.accentColor)
+        .task(id: exercise.catalogID) {
+            board = nil
+            guard !exercise.catalogID.isEmpty, let api = SyncService.shared.peakAPI else { return }
+            await SocialStore.shared.refresh()
+            board = try? await api.board(catalog: exercise.catalogID)
+        }
         .navigationTitle(exercise.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

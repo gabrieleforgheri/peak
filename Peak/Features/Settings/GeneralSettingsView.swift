@@ -9,6 +9,15 @@ struct GeneralSettingsView: View {
         SettingsPage {
             unitCard
             accentCard
+            GlassCard {
+                Button { settings.tutorialDone = false; AppNav.shared.tab = .home } label: {
+                    Label("Rivedi il tutorial", systemImage: "questionmark.circle")
+                        .font(Theme.rounded(15, .semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(settings.accentColor)
+            }
         }
     }
 

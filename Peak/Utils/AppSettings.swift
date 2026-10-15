@@ -89,6 +89,8 @@ final class AppSettings {
         static let availablePlates = "settings.availablePlates"
         static let didSeeWelcome = "settings.didSeeWelcome"
         static let didLinkCatalog = "settings.didLinkCatalog"
+        static let tutorialDone = "settings.tutorialDone"
+        static let weeklyGoal = "settings.weeklyGoal"
     }
 
     private let defaults: UserDefaults
@@ -166,6 +168,16 @@ final class AppSettings {
         didSet { defaults.set(didLinkCatalog, forKey: Key.didLinkCatalog) }
     }
 
+    /// Il tutorial l'hai già fatto (su un dispositivo qualsiasi). Segue l'account.
+    var tutorialDone: Bool {
+        didSet { defaults.set(tutorialDone, forKey: Key.tutorialDone) }
+    }
+
+    /// Allenamenti a settimana che ti sei dato come obiettivo; 0 = non l'hai ancora scelto. Segue l'account.
+    var weeklyGoal: Int {
+        didSet { defaults.set(weeklyGoal, forKey: Key.weeklyGoal) }
+    }
+
     var lastBackupDate: Date? {
         didSet { defaults.set(lastBackupDate, forKey: Key.lastBackup) }
     }
@@ -187,6 +199,8 @@ final class AppSettings {
             ?? [25, 20, 15, 10, 5, 2.5, 1.25]
         self.didSeeWelcome = defaults.bool(forKey: Key.didSeeWelcome)
         self.didLinkCatalog = defaults.bool(forKey: Key.didLinkCatalog)
+        self.tutorialDone = defaults.bool(forKey: Key.tutorialDone)
+        self.weeklyGoal = defaults.integer(forKey: Key.weeklyGoal)
     }
 
     var accentColor: Color { accent.color }

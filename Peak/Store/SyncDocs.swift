@@ -23,7 +23,7 @@ enum SyncDocs {
     /// Le impostazioni che seguono l'account. Quelle del Watch, di Salute e dei dati interni restano del dispositivo.
     static let settingKeys = [
         "unit", "accent", "restTimerEnabled", "restSeconds", "progressionEnabled", "repRangeMin",
-        "repRangeMax", "plateCalculatorEnabled", "barWeight", "availablePlates"
+        "repRangeMax", "plateCalculatorEnabled", "barWeight", "availablePlates", "tutorialDone", "weeklyGoal"
     ]
 
     private static func settingValue(_ name: String, _ settings: AppSettings) -> Any {
@@ -38,6 +38,8 @@ enum SyncDocs {
         case "plateCalculatorEnabled": return settings.plateCalculatorEnabled
         case "barWeight": return settings.barWeight
         case "availablePlates": return settings.availablePlates
+        case "tutorialDone": return settings.tutorialDone
+        case "weeklyGoal": return settings.weeklyGoal
         default: return NSNull()
         }
     }
@@ -56,6 +58,8 @@ enum SyncDocs {
         case "repRangeMax": guard let v = number(1, 30) else { return false }; settings.repRangeMax = Int(v)
         case "plateCalculatorEnabled": guard let v = value as? Bool else { return false }; settings.plateCalculatorEnabled = v
         case "barWeight": guard let v = number(0, 100) else { return false }; settings.barWeight = v
+        case "tutorialDone": guard let v = value as? Bool else { return false }; settings.tutorialDone = v
+        case "weeklyGoal": guard let v = number(0, 7) else { return false }; settings.weeklyGoal = Int(v)
         case "availablePlates":
             guard let list = value as? [NSNumber] else { return false }
             settings.availablePlates = list.map(\.doubleValue)

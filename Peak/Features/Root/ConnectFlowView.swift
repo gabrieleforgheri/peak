@@ -56,12 +56,12 @@ struct ConnectFlowView: View {
                 title: "Il tuo account Peak è vuoto",
                 text: hasLocalData
                     ? "Puoi portarci i dati di questo iPhone oppure partire da un backup."
-                    : "Parti dal catalogo di macchinari o importa un backup."
+                    : "Parti da zero (i macchinari li aggiungi cercando nel catalogo) o importa un backup."
             )
             if hasLocalData {
                 choice("Carica i dati di questo iPhone", primary: true) { Task { await flow.uploadLocalData() } }
             } else {
-                choice("Parti dal catalogo", primary: true) { Task { await flow.startFromCatalog() } }
+                choice("Parti da zero", primary: true) { Task { await flow.startEmpty() } }
             }
             choice("Importa un backup", primary: false) { showingImporter = true }
             if let importError { errorText(importError) }

@@ -5,7 +5,7 @@ import Observation
 /// Le scelte del primo collegamento a Peak (yG). Prima di toccare qualcosa sull'iPhone si scrive
 /// `Documents/Peak-prima-del-collegamento.json`; il token si salva solo a scelta finita (SyncService).
 ///
-///  - server vuoto: carica i dati dell'iPhone, importa un backup, oppure parti dal catalogo;
+///  - server vuoto: carica i dati dell'iPhone, importa un backup, oppure parti da zero;
 ///  - server con dati e iPhone con dati propri: «Usa i dati del server» oppure «Unisci»;
 ///  - server con dati e iPhone solo col catalogo: si prendono i dati del server, senza domande.
 @MainActor
@@ -85,11 +85,9 @@ final class ConnectFlow {
         }
     }
 
-    func startFromCatalog() async {
-        await run("Preparo il catalogo…") {
-            try await self.sync.seedServerCatalog()
-            try await self.sync.replaceLocalWithServer()
-        }
+    /// Account vuoto, niente da caricare: si collega e basta. I macchinari si aggiungono cercando nel catalogo.
+    func startEmpty() async {
+        await run("Collego l'account…") { try await self.sync.replaceLocalWithServer() }
     }
 
     func importBackup(_ data: Data) async {

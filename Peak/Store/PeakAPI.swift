@@ -63,7 +63,7 @@ struct PeakAPI {
 
     // MARK: - Richieste
 
-    private func send(
+    func send(
         _ path: String,
         method: String = "GET",
         query: [URLQueryItem] = [],
@@ -159,10 +159,5 @@ struct PeakAPI {
         var query = [URLQueryItem(name: "modo", value: replace ? "sostituisci" : "unisci")]
         if first { query.append(URLQueryItem(name: "primo", value: "1")) }
         _ = try await send("api/importa", method: "POST", query: query, body: data, contentType: "application/json")
-    }
-
-    /// Il catalogo da 98 macchinari, una volta sola per account.
-    func seedCatalog() async throws {
-        _ = try await send("api/catalogo", method: "POST", body: Data(), contentType: "application/json")
     }
 }

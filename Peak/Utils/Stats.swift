@@ -144,4 +144,21 @@ enum Stats {
         }
         return streak
     }
+
+    /// L'obiettivo della settimana: quanti allenamenti fai di solito. La media delle ultime otto settimane (questa esclusa),
+    /// arrotondata, fra 2 e 5; con meno di due settimane di storia, 3. Come `weeklyGoal` in common/stats.ts.
+    static func weeklyGoal(workouts: [Workout], calendar: Calendar = .current, now: Date = Date()) -> Int {
+        var cal = calendar
+        cal.firstWeekday = 2
+        guard let thisWeek = cal.dateInterval(of: .weekOfYear, for: now)?.start,
+              let oldest = cal.date(byAdding: .weekOfYear, value: -8, to: thisWeek) else { return 3 }
+        var perWeek: [Date: Int] = [:]
+        for w in workouts {
+            guard let start = cal.dateInterval(of: .weekOfYear, for: w.date)?.start, start < thisWeek, start >= oldest else { continue }
+            perWeek[start, default: 0] += 1
+        }
+        guard perWeek.count >= 2 else { return 3 }
+        let average = Double(perWeek.values.reduce(0, +)) / 8
+        return min(5, max(2, Int(average.rounded())))
+    }
 }

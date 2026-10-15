@@ -75,6 +75,8 @@ final class SyncService {
 
     private var context: ModelContext { container!.mainContext }
     private var api: PeakAPI? { credentials.map { PeakAPI(token: $0.token) } }
+    /// Per le chiamate agli amici, che stanno fuori dalla sincronizzazione.
+    var peakAPI: PeakAPI? { api }
 
     var isConnected: Bool { state == .connected || state == .expired }
 
@@ -374,11 +376,6 @@ final class SyncService {
     func uploadBackup(_ data: Data, replace: Bool, first: Bool) async throws {
         guard let api else { throw PeakAPIError.unauthorized }
         try await api.importBackup(data, replace: replace, first: first)
-    }
-
-    func seedServerCatalog() async throws {
-        guard let api else { throw PeakAPIError.unauthorized }
-        try await api.seedCatalog()
     }
 
     /// Sostituisce i dati dell'iPhone con quelli del server. La rete si usa per prima: se cade, i dati
