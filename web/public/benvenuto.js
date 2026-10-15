@@ -1,6 +1,6 @@
-// Benvenuto di Peak: cinque scene in ciclo (il piano è in brag-output-*/brag-plan.md). Solo italiano e inglese, come l'app.
+// Benvenuto di Peak: sei scene in ciclo (il piano è in brag-output-*/brag-plan.md). Solo italiano e inglese, come l'app.
 const en = {
-	tag: 'Your real max.', maxes: 'Maxes', bench: 'Bench press', cap2: 'The weight you actually lifted, on every machine.',
+	tag: 'Your real max.', maxes: 'Maxes', bench: 'Bench press', cap2: 'The weight you actually lifted, on every machine.', tpl: 'Routines', ex3: '3 exercises', capT: 'Your routine, ready for every workout.',
 	set: 'Set', new: 'NEW RECORD', cap3: 'A record? You see it right away.', prog: 'Progress', gain: 'Biggest gainers',
 	cap4: 'Week after week.', cap5: 'On the web and on iPhone.<br />Always in sync.', login: 'Sign in with yG', note: 'Peak uses your yG account.'
 }
@@ -12,7 +12,7 @@ if (!navigator.language?.toLowerCase().startsWith('it')) {
 const scenes = [...document.querySelectorAll('.scene')]
 const dots = [...document.querySelectorAll('#dots i')]
 const count = document.getElementById('count')
-const durations = [3200, 5500, 4500, 4500, 4500]
+const durations = [3200, 5500, 5000, 4500, 4500, 4500]
 
 const logo = document.getElementById('logo')
 const rect = (id) => document.getElementById(id).getBoundingClientRect()
@@ -30,7 +30,7 @@ function show(n) {
 	place(n)
 	scenes.forEach((s, i) => s.classList.toggle('on', i === n))
 	dots.forEach((d, i) => d.classList.toggle('on', i === n))
-	if (n === 2) { // la serie batte il record: 180 → 190
+	if (n === 3) { // la serie batte il record: 180 → 190
 		count.textContent = '180'
 		setTimeout(() => {
 			const t0 = performance.now()
@@ -45,7 +45,7 @@ function show(n) {
 }
 
 if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-	show(4) // senza movimento: l'ultima scena, ferma
+	show(5) // senza movimento: l'ultima scena, ferma
 } else {
 	let n = 0
 	const next = () => { show(n); setTimeout(next, durations[n]); n = (n + 1) % scenes.length }

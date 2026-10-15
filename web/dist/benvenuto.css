@@ -27,7 +27,7 @@ html, body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.
 .stage { position: relative; flex: 1; min-height: 360px; }
 .scene { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 12px; opacity: 0; transition: opacity 0.7s ease; pointer-events: none; }
 .scene.on { opacity: 1; }
-.s1, .s5 { align-items: center; text-align: center; }
+.s1, .s6 { align-items: center; text-align: center; }
 
 .slot { width: 96px; height: 96px; }
 .dock { position: absolute; top: calc(env(safe-area-inset-top) + 16px); left: 20px; width: 40px; height: 40px; }
@@ -52,21 +52,31 @@ html, body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.
 /* ogni scena ripete le sue animazioni a ogni ingresso: valgono solo con .on */
 .s1.on .word { animation: rise 0.7s 0.35s both; }
 .s1.on .tag { animation: rise 0.7s 0.9s both; }
-.s5.on .tag { animation: rise 0.8s 0.5s both; }
+.s6.on .tag { animation: rise 0.8s 0.5s both; }
 .s2.on .card { animation: rise 0.6s calc(0.3s + var(--i) * 0.55s) both; }
-.s2.on .cap, .s3.on .cap, .s4.on .cap { animation: rise 0.7s 2.4s both; }
-.s3.on .hero { animation: rise 0.6s 0.2s both; }
-.s3.on .pr { animation: stamp 0.6s 2s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
-.s3.on .cap { animation-delay: 3s; }
-.s4.on .chart { animation: rise 0.6s 0.2s both; }
-.s4.on .gain { animation: rise 0.6s 2s both; }
-.s4.on .bars i { animation: grow 0.8s calc(0.5s + var(--i) * 0.12s) cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-.s4.on .cap { animation-delay: 2.9s; }
+.s2.on .cap, .s3.on .cap, .s4.on .cap, .s5.on .cap { animation: rise 0.7s 2.4s both; }
+.s3.on .tpl { animation: rise 0.6s 0.2s both; }
+.s3.on .line { animation: rise 0.5s calc(0.8s + var(--i) * 0.5s) both; }
+.s3.on .cap { animation-delay: 2.9s; }
+.s4.on .hero { animation: rise 0.6s 0.2s both; }
+.s4.on .pr { animation: stamp 0.6s 2s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+.s4.on .cap { animation-delay: 3s; }
+.s5.on .chart { animation: rise 0.6s 0.2s both; }
+.s5.on .gain { animation: rise 0.6s 2s both; }
+.s5.on .bars i { animation: grow 0.8s calc(0.5s + var(--i) * 0.12s) cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.s5.on .cap { animation-delay: 2.9s; }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
 @keyframes pop { from { opacity: 0; transform: scale(0.6); } }
 @keyframes stamp { from { opacity: 0; transform: scale(0.7); } }
 @keyframes grow { from { transform: scaleY(0); } }
 
+/* la scheda: nome, poi una riga alla volta con il suo obiettivo */
+.tpl { display: block; }
+.tpl .head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.tpl .head b { font-size: 22px; letter-spacing: -0.01em; }
+.tpl .line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 12px 0 0; margin-top: 12px;
+	border-top: 1px solid var(--stroke); font-size: 15px; font-weight: 600; }
+.tpl .line span:last-child { color: var(--accent); font-weight: 700; font-size: 14px; }
 .hero { box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.25), 0 0 40px rgba(var(--accent-rgb), 0.12); }
 .pr { align-self: flex-start; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 800; letter-spacing: 0.08em;
 	color: #0b0d14; background: var(--pos); box-shadow: 0 0 24px rgba(95, 217, 138, 0.45); }
