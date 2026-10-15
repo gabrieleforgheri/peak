@@ -11,7 +11,7 @@ export const GLYPHS = [
 ] as const
 export type GlyphName = (typeof GLYPHS)[number]
 
-export const KINDS = ['setting', 'exercise', 'record', 'workout', 'set', 'bodyweight'] as const
+export const KINDS = ['setting', 'exercise', 'record', 'workout', 'set', 'bodyweight', 'template'] as const
 export type Kind = (typeof KINDS)[number]
 
 // ---- date e uuid -------------------------------------------------------------------------
@@ -52,7 +52,13 @@ export interface ExerciseDoc {
   isUnilateral: boolean; restSeconds: number
 }
 export interface RecordDoc { exercise: string; date: string; weight: number; reps: number; note: string }
-export interface WorkoutDoc { date: string; endedAt: string | null; note: string; name: string; focus: string }
+/** Una riga di scheda: sets/reps 0 = non indicato; weight in kg, null = si mostra l'ultimo usato. */
+export interface TemplateItem { exercise: string; sets: number; repsMin: number; repsMax: number; weight: number | null }
+export interface TemplateDoc { name: string; items: TemplateItem[]; sortIndex: number; createdAt: string }
+/** `template`: la scheda da cui è partito (uuid o ''); `plan`: copia delle sue righe, poi modificata in sessione. */
+export interface WorkoutDoc {
+  date: string; endedAt: string | null; note: string; name: string; focus: string; template: string; plan: TemplateItem[]
+}
 export interface SetDoc {
   workout: string; exercise: string | null; weight: number; reps: number; rpe: number | null
   isWarmup: boolean; order: number; createdAt: string; noRecord: boolean
@@ -62,7 +68,7 @@ export interface SettingDoc { value: unknown }
 
 export interface DocDataMap {
   exercise: ExerciseDoc; record: RecordDoc; workout: WorkoutDoc; set: SetDoc
-  bodyweight: BodyWeightDoc; setting: SettingDoc
+  bodyweight: BodyWeightDoc; setting: SettingDoc; template: TemplateDoc
 }
 
 // ---- impostazioni condivise ----------------------------------------------------------------
@@ -74,6 +80,7 @@ export const SETTING_DEFAULTS = {
   progressionEnabled: true, repRangeMin: 8, repRangeMax: 12,
   plateCalculatorEnabled: true, barWeight: 20, availablePlates: [25, 20, 15, 10, 5, 2.5, 1.25],
   lastExportDate: null as string | null,
+  templateSets: true, templateReps: true, templateWeight: true,
 } as const
 export type SettingKey = keyof typeof SETTING_DEFAULTS
 
@@ -94,6 +101,7 @@ function cleanSetting(key: string, v: unknown): unknown {
     case 'formula': return v === 'epley' || v === 'brzycki' ? v : undefined
     case 'accent': return (ACCENTS as readonly unknown[]).includes(v) ? v : undefined
     case 'restTimerEnabled': case 'progressionEnabled': case 'plateCalculatorEnabled':
+    case 'templateSets': case 'templateReps': case 'templateWeight':
       return typeof v === 'boolean' ? v : undefined
     case 'restSeconds': return int(v, 15, 600) ?? undefined
     case 'repRangeMin': case 'repRangeMax': return int(v, 1, 30) ?? undefined
@@ -116,6 +124,27 @@ export function cleanFocus(raw: unknown): string | null {
   const parts = raw.split(',').filter(Boolean)
   if (!parts.every((p) => (MUSCLE_GROUPS as readonly string[]).includes(p))) return null
   return MUSCLE_GROUPS.filter((g) => parts.includes(g)).join(',')
+}
+
+export const MAX_ITEMS = 60
+
+/** Righe di scheda/piano: null se qualcosa non torna. */
+export function cleanItems(raw: unknown): TemplateItem[] | null {
+  if (!Array.isArray(raw) || raw.length > MAX_ITEMS) return null
+  const out: TemplateItem[] = []
+  for (const r of raw) {
+    if (typeof r !== 'object' || r === null) return null
+    const o = r as Record<string, unknown>
+    const exercise = normUuid(o.exercise)
+    const sets = int(o.sets ?? 0, 0, 20)
+    const repsMin = int(o.repsMin ?? 0, 0, 100)
+    const repsMax = int(o.repsMax ?? 0, 0, 100)
+    const weight = o.weight === null || o.weight === undefined ? null : num(o.weight, 0, 2000)
+    if (!exercise || sets === null || repsMin === null || repsMax === null || repsMin > repsMax) return null
+    if (o.weight != null && weight === null) return null
+    out.push({ exercise, sets, repsMin, repsMax, weight })
+  }
+  return out
 }
 
 /**
@@ -177,12 +206,16 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
       const note = str(o.note ?? '', 2000)
       const name = str(o.name ?? '', 80)
       const focus = cleanFocus(o.focus ?? '')
+      const template = o.template == null || o.template === '' ? '' : normUuid(o.template)
+      const plan = cleanItems(o.plan ?? [])
       if (date === null) return fail('date')
       if (o.endedAt != null && endedAt === null) return fail('endedAt')
       if (note === null) return fail('note')
       if (name === null) return fail('name')
       if (focus === null) return fail('focus')
-      return { data: { date: isoSec(date), endedAt: endedAt === null ? null : isoSec(endedAt), note, name, focus } }
+      if (template === null) return fail('template')
+      if (plan === null) return fail('plan')
+      return { data: { date: isoSec(date), endedAt: endedAt === null ? null : isoSec(endedAt), note, name, focus, template, plan } }
     }
     case 'set': {
       const workout = normUuid(o.workout)
@@ -206,6 +239,17 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
         },
       }
     }
+    case 'template': {
+      const name = str(o.name, 80, 1)?.trim()
+      const items = cleanItems(o.items ?? [])
+      const sortIndex = int(o.sortIndex ?? 0, -1e6, 1e6)
+      const createdAt = parseIso(o.createdAt)
+      if (!name) return fail('name')
+      if (items === null) return fail('items')
+      if (sortIndex === null) return fail('sortIndex')
+      if (createdAt === null) return fail('createdAt')
+      return { data: { name, items, sortIndex, createdAt: isoSec(createdAt) } }
+    }
     case 'bodyweight': {
       const date = parseIso(o.date)
       const weight = num(o.weight, 20, 400)
@@ -214,6 +258,11 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
       return { data: { date: isoSec(date), weight, fromHealth: o.fromHealth === true } }
     }
   }
+}
+
+/** Documenti salvati prima delle schede: i campi nuovi mancano, qui prendono il valore di partenza. */
+export function upgradeDoc<T>(kind: Kind, data: T): T {
+  return kind === 'workout' && data ? ({ template: '', plan: [], ...data } as T) : data
 }
 
 /** Chiave unica di un documento, per mappe in memoria. */
@@ -227,6 +276,7 @@ export function split(docs: Iterable<LiveDoc>) {
   const out = {
     exercises: [] as LiveDoc<'exercise'>[], records: [] as LiveDoc<'record'>[], workouts: [] as LiveDoc<'workout'>[],
     sets: [] as LiveDoc<'set'>[], bodyweights: [] as LiveDoc<'bodyweight'>[], settings: [] as LiveDoc<'setting'>[],
+    templates: [] as LiveDoc<'template'>[],
   }
   for (const d of docs) {
     if (d.kind === 'exercise') out.exercises.push(d as LiveDoc<'exercise'>)
@@ -234,6 +284,7 @@ export function split(docs: Iterable<LiveDoc>) {
     else if (d.kind === 'workout') out.workouts.push(d as LiveDoc<'workout'>)
     else if (d.kind === 'set') out.sets.push(d as LiveDoc<'set'>)
     else if (d.kind === 'bodyweight') out.bodyweights.push(d as LiveDoc<'bodyweight'>)
+    else if (d.kind === 'template') out.templates.push(d as LiveDoc<'template'>)
     else out.settings.push(d as LiveDoc<'setting'>)
   }
   return out

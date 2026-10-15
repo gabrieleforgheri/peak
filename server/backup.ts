@@ -5,7 +5,7 @@
 import { createHash } from 'node:crypto'
 import {
   isoSec, normUuid, parseDoc, parseIso, split, MUSCLE_GROUPS, GLYPHS,
-  type DocDataMap, type ExerciseDoc, type Kind, type LiveDoc, type MuscleGroup,
+  type DocDataMap, type ExerciseDoc, type Kind, type LiveDoc, type MuscleGroup, type TemplateItem,
 } from '../common/docs.ts'
 import { deriveRecords, type RecManual, type RecSet } from '../common/records.ts'
 import { EPSILON } from '../common/domain.ts'
@@ -23,17 +23,29 @@ export interface ExerciseDTO {
   isArchived: boolean; createdAt: string; glyph?: string; photo?: string; photoOffset?: number
   isUnilateral?: boolean; restSeconds?: number; records: RecordDTO[]
 }
+/** Riga di scheda; `weight` assente = si mostra l'ultimo usato. */
+export interface ItemDTO { exerciseUUID: string; sets: number; repsMin: number; repsMax: number; weight?: number }
+export interface TemplateDTO { uuid: string; name: string; sortIndex: number; createdAt: string; items: ItemDTO[] }
 export interface WorkoutDTO {
   uuid: string; date: string; endedAt?: string; note: string; focus: string; name: string; sets: SetDTO[]
+  template?: string; plan?: ItemDTO[]
 }
 export interface BodyWeightDTO { uuid: string; date: string; weight: number; fromHealth: boolean }
 export interface BackupFile {
   version: number; exportedAt: string; exercises: ExerciseDTO[]; workouts: WorkoutDTO[]; bodyWeights?: BodyWeightDTO[]
+  templates?: TemplateDTO[]
 }
 
 // ---- esportazione ---------------------------------------------------------------------------------------
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
+
+const toItemDTOs = (items: TemplateItem[], liveEx: Set<string>): ItemDTO[] =>
+  items.filter((i) => liveEx.has(i.exercise)).map((i) => {
+    const out: ItemDTO = { exerciseUUID: i.exercise, sets: i.sets, repsMin: i.repsMin, repsMax: i.repsMax }
+    if (i.weight !== null) out.weight = i.weight
+    return out
+  })
 
 /** `photo(sha)` restituisce i byte del JPEG, o null se non c'è. */
 export function exportBackup(docs: Iterable<LiveDoc>, photo: (sha: string) => Uint8Array | null, now = Date.now()): BackupFile {
@@ -93,6 +105,8 @@ export function exportBackup(docs: Iterable<LiveDoc>, photo: (sha: string) => Ui
           }),
       }
       if (w.endedAt) dto.endedAt = w.endedAt
+      if (w.template) dto.template = w.template
+      if (w.plan.length) dto.plan = toItemDTOs(w.plan, liveEx)
       return dto
     })
 
@@ -100,7 +114,11 @@ export function exportBackup(docs: Iterable<LiveDoc>, photo: (sha: string) => Ui
     .sort((a, b) => cmp(a.data.date, b.data.date) || cmp(a.uuid, b.uuid))
     .map(({ uuid, data: b }) => ({ uuid, date: b.date, weight: b.weight, fromHealth: b.fromHealth }))
 
-  return { version: BACKUP_VERSION, exportedAt: isoSec(now), exercises, workouts, bodyWeights }
+  const templates: TemplateDTO[] = [...d.templates]
+    .sort((a, b) => a.data.sortIndex - b.data.sortIndex || cmp(a.data.createdAt, b.data.createdAt) || cmp(a.uuid, b.uuid))
+    .map(({ uuid, data: t }) => ({ uuid, name: t.name, sortIndex: t.sortIndex, createdAt: t.createdAt, items: toItemDTOs(t.items, liveEx) }))
+
+  return { version: BACKUP_VERSION, exportedAt: isoSec(now), exercises, workouts, bodyWeights, templates }
 }
 
 /** JSON a chiavi ordinate e indentato, come lo scrive l'app. */
@@ -124,6 +142,7 @@ export function parseBackup(raw: unknown): ParseResult {
   if (raw.version > BACKUP_VERSION) return { error: 'versione', version: raw.version }
   if (!Array.isArray(raw.exercises) || !Array.isArray(raw.workouts)) return { error: 'invalido' }
   if (raw.bodyWeights !== undefined && !Array.isArray(raw.bodyWeights)) return { error: 'invalido' }
+  if (raw.templates !== undefined && !Array.isArray(raw.templates)) return { error: 'invalido' }
   const bad = { error: 'invalido' } as const
   const exercises: ExerciseDTO[] = []
   for (const e of raw.exercises) {
@@ -148,6 +167,20 @@ export function parseBackup(raw: unknown): ParseResult {
       restSeconds: typeof e.restSeconds === 'number' ? e.restSeconds : undefined, records,
     })
   }
+  /** Righe di scheda del file: tollerante, una riga rotta si scarta (non invalida tutto il backup). */
+  const readItems = (v: unknown): ItemDTO[] | null => {
+    if (v === undefined) return []
+    if (!Array.isArray(v)) return null
+    const out: ItemDTO[] = []
+    for (const i of v) {
+      if (!isObj(i)) return null
+      const exerciseUUID = normUuid(i.exerciseUUID)
+      if (!exerciseUUID) continue
+      const n = (x: unknown) => (typeof x === 'number' ? x : 0)
+      out.push({ exerciseUUID, sets: n(i.sets), repsMin: n(i.repsMin), repsMax: n(i.repsMax), weight: typeof i.weight === 'number' ? i.weight : undefined })
+    }
+    return out
+  }
   const workouts: WorkoutDTO[] = []
   for (const w of raw.workouts) {
     if (!isObj(w)) return bad
@@ -169,9 +202,12 @@ export function parseBackup(raw: unknown): ParseResult {
         excludedFromRecords: s.excludedFromRecords === true ? true : undefined,
       })
     }
+    const plan = readItems(w.plan)
+    if (plan === null) return bad
     workouts.push({
       uuid, date: isoSec(date), endedAt: endedAt === null ? undefined : isoSec(endedAt), note: typeof w.note === 'string' ? w.note : '',
       focus: typeof w.focus === 'string' ? w.focus : '', name: typeof w.name === 'string' ? w.name : '', sets,
+      template: normUuid(w.template) ?? undefined, plan: plan.length ? plan : undefined,
     })
   }
   const bodyWeights: BodyWeightDTO[] = []
@@ -182,8 +218,17 @@ export function parseBackup(raw: unknown): ParseResult {
     if (!uuid || date === null || typeof b.weight !== 'number') return bad
     bodyWeights.push({ uuid, date: isoSec(date), weight: b.weight, fromHealth: b.fromHealth === true })
   }
+  const templates: TemplateDTO[] = []
+  for (const t of (raw.templates as unknown[] | undefined) ?? []) {
+    if (!isObj(t)) return bad
+    const uuid = normUuid(t.uuid)
+    const createdAt = parseIso(t.createdAt)
+    const items = readItems(t.items)
+    if (!uuid || typeof t.name !== 'string' || createdAt === null || items === null) return bad
+    templates.push({ uuid, name: t.name, sortIndex: typeof t.sortIndex === 'number' ? t.sortIndex : 0, createdAt: isoSec(createdAt), items })
+  }
   const exportedAt = parseIso(raw.exportedAt)
-  return { file: { version: raw.version, exportedAt: isoSec(exportedAt ?? 0), exercises, workouts, bodyWeights } }
+  return { file: { version: raw.version, exportedAt: isoSec(exportedAt ?? 0), exercises, workouts, bodyWeights, templates } }
 }
 
 // ---- importazione -------------------------------------------------------------------------------------------
@@ -193,7 +238,7 @@ export interface ImportPlan {
   del: { kind: Kind; uuid: string }[]
   /** Foto nuove da salvare, per sha256. */
   photos: Map<string, Uint8Array>
-  conteggi: { esercizi: number; allenamenti: number; serie: number; record: number; pesate: number }
+  conteggi: { esercizi: number; allenamenti: number; serie: number; record: number; pesate: number; schede: number }
   /** Record automatici senza una serie che li spieghi: scartati. */
   orfani: number
   /** Documenti che non hanno passato la validazione. */
@@ -217,7 +262,7 @@ function decodePhoto(b64: string | undefined): { sha: string; bytes: Uint8Array 
 export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'unisci' | 'sostituisci'): ImportPlan {
   const l = split(live)
   const plan: ImportPlan = {
-    put: [], del: [], photos: new Map(), conteggi: { esercizi: 0, allenamenti: 0, serie: 0, record: 0, pesate: 0 }, orfani: 0, scartati: 0,
+    put: [], del: [], photos: new Map(), conteggi: { esercizi: 0, allenamenti: 0, serie: 0, record: 0, pesate: 0, schede: 0 }, orfani: 0, scartati: 0,
   }
   const putKeys = new Set<string>()
   const add = (kind: Kind, uuid: string, data: unknown, count?: keyof ImportPlan['conteggi']) => {
@@ -242,6 +287,7 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
   const liveRecIds = new Set(l.records.map((r) => r.uuid))
   const liveWk = new Set(l.workouts.map((w) => w.uuid))
   const liveBw = new Set(l.bodyweights.map((b) => b.uuid))
+  const liveTpl = new Set(l.templates.map((t) => t.uuid))
 
   // file → esistente (o sé stesso)
   const exMap = new Map<string, string>()
@@ -291,9 +337,20 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
     }
   }
 
+  /** Righe del file con l'esercizio riportato a quello vero (unione per nome); quelle senza esercizio spariscono. */
+  const mapItems = (items: ItemDTO[] | undefined) =>
+    (items ?? []).flatMap((i) => {
+      const ex = exMap.get(i.exerciseUUID) ?? (liveEx.has(i.exerciseUUID) ? i.exerciseUUID : null)
+      return ex ? [{ exercise: ex, sets: i.sets, repsMin: i.repsMin, repsMax: i.repsMax, weight: i.weight ?? null }] : []
+    })
+
   for (const w of file.workouts) {
     if (merge && liveWk.has(w.uuid)) continue
-    if (!add('workout', w.uuid, { date: w.date, endedAt: w.endedAt ?? null, note: w.note, name: w.name, focus: w.focus }, 'allenamenti')) continue
+    const workoutDoc = {
+      date: w.date, endedAt: w.endedAt ?? null, note: w.note, name: w.name, focus: w.focus,
+      template: w.template ?? '', plan: mapItems(w.plan),
+    }
+    if (!add('workout', w.uuid, workoutDoc, 'allenamenti')) continue
     for (const s of w.sets) {
       const ex = s.exerciseUUID ? (exMap.get(s.exerciseUUID) ?? (liveEx.has(s.exerciseUUID) ? s.exerciseUUID : null)) : null
       add('set', s.uuid, {
@@ -307,8 +364,13 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
     add('bodyweight', b.uuid, { date: b.date, weight: b.weight, fromHealth: b.fromHealth }, 'pesate')
   }
 
+  for (const t of file.templates ?? []) {
+    if (merge && liveTpl.has(t.uuid)) continue
+    add('template', t.uuid, { name: t.name.trim() || 'Senza nome', items: mapItems(t.items), sortIndex: t.sortIndex, createdAt: t.createdAt }, 'schede')
+  }
+
   if (!merge) {
-    for (const d of [...l.exercises, ...l.records, ...l.workouts, ...l.sets, ...l.bodyweights]) {
+    for (const d of [...l.exercises, ...l.records, ...l.workouts, ...l.sets, ...l.bodyweights, ...l.templates]) {
       if (!putKeys.has(`${d.kind}:${d.uuid}`)) plan.del.push({ kind: d.kind, uuid: d.uuid })
     }
   }

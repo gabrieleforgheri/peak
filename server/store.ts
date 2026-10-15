@@ -6,7 +6,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  KINDS, SETTING_DEFAULTS, normUuid, parseDoc, type DocDataMap, type Kind, type LiveDoc,
+  KINDS, SETTING_DEFAULTS, normUuid, parseDoc, upgradeDoc, type DocDataMap, type Kind, type LiveDoc,
 } from '../common/docs.ts'
 import type { ImportPlan } from './backup.ts'
 
@@ -96,7 +96,7 @@ export function openStore(dataDir: string) {
   }
 
   const toWire = (r: Record<string, unknown>): WireDoc => ({
-    kind: r.kind as Kind, uuid: r.uuid as string, data: r.data ? JSON.parse(r.data as string) : null,
+    kind: r.kind as Kind, uuid: r.uuid as string, data: r.data ? upgradeDoc(r.kind as Kind, JSON.parse(r.data as string)) : null,
     m: Number(r.m), deleted: r.deleted === 1,
   })
 
@@ -197,7 +197,7 @@ export function openStore(dataDir: string) {
 
     live(userId: number): LiveDoc[] {
       return (q.live.all(userId) as Record<string, unknown>[]).map((r) => ({
-        kind: r.kind as Kind, uuid: r.uuid as string, data: JSON.parse(r.data as string) as DocDataMap[Kind],
+        kind: r.kind as Kind, uuid: r.uuid as string, data: upgradeDoc(r.kind as Kind, JSON.parse(r.data as string)) as DocDataMap[Kind],
       }))
     },
     hasData: (userId: number) => q.hasData.get(userId) !== undefined,

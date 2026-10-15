@@ -44,7 +44,7 @@ test('import → export: stessi dati, record automatici rigenerati dalle serie',
     const uid = s.upsertUser('sub-1', 'a@b.it', 'a', 'A').id
     const plan = planImport(parse(sample()), [], 'sostituisci')
     s.applyPlan(uid, plan)
-    assert.deepEqual(plan.conteggi, { esercizi: 2, allenamenti: 1, serie: 3, record: 1, pesate: 1 })
+    assert.deepEqual(plan.conteggi, { esercizi: 2, allenamenti: 1, serie: 3, record: 1, pesate: 1, schede: 0 })
     assert.equal(plan.orfani, 1, 'il record automatico senza serie è scartato e contato')
     const out = exportBackup(s.live(uid), photoOf(s, uid), Date.parse('2026-10-14T12:00:00Z'))
     const ex = out.exercises[0]
@@ -83,6 +83,38 @@ test('backup vecchi senza i campi opzionali, date con millisecondi, uuid minusco
   const plan = planImport(f, [], 'sostituisci')
   assert.equal(plan.conteggi.pesate, 0)
   assert.equal(plan.conteggi.allenamenti, 1)
+})
+
+test('schede e piano dell\'allenamento: round-trip, unione per nome, backup vecchi senza schede', () => {
+  const { s, done } = store()
+  try {
+    const uid = s.upsertUser('s', 'a@b.it', 'a', 'A').id
+    const f = sample()
+    f.templates = [{ uuid: U(400), name: 'Push 1', sortIndex: 0, createdAt: '2026-09-20T08:00:00Z', items: [
+      { exerciseUUID: U(1), sets: 4, repsMin: 8, repsMax: 10, weight: 60 },
+      { exerciseUUID: U(2), sets: 3, repsMin: 10, repsMax: 12 },
+      { exerciseUUID: U(999), sets: 3, repsMin: 10, repsMax: 12 }, // macchinario che non c'è: la riga sparisce
+    ] }]
+    f.workouts[0].template = U(400)
+    f.workouts[0].plan = [{ exerciseUUID: U(1), sets: 4, repsMin: 8, repsMax: 10, weight: 60 }]
+    const plan = planImport(parse(f), [], 'sostituisci')
+    assert.equal(plan.conteggi.schede, 1)
+    s.applyPlan(uid, plan)
+    const out = exportBackup(s.live(uid), photoOf(s, uid))
+    assert.deepEqual(out.templates?.[0].items, [
+      { exerciseUUID: U(1), sets: 4, repsMin: 8, repsMax: 10, weight: 60 },
+      { exerciseUUID: U(2), sets: 3, repsMin: 10, repsMax: 12 },
+    ])
+    assert.equal(out.workouts[0].template, U(400))
+    assert.equal(out.workouts[0].plan?.length, 1)
+    const text = serializeBackup(out)
+    assert.equal(planImport(parse(JSON.parse(text)), [], 'sostituisci').conteggi.schede, 1)
+    // unione: la scheda già presente non si duplica
+    assert.equal(planImport(parse(JSON.parse(text)), s.live(uid), 'unisci').conteggi.schede, 0)
+    // un file vecchio, senza schede né piano, si legge come prima
+    const old = JSON.parse(JSON.stringify(sample())); assert.equal(parse(old).templates?.length, 0)
+    assert.equal(parse(old).workouts[0].plan, undefined)
+  } finally { done() }
 })
 
 test('file non valido o di una versione più nuova', () => {
