@@ -4,22 +4,13 @@
 	import { call, resync, syncNow } from '../lib/sync.ts'
 	import Icon from '../components/Icon.svelte'
 
+	let { onstart }: { onstart: () => void } = $props()
 	let busy = $state('')
 	let error = $state('')
 	let waiting = $state(false)
 
 	// mentre si aspettano i dati dall'iPhone si controlla il server ogni pochi secondi
 	onMount(() => { const id = setInterval(() => { if (waiting) void syncNow() }, 5000); return () => clearInterval(id) })
-
-	async function catalog() {
-		busy = 'cat'; error = ''
-		try {
-			const res = await call('/api/catalogo', { method: 'POST' })
-			if (res.ok || res.status === 409) await resync()
-			else error = t('Non è andata: riprova.')
-		} catch { error = t('Serve la connessione.') }
-		busy = ''
-	}
 
 	async function importFile(e: Event) {
 		const file = (e.target as HTMLInputElement).files?.[0]
@@ -56,8 +47,8 @@
 		</div>
 		<div class="card">
 			<div class="row"><Icon name="dumbbell" size={28} /><div class="grow"><div class="mid">{t('Parto da zero')}</div></div></div>
-			<p class="muted small" style="margin:8px 0 12px">{t('98 macchinari ed esercizi di una palestra attrezzata. Quello che non hai lo archivi dopo.')}</p>
-			<button class="btn primary block" onclick={catalog} disabled={!!busy}>{busy === 'cat' ? t('Preparo…') : t('Usa il catalogo')}</button>
+			<p class="muted small" style="margin:8px 0 12px">{t('Nessun macchinario: li aggiungi cercando nel catalogo.')}</p>
+			<button class="btn primary block" onclick={onstart} disabled={!!busy}>{t('Inizia')}</button>
 		</div>
 		{#if error}<div class="banner warn">{error}</div>{/if}
 	</div>

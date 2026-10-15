@@ -67,13 +67,12 @@ test('portale: token obbligatorio, utente cercato per sub e poi per email, mai c
   assert.equal(app.store.userBySub('sconosciuto'), undefined, 'non crea utenti')
 })
 
-test('portale: backup scaricabile (segna lastExportDate), revoca dispositivo, scollegamento per email', async () => {
+test('portale: backup scaricabile, revoca dispositivo, scollegamento per email', async () => {
   const u = seed('por2', 'por2@x.it')
   const tok = app.store.createDevice(u.id, 'Peak · iPhone')
   const backup = await get('/portale/backup?sub=por2')
   assert.match(backup.headers.get('content-disposition')!, /attachment; filename="Peak-/)
   assert.equal(((await backup.json()) as { exercises: unknown[] }).exercises.length, 1)
-  assert.ok(app.store.live(u.id).some((d) => d.kind === 'setting' && d.uuid === 'lastExportDate'))
   const id = app.store.listDevices(u.id)[0].id
   assert.equal((await get(`/portale/dispositivi/${id}?sub=por2`, TOKEN, { method: 'DELETE' })).status, 200)
   assert.equal(app.store.deviceUser(tok), undefined)

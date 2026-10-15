@@ -2,7 +2,6 @@
 // derivano dalle serie (common/records.ts), quindi cancellare o modificare una serie basta a tenerli giusti.
 
 import { isoSec, newUuid, MUSCLE_GROUPS, type DocDataMap, type ExerciseDoc, type Kind, type MuscleGroup, type SetDoc, type TemplateItem, type WorkoutDoc } from '@common/docs.ts'
-import { CATALOG } from '@common/catalog.ts'
 import { settingsForUnitChange, type Unit } from '@common/domain.ts'
 import { addItem, differsFromTemplate, moveItem, removeItem, replaceItem, sessionItems, type PlanSet } from '@common/plan.ts'
 import type { AnyRecord } from '@common/records.ts'
@@ -140,18 +139,6 @@ export function addRecord(exercise: string, weight: number, reps: number, dateMs
 export function deleteRecord(r: AnyRecord) {
 	if (r.isAuto) patchSet(r.uuid, { noRecord: true })
 	else remove('record', r.uuid)
-}
-
-/** Aggiunge le voci del catalogo che mancano (nome uguale, senza maiuscole). */
-export function seedMissing(): number {
-	const have = new Set(getModel().exercises.map((e) => e.name.trim().toLowerCase()))
-	const missing = CATALOG.filter((c) => !have.has(c.name.toLowerCase()))
-	const top = getModel().exercises.reduce((m, e) => Math.max(m, e.sortIndex), -1)
-	batch(() => missing.forEach((c, i) => put('exercise', newUuid(), {
-		name: c.name, muscleGroup: c.group, notes: c.notes, incrementStep: c.step, sortIndex: top + 1 + i, isArchived: false,
-		createdAt: now(), glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0,
-	})))
-	return missing.length
 }
 
 // ---- peso corporeo -------------------------------------------------------------------------------------------------

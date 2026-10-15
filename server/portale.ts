@@ -51,7 +51,6 @@ export function createPortal(store: Store, token: string | undefined) {
     if (path === '/portale/backup' && method === 'GET') {
       const now = Date.now()
       const text = serializeBackup(exportBackup(store.live(user.id), (sha) => store.getPhoto(user.id, sha), now))
-      store.setSetting(user.id, 'lastExportDate', isoSec(now), now) // qui il file lo scarica davvero: vale come backup
       res.writeHead(200, {
         'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store',
         'content-disposition': `attachment; filename="Peak-${isoSec(now).slice(0, 10)}.json"`, ...SECURITY_HEADERS,

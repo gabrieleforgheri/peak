@@ -1,10 +1,9 @@
-// API per web e iPhone: sincronizzazione, foto, importazione, catalogo, backup, dispositivi.
+// API per web e iPhone: sincronizzazione, foto, importazione, backup, dispositivi.
 // Tutto vale per l'utente autenticato; ogni documento in ingresso passa da parseDoc (confine di fiducia).
 
 import { createHash } from 'node:crypto'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { isoSec, newUuid, type Kind, type MuscleGroup } from '../common/docs.ts'
-import { CATALOG } from '../common/catalog.ts'
+import { isoSec } from '../common/docs.ts'
 import { exportBackup, parseBackup, planImport, serializeBackup } from './backup.ts'
 import type { Auth } from './auth.ts'
 import { endpointOk, type Push } from './push.ts'
@@ -78,21 +77,6 @@ export function createApi(store: Store, auth: Auth, push: Push, commit: () => st
       const plan = planImport(parsed.file, store.live(user.id), modo)
       store.applyPlan(user.id, plan)
       sendJson(res, 200, { conteggi: plan.conteggi, orfani: plan.orfani, scartati: plan.scartati, rev: store.rev })
-      return true
-    }
-
-    if (path === '/api/catalogo' && method === 'POST') {
-      if (store.hasData(user.id)) { sendJson(res, 409, { error: 'account non vuoto' }); return true }
-      const createdAt = isoSec(Date.now())
-      const put = CATALOG.map((e, i) => ({
-        kind: 'exercise' as Kind, uuid: newUuid(),
-        data: {
-          name: e.name, muscleGroup: e.group as MuscleGroup, notes: e.notes, incrementStep: e.step, sortIndex: i, isArchived: false,
-          createdAt, glyph: '' as const, photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0,
-        },
-      }))
-      store.applyPlan(user.id, { put, del: [], photos: new Map() })
-      sendJson(res, 200, { esercizi: put.length, rev: store.rev })
       return true
     }
 

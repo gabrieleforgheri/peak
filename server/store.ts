@@ -6,7 +6,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  KINDS, SETTING_DEFAULTS, normUuid, parseDoc, upgradeDoc, type DocDataMap, type Kind, type LiveDoc,
+  KINDS, LEGACY_SETTINGS, SETTING_DEFAULTS, normUuid, parseDoc, upgradeDoc, type DocDataMap, type Kind, type LiveDoc,
 } from '../common/docs.ts'
 import type { ImportPlan } from './backup.ts'
 
@@ -177,6 +177,7 @@ export function openStore(dataDir: string) {
         for (const d of docs) {
           const reject = (errore: string) => out.scartati.push({ kind: String(d?.kind), uuid: String(d?.uuid), errore })
           if (!d || !(KINDS as readonly unknown[]).includes(d.kind)) { reject('kind'); continue }
+          if (d.kind === 'setting' && LEGACY_SETTINGS.includes(d.uuid)) continue
           const uuid = d.kind === 'setting' ? (d.uuid in SETTING_DEFAULTS ? d.uuid : null) : normUuid(d.uuid)
           if (!uuid) { reject('uuid'); continue }
           if (!Number.isInteger(d.m) || d.m < 0 || d.m > now + MAX_FUTURE_MS) { reject('m'); continue }

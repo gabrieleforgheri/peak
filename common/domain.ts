@@ -3,17 +3,14 @@
 // Tutti i pesi qui sono numeri nell'unità che passa il chiamante: lo stoccaggio resta in kg,
 // la conversione in lb si fa ai bordi (vedi sotto).
 
-export type Formula = 'epley' | 'brzycki'
 export type Unit = 'kg' | 'lb'
 
 // ---- 1RM stimato -----------------------------------------------------------------------------
 
-/** Solo una nota a margine: non decide mai un record (vedi `beats`). */
-export function oneRepMax(formula: Formula, weight: number, reps: number): number {
+/** Epley. Solo una stima: non decide mai un record (vedi `beats`), ma ordina le classifiche. */
+export function oneRepMax(weight: number, reps: number): number {
   if (!(weight > 0) || reps < 1) return 0
-  if (reps === 1) return weight
-  if (formula === 'epley' || reps > 10) return weight * (1 + reps / 30)
-  return (weight * 36) / (37 - reps)
+  return reps === 1 ? weight : weight * (1 + reps / 30)
 }
 
 // ---- confronto dei massimali -------------------------------------------------------------------

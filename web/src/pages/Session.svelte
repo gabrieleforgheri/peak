@@ -135,7 +135,7 @@
 								<div class="grow num" style="font-weight:700">{setLine(s.weight, s.reps)}</div>
 								{#if s.isWarmup}<span class="badge">{t('risc.')}</span>{/if}
 								{#if s.isPR}<span class="badge pos">PR</span>{/if}
-								{#if s.reps > 1 && !s.isWarmup}<span class="small muted num">≈ {W(oneRepMax(m.settings.formula, s.weight, s.reps))}</span>{/if}
+								{#if s.reps > 1 && !s.isWarmup}<span class="small muted num">≈ {W(oneRepMax(s.weight, s.reps))}</span>{/if}
 							</button>
 						{/each}
 					</div>

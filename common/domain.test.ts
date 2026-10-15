@@ -13,17 +13,14 @@ import * as fmt from './format.ts'
 const near = (a: number, b: number, eps = 0.01) => assert.ok(Math.abs(a - b) <= eps, `${a} ≠ ${b}`)
 
 test('1RM', () => {
-  assert.equal(oneRepMax('epley', 100, 1), 100)
-  assert.equal(oneRepMax('brzycki', 100, 1), 100)
-  near(oneRepMax('epley', 100, 5), 116.666)
-  near(oneRepMax('epley', 80, 10), 106.666)
-  near(oneRepMax('brzycki', 100, 5), 112.5)
-  assert.equal(oneRepMax('epley', 0, 5), 0)
-  assert.equal(oneRepMax('epley', 100, 0), 0)
-  assert.equal(oneRepMax('brzycki', 100, -3), 0)
-  near(oneRepMax('brzycki', 60, 10), oneRepMax('epley', 60, 10), 0.0001)
+  assert.equal(oneRepMax(100, 1), 100)
+  near(oneRepMax(100, 5), 116.666)
+  near(oneRepMax(80, 10), 106.666)
+  assert.equal(oneRepMax(0, 5), 0)
+  assert.equal(oneRepMax(100, 0), 0)
+  assert.equal(oneRepMax(100, -3), 0)
   let prev = 0
-  for (let r = 1; r <= 50; r++) { const v = oneRepMax('brzycki', 60, r); assert.ok(v > prev && v < 1000); prev = v }
+  for (let r = 1; r <= 50; r++) { const v = oneRepMax(60, r); assert.ok(v > prev && v < 1000); prev = v }
 })
 
 test('confronto dei massimali', () => {

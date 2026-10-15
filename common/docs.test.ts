@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { cleanItems, parseDoc, upgradeDoc, SETTING_DEFAULTS } from './docs.ts'
+import { cleanItems, parseDoc, upgradeDoc, LEGACY_SETTINGS, SETTING_DEFAULTS } from './docs.ts'
 
 const U = (n: number) => `00000000-0000-0000-0000-${String(n).padStart(12, '0')}`
 const item = { exercise: U(1), sets: 4, repsMin: 8, repsMax: 10, weight: 60 }
@@ -29,12 +29,9 @@ test('allenamento: i documenti vecchi, senza scheda né piano, restano validi', 
   assert.deepEqual(parseDoc('workout', U(9), { ...base, plan: [{ ...item, repsMin: 9, repsMax: 1 }] }), { error: 'plan' })
 })
 
-test('impostazioni delle schede: tre interruttori, solo booleani', () => {
-  for (const k of ['templateSets', 'templateReps', 'templateWeight'] as const) {
-    assert.equal(SETTING_DEFAULTS[k], true)
-    assert.deepEqual(parseDoc('setting', k, { value: false }), { data: { value: false } })
-    assert.deepEqual(parseDoc('setting', k, { value: 1 }), { error: 'value' })
-  }
+test('impostazioni tolte: restano in LEGACY_SETTINGS e non fra quelle vere', () => {
+  for (const k of LEGACY_SETTINGS) assert.ok(!(k in SETTING_DEFAULTS), k)
+  assert.deepEqual(parseDoc('setting', 'unit', { value: 'lb' }), { data: { value: 'lb' } })
 })
 
 test('upgradeDoc: un allenamento salvato prima delle schede prende scheda vuota e piano vuoto', () => {

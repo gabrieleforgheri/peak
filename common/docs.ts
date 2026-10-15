@@ -75,14 +75,14 @@ export interface DocDataMap {
 
 /** Le chiavi sincronizzate, con il loro valore predefinito. Il Watch, Salute ecc. restano per dispositivo. */
 export const SETTING_DEFAULTS = {
-  unit: 'kg', formula: 'epley', accent: 'lime',
+  unit: 'kg', accent: 'lime',
   restTimerEnabled: true, restSeconds: 120,
   progressionEnabled: true, repRangeMin: 8, repRangeMax: 12,
   plateCalculatorEnabled: true, barWeight: 20, availablePlates: [25, 20, 15, 10, 5, 2.5, 1.25],
-  lastExportDate: null as string | null,
-  templateSets: true, templateReps: true, templateWeight: true,
 } as const
 export type SettingKey = keyof typeof SETTING_DEFAULTS
+/** Impostazioni tolte nella 3.0: i client vecchi le mandano ancora; il server le ignora senza segnalarle come errori. */
+export const LEGACY_SETTINGS: readonly string[] = ['formula', 'templateSets', 'templateReps', 'templateWeight', 'lastExportDate']
 
 export const ACCENTS = ['lime', 'ember', 'ice', 'violet', 'coral'] as const
 
@@ -98,17 +98,14 @@ const str = (v: unknown, max: number, min = 0): string | null =>
 function cleanSetting(key: string, v: unknown): unknown {
   switch (key) {
     case 'unit': return v === 'kg' || v === 'lb' ? v : undefined
-    case 'formula': return v === 'epley' || v === 'brzycki' ? v : undefined
     case 'accent': return (ACCENTS as readonly unknown[]).includes(v) ? v : undefined
     case 'restTimerEnabled': case 'progressionEnabled': case 'plateCalculatorEnabled':
-    case 'templateSets': case 'templateReps': case 'templateWeight':
       return typeof v === 'boolean' ? v : undefined
     case 'restSeconds': return int(v, 15, 600) ?? undefined
     case 'repRangeMin': case 'repRangeMax': return int(v, 1, 30) ?? undefined
     case 'barWeight': return num(v, 0, 100) ?? undefined
     case 'availablePlates':
       return Array.isArray(v) && v.length <= 20 && v.every((p) => num(p, 0.01, 100) !== null) ? v : undefined
-    case 'lastExportDate': return v === null || parseIso(v) !== null ? v : undefined
     default: return undefined
   }
 }

@@ -71,16 +71,12 @@
 						<button class="icon-btn" onclick={() => move(i, 1)} disabled={i === rows.length - 1} aria-label={t('Giù')}><Icon name="down" /></button>
 						<button class="icon-btn" onclick={() => (rows = rows.filter((x) => x !== r))} aria-label={t('Togli')}><Icon name="x" /></button>
 					</div>
-					{#if s.templateSets || s.templateReps || s.templateWeight}
-						<div class="row" style="margin-top:10px;gap:8px">
-							{#if s.templateSets}<label class="field grow"><span>{t('Serie')}</span><input class="input num" type="number" inputmode="numeric" min="0" max="20" bind:value={r.sets} /></label>{/if}
-							{#if s.templateReps}
-								<label class="field grow"><span>{t('Rip min')}</span><input class="input num" type="number" inputmode="numeric" min="0" max="100" bind:value={r.repsMin} /></label>
-								<label class="field grow"><span>{t('Rip max')}</span><input class="input num" type="number" inputmode="numeric" min="0" max="100" bind:value={r.repsMax} /></label>
-							{/if}
-							{#if s.templateWeight}<label class="field" style="flex:1.6"><span>{unit()}</span><input class="input num" type="number" inputmode="decimal" min="0" step="0.5" bind:value={r.weight} placeholder={t('ultimo')} /></label>{/if}
-						</div>
-					{/if}
+					<div class="row" style="margin-top:10px;gap:8px">
+						<label class="field grow"><span>{t('Serie')}</span><input class="input num" type="number" inputmode="numeric" min="0" max="20" bind:value={r.sets} /></label>
+						<label class="field grow"><span>{t('Rip min')}</span><input class="input num" type="number" inputmode="numeric" min="0" max="100" bind:value={r.repsMin} /></label>
+						<label class="field grow"><span>{t('Rip max')}</span><input class="input num" type="number" inputmode="numeric" min="0" max="100" bind:value={r.repsMax} /></label>
+						<label class="field" style="flex:1.6"><span>{unit()}</span><input class="input num" type="number" inputmode="decimal" min="0" step="0.5" bind:value={r.weight} placeholder={t('ultimo')} /></label>
+					</div>
 				</div>
 			{/if}
 		{/each}

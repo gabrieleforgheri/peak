@@ -143,13 +143,13 @@ test('ogni utente vede solo i propri dati', async () => {
   assert.equal((await call('/api/foto/' + 'a'.repeat(64), { h: b.h })).status, 404)
 })
 
-test('catalogo: 98 macchinari una volta sola; poi 409', async () => {
-  const { h } = login('cat')
-  const r = await (await call('/api/catalogo', { h, method: 'POST' })).json() as { esercizi: number }
-  assert.equal(r.esercizi, 98)
-  assert.equal((await call('/api/catalogo', { h, method: 'POST' })).status, 409)
-  const pulled = await (await call('/api/sync?dopo=0', { h })).json() as { docs: { data: { sortIndex: number } }[] }
-  assert.equal(pulled.docs.length, 98)
+test('un client vecchio che manda impostazioni tolte non ottiene scarti, e non si salvano', async () => {
+  const { h } = login('legacy')
+  const docs = ['formula', 'templateSets', 'lastExportDate'].map((k) => ({ kind: 'setting', uuid: k, data: { value: k === 'formula' ? 'brzycki' : true }, m: NOW(), deleted: false }))
+  const out = await (await call('/api/sync', { h, body: { docs } })).json() as { scartati: unknown[] }
+  assert.deepEqual(out.scartati, [])
+  const pulled = await (await call('/api/sync?dopo=0', { h })).json() as { docs: unknown[] }
+  assert.equal(pulled.docs.length, 0)
 })
 
 test('importa: primo=1 su account non vuoto 409, file non valido 422, unisci e sostituisci', async () => {
@@ -170,7 +170,7 @@ test('importa: primo=1 su account non vuoto 409, file non valido 422, unisci e s
   const pulled = await (await call('/api/sync?dopo=0', { h })).json() as { docs: { deleted: boolean }[] }
   assert.deepEqual(pulled.docs.map((d) => d.deleted), [true])
   // dopo aver cancellato tutto l'account è di nuovo «vuoto» per la prima scelta
-  assert.equal((await call('/api/catalogo', { h, method: 'POST' })).status, 200)
+  assert.equal((await call('/api/importa?modo=unisci&primo=1', { h, body: file })).status, 200)
 })
 
 test('foto: solo JPEG, lo sha256 deve coincidere, si legge con cache immutabile', async () => {
@@ -190,12 +190,12 @@ test('foto: solo JPEG, lo sha256 deve coincidere, si legge con cache immutabile'
 
 test('backup: JSON scaricabile nel formato dell\'app', async () => {
   const { h } = login('bk')
-  await call('/api/catalogo', { h, method: 'POST' })
+  await call('/api/sync', { h, body: { docs: [1, 2, 3].map((n) => ({ kind: 'exercise', uuid: U(60 + n), data: exDoc('Es ' + n), m: NOW(), deleted: false })) } })
   const r = await call('/api/backup', { h })
   assert.match(r.headers.get('content-disposition')!, /^attachment; filename="Peak-\d{4}-\d\d-\d\d\.json"$/)
   const file = await r.json() as { version: number; exercises: unknown[] }
   assert.equal(file.version, 1)
-  assert.equal(file.exercises.length, 98)
+  assert.equal(file.exercises.length, 3)
 })
 
 test('dispositivi: si elencano e si revocano solo i propri', async () => {

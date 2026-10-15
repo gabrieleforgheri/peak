@@ -28,10 +28,9 @@ export interface Wk extends WorkoutDoc {
 export interface Tpl extends TemplateDoc { uuid: string }
 export interface Bw { uuid: string; dateMs: number; weight: number; fromHealth: boolean }
 export interface Settings {
-	unit: 'kg' | 'lb'; formula: 'epley' | 'brzycki'; accent: (typeof ACCENTS)[number]
+	unit: 'kg' | 'lb'; accent: (typeof ACCENTS)[number]
 	restTimerEnabled: boolean; restSeconds: number; progressionEnabled: boolean; repRangeMin: number; repRangeMax: number
-	plateCalculatorEnabled: boolean; barWeight: number; availablePlates: number[]; lastExportDate: string | null
-	templateSets: boolean; templateReps: boolean; templateWeight: boolean
+	plateCalculatorEnabled: boolean; barWeight: number; availablePlates: number[]
 }
 export interface Model {
 	exercises: Ex[]

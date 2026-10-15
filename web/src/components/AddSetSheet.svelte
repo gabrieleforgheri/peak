@@ -84,7 +84,7 @@
 				</div>
 				{#if isRecord}
 					<div class="mid num">{setLine(kg, reps)}</div>
-					{#if reps > 1}<div class="small muted">≈ {W(oneRepMax(m.settings.formula, kg, reps))} {t('di 1RM stimato')}</div>{/if}
+					{#if reps > 1}<div class="small muted">≈ {W(oneRepMax(kg, reps))} {t('di 1RM stimato')}</div>{/if}
 					{#if reference}<div class="small muted">{t('Precedente')}: {setLine(reference.weight, reference.reps)}</div>{/if}
 				{:else if reference}
 					<div class="mid num">{setLine(reference.weight, reference.reps)}</div>

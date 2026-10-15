@@ -63,7 +63,7 @@
 						<div class="small muted">{dateLong(ex.best.date)}
 							{#if deltaOf(ex) !== null}<span class="badge pos" style="margin-left:6px">{delta(deltaOf(ex)!)}</span>{/if}
 						</div>
-						{#if ex.best.reps > 1}<div class="small muted">≈ {W(oneRepMax(m.settings.formula, ex.best.weight, ex.best.reps))} {t('di 1RM stimato')}</div>{/if}
+						{#if ex.best.reps > 1}<div class="small muted">≈ {W(oneRepMax(ex.best.weight, ex.best.reps))} {t('di 1RM stimato')}</div>{/if}
 					{:else}
 						<div class="mid" style="margin-top:6px">{t('Nessun massimale')}</div>
 					{/if}
@@ -109,7 +109,7 @@
 				{#each ex.records.slice(0, 12) as r (r.uuid)}
 					<div class="item">
 						<div class="grow"><div class="num" style="font-weight:700">{setLine(r.weight, r.reps)}</div><div class="small muted">{dateLong(r.date)} · {r.isAuto ? t('Da allenamento') : t('Registrato')}</div></div>
-						{#if r.reps > 1}<span class="small muted num">≈ {W(oneRepMax(m.settings.formula, r.weight, r.reps))}</span>{/if}
+						{#if r.reps > 1}<span class="small muted num">≈ {W(oneRepMax(r.weight, r.reps))}</span>{/if}
 						<button class="icon-btn" style="width:34px;height:34px" onclick={() => deleteRecord(r)} aria-label={t('Elimina')}><Icon name="trash" size={16} /></button>
 					</div>
 				{/each}

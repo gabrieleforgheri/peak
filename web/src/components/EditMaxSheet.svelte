@@ -23,7 +23,7 @@
 
 	const kg = $derived(fromUnit(weight))
 	const isNew = $derived(beats(kg, reps, ex.best))
-	const est = $derived(oneRepMax(m.settings.formula, kg, reps))
+	const est = $derived(oneRepMax(kg, reps))
 
 	function save() {
 		addRecord(ex.uuid, kg, reps, fromDateInput(day), note.trim())
@@ -45,7 +45,7 @@
 				<span class="muted">{isNew ? '' : t('Prestazione')}</span>
 				{#if isNew}<span class="badge accent">{t('NUOVO RECORD')}</span>{/if}
 			</div>
-			{#if reps > 1}<div class="row between"><span class="muted">{t('1RM stimato ({0})', m.settings.formula === 'epley' ? 'Epley' : 'Brzycki')}</span><b class="num">≈ {W(est)}</b></div>{/if}
+			{#if reps > 1}<div class="row between"><span class="muted">{t('1RM stimato')}</span><b class="num">≈ {W(est)}</b></div>{/if}
 			{#if ex.best}<div class="row between"><span class="muted">{t('Precedente')}</span><span class="num">{setLine(ex.best.weight, ex.best.reps)} · {dateLong(ex.best.date)}</span></div>{/if}
 		</div>
 		<label class="field"><span>{t('Data')}</span><input class="input" type="date" bind:value={day} max={toDateInput(Date.now())} /></label>

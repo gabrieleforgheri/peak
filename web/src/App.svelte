@@ -13,7 +13,7 @@
 	import Summary from './pages/Summary.svelte'
 	import Progress from './pages/Progress.svelte'
 	import Settings from './pages/Settings.svelte'
-	import Curation from './pages/Curation.svelte'
+	import Archived from './pages/Archived.svelte'
 
 	const m = $derived(getModel())
 	const tab = $derived(route.parts[0] === 'allenamenti' ? 'allenamenti' : route.parts[0] === 'progressi' ? 'progressi' : route.parts[0] === 'impostazioni' ? 'impostazioni' : 'massimali')
@@ -26,7 +26,8 @@
 	]
 
 	$effect(() => { document.documentElement.dataset.accent = m.settings.accent })
-	const showFirstRun = $derived(S.ready && S.synced && !m.hasData)
+	let started = $state(false)
+	const showFirstRun = $derived(S.ready && S.synced && !m.hasData && !started)
 	const loading = $derived(!S.ready || (!S.synced && !m.hasData && S.auth !== 'expired'))
 </script>
 
@@ -36,7 +37,7 @@
 	{:else if loading}
 		<main class="screen no-tabs"><div class="empty">{t('Carico i tuoi dati…')}</div></main>
 	{:else if showFirstRun}
-		<FirstRun />
+		<FirstRun onstart={() => (started = true)} />
 	{:else}
 		{#if S.auth === 'expired'}
 			<div class="screen" style="padding-bottom:0;padding-top:calc(env(safe-area-inset-top) + 8px);margin-bottom:-4px">
@@ -52,8 +53,8 @@
 				{:else}<Workouts />{/if}
 			{:else if tab === 'progressi'}
 				<Progress />
-			{:else if route.parts[1] === 'catalogo' || route.parts[1] === 'archivio'}
-				<Curation archived={route.parts[1] === 'archivio'} />
+			{:else if route.parts[1] === 'archivio'}
+				<Archived />
 			{:else}
 				<Settings />
 			{/if}

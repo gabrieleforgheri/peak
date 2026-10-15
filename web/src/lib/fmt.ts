@@ -17,16 +17,13 @@ export const toUnit = (kg: number): number => round2(toDisplay(kg, unit()))
 export const fromUnit = (v: number): number => toKg(v, unit())
 export const setLine = (kg: number, reps: number): string => f.setLine(kg, reps, unit(), locale)
 export const delta = (p: number): string => f.delta(p, locale)
-/** "2/4 serie · 8–10 rip · 60 kg": solo i campi attivi nelle impostazioni; senza peso scritto, l'ultimo usato. */
+/** "2/4 serie · 8–10 rip · 60 kg": solo i campi compilati; senza peso scritto, l'ultimo usato. */
 export function targetLine(item: TemplateItem, done: number, lastKg: number | null): string {
-	const s = getModel().settings
 	const parts: string[] = []
-	if (s.templateSets && item.sets) parts.push(t('{0}/{1} serie', done, item.sets))
-	if (s.templateReps && item.repsMax) parts.push(item.repsMin === item.repsMax ? t('{0} rip', item.repsMax) : t('{0}–{1} rip', item.repsMin, item.repsMax))
-	if (s.templateWeight) {
-		if (item.weight !== null) parts.push(W(item.weight))
-		else if (lastKg !== null) parts.push(t('ultimo {0}', W(lastKg)))
-	}
+	if (item.sets) parts.push(t('{0}/{1} serie', done, item.sets))
+	if (item.repsMax) parts.push(item.repsMin === item.repsMax ? t('{0} rip', item.repsMax) : t('{0}–{1} rip', item.repsMin, item.repsMax))
+	if (item.weight !== null) parts.push(W(item.weight))
+	else if (lastKg !== null) parts.push(t('ultimo {0}', W(lastKg)))
 	return parts.join(' · ')
 }
 export const clock = f.clock
