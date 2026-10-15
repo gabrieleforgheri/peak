@@ -116,7 +116,7 @@
 		{/each}
 	</div>
 
-	<p class="faint small" style="text-align:center;margin-top:24px">Peak · {__VERSION__}</p>
+	<p class="faint small" style="text-align:center;margin-top:24px">Peak {__APP_VERSION__}</p>
 {:else}
 	<div class="bar">
 		<button class="icon-btn" onclick={() => go('impostazioni')} aria-label={t('Indietro')}><Icon name="left" /></button>
@@ -171,6 +171,12 @@
 			</div>
 		{/if}
 		<a class="btn block" href="/auth/logout">{t('Esci')}</a>
+	</div>
+
+	<div class="sec-title">{t('Gestione account')}</div>
+	<div class="card list">
+		<a class="item" href="https://yrb4g.com/account" target="_blank" rel="noopener"><Icon name="cloud" size={22} /><div class="grow"><b>{t('Il tuo account yG')}</b><div class="small muted">{t('Profilo, password, accessi e le altre app')}</div></div><Icon name="right" size={20} /></a>
+		<a class="item" href="https://yrb4g.com/account/peak" target="_blank" rel="noopener"><Icon name="phone" size={22} /><div class="grow"><b>{t('Accessi di Peak')}</b><div class="small muted">{t('Dispositivi collegati e dati salvati')}</div></div><Icon name="right" size={20} /></a>
 	</div>
 
 	{:else if cat.id === 'backup'}

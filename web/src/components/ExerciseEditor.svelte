@@ -31,6 +31,7 @@
 	let unilateral = $state(existing?.isUnilateral ?? false)
 	let rest = $state(existing?.restSeconds ?? 0)
 	let archived = $state(existing?.isArchived ?? false)
+	let hidden = $state(existing?.hidden ?? false)
 	let custom = $state(![1, 1.25, 2, 2.5, 5, 10].includes(existing?.incrementStep ?? 2.5))
 
 	// il catalogo: un macchinario nuovo parte dalla ricerca; uno esistente può essere (ri)collegato
@@ -79,7 +80,7 @@
 		const uuid = saveExercise(id, {
 			name: name.trim(), muscleGroup: group, notes, incrementStep: step, isArchived: archived, glyph, photo,
 			photoOffset: Math.round(offset * 1000) / 1000, isUnilateral: unilateral, restSeconds: rest,
-			catalog, hidden: existing?.hidden ?? false,
+			catalog, hidden,
 		})
 		onsaved?.(uuid)
 		onclose()
@@ -179,6 +180,8 @@
 		{/if}
 
 		<label class="field"><span>{t('Note')}</span><textarea class="textarea" bind:value={notes} maxlength="2000"></textarea></label>
+
+		<label class="row between card"><span>{t('Nascondi agli amici')}</span><input class="toggle" type="checkbox" bind:checked={hidden} /></label>
 
 		{#if id}
 			<label class="row between card"><span>{t('Archiviato')}</span><input class="toggle" type="checkbox" bind:checked={archived} /></label>

@@ -6,7 +6,9 @@ import { settingsForUnitChange, type Unit } from '@common/domain.ts'
 import { addItem, differsFromTemplate, moveItem, removeItem, replaceItem, sessionItems, type PlanSet } from '@common/plan.ts'
 import type { AnyRecord } from '@common/records.ts'
 import { batch, getModel, put, remove, rows } from './store.svelte.ts'
-import type { Tpl, Wk } from './types.ts'
+import { norm } from '@common/catalog.ts'
+import { entryName, loadCatalog } from './catalog.ts'
+import type { Ex, Tpl, Wk } from './types.ts'
 
 const docOf = <K extends Kind>(kind: K, uuid: string): DocDataMap[K] | undefined => {
 	const r = rows.get(`${kind}:${uuid}`)
@@ -98,15 +100,45 @@ export function updateTemplateFromWorkout(tpl: Tpl, wk: Wk) {
 	saveTemplate(tpl.uuid, tpl.name, sessionItems(wk.plan, planSets(wk), exists, 'targets'))
 }
 
-export function saveTemplate(id: string | null, name: string, items: TemplateItem[]): string {
+export function saveTemplate(id: string | null, name: string, items: TemplateItem[], hidden?: boolean): string {
 	const uuid = id ?? newUuid()
 	const prev = getModel().tplById.get(uuid)
 	const top = getModel().templates.reduce((m, x) => Math.max(m, x.sortIndex), -1)
-	put('template', uuid, { name: name.trim(), items, sortIndex: prev?.sortIndex ?? top + 1, createdAt: prev?.createdAt ?? now(), hidden: prev?.hidden ?? false })
+	put('template', uuid, { name: name.trim(), items, sortIndex: prev?.sortIndex ?? top + 1, createdAt: prev?.createdAt ?? now(), hidden: hidden ?? prev?.hidden ?? false })
 	return uuid
 }
 
 export const deleteTemplate = (id: string) => remove('template', id)
+
+/**
+ * La scheda di un amico, copiata fra le tue: ogni riga si abbina a un tuo esercizio con lo stesso id del catalogo (o, se
+ * personalizzato, con lo stesso nome); quelli che mancano si creano. Senza pesi: sono i tuoi da scegliere.
+ */
+export async function copyTemplate(src: { name: string; rows: { catalog: string; name: string; sets: number; repsMin: number; repsMax: number }[] }): Promise<string> {
+	const catalog = await loadCatalog()
+	const mine = getModel().exercises.filter((e) => !e.isArchived)
+	let top = getModel().exercises.reduce((m, e) => Math.max(m, e.sortIndex), -1)
+	const items: TemplateItem[] = []
+	batch(() => {
+		for (const r of src.rows) {
+			const entry = r.catalog ? catalog.find((c) => c.id === r.catalog) : undefined
+			let ex = r.catalog ? mine.find((e) => e.catalog === r.catalog) : mine.find((e) => !e.catalog && norm(e.name) === norm(r.name))
+			let uuid = ex?.uuid
+			if (!uuid) {
+				uuid = newUuid()
+				put('exercise', uuid, {
+					name: entry ? entryName(entry) : r.name, muscleGroup: entry?.group ?? 'petto', notes: entry?.notes ?? '', incrementStep: entry?.step ?? 2.5,
+					sortIndex: ++top, isArchived: false, createdAt: now(), glyph: entry?.glyph ?? '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0,
+					catalog: entry?.id ?? '', hidden: false,
+				})
+				ex = { uuid, catalog: entry?.id ?? '', name: r.name } as Ex
+				mine.push(ex)
+			}
+			if (!items.some((i) => i.exercise === uuid)) items.push({ exercise: uuid, sets: r.sets, repsMin: r.repsMin, repsMax: r.repsMax, weight: null })
+		}
+	})
+	return saveTemplate(null, src.name, items)
+}
 
 // ---- macchinari --------------------------------------------------------------------------------------------------
 

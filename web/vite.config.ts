@@ -22,7 +22,8 @@ function serviceWorker(): Plugin {
 }
 
 export default defineConfig({
-	define: { __VERSION__: JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ')) },
+	// la versione dell'app (da package.json: tenerla uguale a MARKETING_VERSION di project.yml)
+	define: { __APP_VERSION__: JSON.stringify(JSON.parse(readFileSync('package.json', 'utf8')).version) },
 	plugins: [svelte(), serviceWorker()],
 	resolve: { alias: { '@common': fileURLToPath(new URL('../common', import.meta.url)) } },
 	server: { proxy: { '/api': peak, '/auth': peak }, fs: { allow: ['..'] } },

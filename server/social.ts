@@ -4,6 +4,7 @@
 
 import { oneRepMax } from '../common/domain.ts'
 import { split, type LiveDoc } from '../common/docs.ts'
+import { weeklyStreak } from '../common/stats.ts'
 
 /** Il migliore di un esercizio: l'1RM stimato più alto fra le serie vere e i massimali scritti a mano. */
 export interface Best { oneRm: number; weight: number; reps: number; date: number }
@@ -69,4 +70,21 @@ export function sharedView(docs: LiveDoc[]): Shared {
       }),
     }))
   return { maxes, templates }
+}
+
+/** Come ti stai allenando: serve alla lega fra amici. Solo allenamenti conclusi, riscaldamento escluso. */
+export interface Activity { volume30: number; sessions30: number; streak: number; last: number | null }
+
+export function activityOf(docs: LiveDoc[], now = Date.now()): Activity {
+  const d = split(docs)
+  const volumeOf = new Map<string, number>()
+  for (const s of d.sets) if (!s.data.isWarmup) volumeOf.set(s.data.workout, (volumeOf.get(s.data.workout) ?? 0) + s.data.weight * s.data.reps)
+  const done = d.workouts.filter((w) => w.data.endedAt).map((w) => ({ uuid: w.uuid, date: Date.parse(w.data.date) }))
+  const recent = done.filter((w) => w.date >= now - 30 * 86_400_000)
+  return {
+    volume30: recent.reduce((v, w) => v + (volumeOf.get(w.uuid) ?? 0), 0),
+    sessions30: recent.length,
+    streak: weeklyStreak(done, now),
+    last: done.reduce<number | null>((a, w) => (a === null || w.date > a ? w.date : a), null),
+  }
 }

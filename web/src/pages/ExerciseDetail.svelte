@@ -4,7 +4,9 @@
 	import { deleteRecord } from '../lib/actions.ts'
 	import { deltaOf, stepOf, suggestionFor, warmupFor } from '../lib/derive.ts'
 	import { locale, t } from '../lib/i18n.ts'
-	import { back } from '../lib/router.svelte.ts'
+	import { back, go } from '../lib/router.svelte.ts'
+	import { F, getBoard, loadFriends, type BoardRow } from '../lib/social.svelte.ts'
+	import { onMount } from 'svelte'
 	import { getModel } from '../lib/store.svelte.ts'
 	import EditMaxSheet from '../components/EditMaxSheet.svelte'
 	import ExerciseEditor from '../components/ExerciseEditor.svelte'
@@ -18,6 +20,12 @@
 	let range = $state<'3m' | '1y' | 'all'>('3m')
 	let editing = $state(false)
 	let updating = $state(false)
+
+	// la classifica con gli amici: solo per i macchinari del catalogo, e solo se hai degli amici
+	let board = $state<BoardRow[] | null>(null)
+	const catalog = $derived(ex?.catalog ?? '')
+	onMount(() => { void loadFriends() })
+	$effect(() => { const c = catalog; board = null; if (c) void getBoard(c).then((r) => { if (c === catalog) board = r }) })
 
 	const warm = $derived(ex ? warmupFor(ex, m) : [])
 	const next = $derived(ex ? suggestionFor(ex, m) : null)
@@ -40,11 +48,11 @@
 
 <main class="screen no-tabs">
 	{#if !ex}
-		<div class="bar"><button class="icon-btn" onclick={() => back('massimali')} aria-label={t('Indietro')}><Icon name="left" /></button></div>
+		<div class="bar"><button class="icon-btn" onclick={() => back('macchinari')} aria-label={t('Indietro')}><Icon name="left" /></button></div>
 		<div class="empty">{t('Macchinario non trovato.')}</div>
 	{:else}
 		<div class="bar">
-			<button class="icon-btn" onclick={() => back('massimali')} aria-label={t('Indietro')}><Icon name="left" /></button>
+			<button class="icon-btn" onclick={() => back('macchinari')} aria-label={t('Indietro')}><Icon name="left" /></button>
 			<h1 class="small ellipsis">{ex.name}</h1>
 			<button class="icon-btn" onclick={() => (editing = true)} aria-label={t('Modifica')}><Icon name="edit" /></button>
 		</div>
@@ -71,6 +79,23 @@
 			</div>
 			<button class="btn primary block" style="margin-top:14px" onclick={() => (updating = true)}>{t('Aggiorna massimale')}</button>
 		</div>
+
+		{#if catalog && F.friends?.amici.length && board && board.length > 1}
+			<div class="card">
+				<div class="sec-title" style="margin:0 0 6px">{t('Classifica amici')}</div>
+				<div class="stack" style="gap:6px">
+					{#each board as r, i (r.id)}
+						<button class="row between" style="text-align:left;color:inherit;padding:2px 0" onclick={() => !r.tu && go(`amici/${r.id}`)}>
+							<span class="row" style="gap:10px"><b class="num" style="width:20px;color:{i === 0 ? 'var(--accent)' : 'var(--text-3)'}">{i + 1}</b><span style="font-weight:{r.tu ? 800 : 600}">{r.tu ? t('Tu') : '@' + r.username}</span></span>
+							<span class="num"><b>{W(r.oneRm)}</b> <span class="small muted">{t('1RM')}</span></span>
+						</button>
+					{/each}
+				</div>
+				<p class="small faint" style="margin-top:8px">{t('1RM stimato dalle serie migliori.')}</p>
+			</div>
+		{:else if !catalog}
+			<div class="card"><p class="small muted">{t('Per la classifica con gli amici collega questo macchinario al catalogo (Modifica → Catalogo).')}</p></div>
+		{/if}
 
 		{#if next}
 			<div class="card">
@@ -133,5 +158,5 @@
 	{/if}
 </main>
 
-{#if ex && editing}<ExerciseEditor id={ex.uuid} onclose={() => (editing = false)} ondeleted={() => back('massimali')} />{/if}
+{#if ex && editing}<ExerciseEditor id={ex.uuid} onclose={() => (editing = false)} ondeleted={() => back('macchinari')} />{/if}
 {#if ex && updating}<EditMaxSheet {ex} onclose={() => (updating = false)} />{/if}

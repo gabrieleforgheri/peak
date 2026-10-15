@@ -32,7 +32,7 @@
 		pressTimer = setTimeout(() => { longPressed = true; menu = ex }, 520)
 	}
 	const release = () => clearTimeout(pressTimer)
-	function open(ex: Ex) { if (!longPressed) go(`massimali/${ex.uuid}`) }
+	function open(ex: Ex) { if (!longPressed) go(`macchinari/${ex.uuid}`) }
 
 	function sub(ex: Ex): string {
 		if (!ex.best) return t('Nessun massimale')
@@ -44,7 +44,7 @@
 
 <main class="screen">
 	<div class="bar">
-		<h1>{t('Massimali')}</h1>
+		<h1>{t('Macchinari')}</h1>
 		<button class="icon-btn" onclick={() => (creating = true)} aria-label={t('Nuovo macchinario')}><Icon name="plus" /></button>
 	</div>
 
@@ -88,11 +88,11 @@
 	{/if}
 </main>
 
-{#if creating}<ExerciseEditor onclose={() => (creating = false)} onsaved={(id) => go(`massimali/${id}`)} />{/if}
+{#if creating}<ExerciseEditor onclose={() => (creating = false)} onsaved={(id) => go(`macchinari/${id}`)} />{/if}
 {#if menu}
 	<Sheet title={menu.name} onclose={() => (menu = null)}>
 		<div class="stack">
-			<button class="btn block" onclick={() => { go(`massimali/${menu!.uuid}`); menu = null }}>{t('Apri')}</button>
+			<button class="btn block" onclick={() => { go(`macchinari/${menu!.uuid}`); menu = null }}>{t('Apri')}</button>
 			<button class="btn block" onclick={() => { patchExercise(menu!.uuid, { isArchived: true }); menu = null }}><Icon name="archive" size={18} />{t('Archivia')}</button>
 		</div>
 	</Sheet>

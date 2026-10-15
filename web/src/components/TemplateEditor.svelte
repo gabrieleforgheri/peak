@@ -22,8 +22,8 @@
 	let name = $state(source?.name ?? '')
 	let rows = $state<Row[]>((source?.items ?? []).filter((i) => m.exById.has(i.exercise)).map(toRow))
 	let picking = $state(false)
+	let hidden = $state(tpl?.hidden ?? false)
 
-	const s = m.settings
 	const int = (v: number | null, max: number) => Math.min(max, Math.max(0, Math.round(v ?? 0)))
 
 	function move(i: number, dir: -1 | 1) {
@@ -44,7 +44,7 @@
 
 	function save() {
 		if (!name.trim()) return
-		const id = saveTemplate(tpl?.uuid ?? null, name, items())
+		const id = saveTemplate(tpl?.uuid ?? null, name, items(), hidden)
 		onsaved?.(id)
 		onclose()
 	}
@@ -82,6 +82,7 @@
 		{/each}
 
 		<button class="btn block" onclick={() => (picking = true)}><Icon name="plus" size={20} />{t('Aggiungi esercizio')}</button>
+		<label class="row between card"><span>{t('Nascondi agli amici')}</span><input class="toggle" type="checkbox" bind:checked={hidden} /></label>
 		{#if tpl}<button class="btn danger block" onclick={remove}><Icon name="trash" size={18} />{t('Elimina scheda')}</button>{/if}
 	</div>
 </Sheet>

@@ -12,16 +12,23 @@
 	import Session from './pages/Session.svelte'
 	import Summary from './pages/Summary.svelte'
 	import Progress from './pages/Progress.svelte'
+	import Friends from './pages/Friends.svelte'
+	import Home from './pages/Home.svelte'
+	import FriendProfile from './pages/FriendProfile.svelte'
+	import Invite from './pages/Invite.svelte'
 	import Settings from './pages/Settings.svelte'
 	import Archived from './pages/Archived.svelte'
 
 	const m = $derived(getModel())
-	const tab = $derived(route.parts[0] === 'allenamenti' ? 'allenamenti' : route.parts[0] === 'progressi' ? 'progressi' : route.parts[0] === 'impostazioni' ? 'impostazioni' : 'massimali')
+	const TABS = ['home', 'allenamento', 'progressi', 'macchinari', 'amici', 'impostazioni']
+	const tab = $derived(TABS.includes(route.parts[0] ?? '') ? route.parts[0]! : route.parts[0] === 'invito' ? 'invito' : 'home')
 	const deep = $derived(route.parts.length > 1)
 	const tabs = [
-		{ id: 'massimali', icon: 'trophy', label: 'Massimali' },
-		{ id: 'allenamenti', icon: 'dumbbell', label: 'Allenamenti' },
+		{ id: 'home', icon: 'home', label: 'Home' },
+		{ id: 'allenamento', icon: 'dumbbell', label: 'Allenamento' },
 		{ id: 'progressi', icon: 'chart', label: 'Progressi' },
+		{ id: 'macchinari', icon: 'machine', label: 'Macchinari' },
+		{ id: 'amici', icon: 'users', label: 'Amici' },
 		{ id: 'impostazioni', icon: 'sliders', label: 'Impostazioni' },
 	]
 
@@ -45,14 +52,20 @@
 			</div>
 		{/if}
 		{#key route.parts.join('/')}
-			{#if tab === 'massimali'}
+			{#if tab === 'home'}
+				<Home />
+			{:else if tab === 'invito'}
+				<Invite code={route.parts[1] ?? ''} />
+			{:else if tab === 'macchinari'}
 				{#if route.parts[1]}<ExerciseDetail id={route.parts[1]} />{:else}<Maxes />{/if}
-			{:else if tab === 'allenamenti'}
+			{:else if tab === 'allenamento'}
 				{#if route.parts[2] === 'riepilogo'}<Summary id={route.parts[1]} />
 				{:else if route.parts[1]}<Session id={route.parts[1]} />
 				{:else}<Workouts />{/if}
 			{:else if tab === 'progressi'}
 				<Progress />
+			{:else if tab === 'amici'}
+				{#if route.parts[1]}<FriendProfile id={route.parts[1]} />{:else}<Friends />{/if}
 			{:else if route.parts[1] === 'archivio'}
 				<Archived />
 			{:else}

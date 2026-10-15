@@ -34,14 +34,14 @@
 </script>
 
 <main class="screen">
-	<div class="bar"><h1>{t('Allenamenti')}</h1></div>
+	<div class="bar"><h1>{t('Allenamento')}</h1></div>
 
 	{#if active}
 		<div class="card" style="border-color:rgba(var(--accent-rgb),.4)">
 			<div class="tiny" style="color:var(--accent);font-weight:800;letter-spacing:.08em">{t('SESSIONE IN CORSO')}</div>
 			<div class="mid" style="margin:4px 0">{title(active)}</div>
 			<div class="small muted">{tn(active.workingSets, '1 serie', '{0} serie')} · {V(active.volume)} · {tn(exCount(active), '1 esercizio', '{0} esercizi')}</div>
-			<button class="btn primary block" style="margin-top:12px" onclick={() => go(`allenamenti/${active.uuid}`)}>{t('Riprendi allenamento')}</button>
+			<button class="btn primary block" style="margin-top:12px" onclick={() => go(`allenamento/${active.uuid}`)}>{t('Riprendi allenamento')}</button>
 		</div>
 	{:else}
 		<div class="card">
@@ -72,7 +72,7 @@
 		<div class="stack">
 			{#each history as w (w.uuid)}
 				<button class="card" style="text-align:left;color:inherit;display:block;width:100%"
-					onclick={() => { if (!longPressed) go(`allenamenti/${w.uuid}`) }} onpointerdown={() => press(w)} onpointerup={release} onpointerleave={release} onpointercancel={release}
+					onclick={() => { if (!longPressed) go(`allenamento/${w.uuid}`) }} onpointerdown={() => press(w)} onpointerup={release} onpointerleave={release} onpointercancel={release}
 					oncontextmenu={(e) => { e.preventDefault(); menu = w }}>
 					<div class="row between">
 						<b class="ellipsis">{title(w)}</b>
@@ -90,11 +90,11 @@
 </main>
 
 {#if editing}<TemplateEditor tpl={editing === 'new' ? null : editing} onclose={() => (editing = null)} />{/if}
-{#if starting}<FocusPicker onclose={() => (starting = false)} onstart={(id) => go(`allenamenti/${id}`)} />{/if}
+{#if starting}<FocusPicker onclose={() => (starting = false)} onstart={(id) => go(`allenamento/${id}`)} />{/if}
 {#if menu}
 	<Sheet title={title(menu)} onclose={() => (menu = null)}>
 		<div class="stack">
-			<button class="btn block" onclick={() => { go(`allenamenti/${menu!.uuid}`); menu = null }}>{t('Apri')}</button>
+			<button class="btn block" onclick={() => { go(`allenamento/${menu!.uuid}`); menu = null }}>{t('Apri')}</button>
 			<button class="btn danger block" onclick={() => { if (confirm(t('Eliminare questo allenamento e le sue serie?'))) deleteWorkout(menu!.uuid); menu = null }}><Icon name="trash" size={18} />{t('Elimina')}</button>
 		</div>
 	</Sheet>

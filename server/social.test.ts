@@ -167,3 +167,19 @@ test('gli inviti per utente sono al massimo 20', () => {
   for (let i = 0; i < 25; i++) app.store.createInvite(u.id)
   assert.equal((app.store.db.prepare('SELECT COUNT(*) AS n FROM invites WHERE user_id = ?').get(u.id) as { n: number }).n, 20)
 })
+
+test('lega: tu e gli amici con volume, allenamenti e settimane di fila; i non amici fuori', async () => {
+  const pam = login('pam'), rex = login('rex'), zed = login('zed')
+  befriend(pam, rex)
+  await train(pam, 50, { name: 'Panca', catalog: 'bench-press-barbell' }, 100, 10, 2) // 1000 kg, due giorni fa
+  await train(rex, 51, { name: 'Panca', catalog: 'bench-press-barbell' }, 50, 10, 45) // fuori dai 30 giorni
+  await train(zed, 52, { name: 'Panca', catalog: 'bench-press-barbell' }, 50, 10, 1)
+  const { righe } = await (await call('/api/lega', pam.h)).json() as { righe: { username: string; tu: boolean; volume30: number; sessions30: number; streak: number; last: number }[] }
+  assert.deepEqual(righe.map((r) => r.username).sort(), ['pam', 'rex'])
+  const me = righe.find((r) => r.tu)!, him = righe.find((r) => !r.tu)!
+  assert.deepEqual([me.volume30, me.sessions30], [1000, 1])
+  assert.ok(me.streak >= 1)
+  assert.deepEqual([him.volume30, him.sessions30, him.streak], [0, 0, 0])
+  assert.ok(him.last < Date.now() - 40 * DAY)
+  assert.equal((await call('/api/lega', { 'sec-fetch-site': 'same-origin' })).status, 401)
+})

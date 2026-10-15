@@ -1,5 +1,10 @@
 <script lang="ts">
 	const paths: Record<string, string> = {
+		home: '<path d="M4 11l8-7 8 7M6 10v10h12V10M10 20v-6h4v6"/>',
+		machine: '<rect x="3.5" y="3" width="9" height="18" rx="1.5"/><path d="M3.5 7.5h9M3.5 11h9M3.5 14.5h9M12.5 5.5H18v8.5M15.5 14h5M2 21h12"/>',
+		bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+		users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14a6.5 6.5 0 0 1 3.5 6"/>',
+		compass: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
 		trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
 		dumbbell: '<path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/>',
 		chart: '<path d="M3 3v18h18M7 15l4-4 3 3 5-6"/>',

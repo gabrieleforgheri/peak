@@ -9,7 +9,7 @@ import type { Auth } from './auth.ts'
 import { endpointOk, type Push } from './push.ts'
 import { HttpError, readBody, readJson, sendJson, SECURITY_HEADERS } from './http.ts'
 import type { Person, Store, WireDoc } from './store.ts'
-import { bestByCatalog, sharedView } from './social.ts'
+import { activityOf, bestByCatalog, sharedView } from './social.ts'
 
 const MAX_SYNC_BODY = 4_000_000
 const MAX_SYNC_DOCS = 1000
@@ -130,6 +130,12 @@ export function createApi(store: Store, auth: Auth, push: Push, commit: () => st
         return b ? [{ id: p.id, username: p.username, tu: p.id === user.id, name: b.name, oneRm: b.oneRm, weight: b.weight, reps: b.reps, date: b.date }] : []
       }).sort((a, b) => b.oneRm - a.oneRm)
       sendJson(res, 200, { catalog: board[1], righe })
+      return true
+    }
+    // la lega: tu e gli amici, con i numeri dell'allenamento (il client ordina per quello che si sceglie)
+    if (path === '/api/lega' && method === 'GET') {
+      const people: Person[] = [{ id: user.id, username: user.username, name: user.name }, ...store.friends(user.id).amici]
+      sendJson(res, 200, { righe: people.map((p) => ({ id: p.id, username: p.username, tu: p.id === user.id, ...activityOf(store.live(p.id)) })) })
       return true
     }
     if (path === '/api/novita' && method === 'GET') {

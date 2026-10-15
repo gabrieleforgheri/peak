@@ -63,13 +63,13 @@
 		endWorkout(wk.uuid)
 		stopRest()
 		if (tpl && confirm(t('Aggiornare la scheda «{0}» con le modifiche di oggi?', tpl.name))) updateTemplateFromWorkout(tpl, wk)
-		go(`allenamenti/${wk.uuid}/riepilogo`, true)
+		go(`allenamento/${wk.uuid}/riepilogo`, true)
 	}
 	function remove() {
 		if (!wk || !confirm(t('Eliminare questo allenamento e le sue serie?'))) return
 		stopRest()
 		deleteWorkout(wk.uuid)
-		go('allenamenti', true)
+		go('allenamento', true)
 	}
 </script>
 
@@ -161,7 +161,7 @@
 		<label class="field" style="margin-top:16px"><span>{t('Note')}</span><textarea class="textarea" bind:value={note} onchange={() => patchWorkout(wk.uuid, { note })} maxlength="2000" placeholder={t('Com\'è andata?')}></textarea></label>
 
 		{#if wk.isActive}<button class="btn primary block" style="margin-top:16px" onclick={finish}>{t('Termina allenamento')}</button>
-		{:else}<button class="btn block" style="margin-top:16px" onclick={() => go(`allenamenti/${wk.uuid}/riepilogo`)}>{t('Riepilogo')}</button>{/if}
+		{:else}<button class="btn block" style="margin-top:16px" onclick={() => go(`allenamento/${wk.uuid}/riepilogo`)}>{t('Riepilogo')}</button>{/if}
 	{/if}
 </main>
 
