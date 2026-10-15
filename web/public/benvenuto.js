@@ -14,7 +14,20 @@ const dots = [...document.querySelectorAll('#dots i')]
 const count = document.getElementById('count')
 const durations = [3200, 5500, 4500, 4500, 4500]
 
+const logo = document.getElementById('logo')
+const rect = (id) => document.getElementById(id).getBoundingClientRect()
+let at = 0
+// grande sullo slot della prima scena, piccolo (40px) sul riquadro in alto a sinistra in tutte le altre
+function place(n = at) {
+	at = n
+	const r = rect(n === 0 ? 'slot' : 'dock')
+	logo.style.transform = `translate(${r.left}px, ${r.top}px) scale(${r.width / 96})`
+	logo.classList.add('ready')
+}
+addEventListener('resize', () => place())
+
 function show(n) {
+	place(n)
 	scenes.forEach((s, i) => s.classList.toggle('on', i === n))
 	dots.forEach((d, i) => d.classList.toggle('on', i === n))
 	if (n === 2) { // la serie batte il record: 180 → 190

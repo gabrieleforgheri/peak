@@ -20,12 +20,22 @@ html, body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.
 	animation: bloom 1.6s ease-out both; }
 @keyframes bloom { from { opacity: 0; transform: scale(1.15); } }
 
+/* il video di sfondo (fatto con /brag, brag-output-sfondo/) a tutto schermo, attenuato perché il primo piano resti leggibile */
+.bg { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; opacity: 0.3; filter: blur(7px) saturate(1.1); transform: scale(1.06); pointer-events: none; }
+.w::after { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+	background: linear-gradient(to bottom, rgba(11, 13, 20, 0.55), rgba(11, 13, 20, 0.2) 40%, rgba(11, 13, 20, 0.85)); }
 .stage { position: relative; flex: 1; min-height: 360px; }
 .scene { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 12px; opacity: 0; transition: opacity 0.7s ease; pointer-events: none; }
 .scene.on { opacity: 1; }
 .s1, .s5 { align-items: center; text-align: center; }
 
-.mark { width: 64px; height: 64px; fill: var(--accent); filter: drop-shadow(0 0 24px rgba(var(--accent-rgb), 0.45)); }
+.slot { width: 96px; height: 96px; }
+.dock { position: absolute; top: calc(env(safe-area-inset-top) + 16px); left: 20px; width: 40px; height: 40px; }
+/* il logo è uno solo: grande al centro nella prima scena, poi vola in alto a sinistra (il transform lo mette benvenuto.js) */
+.logo { position: fixed; z-index: 2; top: 0; left: 0; width: 96px; height: 96px; transform-origin: 0 0; opacity: 0;
+	transition: transform 0.9s cubic-bezier(0.65, 0, 0.25, 1), opacity 0.5s; }
+.logo.ready { opacity: 1; }
+.logo img { display: block; width: 100%; height: 100%; border-radius: 22px; box-shadow: 0 0 40px rgba(var(--accent-rgb), 0.3); animation: pop 0.9s 0.1s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
 .word { font-size: 52px; font-weight: 800; letter-spacing: -0.03em; }
 .tag { font-size: 18px; font-weight: 600; color: var(--text-2); }
 .big-tag { font-size: 24px; font-weight: 700; color: var(--text); line-height: 1.25; margin-top: 8px; }
@@ -40,7 +50,6 @@ html, body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.
 .big i { font-style: normal; font-size: 15px; font-weight: 700; color: var(--text-3); margin-left: 4px; }
 
 /* ogni scena ripete le sue animazioni a ogni ingresso: valgono solo con .on */
-.s1.on .mark, .s5.on .mark { animation: pop 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
 .s1.on .word { animation: rise 0.7s 0.35s both; }
 .s1.on .tag { animation: rise 0.7s 0.9s both; }
 .s5.on .tag { animation: rise 0.8s 0.5s both; }
@@ -77,5 +86,7 @@ footer { display: flex; flex-direction: column; align-items: center; gap: 12px; 
 .note { margin: 0; font-size: 12px; font-weight: 600; color: var(--text-3); }
 
 @media (prefers-reduced-motion: reduce) {
+	.bg { display: none; }
+	.logo, .logo img { transition: none !important; animation: none !important; }
 	.w::before, .scene *, .scene { animation: none !important; transition: none !important; }
 }

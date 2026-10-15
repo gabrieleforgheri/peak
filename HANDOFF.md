@@ -1,4 +1,4 @@
-# Peak — stato al 14 ottobre 2026 (leggere per primo)
+# Peak — stato al 15 ottobre 2026 (leggere per primo)
 
 Massimali diventa **Peak**: l'app web su `peak.yrb4g.com` (stessi dati dell'iPhone, sul server, col login di yG) e
 l'iPhone che sincronizza con lo stesso server. Le decisioni prese con l'utente stanno nel piano approvato
@@ -12,6 +12,7 @@ l'iPhone che sincronizza con lo stesso server. Le decisioni prese con l'utente s
 | Server senza dipendenze (`node:http`, `node:sqlite`): login yG (OIDC+PKCE a mano), sync, foto, import/export backup, dispositivi, Web Push, portale per yG | `server/` | `npm test` (58 test, con un finto authentik) |
 | Client web offline (Svelte 5, IndexedDB, service worker), tutte le schermate, IT+EN | `web/` (build committata in `web/dist`) | `cd web && npx svelte-check && node scripts/check-i18n.mjs && npx vite build`; prova nel browser con coda offline e secondo dispositivo |
 | Pagina `/account/peak`, tile, blueprint 210, script dei segreti, selftest | repo **yG** (commit `c01f50a`, spinto e deployato il 14 ott) | `npm test` in yG, 100 controlli |
+| Benvenuto web prima del login: `/` senza sessione → `/benvenuto.html` (5 scene animate, logo che passa in alto a sinistra, sfondo video fatto con `/brag`, «Accedi con yG») | `web/public/benvenuto.*`, `server/index.ts`; sfondo in `brag-output-sfondo/` (non tracciata) | `npm test` (anche il `Range` dei `.mp4`); Chrome headless a 390 px |
 | App iPhone rinominata Peak (cartelle, target, nome visibile, 2.0) | `main` | compila per dispositivo (senza simulatore) |
 
 Bundle id, nome dello store SwiftData, chiavi UserDefaults e **modulo Swift (`PRODUCT_MODULE_NAME: Massimali`)** non sono
@@ -37,6 +38,9 @@ cambiati di proposito: i dati degli utenti non si toccano.
 4. Tag `v2.0` (pubblica su AltStore) e installazione sul telefono vero **con un backup prima**.
 
 ## Trappole
+
+- Il benvenuto è HTML/CSS/JS a parte (`web/public/benvenuto.*`), non Svelte: `APP_CSP` non ammette script inline. Il server legge `web/dist` all'avvio, quindi dopo `vite build` va riavviato. Un `.mp4` ha bisogno delle risposte `206` (Range), altrimenti Safari non lo riproduce. Il redirect di `/` senza sessione deve restare un redirect: il service worker non mette in cache i redirect, una pagina 200 finirebbe nel guscio offline.
+- Per rifare lo sfondo: `brag-output-sfondo/composition` (`npx hyperframes check`, poi `render --output ../brag.mp4`) e copiare in `web/public/benvenuto.mp4`.
 
 - Il codice TypeScript sta in `common/`, non in `shared/`: su macOS `shared/` e `Shared/` (Swift) sono la stessa cartella.
 - Su Pelican (egg 1) ogni riavvio è anche un deploy: `git pull --ff-only` e `node server/index.ts`, **niente npm**. Il server stampa

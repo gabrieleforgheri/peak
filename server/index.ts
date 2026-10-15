@@ -16,7 +16,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml',
-  '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.map': 'application/json',
+  '.png': 'image/png', '.mp4': 'video/mp4', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.map': 'application/json',
 }
 
 function commitOf(): string {
@@ -79,9 +79,26 @@ export function createApp({ dataDir, env = process.env, staticDir = join(ROOT, '
       if (files.size === 0) throw new HttpError(503, 'client non compilato: npm run build')
       throw new HttpError(404, 'non trovato')
     }
+    // Safari riproduce un video solo se il server sa rispondere a un intervallo di byte (Range)
+    const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? '')
+    if (range && file.type === 'video/mp4') {
+      const size = file.body.length
+      const start = range[1] ? Number(range[1]) : size - Number(range[2])
+      const end = range[1] && range[2] ? Math.min(Number(range[2]), size - 1) : size - 1
+      if (!(start >= 0 && start <= end)) {
+        res.writeHead(416, { 'content-range': `bytes */${size}`, ...SECURITY_HEADERS })
+        return void res.end()
+      }
+      res.writeHead(206, {
+        'content-type': file.type, 'cache-control': file.cache, 'content-range': `bytes ${start}-${end}/${size}`, 'accept-ranges': 'bytes',
+        'content-length': end - start + 1, ...SECURITY_HEADERS,
+      })
+      return void res.end(req.method === 'HEAD' ? undefined : file.body.subarray(start, end + 1))
+    }
     res.writeHead(200, {
       // sw.js mai in cache, nemmeno su Cloudflare (che ignora `no-cache` sui .js): un aggiornamento deve arrivare subito
       'content-type': file.type, 'cache-control': isShell || path === '/sw.js' ? 'no-store' : file.cache,
+      ...(file.type === 'video/mp4' ? { 'accept-ranges': 'bytes' } : {}),
       'content-security-policy': APP_CSP, ...SECURITY_HEADERS,
       ...(path === '/sw.js' ? { 'service-worker-allowed': '/' } : {}),
     })
