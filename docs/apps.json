@@ -8,7 +8,7 @@
       "bundleIdentifier": "com.gabrieleforghieri.massimali",
       "developerName": "Gabriele Forghieri",
       "subtitle": "Massimali di palestra, storico e progressi",
-      "localizedDescription": "App per tenere traccia dei massimali su ogni macchinario della palestra: storico, grafici dei progressi, riscaldamento consigliato e log degli allenamenti. I dati stanno sul telefono; con l'account yG si sincronizzano anche con il web (peak.yrb4g.com).",
+      "localizedDescription": "App per tenere traccia dei massimali su ogni macchinario della palestra: storico, grafici dei progressi, riscaldamento consigliato e log degli allenamenti e schede di allenamento (esercizi con serie, ripetizioni e peso) da scegliere quando inizi. I dati stanno sul telefono; con l'account yG si sincronizzano anche con il web (peak.yrb4g.com).",
       "iconURL": "https://gabrieleforgheri.github.io/peak/icon.png",
       "tintColor": "34C759",
       "versions": [
