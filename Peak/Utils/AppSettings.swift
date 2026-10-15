@@ -97,6 +97,9 @@ final class AppSettings {
         static let watchSensitivity = "settings.watchSensitivity"
         static let didSeeWelcome = "settings.didSeeWelcome"
         static let didRecomputeRecords = "settings.didRecomputeRecords2"
+        static let templateSets = "settings.templateSets"
+        static let templateReps = "settings.templateReps"
+        static let templateWeight = "settings.templateWeight"
     }
 
     private let defaults: UserDefaults
@@ -207,6 +210,19 @@ final class AppSettings {
         didSet { defaults.set(didRecomputeRecords, forKey: Key.didRecomputeRecords) }
     }
 
+    /// Cosa mostrare nelle schede e nella lista dell'allenamento. Seguono l'account.
+    var templateSets: Bool {
+        didSet { defaults.set(templateSets, forKey: Key.templateSets) }
+    }
+
+    var templateReps: Bool {
+        didSet { defaults.set(templateReps, forKey: Key.templateReps) }
+    }
+
+    var templateWeight: Bool {
+        didSet { defaults.set(templateWeight, forKey: Key.templateWeight) }
+    }
+
     var lastBackupDate: Date? {
         didSet { defaults.set(lastBackupDate, forKey: Key.lastBackup) }
     }
@@ -243,6 +259,9 @@ final class AppSettings {
         self.lastExportDate = defaults.object(forKey: Key.lastExport) as? Date
         self.didSeeWelcome = defaults.bool(forKey: Key.didSeeWelcome)
         self.didRecomputeRecords = defaults.bool(forKey: Key.didRecomputeRecords)
+        self.templateSets = defaults.object(forKey: Key.templateSets) as? Bool ?? true
+        self.templateReps = defaults.object(forKey: Key.templateReps) as? Bool ?? true
+        self.templateWeight = defaults.object(forKey: Key.templateWeight) as? Bool ?? true
     }
 
     var accentColor: Color { accent.color }

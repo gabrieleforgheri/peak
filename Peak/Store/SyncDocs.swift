@@ -14,7 +14,7 @@ enum SyncDocs {
     typealias Encoded = [String: [String: Any]]
 
     /// Ordine di applicazione: prima i genitori (macchinari, allenamenti), poi ciò che li richiama.
-    static let applyOrder = ["setting", "exercise", "workout", "record", "set", "bodyweight"]
+    static let applyOrder = ["setting", "exercise", "template", "workout", "record", "set", "bodyweight"]
 
     static func key(_ kind: String, _ uuid: UUID) -> String { "\(kind):\(uuid.uuidString)" }
 
@@ -23,7 +23,8 @@ enum SyncDocs {
     /// Le impostazioni che seguono l'account. Quelle del Watch, di Salute e dei dati interni restano del dispositivo.
     static let settingKeys = [
         "unit", "formula", "accent", "restTimerEnabled", "restSeconds", "progressionEnabled", "repRangeMin",
-        "repRangeMax", "plateCalculatorEnabled", "barWeight", "availablePlates", "lastExportDate"
+        "repRangeMax", "plateCalculatorEnabled", "barWeight", "availablePlates", "lastExportDate",
+        "templateSets", "templateReps", "templateWeight"
     ]
 
     private static func settingValue(_ name: String, _ settings: AppSettings) -> Any {
@@ -40,6 +41,9 @@ enum SyncDocs {
         case "barWeight": return settings.barWeight
         case "availablePlates": return settings.availablePlates
         case "lastExportDate": return settings.lastExportDate.map(PeakDates.string) ?? NSNull()
+        case "templateSets": return settings.templateSets
+        case "templateReps": return settings.templateReps
+        case "templateWeight": return settings.templateWeight
         default: return NSNull()
         }
     }
@@ -58,6 +62,9 @@ enum SyncDocs {
         case "repRangeMin": guard let v = number(1, 30) else { return false }; settings.repRangeMin = Int(v)
         case "repRangeMax": guard let v = number(1, 30) else { return false }; settings.repRangeMax = Int(v)
         case "plateCalculatorEnabled": guard let v = value as? Bool else { return false }; settings.plateCalculatorEnabled = v
+        case "templateSets": guard let v = value as? Bool else { return false }; settings.templateSets = v
+        case "templateReps": guard let v = value as? Bool else { return false }; settings.templateReps = v
+        case "templateWeight": guard let v = value as? Bool else { return false }; settings.templateWeight = v
         case "barWeight": guard let v = number(0, 100) else { return false }; settings.barWeight = v
         case "availablePlates":
             guard let list = value as? [NSNumber] else { return false }
@@ -113,7 +120,9 @@ enum SyncDocs {
                 "endedAt": workout.endedAt.map(PeakDates.string) ?? NSNull(),
                 "note": workout.note,
                 "name": workout.name,
-                "focus": workout.focusRaw
+                "focus": workout.focusRaw,
+                "template": workout.templateRaw,
+                "plan": TemplateItems.json(workout.plan)
             ]
             for set in workout.setList {
                 out[key("set", set.uuid)] = [
@@ -128,6 +137,15 @@ enum SyncDocs {
                     "noRecord": set.excludedFromRecords
                 ]
             }
+        }
+
+        for template in try context.fetch(FetchDescriptor<WorkoutTemplate>()) {
+            out[key("template", template.uuid)] = [
+                "name": template.name,
+                "items": TemplateItems.json(template.items),
+                "sortIndex": template.sortIndex,
+                "createdAt": PeakDates.string(template.createdAt)
+            ]
         }
 
         for entry in try context.fetch(FetchDescriptor<BodyWeightEntry>()) {
@@ -165,6 +183,7 @@ enum SyncDocs {
         }
         var exercises = try index(Exercise.self, \.uuid)
         var workouts = try index(Workout.self, \.uuid)
+        var templates = try index(WorkoutTemplate.self, \.uuid)
         var records = try index(MaxRecord.self, \.uuid)
         var sets = try index(WorkoutSet.self, \.uuid)
         var weights = try index(BodyWeightEntry.self, \.uuid)
@@ -185,6 +204,7 @@ enum SyncDocs {
                     switch doc.kind {
                     case "exercise": if let m = exercises.removeValue(forKey: uuid) { context.delete(m) }
                     case "workout": if let m = workouts.removeValue(forKey: uuid) { context.delete(m) }
+                    case "template": if let m = templates.removeValue(forKey: uuid) { context.delete(m) }
                     case "record": if let m = records.removeValue(forKey: uuid) { context.delete(m) }
                     case "set": if let m = sets.removeValue(forKey: uuid) { context.delete(m) }
                     case "bodyweight": if let m = weights.removeValue(forKey: uuid) { context.delete(m) }
@@ -239,6 +259,23 @@ enum SyncDocs {
                 workout.note = text(d, "note") ?? ""
                 workout.name = text(d, "name") ?? ""
                 workout.focusRaw = text(d, "focus") ?? ""
+                workout.templateRaw = text(d, "template") ?? ""
+                workout.plan = TemplateItems.parse(d["plan"])
+                result.upserted.insert(key)
+
+            case "template":
+                guard let uuid, let name = text(d, "name"), let created = date(d, "createdAt") else { result.skipped.insert(key); continue }
+                let template = templates[uuid] ?? {
+                    let t = WorkoutTemplate(name: name)
+                    t.uuid = uuid
+                    context.insert(t)
+                    templates[uuid] = t
+                    return t
+                }()
+                template.name = name
+                template.items = TemplateItems.parse(d["items"])
+                template.sortIndex = integer(d, "sortIndex") ?? 0
+                template.createdAt = created
                 result.upserted.insert(key)
 
             case "record":

@@ -14,6 +14,11 @@ final class Workout {
     /// Gruppi scelti a inizio sessione ("cosa alleni oggi"), come rawValue separati
     /// da virgola. Vuoto = nessun filtro.
     var focusRaw: String = ""
+    /// uuid della scheda da cui è partito l'allenamento, vuoto = nessuna. La scheda può sparire: non è un legame.
+    var templateRaw: String = ""
+    /// La lista di oggi: copia delle righe della scheda all'avvio, poi modificata in sessione
+    /// (sostituisci, togli, sposta, aggiungi). JSON di `[TemplateItem]`, vuoto = nessuna riga.
+    var planRaw: String = ""
 
     @Relationship(deleteRule: .cascade, inverse: \WorkoutSet.workout)
     var sets: [WorkoutSet]? = []
@@ -31,6 +36,22 @@ final class Workout {
     var focus: Set<MuscleGroup> {
         get { Set(focusRaw.split(separator: ",").compactMap { MuscleGroup(rawValue: String($0)) }) }
         set { focusRaw = MuscleGroup.allCases.filter(newValue.contains).map(\.rawValue).joined(separator: ",") }
+    }
+
+    var plan: [TemplateItem] {
+        get { TemplateItems.decode(planRaw) }
+        set { planRaw = TemplateItems.encode(newValue) }
+    }
+
+    var templateUUID: UUID? { UUID(uuidString: templateRaw) }
+
+    private var planSets: [PlanSet] {
+        orderedSets.map { PlanSet(exercise: $0.exercise?.uuid, weight: $0.weight, reps: $0.reps, isWarmup: $0.isWarmup) }
+    }
+
+    /// La lista di oggi in ordine (vedi `Plan.session`). `exists`: gli esercizi che ci sono ancora.
+    func items(_ mode: Plan.Mode = .view, exists: (UUID) -> Bool) -> [TemplateItem] {
+        Plan.session(plan: plan, sets: planSets, exists: exists, mode: mode)
     }
 
     var orderedSets: [WorkoutSet] {

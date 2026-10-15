@@ -8,6 +8,8 @@ struct BackupFile: Codable {
     var workouts: [WorkoutDTO]
     /// Opzionale: i backup scritti prima del peso corporeo restano leggibili.
     var bodyWeights: [BodyWeightDTO]?
+    /// Opzionale: i backup scritti prima delle schede restano leggibili.
+    var templates: [TemplateDTO]?
 
     static let currentVersion = 1
 }
@@ -52,7 +54,39 @@ struct WorkoutDTO: Codable {
     var focus: String?
     /// Opzionale: i backup scritti prima dei nomi restano leggibili.
     var name: String?
+    /// Opzionali: i backup scritti prima delle schede non li hanno.
+    var template: UUID?
+    var plan: [TemplateItemDTO]?
     var sets: [WorkoutSetDTO]
+}
+
+struct TemplateDTO: Codable {
+    var uuid: UUID
+    var name: String
+    var sortIndex: Int
+    var createdAt: Date
+    var items: [TemplateItemDTO]
+}
+
+/// Una riga di scheda. `weight` assente = si mostra l'ultimo usato.
+struct TemplateItemDTO: Codable {
+    var exerciseUUID: UUID
+    var sets: Int
+    var repsMin: Int
+    var repsMax: Int
+    var weight: Double?
+
+    init(_ item: TemplateItem) {
+        exerciseUUID = item.exercise
+        sets = item.sets
+        repsMin = item.repsMin
+        repsMax = item.repsMax
+        weight = item.weight
+    }
+
+    var item: TemplateItem {
+        TemplateItem(exercise: exerciseUUID, sets: sets, repsMin: repsMin, repsMax: repsMax, weight: weight)
+    }
 }
 
 struct WorkoutSetDTO: Codable {

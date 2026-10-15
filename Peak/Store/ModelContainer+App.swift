@@ -16,7 +16,8 @@ enum AppStore {
         MaxRecord.self,
         Workout.self,
         WorkoutSet.self,
-        BodyWeightEntry.self
+        BodyWeightEntry.self,
+        WorkoutTemplate.self
     ])
 
     static func makeContainer(inMemory: Bool = false) throws -> ModelContainer {

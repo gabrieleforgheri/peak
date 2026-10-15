@@ -70,6 +70,13 @@ enum BackupService {
         let weights = try context.fetch(
             FetchDescriptor<BodyWeightEntry>(sortBy: [SortDescriptor(\.date)])
         )
+        let templates = try context.fetch(
+            FetchDescriptor<WorkoutTemplate>(sortBy: [SortDescriptor(\.sortIndex)])
+        )
+        let liveExercises = Set(exercises.map(\.uuid))
+        func dtos(_ items: [TemplateItem]) -> [TemplateItemDTO] {
+            items.filter { liveExercises.contains($0.exercise) }.map(TemplateItemDTO.init)
+        }
 
         return BackupFile(
             version: BackupFile.currentVersion,
@@ -109,6 +116,8 @@ enum BackupService {
                     note: workout.note,
                     focus: workout.focusRaw,
                     name: workout.name,
+                    template: workout.templateUUID,
+                    plan: workout.plan.isEmpty ? nil : dtos(workout.plan),
                     sets: workout.orderedSets.map { set in
                         WorkoutSetDTO(
                             uuid: set.uuid,
@@ -131,6 +140,15 @@ enum BackupService {
                     date: entry.date,
                     weight: entry.weight,
                     fromHealth: entry.fromHealth
+                )
+            },
+            templates: templates.map { template in
+                TemplateDTO(
+                    uuid: template.uuid,
+                    name: template.name,
+                    sortIndex: template.sortIndex,
+                    createdAt: template.createdAt,
+                    items: dtos(template.items)
                 )
             }
         )
@@ -188,6 +206,7 @@ enum BackupService {
             try context.delete(model: MaxRecord.self)
             try context.delete(model: Exercise.self)
             try context.delete(model: BodyWeightEntry.self)
+            try context.delete(model: WorkoutTemplate.self)
             try context.save()
         }
 
@@ -237,6 +256,8 @@ enum BackupService {
             workout.endedAt = dto.endedAt
             workout.focusRaw = dto.focus ?? ""
             workout.name = dto.name ?? ""
+            workout.templateRaw = dto.template?.uuidString ?? ""
+            workout.plan = (dto.plan ?? []).map(\.item).filter { exercisesByUUID[$0.exercise] != nil }
             context.insert(workout)
 
             for setDTO in dto.sets {
@@ -265,6 +286,21 @@ enum BackupService {
             let entry = BodyWeightEntry(weight: dto.weight, date: dto.date, fromHealth: dto.fromHealth)
             entry.uuid = dto.uuid
             context.insert(entry)
+        }
+
+        var existingTemplateUUIDs = Set<UUID>()
+        for template in try context.fetch(FetchDescriptor<WorkoutTemplate>()) {
+            existingTemplateUUIDs.insert(template.uuid)
+        }
+        for dto in file.templates ?? [] where !existingTemplateUUIDs.contains(dto.uuid) {
+            let template = WorkoutTemplate(
+                name: dto.name,
+                items: dto.items.map(\.item).filter { exercisesByUUID[$0.exercise] != nil },
+                sortIndex: dto.sortIndex
+            )
+            template.uuid = dto.uuid
+            template.createdAt = dto.createdAt
+            context.insert(template)
         }
 
         try context.save()
