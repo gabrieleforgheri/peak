@@ -2,8 +2,8 @@
 	import { t, tn } from '../lib/i18n.ts'
 
 	/** La prima cosa che vedi: una montagna e una frase che cambia. Sotto, i due numeri che contano di più. */
-	let { greeting, name, streak, weekSessions, goal, onavatar }: {
-		greeting: string; name: string; streak: number; weekSessions: number; goal: number; onavatar: () => void
+	let { greeting, name, streak, weekSessions, goal, onavatar, onchangegoal }: {
+		greeting: string; name: string; streak: number; weekSessions: number; goal: number; onavatar: () => void; onchangegoal: () => void
 	} = $props()
 
 	const PHRASES = [
@@ -54,10 +54,10 @@
 	<div class="quote">{#key i}<p>{PHRASES[i]}</p>{/key}</div>
 
 	<!-- l'obiettivo della settimana: un segmento per allenamento -->
-	<div class="goal" role="progressbar" aria-valuemin="0" aria-valuemax={goal} aria-valuenow={Math.min(weekSessions, goal)} aria-label={t('Obiettivo della settimana')}>
+	<button class="goal" onclick={onchangegoal} aria-label="{t('Obiettivo della settimana')}: {Math.min(weekSessions, goal)} / {goal}. {t('Cambia l\'obiettivo della settimana')}">
 		<div class="gl"><span>{weekSessions >= goal ? t('Obiettivo raggiunto!') : t('Obiettivo della settimana')}</span><b>{weekSessions} / {goal}</b></div>
 		<div class="segs">{#each Array(goal) as _, k}<i class:on={k < weekSessions} class:last={k === weekSessions - 1}></i>{/each}</div>
-	</div>
+	</button>
 
 	<div class="foot">
 		<span class="pill"><b>{streak}</b> {t('settimane di fila')}</span>
@@ -77,7 +77,7 @@
 	.quote p { margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.08; text-shadow: 0 4px 30px rgba(var(--accent-rgb), .45); animation: in .7s cubic-bezier(.22, 1, .36, 1); }
 	@keyframes in { from { opacity: 0; transform: translateY(10px); } }
 	@media (prefers-reduced-motion: reduce) { .quote p { animation: none; } }
-	.goal { position: relative; margin-top: auto; padding-top: 14px; }
+	.goal { position: relative; margin-top: auto; padding: 14px 0 0; border: 0; background: none; color: inherit; text-align: left; width: 100%; }
 	.gl { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--text-2); margin-bottom: 8px; text-shadow: 0 1px 10px rgba(0,0,0,.7); }
 	.gl b { font-size: 15px; color: var(--text); font-variant-numeric: tabular-nums; }
 	.segs { display: flex; gap: 6px; }

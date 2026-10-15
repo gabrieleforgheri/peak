@@ -138,6 +138,9 @@
 
 	{:else if cat.id === 'allenamento'}
 	<div class="card stack">
+		<div class="small muted">{t('Obiettivo della settimana')}</div>
+		<Stepper value={s.weeklyGoal || 3} step={1} min={1} max={7} unit={t('allenamenti')} onchange={(v) => setSetting('weeklyGoal', v)} />
+		<hr style="border:0;border-top:1px solid var(--stroke);width:100%;margin:0" />
 		<label class="row between"><span>{t('Timer di recupero')}</span><input class="toggle" type="checkbox" checked={s.restTimerEnabled} onchange={(e) => setSetting('restTimerEnabled', e.currentTarget.checked)} /></label>
 		{#if s.restTimerEnabled}<Stepper value={s.restSeconds} step={15} min={15} max={600} unit={t('secondi')} onchange={(v) => setSetting('restSeconds', v)} />
 			{#if push !== 'unsupported'}

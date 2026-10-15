@@ -17,6 +17,7 @@
 	import FriendProfile from './pages/FriendProfile.svelte'
 	import Invite from './pages/Invite.svelte'
 	import Tour from './components/Tour.svelte'
+	import GoalPicker from './components/GoalPicker.svelte'
 	import Settings from './pages/Settings.svelte'
 	import Archived from './pages/Archived.svelte'
 
@@ -81,6 +82,8 @@
 			</div></nav>
 		{/if}
 	{/if}
-	{#if !loading && !showFirstRun && S.synced && !m.settings.tutorialDone}<Tour />{/if}
+	<!-- la prima volta: prima l'obiettivo, poi il tutorial -->
+	{#if !loading && !showFirstRun && S.synced && !m.settings.weeklyGoal}<GoalPicker onclose={() => {}} />
+	{:else if !loading && !showFirstRun && S.synced && !m.settings.tutorialDone}<Tour />{/if}
 	{#if T.msg}<div class="toast" role="status">{T.msg}</div>{/if}
 </div>

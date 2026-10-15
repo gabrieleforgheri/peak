@@ -85,6 +85,8 @@ export const SETTING_DEFAULTS = {
   plateCalculatorEnabled: true, barWeight: 20, availablePlates: [25, 20, 15, 10, 5, 2.5, 1.25],
   /** Il tutorial l'hai già fatto (su un dispositivo qualsiasi). */
   tutorialDone: false,
+  /** Allenamenti a settimana che ti sei dato come obiettivo; 0 = non l'hai ancora scelto. */
+  weeklyGoal: 0,
 } as const
 export type SettingKey = keyof typeof SETTING_DEFAULTS
 /** Impostazioni tolte nella 3.0: i client vecchi le mandano ancora; il server le ignora senza segnalarle come errori. */
@@ -108,6 +110,7 @@ function cleanSetting(key: string, v: unknown): unknown {
     case 'restTimerEnabled': case 'progressionEnabled': case 'plateCalculatorEnabled': case 'tutorialDone':
       return typeof v === 'boolean' ? v : undefined
     case 'restSeconds': return int(v, 15, 600) ?? undefined
+    case 'weeklyGoal': return int(v, 0, 7) ?? undefined
     case 'repRangeMin': case 'repRangeMax': return int(v, 1, 30) ?? undefined
     case 'barWeight': return num(v, 0, 100) ?? undefined
     case 'availablePlates':

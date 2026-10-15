@@ -11,6 +11,7 @@
 	import { F, loadFriends, loadNews } from '../lib/social.svelte.ts'
 	import { S, getModel } from '../lib/store.svelte.ts'
 	import Donut from '../components/Donut.svelte'
+	import GoalPicker from '../components/GoalPicker.svelte'
 	import Heatmap from '../components/Heatmap.svelte'
 	import SummitHero from '../components/SummitHero.svelte'
 	import Icon from '../components/Icon.svelte'
@@ -25,6 +26,7 @@
 	const hour = new Date().getHours()
 	const greeting = hour < 12 ? t('Buongiorno') : hour < 18 ? t('Buon pomeriggio') : t('Buonasera')
 	const first = $derived((S.user?.nome ?? '').split(' ')[0] || S.user?.username || '')
+	let choosing = $state(false)
 	const active = $derived(m.workouts.find((w) => w.isActive))
 	const finished = $derived(m.workouts.filter((w) => !w.isActive))
 	// la scheda che tocca: quella dopo l'ultima usata, a rotazione
@@ -106,7 +108,9 @@
 </script>
 
 <main class="screen">
-	<SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={finished.filter((w) => w.dateMs >= weekStart(Date.now())).length} goal={weeklyGoal(stat)} onavatar={() => go('impostazioni/account')} />
+	<SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={finished.filter((w) => w.dateMs >= weekStart(Date.now())).length} goal={m.settings.weeklyGoal || weeklyGoal(stat)} onchangegoal={() => (choosing = true)} onavatar={() => go('impostazioni/account')} />
+
+	{#if choosing}<GoalPicker current={m.settings.weeklyGoal} suggested={weeklyGoal(stat)} onclose={() => (choosing = false)} />{/if}
 
 	<!-- subito sotto: cosa fare adesso, in piccolo -->
 	<button class="next" onclick={begin} data-tour="start">

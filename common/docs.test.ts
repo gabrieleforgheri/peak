@@ -50,3 +50,9 @@ test('esercizio: id del catalogo e nascosto', () => {
   assert.deepEqual([plain.data.catalog, plain.data.hidden], ['', false])
   for (const bad of ['Lat Pulldown', 'lat_pulldown', 'x'.repeat(81), 5]) assert.deepEqual(parseDoc('exercise', U(1), { ...base, catalog: bad }), { error: 'catalog' })
 })
+
+test('obiettivo settimanale: intero da 0 a 7', () => {
+  assert.deepEqual(parseDoc('setting', 'weeklyGoal', { value: 4 }), { data: { value: 4 } })
+  assert.equal(SETTING_DEFAULTS.weeklyGoal, 0)
+  for (const bad of [-1, 8, 2.5, '3', null]) assert.deepEqual(parseDoc('setting', 'weeklyGoal', { value: bad }), { error: 'value' })
+})
