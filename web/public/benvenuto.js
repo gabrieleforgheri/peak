@@ -26,28 +26,52 @@ function place(n = at) {
 }
 addEventListener('resize', () => place())
 
+let counter
 function show(n) {
 	place(n)
 	scenes.forEach((s, i) => s.classList.toggle('on', i === n))
 	dots.forEach((d, i) => d.classList.toggle('on', i === n))
+	clearTimeout(counter)
+	count.textContent = '180'
 	if (n === 3) { // la serie batte il record: 180 → 190
-		count.textContent = '180'
-		setTimeout(() => {
+		counter = setTimeout(() => {
 			const t0 = performance.now()
 			const tick = (t) => {
 				const k = Math.min(1, (t - t0) / 1000)
 				count.textContent = String(Math.round(180 + 10 * k))
-				if (k < 1) requestAnimationFrame(tick)
+				if (k < 1 && at === 3) requestAnimationFrame(tick)
 			}
 			requestAnimationFrame(tick)
 		}, 1100)
 	}
 }
 
-if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-	show(5) // senza movimento: l'ultima scena, ferma
-} else {
-	let n = 0
-	const next = () => { show(n); setTimeout(next, durations[n]); n = (n + 1) % scenes.length }
-	next()
+// il giro automatico riparte da ogni scena, anche quando la scelta è a mano
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
+let timer
+let current = 0
+function go(n) {
+	current = (n + scenes.length) % scenes.length
+	show(current)
+	clearTimeout(timer)
+	if (!reduced) timer = setTimeout(() => go(current + 1), durations[current])
 }
+go(reduced ? scenes.length - 1 : 0) // senza movimento: l'ultima scena, ferma; si sfoglia a mano
+
+// a mano: swipe o tocco sulla scena (il terzo a sinistra torna indietro), puntini, frecce
+const stage = document.getElementById('stage')
+let down
+stage.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY } })
+stage.addEventListener('pointerup', (e) => {
+	if (!down) return
+	const dx = e.clientX - down.x, dy = e.clientY - down.y
+	down = undefined
+	if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) go(current + (dx < 0 ? 1 : -1))
+	else if (Math.abs(dx) < 10 && Math.abs(dy) < 10) go(current + (e.clientX - stage.getBoundingClientRect().left < stage.clientWidth / 3 ? -1 : 1))
+})
+stage.addEventListener('pointercancel', () => { down = undefined })
+dots.forEach((d, i) => d.addEventListener('click', () => go(i)))
+addEventListener('keydown', (e) => {
+	if (e.key === 'ArrowRight') go(current + 1)
+	else if (e.key === 'ArrowLeft') go(current - 1)
+})
