@@ -21,11 +21,9 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Per tenere attivo il conteggio delle ripetizioni durante la serie.</string>
+	<string>Per tenere aperta l'app sul polso durante l'allenamento.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Per tenere attivo il conteggio delle ripetizioni durante la serie. L'allenamento in Salute lo registra l'iPhone.</string>
-	<key>NSMotionUsageDescription</key>
-	<string>Per contare le ripetizioni dal movimento del polso.</string>
+	<string>Per tenere aperta l'app sul polso durante l'allenamento. L'allenamento in Salute lo registra l'iPhone.</string>
 	<key>WKApplication</key>
 	<true/>
 	<key>WKBackgroundModes</key>

@@ -32,7 +32,6 @@ struct ExerciseDetailView: View {
         }
     }
 
-    private var formula: OneRepMaxFormula { settings.formula }
     private var tint: Color { exercise.muscleGroup.tint }
 
     private var records: [MaxRecord] { exercise.recordsByDateDesc }
@@ -151,7 +150,7 @@ struct ExerciseDetailView: View {
                             }
                         }
                         if best.reps > 1 {
-                            Text("≈ \(Fmt.weight(best.estimatedOneRepMax(using: formula), unit: settings.unit)) di 1RM stimato")
+                            Text("≈ \(Fmt.weight(best.estimatedOneRepMax, unit: settings.unit)) di 1RM stimato")
                                 .font(Theme.rounded(11, .medium))
                                 .foregroundStyle(Theme.textTertiary)
                         }
@@ -334,7 +333,7 @@ struct ExerciseDetailView: View {
                         Spacer()
 
                         if record.reps > 1 {
-                            Text("≈ \(Fmt.weight(record.estimatedOneRepMax(using: formula), unit: settings.unit))")
+                            Text("≈ \(Fmt.weight(record.estimatedOneRepMax, unit: settings.unit))")
                                 .font(Theme.rounded(12, .semibold))
                                 .foregroundStyle(Theme.textTertiary)
                         }

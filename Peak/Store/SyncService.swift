@@ -291,7 +291,6 @@ final class SyncService {
     func completeConnection() {
         guard state == .onboarding, let credentials else { return }
         PeakKeychain.save(credentials)
-        settings?.didSeedCatalog = true
         state = .connected
         persist()
         updatePending()
@@ -401,7 +400,6 @@ final class SyncService {
 
         try commit(answer.docs, photos: photos)
         store.cursor = answer.rev
-        settings?.didSeedCatalog = true
         persist()
         updatePending()
         lastSync = Date()

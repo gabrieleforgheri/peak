@@ -11,41 +11,16 @@ final class RemindersTests: XCTestCase {
         return AppSettings(defaults: defaults)
     }
 
-    // MARK: - Promemoria di backup
-
-    /// Chi non ha mai esportato va avvisato subito: è la situazione più esposta.
-    func testNeverExportedNeedsReminder() {
-        let settings = makeSettings()
-        XCTAssertNil(settings.lastExportDate)
-        XCTAssertTrue(settings.needsExportReminder)
-        XCTAssertNil(settings.daysSinceExport)
-    }
-
-    func testRecentExportDoesNotRemind() {
-        let settings = makeSettings()
-        settings.lastExportDate = Date().addingTimeInterval(-3 * 86_400)
-        XCTAssertEqual(settings.daysSinceExport, 3)
-        XCTAssertFalse(settings.needsExportReminder)
-    }
-
-    func testOldExportRemindsAgain() {
-        let settings = makeSettings()
-        settings.lastExportDate = Date().addingTimeInterval(-Double(AppSettings.exportReminderDays + 1) * 86_400)
-        XCTAssertTrue(settings.needsExportReminder)
-    }
-
     func testSettingsSurviveAcrossInstances() {
         let suite = "massimali.tests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
 
         let first = AppSettings(defaults: defaults)
         first.healthSyncEnabled = true
-        first.didCurateCatalog = true
         first.unit = .lb
 
         let second = AppSettings(defaults: defaults)
         XCTAssertTrue(second.healthSyncEnabled)
-        XCTAssertTrue(second.didCurateCatalog)
         XCTAssertEqual(second.unit, .lb)
     }
 

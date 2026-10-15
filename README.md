@@ -74,7 +74,7 @@ project.yml                  configurazione XcodeGen (bundle id, target iOS 17, 
 Massimali/
   MassimaliApp.swift         @main, ModelContainer, iniezione delle preferenze
   Model/                     Exercise, MaxRecord, Workout, WorkoutSet, BodyWeightEntry,
-                             MuscleGroup, OneRepMax (Epley/Brzycki), Warmup, SeedCatalog
+                             MuscleGroup, OneRepMax (Epley), Warmup, SeedCatalog
   Store/                     AppStore (ModelContainer), BackupService + DTO,
                              RecordService, HealthService
   Design/                    Theme, GlassCard, Components (stepper, tessere, badge),
@@ -86,8 +86,8 @@ Massimali/
     Maxes/                   lista, dettaglio con grafico, sheet del massimale, editor
     Workouts/                sessione, aggiunta serie, selettore, riepilogo
     Progress/                volume settimanale, ripartizione, top movers
-    Settings/                unità, formula, accento, Salute, backup, catalogo,
-                             sfoltimento del catalogo (CatalogCurationView)
+    Settings/                una vista per sottopagina: generale, allenamento, account yG,
+                             Salute, backup, dati (archiviati, cancella tutto)
 MassimaliWatch/              app Watch: contatore, Digital Crown, invio delle serie
 WatchShared/                 messaggi iPhone↔Watch e RepCounter (compilati in entrambe)
 MassimaliTests/              1RM, riscaldamento, rilevamento record, statistiche,
@@ -164,11 +164,10 @@ verticale scorrerebbe la pagina.
 
 ## App per Apple Watch
 
-Sugli esercizi di **braccia** il Watch conta le ripetizioni dal movimento del polso,
-vibra a ognuna e, a serie finita, la registra nella sessione dell'iPhone con il carico
-mostrato (si corregge con la Digital Crown). Sulle gambe il polso è fermo: lì le
-ripetizioni si inseriscono a mano dal Watch. Sui monolaterali il Watch va sul braccio
-che lavora.
+Il Watch mostra l'esercizio aperto nella sessione dell'iPhone (con l'obiettivo della
+scheda): il carico si regola con la Digital Crown, le ripetizioni con − e +, *Registra*
+manda la serie all'iPhone. Il conteggio automatico delle ripetizioni dal movimento del polso
+è stato tolto nella 3.0.
 
 - **Scelta dell'esercizio**: nella sessione si sceglie solo cosa stai facendo (dal
   selettore o toccando l'intestazione di una card, che diventa *in corso*), senza peso né
@@ -176,14 +175,8 @@ che lavora.
   inserire a mano.
 - **Peso dalla ghiera**: la Digital Crown si muove a passi del macchinario partendo dal
   peso proposto, quindi dà solo pesi inseribili (anche sui pacchi sfalsati).
-- **Avvio**: *Via* sul Watch, oppure l'icona del Watch sulla card (apre l'app
-  sull'orologio tramite HealthKit e fa partire la serie). Da *Via* parte un cronometro.
-- **Modalità** (*Impostazioni → Apple Watch*): via a mano e fine automatica dopo N
-  secondi fermo (default 4 s), via e fine a mano, oppure tutto automatico (sotto le 3
-  ripetizioni è un falso allarme e non si registra).
-- **Sensibilità**: è la manopola di calibrazione del contatore
-  (`WatchShared/RepCounter.swift`): se salta ripetizioni alzala, se ne conta troppe
-  abbassala.
+- **Avvio**: l'icona del Watch sulla card apre l'app sull'orologio tramite HealthKit (la
+  sessione di allenamento la tiene aperta a polso abbassato).
 - Una serie arrivata dal Watch senza sessione aperta ne apre una nuova.
 
 ### Installazione: dal Mac, non da AltStore
@@ -250,10 +243,10 @@ confronto sta tutta in `Model/MaxRanking.swift`: vince prima il peso più alto, 
 parità di peso le ripetizioni in più. Quindi 85 × 3 batte 80 × 8, e 80 × 8 batte
 80 × 5.
 
-Il **1RM stimato** (Epley di default, Brzycki alternativa) resta come nota a margine
-accanto ai numeri veri: serve a paragonare serie con ripetizioni diverse, non decide
-mai un record. Cambiare formula nelle impostazioni non riscrive niente, perché i
-record salvano **peso × ripetizioni grezzi** e la stima si ricalcola al volo.
+Il **1RM stimato** (Epley) resta come nota a margine accanto ai numeri veri: serve a
+paragonare serie con ripetizioni diverse (e, nella 3.0, a ordinare le classifiche), non
+decide mai un record. I record salvano **peso × ripetizioni grezzi** e la stima si
+ricalcola al volo.
 
 Durante un allenamento, ogni serie non di riscaldamento che batte il massimale
 precedente crea da sola un record marcato *da allenamento*; cancellando quella serie il

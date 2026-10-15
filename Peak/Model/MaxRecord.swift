@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 /// Una misurazione del massimale: peso × ripetizioni in una certa data.
-/// Il 1RM non viene mai salvato, si ricalcola sempre dalla formula scelta.
+/// Il 1RM non viene mai salvato, si ricalcola sempre (Epley).
 @Model
 final class MaxRecord {
     var uuid: UUID = UUID()
@@ -32,7 +32,7 @@ final class MaxRecord {
         self.exercise = exercise
     }
 
-    func estimatedOneRepMax(using formula: OneRepMaxFormula) -> Double {
-        formula.oneRepMax(weight: weight, reps: reps)
+    var estimatedOneRepMax: Double {
+        OneRepMax.estimate(weight: weight, reps: reps)
     }
 }

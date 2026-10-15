@@ -76,12 +76,8 @@ final class AppSettings {
 
     private enum Key {
         static let unit = "settings.unit"
-        static let formula = "settings.formula"
         static let accent = "settings.accent"
-        static let didSeed = "settings.didSeedCatalog"
         static let lastBackup = "settings.lastBackupDate"
-        static let lastExport = "settings.lastExportDate"
-        static let didCurate = "settings.didCurateCatalog"
         static let health = "settings.healthSyncEnabled"
         static let restEnabled = "settings.restTimerEnabled"
         static let restSeconds = "settings.restSeconds"
@@ -91,15 +87,7 @@ final class AppSettings {
         static let plates = "settings.plateCalculatorEnabled"
         static let barWeight = "settings.barWeight"
         static let availablePlates = "settings.availablePlates"
-        static let watch = "settings.watchEnabled"
-        static let watchMode = "settings.watchMode"
-        static let watchAutoEnd = "settings.watchAutoEndSeconds"
-        static let watchSensitivity = "settings.watchSensitivity"
         static let didSeeWelcome = "settings.didSeeWelcome"
-        static let didRecomputeRecords = "settings.didRecomputeRecords2"
-        static let templateSets = "settings.templateSets"
-        static let templateReps = "settings.templateReps"
-        static let templateWeight = "settings.templateWeight"
     }
 
     private let defaults: UserDefaults
@@ -117,22 +105,8 @@ final class AppSettings {
         }
     }
 
-    var formula: OneRepMaxFormula {
-        didSet { defaults.set(formula.rawValue, forKey: Key.formula) }
-    }
-
     var accent: AccentPalette {
         didSet { defaults.set(accent.rawValue, forKey: Key.accent) }
-    }
-
-    var didSeedCatalog: Bool {
-        didSet { defaults.set(didSeedCatalog, forKey: Key.didSeed) }
-    }
-
-    /// `true` una volta che hai scelto quali macchinari ha la tua palestra,
-    /// così l'invito a sfoltire il catalogo non torna a ogni avvio.
-    var didCurateCatalog: Bool {
-        didSet { defaults.set(didCurateCatalog, forKey: Key.didCurate) }
     }
 
     /// Sincronizzazione con l'app Salute: peso in entrata, allenamenti in uscita.
@@ -181,66 +155,19 @@ final class AppSettings {
         didSet { defaults.set(availablePlates, forKey: Key.availablePlates) }
     }
 
-    /// App del Watch: conteggio delle ripetizioni e serie registrate dall'orologio.
-    var watchEnabled: Bool {
-        didSet { defaults.set(watchEnabled, forKey: Key.watch) }
-    }
-
-    var watchMode: WatchCountMode {
-        didSet { defaults.set(watchMode.rawValue, forKey: Key.watchMode) }
-    }
-
-    /// Secondi di fermo dopo l'ultima ripetizione prima di chiudere la serie.
-    var watchAutoEndSeconds: Double {
-        didSet { defaults.set(watchAutoEndSeconds, forKey: Key.watchAutoEnd) }
-    }
-
-    /// Calibrazione del contatore: 1 normale, più alto conta movimenti più piccoli.
-    var watchSensitivity: Double {
-        didSet { defaults.set(watchSensitivity, forKey: Key.watchSensitivity) }
-    }
-
     /// La pagina «Collega a yG» si mostra una volta sola, anche a chi aggiorna dalla 1.x. Resta di questo iPhone.
     var didSeeWelcome: Bool {
         didSet { defaults.set(didSeeWelcome, forKey: Key.didSeeWelcome) }
-    }
-
-    /// I massimali «da allenamento» si ricalcolano dalle serie una volta alla prima apertura della 2.0.
-    var didRecomputeRecords: Bool {
-        didSet { defaults.set(didRecomputeRecords, forKey: Key.didRecomputeRecords) }
-    }
-
-    /// Cosa mostrare nelle schede e nella lista dell'allenamento. Seguono l'account.
-    var templateSets: Bool {
-        didSet { defaults.set(templateSets, forKey: Key.templateSets) }
-    }
-
-    var templateReps: Bool {
-        didSet { defaults.set(templateReps, forKey: Key.templateReps) }
-    }
-
-    var templateWeight: Bool {
-        didSet { defaults.set(templateWeight, forKey: Key.templateWeight) }
     }
 
     var lastBackupDate: Date? {
         didSet { defaults.set(lastBackupDate, forKey: Key.lastBackup) }
     }
 
-    /// Ultima volta che un backup è uscito davvero dall'app (condiviso o salvato).
-    /// Diverso da `lastBackupDate`, che è la copia automatica interna: se disinstalli
-    /// l'app quella se ne va con lei, questa no.
-    var lastExportDate: Date? {
-        didSet { defaults.set(lastExportDate, forKey: Key.lastExport) }
-    }
-
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.unit = WeightUnit(rawValue: defaults.string(forKey: Key.unit) ?? "") ?? .kg
-        self.formula = OneRepMaxFormula(rawValue: defaults.string(forKey: Key.formula) ?? "") ?? .epley
         self.accent = AccentPalette(rawValue: defaults.string(forKey: Key.accent) ?? "") ?? .lime
-        self.didSeedCatalog = defaults.bool(forKey: Key.didSeed)
-        self.didCurateCatalog = defaults.bool(forKey: Key.didCurate)
         self.healthSyncEnabled = defaults.bool(forKey: Key.health)
         self.lastBackupDate = defaults.object(forKey: Key.lastBackup) as? Date
         self.restTimerEnabled = defaults.object(forKey: Key.restEnabled) as? Bool ?? true
@@ -252,31 +179,8 @@ final class AppSettings {
         self.barWeight = defaults.object(forKey: Key.barWeight) as? Double ?? 20
         self.availablePlates = defaults.array(forKey: Key.availablePlates) as? [Double]
             ?? [25, 20, 15, 10, 5, 2.5, 1.25]
-        self.watchEnabled = defaults.object(forKey: Key.watch) as? Bool ?? true
-        self.watchMode = WatchCountMode(rawValue: defaults.string(forKey: Key.watchMode) ?? "") ?? .tapStartAutoEnd
-        self.watchAutoEndSeconds = defaults.object(forKey: Key.watchAutoEnd) as? Double ?? 4
-        self.watchSensitivity = defaults.object(forKey: Key.watchSensitivity) as? Double ?? 1
-        self.lastExportDate = defaults.object(forKey: Key.lastExport) as? Date
         self.didSeeWelcome = defaults.bool(forKey: Key.didSeeWelcome)
-        self.didRecomputeRecords = defaults.bool(forKey: Key.didRecomputeRecords)
-        self.templateSets = defaults.object(forKey: Key.templateSets) as? Bool ?? true
-        self.templateReps = defaults.object(forKey: Key.templateReps) as? Bool ?? true
-        self.templateWeight = defaults.object(forKey: Key.templateWeight) as? Bool ?? true
     }
 
     var accentColor: Color { accent.color }
-
-    /// Dopo due settimane senza esportare vale la pena ricordarlo.
-    static let exportReminderDays = 14
-
-    var daysSinceExport: Int? {
-        guard let lastExportDate else { return nil }
-        return Calendar.current.dateComponents([.day], from: lastExportDate, to: Date()).day
-    }
-
-    /// `true` se non hai mai esportato o se è passato troppo tempo.
-    var needsExportReminder: Bool {
-        guard let days = daysSinceExport else { return true }
-        return days >= Self.exportReminderDays
-    }
 }

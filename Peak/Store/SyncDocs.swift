@@ -22,15 +22,13 @@ enum SyncDocs {
 
     /// Le impostazioni che seguono l'account. Quelle del Watch, di Salute e dei dati interni restano del dispositivo.
     static let settingKeys = [
-        "unit", "formula", "accent", "restTimerEnabled", "restSeconds", "progressionEnabled", "repRangeMin",
-        "repRangeMax", "plateCalculatorEnabled", "barWeight", "availablePlates", "lastExportDate",
-        "templateSets", "templateReps", "templateWeight"
+        "unit", "accent", "restTimerEnabled", "restSeconds", "progressionEnabled", "repRangeMin",
+        "repRangeMax", "plateCalculatorEnabled", "barWeight", "availablePlates"
     ]
 
     private static func settingValue(_ name: String, _ settings: AppSettings) -> Any {
         switch name {
         case "unit": return settings.unit.rawValue
-        case "formula": return settings.formula.rawValue
         case "accent": return settings.accent.rawValue
         case "restTimerEnabled": return settings.restTimerEnabled
         case "restSeconds": return settings.restSeconds
@@ -40,10 +38,6 @@ enum SyncDocs {
         case "plateCalculatorEnabled": return settings.plateCalculatorEnabled
         case "barWeight": return settings.barWeight
         case "availablePlates": return settings.availablePlates
-        case "lastExportDate": return settings.lastExportDate.map(PeakDates.string) ?? NSNull()
-        case "templateSets": return settings.templateSets
-        case "templateReps": return settings.templateReps
-        case "templateWeight": return settings.templateWeight
         default: return NSNull()
         }
     }
@@ -54,7 +48,6 @@ enum SyncDocs {
         }
         switch name {
         case "unit": guard let raw = value as? String, let v = WeightUnit(rawValue: raw) else { return false }; settings.unit = v
-        case "formula": guard let raw = value as? String, let v = OneRepMaxFormula(rawValue: raw) else { return false }; settings.formula = v
         case "accent": guard let raw = value as? String, let v = AccentPalette(rawValue: raw) else { return false }; settings.accent = v
         case "restTimerEnabled": guard let v = value as? Bool else { return false }; settings.restTimerEnabled = v
         case "restSeconds": guard let v = number(15, 600) else { return false }; settings.restSeconds = Int(v)
@@ -62,17 +55,10 @@ enum SyncDocs {
         case "repRangeMin": guard let v = number(1, 30) else { return false }; settings.repRangeMin = Int(v)
         case "repRangeMax": guard let v = number(1, 30) else { return false }; settings.repRangeMax = Int(v)
         case "plateCalculatorEnabled": guard let v = value as? Bool else { return false }; settings.plateCalculatorEnabled = v
-        case "templateSets": guard let v = value as? Bool else { return false }; settings.templateSets = v
-        case "templateReps": guard let v = value as? Bool else { return false }; settings.templateReps = v
-        case "templateWeight": guard let v = value as? Bool else { return false }; settings.templateWeight = v
         case "barWeight": guard let v = number(0, 100) else { return false }; settings.barWeight = v
         case "availablePlates":
             guard let list = value as? [NSNumber] else { return false }
             settings.availablePlates = list.map(\.doubleValue)
-        case "lastExportDate":
-            if value is NSNull || value == nil { settings.lastExportDate = nil }
-            else if let text = value as? String, let date = PeakDates.date(text) { settings.lastExportDate = date }
-            else { return false }
         default: return false
         }
         return true

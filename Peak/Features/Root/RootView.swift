@@ -15,7 +15,7 @@ struct RootView: View {
     var body: some View {
         ZStack {
             tabs
-            // La prima pagina della 2.0, una volta sola: finché c'è, il catalogo non viene inserito.
+            // La prima pagina della 2.0, una volta sola.
             if !settings.didSeeWelcome {
                 WelcomeView()
                     .transition(.opacity)
@@ -24,17 +24,12 @@ struct RootView: View {
         }
         .animation(.easeInOut(duration: 0.25), value: settings.didSeeWelcome)
         .task {
-            if settings.didSeeWelcome { AppStore.seedIfNeeded(context: context, settings: settings) }
             runAutoBackup()
-            recomputeRecordsOnce()
             await SyncService.shared.syncNow()
         }
-        .onChange(of: settings.didSeeWelcome) { _, seen in
-            if seen { AppStore.seedIfNeeded(context: context, settings: settings) }
-        }
         .onChange(of: scenePhase) { _, phase in
-            // Alla chiusura dell'app il backup automatico resta allineato:
-            // è la rete di sicurezza contro la disinstallazione.
+            // Alla chiusura dell'app il backup automatico resta allineato (se non si è collegati a yG,
+            // che ha già i dati): è la rete di sicurezza contro la disinstallazione.
             if phase == .background { runAutoBackup() }
             if phase == .active { Task { await SyncService.shared.syncNow() } }
         }
@@ -63,16 +58,9 @@ struct RootView: View {
 
     private func runAutoBackup() {
         // Con lo store di emergenza (in memoria) il backup sovrascriverebbe quello buono con un file vuoto.
-        guard !AppStore.isFallback else { return }
+        guard !AppStore.isFallback, !SyncService.shared.isConnected else { return }
         if let date = try? BackupService.writeAutoBackup(context: context) {
             settings.lastBackupDate = date
         }
-    }
-
-    /// La 2.0 ricalcola i massimali «da allenamento» dalle serie, una volta (dopo il backup automatico qui sopra).
-    private func recomputeRecordsOnce() {
-        guard !settings.didRecomputeRecords, !AppStore.isFallback else { return }
-        RecordService.recomputeAll(context: context)
-        settings.didRecomputeRecords = true
     }
 }

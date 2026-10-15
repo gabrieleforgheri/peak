@@ -154,17 +154,15 @@ enum Plan {
         today.map(\.exercise) != template.filter { exists($0.exercise) }.map(\.exercise)
     }
 
-    /// «2/4 serie · 8–10 rip · 60 kg»: solo i campi attivi nelle impostazioni; senza peso scritto, l'ultimo usato.
+    /// «2/4 serie · 8–10 rip · 60 kg»: solo i campi compilati; senza peso scritto, l'ultimo usato.
     static func targetLine(_ item: TemplateItem, done: Int, lastKilograms: Double?, settings: AppSettings) -> String {
         var parts: [String] = []
-        if settings.templateSets, item.sets > 0 { parts.append("\(done)/\(item.sets) serie") }
-        if settings.templateReps, item.repsMax > 0 {
+        if item.sets > 0 { parts.append("\(done)/\(item.sets) serie") }
+        if item.repsMax > 0 {
             parts.append(item.repsMin == item.repsMax ? "\(item.repsMax) rip" : "\(item.repsMin)–\(item.repsMax) rip")
         }
-        if settings.templateWeight {
-            if let weight = item.weight { parts.append(Fmt.weight(weight, unit: settings.unit)) }
-            else if let last = lastKilograms { parts.append("ultimo \(Fmt.weight(last, unit: settings.unit))") }
-        }
+        if let weight = item.weight { parts.append(Fmt.weight(weight, unit: settings.unit)) }
+        else if let last = lastKilograms { parts.append("ultimo \(Fmt.weight(last, unit: settings.unit))") }
         return parts.joined(separator: " · ")
     }
 }

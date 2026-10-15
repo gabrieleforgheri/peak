@@ -28,7 +28,7 @@ struct WorkoutSessionView: View {
     @State private var sendingToHealth = false
 
     private var canUseWatch: Bool {
-        settings.watchEnabled && workout.isActive && WatchBridge.shared.isWatchAppInstalled
+        workout.isActive && WatchBridge.shared.isWatchAppInstalled
     }
 
     private var recordCount: Int {
@@ -450,7 +450,7 @@ struct WorkoutSessionView: View {
         RestTimer.shared.stop()
         WorkoutActivity.end()
         WatchBridge.shared.clear()
-        if let date = try? BackupService.writeAutoBackup(context: context) {
+        if !SyncService.shared.isConnected, let date = try? BackupService.writeAutoBackup(context: context) {
             settings.lastBackupDate = date
         }
         if settings.healthSyncEnabled {
@@ -587,7 +587,7 @@ private struct ExerciseSessionCard: View {
                                 Spacer()
 
                                 if set.reps > 1 {
-                                    Text("≈ \(Fmt.weight(set.estimatedOneRepMax(using: settings.formula), unit: settings.unit))")
+                                    Text("≈ \(Fmt.weight(set.estimatedOneRepMax, unit: settings.unit))")
                                         .font(Theme.rounded(11, .medium))
                                         .foregroundStyle(Theme.textTertiary)
                                 }

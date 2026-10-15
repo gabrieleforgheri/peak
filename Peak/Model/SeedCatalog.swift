@@ -1,5 +1,4 @@
 import Foundation
-import SwiftData
 
 /// Catalogo dei macchinari e degli esercizi tipici di una palestra attrezzata,
 /// inserito al primo avvio e ripristinabile dalle impostazioni.
@@ -190,22 +189,4 @@ enum SeedCatalog {
         Entry(name: "Plank", group: .core, step: 2.5,
               notes: "A corpo libero: qui conviene segnare i secondi al posto delle ripetizioni.")
     ]
-
-    /// Inserisce il catalogo nel contesto indicato. Non salva: pensaci tu fuori.
-    @discardableResult
-    static func insert(into context: ModelContext, startingAt startIndex: Int = 0) -> [Exercise] {
-        var created: [Exercise] = []
-        for (offset, entry) in entries.enumerated() {
-            let exercise = Exercise(
-                name: entry.name,
-                muscleGroup: entry.group,
-                incrementStep: entry.step,
-                notes: entry.notes,
-                sortIndex: startIndex + offset
-            )
-            context.insert(exercise)
-            created.append(exercise)
-        }
-        return created
-    }
 }

@@ -19,7 +19,7 @@ struct EditMaxSheet: View {
     private var tint: Color { exercise.muscleGroup.tint }
 
     private var estimated: Double {
-        settings.formula.oneRepMax(weight: weight, reps: reps)
+        OneRepMax.estimate(weight: weight, reps: reps)
     }
 
     private var previousBest: MaxRecord? { exercise.bestRecord }
@@ -105,7 +105,7 @@ struct EditMaxSheet: View {
                 }
 
                 if reps > 1 {
-                    Text("≈ \(Fmt.weight(estimated, unit: settings.unit)) di 1RM stimato · \(settings.formula.title)")
+                    Text("≈ \(Fmt.weight(estimated, unit: settings.unit)) di 1RM stimato")
                         .font(Theme.rounded(12, .medium))
                         .foregroundStyle(Theme.textTertiary)
                 }

@@ -72,7 +72,7 @@ struct TemplateEditorView: View {
                     }
                     .buttonStyle(SecondaryButtonStyle())
 
-                    if settings.templateWeight, !rows.isEmpty {
+                    if !rows.isEmpty {
                         Text("Senza peso scritto si vede l'ultimo usato.")
                             .font(Theme.rounded(11, .medium))
                             .foregroundStyle(Theme.textTertiary)
@@ -141,17 +141,11 @@ struct TemplateEditorView: View {
                     roundButton("xmark", label: "Togli", disabled: false) { rows.remove(at: index) }
                 }
 
-                if settings.templateSets || settings.templateReps || settings.templateWeight {
-                    HStack(spacing: 8) {
-                        if settings.templateSets { field("Serie", text: binding(index, \.sets), keyboard: .numberPad) }
-                        if settings.templateReps {
-                            field("Rip min", text: binding(index, \.repsMin), keyboard: .numberPad)
-                            field("Rip max", text: binding(index, \.repsMax), keyboard: .numberPad)
-                        }
-                        if settings.templateWeight {
-                            field(settings.unit.symbol, text: binding(index, \.weight), keyboard: .decimalPad, prompt: "–")
-                        }
-                    }
+                HStack(spacing: 8) {
+                    field("Serie", text: binding(index, \.sets), keyboard: .numberPad)
+                    field("Rip min", text: binding(index, \.repsMin), keyboard: .numberPad)
+                    field("Rip max", text: binding(index, \.repsMax), keyboard: .numberPad)
+                    field(settings.unit.symbol, text: binding(index, \.weight), keyboard: .decimalPad, prompt: "–")
                 }
             }
         }

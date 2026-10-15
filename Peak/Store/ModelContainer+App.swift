@@ -48,17 +48,4 @@ enum AppStore {
     /// uscire dall'app: né il backup automatico (scriverebbe un file vuoto sopra quello buono) né la
     /// sincronizzazione (spingerebbe al server un "tutto cancellato").
     private(set) static var isFallback = false
-
-    /// Inserisce il catalogo iniziale solo la prima volta in assoluto.
-    static func seedIfNeeded(context: ModelContext, settings: AppSettings) {
-        guard !settings.didSeedCatalog else { return }
-        let existing = (try? context.fetchCount(FetchDescriptor<Exercise>())) ?? 0
-        guard existing == 0 else {
-            settings.didSeedCatalog = true
-            return
-        }
-        SeedCatalog.insert(into: context)
-        try? context.save()
-        settings.didSeedCatalog = true
-    }
 }

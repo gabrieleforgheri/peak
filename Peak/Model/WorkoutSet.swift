@@ -42,7 +42,7 @@ final class WorkoutSet {
 
     var volume: Double { weight * Double(reps) }
 
-    func estimatedOneRepMax(using formula: OneRepMaxFormula) -> Double {
-        formula.oneRepMax(weight: weight, reps: reps)
+    var estimatedOneRepMax: Double {
+        OneRepMax.estimate(weight: weight, reps: reps)
     }
 }

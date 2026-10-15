@@ -64,13 +64,10 @@ final class WatchBridge: NSObject, WCSessionDelegate {
 
     @MainActor
     private func push(exercise: WatchExercise?, start: Bool) {
-        guard let settings, settings.watchEnabled,
+        guard let settings,
               WCSession.isSupported(), WCSession.default.activationState == .activated else { return }
         let context = WatchContext(
             exercise: exercise,
-            mode: settings.watchMode,
-            autoEndSeconds: settings.watchAutoEndSeconds,
-            sensitivity: settings.watchSensitivity,
             unitSymbol: settings.unit.symbol,
             unitFactor: settings.unit.fromKilograms(1),
             startRequestedAt: start ? Date() : nil
@@ -94,8 +91,6 @@ final class WatchBridge: NSObject, WCSessionDelegate {
             name: exercise.name,
             weight: weight,
             step: exercise.incrementStep,
-            isUnilateral: exercise.isUnilateral,
-            worksLegs: exercise.worksLegs,
             target: target(for: exercise, in: workout)
         )
     }

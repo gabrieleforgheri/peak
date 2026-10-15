@@ -56,40 +56,19 @@ private struct ExerciseView: View {
                         isHapticFeedbackEnabled: true
                     )
 
-                if let started = model.setStartedAt {
-                    Text(started, style: .timer)
-                        .font(.system(.title3, design: .rounded).weight(.semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(.orange)
-                }
-
                 Text("\(model.reps)")
                     .font(.system(size: 54, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .contentTransition(.numericText())
                     .animation(.snappy, value: model.reps)
 
-                if model.canCount {
-                    countingControls
-                    if exercise.isUnilateral {
-                        Text("Watch sul braccio che lavora.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                } else {
-                    // Gambe: il polso è fermo, le ripetizioni si inseriscono a mano.
-                    Text("Conteggio automatico solo per le braccia.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                    HStack {
-                        Button { if model.reps > 0 { model.reps -= 1 } } label: { Image(systemName: "minus") }
-                        Button { model.reps += 1 } label: { Image(systemName: "plus") }
-                    }
-                    Button("Registra") { model.send() }
-                        .tint(.green)
-                        .disabled(model.reps == 0)
+                HStack {
+                    Button { if model.reps > 0 { model.reps -= 1 } } label: { Image(systemName: "minus") }
+                    Button { model.reps += 1 } label: { Image(systemName: "plus") }
                 }
+                Button("Registra") { model.send() }
+                    .tint(.green)
+                    .disabled(model.reps == 0)
 
                 if let last = model.lastSent {
                     Text("Registrata: \(model.displayWeight(last.weight)) × \(last.reps)")
@@ -99,29 +78,5 @@ private struct ExerciseView: View {
             }
         }
         .navigationTitle("Peak")
-    }
-
-    @ViewBuilder
-    private var countingControls: some View {
-        switch model.phase {
-        case .idle:
-            Button("Via") { model.begin() }
-                .tint(.green)
-        case .listening:
-            Text("In ascolto: inizia la serie.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-        case .counting:
-            if model.mode == .tapStartTapEnd {
-                Button("Fine") { model.finish() }
-                    .tint(.orange)
-            } else {
-                Text("Si chiude dopo \(Int(model.context?.autoEndSeconds ?? 4)) s fermo.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                Button("Fine") { model.finish() }
-                    .tint(.orange)
-            }
-        }
     }
 }

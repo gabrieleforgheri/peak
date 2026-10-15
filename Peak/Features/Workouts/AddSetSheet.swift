@@ -30,7 +30,7 @@ struct AddSetSheet: View {
     private var tint: Color { exercise.muscleGroup.tint }
 
     private var estimated: Double {
-        settings.formula.oneRepMax(weight: weight, reps: reps)
+        OneRepMax.estimate(weight: weight, reps: reps)
     }
 
     private var warmupPlan: [Warmup.Step] { exercise.warmupPlan(unit: settings.unit) }
