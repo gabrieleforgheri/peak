@@ -10,7 +10,10 @@ struct WelcomeView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var connecting = false
-    @State private var scene = 0
+    /// -1 = ancora niente: la prima scena entra con la sua animazione.
+    @State private var scene = -1
+    /// Cambia a ogni scelta a mano: il giro automatico riparte da quella scena.
+    @State private var restart = 0
 
     /// Quanto resta ogni scena, in secondi (come `durations` in benvenuto.js).
     private static let durations: [Double] = [3.2, 5.5, 5, 4.5, 4.5, 4.5]
@@ -31,19 +34,42 @@ struct WelcomeView: View {
 
     private var intro: some View {
         VStack(spacing: 14) {
-            stage
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .accessibilityHidden(true)
+            // a mano: swipe, o tocco sulla scena (il terzo a sinistra torna indietro)
+            GeometryReader { proxy in
+                stage
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 24).onEnded { value in
+                            if abs(value.translation.width) > abs(value.translation.height) {
+                                go(scene + (value.translation.width < 0 ? 1 : -1))
+                            }
+                        }
+                    )
+                    .simultaneousGesture(
+                        SpatialTapGesture().onEnded { value in
+                            go(scene + (value.location.x < proxy.size.width / 3 ? -1 : 1))
+                        }
+                    )
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .accessibilityHidden(true)
 
-            HStack(spacing: 6) {
+            HStack(spacing: 0) {
                 ForEach(0..<Self.durations.count, id: \.self) { index in
-                    Capsule()
-                        .fill(index == scene ? settings.accentColor : Theme.textTertiary)
-                        .frame(width: index == scene ? 18 : 6, height: 6)
+                    Button { go(index) } label: {
+                        Capsule()
+                            .fill(index == scene ? settings.accentColor : Theme.textTertiary)
+                            .frame(width: index == scene ? 18 : 6, height: 6)
+                            .padding(.horizontal, 3)
+                            .padding(.vertical, 12)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Scena \(index + 1) di \(Self.durations.count)")
                 }
             }
             .animation(.easeInOut(duration: 0.4), value: scene)
-            .accessibilityHidden(true)
 
             Button("Collega a yG") { connecting = true }
                 .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
@@ -60,16 +86,31 @@ struct WelcomeView: View {
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 20)
-        .task {
-            // senza movimento: l'ultima scena, ferma
-            guard !reduceMotion else { scene = Self.durations.count - 1; return }
-            var next = 0
+        .task(id: restart) {
+            // senza movimento: l'ultima scena, ferma; si sfoglia a mano
+            guard !reduceMotion else {
+                if scene < 0 { scene = Self.durations.count - 1 }
+                return
+            }
+            if scene < 0 {
+                try? await Task.sleep(for: .milliseconds(150))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: 0.6)) { scene = 0 }
+            }
+            // ogni scena resta il suo tempo, poi passa alla prossima; una scelta a mano riavvia questo giro
             while !Task.isCancelled {
-                withAnimation(.easeInOut(duration: 0.6)) { scene = next }
-                try? await Task.sleep(for: .seconds(Self.durations[next]))
-                next = (next + 1) % Self.durations.count
+                try? await Task.sleep(for: .seconds(Self.durations[scene]))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: 0.6)) { scene = (scene + 1) % Self.durations.count }
             }
         }
+    }
+
+    private func go(_ index: Int) {
+        let count = Self.durations.count
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.6)) { scene = (index % count + count) % count }
+        restart += 1
+        Haptics.tap()
     }
 
     // MARK: - Scene
@@ -322,12 +363,20 @@ private struct SetScene: View {
     }
 }
 
-private extension View {
-    /// Entra dal basso dopo `delay` quando la scena è attiva; esce senza attese.
-    func reveal(_ on: Bool, delay: Double) -> some View {
-        self
+private struct Reveal: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let on: Bool
+    let delay: Double
+
+    func body(content: Content) -> some View {
+        content
             .opacity(on ? 1 : 0)
             .offset(y: on ? 0 : 14)
-            .animation(on ? .easeOut(duration: 0.6).delay(delay) : .easeIn(duration: 0.3), value: on)
+            .animation(reduceMotion ? nil : (on ? .easeOut(duration: 0.6).delay(delay) : .easeIn(duration: 0.3)), value: on)
     }
+}
+
+private extension View {
+    /// Entra dal basso dopo `delay` quando la scena è attiva; esce senza attese.
+    func reveal(_ on: Bool, delay: Double) -> some View { modifier(Reveal(on: on, delay: delay)) }
 }
