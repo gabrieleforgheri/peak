@@ -1,3 +1,28 @@
+# Peak 3.0 — stato al 15 ottobre 2026 (leggere per primo)
+
+Il piano è `~/.claude/plans/semplifica-l-app-implementiamo-una-goofy-coral.md`. **Tutto è su `main`, niente è pubblicato**: web, server e iPhone
+compilano e i test passano (`npm test`: 92; iPhone: `build-for-testing` per dispositivo, i test Swift non sono mai stati eseguiti).
+
+| Pezzo | Dove |
+|---|---|
+| Tolti: formula 1RM (solo Epley), sottopagina Schede, promemoria backup, Catalogo/«La tua palestra», conteggio ripetizioni del Watch, codice di migrazione 2.0; `SettingsView.swift` diviso in un file per sottopagina | `Peak/Features/Settings/`, `common/domain.ts`, `PeakWatch/` |
+| **Catalogo con id**: 291 esercizi, IT+EN+sinonimi, id slug stabili; ricerca, collegamento per nome, `catalog` sull'esercizio | `common/catalog.json` (fonte unica), `common/catalog.ts`, `server/catalog.ts`, `Peak/Model/Catalog.swift`, `web/src/components/CatalogPicker.svelte` |
+| **Amici**: richieste per username, invito monouso (link + QR), lega (volume/allenamenti/settimane di fila), classifica per esercizio sull'1RM, profilo con schede copiabili, «nascondi agli amici» | `server/social.ts`, `server/api.ts` (`/api/amici`, `/api/inviti`, `/api/lega`, `/api/classifica`, `/api/novita`), `web/src/pages/Friends.svelte`, `Peak/Features/Friends/` |
+| **Nuova navigazione** a 6 schede: Home, Allenamento, Progressi, Macchinari, Amici, Impostazioni | `web/src/App.svelte`, `Peak/Features/Root/RootView.swift` |
+| **Home**: montagna con frasi a rotazione, barra dell'obiettivo, attività, grafici, medaglie | `web/src/pages/Home.svelte`, `Peak/Features/Home/`, `common/medals.ts` |
+| **Obiettivo settimanale** scelto all'apertura (schermata a tutto schermo) e **tutorial** sulle schermate vere; impostazioni `weeklyGoal` e `tutorialDone` sincronizzate | `GoalPicker.svelte`, `Tour.svelte`, `GoalPickerView.swift`, `TourOverlay.swift` |
+
+Da sapere:
+- Un client vecchio (AltStore 2.1) che non manda `catalog`/`hidden` non li cancella (`KEEP_IF_ABSENT`, `server/store.ts`); le impostazioni tolte restano accettate e ignorate (`LEGACY_SETTINGS`).
+- Il server collega al catalogo gli esercizi senza id all'avvio (`migrateCatalog`), l'iPhone una volta (`linkCatalogOnce`).
+- **Mai emoji nell'interfaccia**: SVG sul web, SF Symbols su iPhone.
+- Versione 3.0 (build 9) in `project.yml` e `web/package.json`: tenerle uguali.
+
+Da fare, con il via libera dell'utente: provare l'app sul telefono vero **dopo un backup** (migrazione SwiftData con i nuovi campi, sopra quella delle schede mai provata), installare (e rimettere il Watch senza conteggio), deploy/riavvio su Pelican, tag `v3.0` e AltStore.
+Non fatto di proposito: link `peak://invito/` nell'app (il link d'invito è https e passa dal web), pagina `/portale` invariata.
+
+---
+
 # Peak — stato al 15 ottobre 2026 (leggere per primo)
 
 Massimali diventa **Peak**: l'app web su `peak.yrb4g.com` (stessi dati dell'iPhone, sul server, col login di yG) e
