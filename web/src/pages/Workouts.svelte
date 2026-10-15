@@ -5,16 +5,19 @@
 	import { t, tn } from '../lib/i18n.ts'
 	import { go } from '../lib/router.svelte.ts'
 	import { getModel } from '../lib/store.svelte.ts'
-	import type { Wk } from '../lib/types.ts'
+	import type { Tpl, Wk } from '../lib/types.ts'
 	import FocusPicker from '../components/FocusPicker.svelte'
 	import Icon from '../components/Icon.svelte'
 	import Sheet from '../components/Sheet.svelte'
+	import TemplateEditor from '../components/TemplateEditor.svelte'
 
 	const m = $derived(getModel())
 	const active = $derived(m.workouts.find((w) => w.isActive))
 	const history = $derived(m.workouts.filter((w) => !w.isActive))
 	let starting = $state(false)
 	let menu = $state<Wk | null>(null)
+	// null = chiuso, 'new' = scheda nuova
+	let editing = $state<Tpl | 'new' | null>(null)
 
 	const title = (w: Wk) => w.name.trim() || relDay(w.dateMs)
 	const exCount = (w: Wk) => new Set(w.sets.map((s) => s.exercise).filter(Boolean)).size
@@ -48,6 +51,20 @@
 		</div>
 	{/if}
 
+	<div class="row between"><div class="sec-title">{t('Schede')}</div><button class="link small" style="margin:20px 4px 8px" onclick={() => (editing = 'new')}>{t('Nuova scheda')}</button></div>
+	{#if m.templates.length === 0}
+		<div class="empty">{t('Una scheda è una lista di esercizi con serie e ripetizioni: la scegli quando inizi e li trovi già pronti.')}</div>
+	{:else}
+		<div class="card list">
+			{#each m.templates as tpl (tpl.uuid)}
+				<button class="item" onclick={() => (editing = tpl)}>
+					<div class="grow"><b class="ellipsis" style="display:block">{tpl.name}</b><span class="small muted">{tn(tpl.items.length, '1 esercizio', '{0} esercizi')}</span></div>
+					<Icon name="right" size={20} />
+				</button>
+			{/each}
+		</div>
+	{/if}
+
 	<div class="sec-title">{t('Storico')}</div>
 	{#if history.length === 0}
 		<div class="empty">{t('Qui compariranno gli allenamenti conclusi.')}</div>
@@ -72,6 +89,7 @@
 	{/if}
 </main>
 
+{#if editing}<TemplateEditor tpl={editing === 'new' ? null : editing} onclose={() => (editing = null)} />{/if}
 {#if starting}<FocusPicker onclose={() => (starting = false)} onstart={(id) => go(`allenamenti/${id}`)} />{/if}
 {#if menu}
 	<Sheet title={title(menu)} onclose={() => (menu = null)}>

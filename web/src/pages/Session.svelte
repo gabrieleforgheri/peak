@@ -2,8 +2,8 @@
 	import { onMount } from 'svelte'
 	import type { MuscleGroup } from '@common/docs.ts'
 	import { oneRepMax } from '@common/domain.ts'
-	import { addSet, deleteWorkout, endWorkout, patchWorkout } from '../lib/actions.ts'
-	import { GROUP_NAMES, V, W, clock, dateTime, duration, setLine, unit } from '../lib/fmt.ts'
+	import { addSet, addToPlan, deleteWorkout, endWorkout, itemsFromWorkout, moveInPlan, patchWorkout, removeFromPlan, replaceInPlan, templateChanged, todayItems, updateTemplateFromWorkout } from '../lib/actions.ts'
+	import { GROUP_NAMES, V, W, clock, dateTime, duration, setLine, targetLine } from '../lib/fmt.ts'
 	import { t, tn } from '../lib/i18n.ts'
 	import { back, go } from '../lib/router.svelte.ts'
 	import { getModel } from '../lib/store.svelte.ts'
@@ -14,6 +14,8 @@
 	import ExercisePicker from '../components/ExercisePicker.svelte'
 	import FocusPicker from '../components/FocusPicker.svelte'
 	import Icon from '../components/Icon.svelte'
+	import Sheet from '../components/Sheet.svelte'
+	import TemplateEditor from '../components/TemplateEditor.svelte'
 	import Thumb from '../components/Thumb.svelte'
 
 	let { id }: { id: string } = $props()
@@ -21,9 +23,7 @@
 	const wk = $derived(m.wkById.get(id))
 
 	const store = (k: string) => `peak.${k}.${id}`
-	let picked = $state<string[]>(JSON.parse(sessionStorage.getItem(store('picked')) ?? '[]'))
 	let current = $state<string | null>(sessionStorage.getItem(store('current')))
-	$effect(() => { sessionStorage.setItem(store('picked'), JSON.stringify(picked)) })
 	$effect(() => { current ? sessionStorage.setItem(store('current'), current) : sessionStorage.removeItem(store('current')) })
 
 	let now = $state(Date.now())
@@ -31,26 +31,22 @@
 
 	let pickingEx = $state(false)
 	let editFocus = $state(false)
+	let menuFor = $state<Ex | null>(null)
+	let replacing = $state<Ex | null>(null)
+	let savingTemplate = $state(false)
 	let adding = $state<{ ex: Ex; set: SetItem | null } | null>(null)
 	let note = $state('')
 	let noteFor = ''
 	$effect(() => { if (wk && noteFor !== wk.uuid) { note = wk.note; noteFor = wk.uuid } })
 
 	const focus = $derived(new Set((wk?.focus ?? '').split(',').filter(Boolean) as MuscleGroup[]))
-	// gli esercizi nell'ordine in cui compaiono, più quelli scelti e ancora senza serie
-	const exercises = $derived.by(() => {
-		if (!wk) return [] as Ex[]
-		const ids: string[] = []
-		for (const s of wk.sets) if (s.exercise && !ids.includes(s.exercise)) ids.push(s.exercise)
-		for (const p of picked) if (!ids.includes(p)) ids.push(p)
-		return ids.map((i) => m.exById.get(i)).filter((e): e is Ex => !!e)
-	})
+	// la lista di oggi: il piano (scheda o esercizi aggiunti) e, in coda, gli esercizi con serie che nel piano non ci sono
+	const items = $derived(wk ? todayItems(wk) : [])
 	const orphanSets = $derived(wk?.sets.filter((s) => !s.exercise) ?? [])
 	const seconds = $derived(wk ? ((wk.endedMs ?? now) - wk.dateMs) / 1000 : 0)
 
 	function added(ex: Ex, r: { isPR: boolean; isWarmup: boolean }) {
 		current = ex.uuid
-		picked = picked.filter((p) => p !== ex.uuid)
 		if (r.isPR) toast(t('Nuovo massimale!'))
 		if (wk?.isActive && m.settings.restTimerEnabled) startRest(ex.restSeconds || m.settings.restSeconds)
 	}
@@ -63,8 +59,10 @@
 
 	function finish() {
 		if (!wk || !confirm(t('Terminare l\'allenamento?'))) return
+		const tpl = templateChanged(wk)
 		endWorkout(wk.uuid)
 		stopRest()
+		if (tpl && confirm(t('Aggiornare la scheda «{0}» con le modifiche di oggi?', tpl.name))) updateTemplateFromWorkout(tpl, wk)
 		go(`allenamenti/${wk.uuid}/riepilogo`, true)
 	}
 	function remove() {
@@ -116,15 +114,19 @@
 			{/if}
 		</div>
 
-		{#each exercises as ex (ex.uuid)}
+		{#each items as it (it.exercise)}
+			{@const ex = m.exById.get(it.exercise)!}
 			{@const sets = wk.sets.filter((s) => s.exercise === ex.uuid)}
+			{@const goal = targetLine(it, sets.filter((s) => !s.isWarmup).length, ex.sets[0]?.weight ?? null)}
 			<div class="card" style={current === ex.uuid && wk.isActive ? 'border-color:rgba(var(--accent-rgb),.45)' : ''}>
-				<button class="row" style="width:100%;background:none;border:0;text-align:left;padding:0" onclick={() => (current = ex.uuid)}>
+				<div class="row"><button class="row grow" style="background:none;border:0;text-align:left;padding:0;min-width:0" onclick={() => (current = ex.uuid)}>
 					<Thumb {ex} />
 					<div class="grow"><b class="ellipsis" style="display:block">{ex.name}</b>
 						{#if current === ex.uuid && wk.isActive}<span class="tiny" style="color:var(--accent);font-weight:800;letter-spacing:.08em">{t('IN CORSO')}</span>
-						{:else if ex.best}<span class="small muted num">{t('max')} {setLine(ex.best.weight, ex.best.reps)}</span>{/if}</div>
+						{:else if ex.best}<span class="small muted num">{t('max')} {setLine(ex.best.weight, ex.best.reps)}</span>{/if}
+						{#if goal}<span class="small muted num" style="display:block">{goal}</span>{/if}</div>
 				</button>
+				{#if wk.isActive}<button class="icon-btn" onclick={() => (menuFor = ex)} aria-label={t('Altro')}><Icon name="more" /></button>{/if}</div>
 				{#if sets.length}
 					<div class="list" style="margin-top:10px">
 						{#each sets as s, i (s.uuid)}
@@ -154,6 +156,8 @@
 
 		<button class="btn block" style="margin-top:12px" onclick={() => (pickingEx = true)}><Icon name="plus" size={20} />{t('Aggiungi esercizio')}</button>
 
+		{#if items.length}<button class="btn block" style="margin-top:12px" onclick={() => (savingTemplate = true)}><Icon name="list" size={20} />{t('Salva come scheda')}</button>{/if}
+
 		<label class="field" style="margin-top:16px"><span>{t('Note')}</span><textarea class="textarea" bind:value={note} onchange={() => patchWorkout(wk.uuid, { note })} maxlength="2000" placeholder={t('Com\'è andata?')}></textarea></label>
 
 		{#if wk.isActive}<button class="btn primary block" style="margin-top:16px" onclick={finish}>{t('Termina allenamento')}</button>
@@ -161,6 +165,25 @@
 	{/if}
 </main>
 
-{#if pickingEx && wk}<ExercisePicker {focus} onclose={() => (pickingEx = false)} onpick={(ex) => { if (!picked.includes(ex.uuid)) picked = [...picked, ex.uuid]; current = ex.uuid; adding = { ex, set: null } }} />{/if}
+{#if pickingEx && wk}<ExercisePicker {focus} onclose={() => (pickingEx = false)} onpick={(ex) => { addToPlan(wk, ex.uuid); current = ex.uuid; adding = { ex, set: null } }} />{/if}
+{#if replacing && wk}<ExercisePicker {focus} onclose={() => (replacing = null)} onpick={(ex) => { if (items.some((i) => i.exercise === ex.uuid)) { toast(t('È già in lista.')); return } replaceInPlan(wk, replacing!.uuid, ex.uuid); current = ex.uuid }} />{/if}
+{#if menuFor && wk}
+	{@const ex = menuFor}
+	{@const idx = items.findIndex((i) => i.exercise === ex.uuid)}
+	{@const empty = !wk.sets.some((s) => s.exercise === ex.uuid)}
+	<Sheet title={ex.name} onclose={() => (menuFor = null)}>
+		<div class="stack">
+			<div class="row">
+				<button class="btn grow" disabled={idx <= 0} onclick={() => moveInPlan(wk, ex.uuid, -1)}><Icon name="up" size={18} />{t('Su')}</button>
+				<button class="btn grow" disabled={idx < 0 || idx >= items.length - 1} onclick={() => moveInPlan(wk, ex.uuid, 1)}><Icon name="down" size={18} />{t('Giù')}</button>
+			</div>
+			{#if empty}
+				<button class="btn block" onclick={() => { replacing = ex; menuFor = null }}><Icon name="repeat" size={18} />{t('Sostituisci')}</button>
+				<button class="btn danger block" onclick={() => { removeFromPlan(wk, ex.uuid); menuFor = null }}><Icon name="trash" size={18} />{t('Togli dalla lista')}</button>
+			{:else}<p class="small muted">{t('Ha già delle serie: per cambiarlo eliminale prima.')}</p>{/if}
+		</div>
+	</Sheet>
+{/if}
+{#if savingTemplate && wk}<TemplateEditor initial={{ name: wk.name, items: itemsFromWorkout(wk) }} onclose={() => (savingTemplate = false)} onsaved={() => toast(t('Scheda salvata.'))} />{/if}
 {#if editFocus && wk}<FocusPicker workout={wk} onclose={() => (editFocus = false)} />{/if}
 {#if adding && wk}<AddSetSheet workout={wk} ex={adding.ex} set={adding.set} onclose={() => (adding = null)} onadded={(r) => added(adding!.ex, r)} />{/if}

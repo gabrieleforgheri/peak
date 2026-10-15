@@ -1,13 +1,18 @@
 <script lang="ts">
+	import { itemsFromWorkout } from '../lib/actions.ts'
 	import { V, duration, setLine } from '../lib/fmt.ts'
 	import { t } from '../lib/i18n.ts'
 	import { go } from '../lib/router.svelte.ts'
 	import { getModel } from '../lib/store.svelte.ts'
+	import { toast } from '../lib/toast.svelte.ts'
+	import Icon from '../components/Icon.svelte'
+	import TemplateEditor from '../components/TemplateEditor.svelte'
 
 	let { id }: { id: string } = $props()
 	const m = $derived(getModel())
 	const wk = $derived(m.wkById.get(id))
 	const prs = $derived(wk?.sets.filter((s) => s.isPR) ?? [])
+	let saving = $state(false)
 	const exCount = $derived(new Set(wk?.sets.map((s) => s.exercise).filter(Boolean)).size)
 </script>
 
@@ -31,6 +36,8 @@
 				{/each}
 			</div>
 		{/if}
-		<button class="btn primary block" style="margin-top:24px" onclick={() => go('allenamenti', true)}>{t('Fine')}</button>
+		{#if exCount}<button class="btn block" style="margin-top:24px" onclick={() => (saving = true)}><Icon name="list" size={20} />{t('Salva come scheda')}</button>{/if}
+		<button class="btn primary block" style="margin-top:12px" onclick={() => go('allenamenti', true)}>{t('Fine')}</button>
+		{#if saving}<TemplateEditor initial={{ name: wk.name, items: itemsFromWorkout(wk) }} onclose={() => (saving = false)} onsaved={() => toast(t('Scheda salvata.'))} />{/if}
 	{/if}
 </main>

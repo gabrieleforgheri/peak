@@ -1,11 +1,13 @@
 // Le operazioni dell'utente sui documenti. Niente logica di record qui: i massimali automatici e i PR si
 // derivano dalle serie (common/records.ts), quindi cancellare o modificare una serie basta a tenerli giusti.
 
-import { isoSec, newUuid, MUSCLE_GROUPS, type DocDataMap, type ExerciseDoc, type Kind, type MuscleGroup, type SetDoc, type WorkoutDoc } from '@common/docs.ts'
+import { isoSec, newUuid, MUSCLE_GROUPS, type DocDataMap, type ExerciseDoc, type Kind, type MuscleGroup, type SetDoc, type TemplateItem, type WorkoutDoc } from '@common/docs.ts'
 import { CATALOG } from '@common/catalog.ts'
 import { settingsForUnitChange, type Unit } from '@common/domain.ts'
+import { addItem, differsFromTemplate, moveItem, removeItem, replaceItem, sessionItems, type PlanSet } from '@common/plan.ts'
 import type { AnyRecord } from '@common/records.ts'
 import { batch, getModel, put, remove, rows } from './store.svelte.ts'
+import type { Tpl, Wk } from './types.ts'
 
 const docOf = <K extends Kind>(kind: K, uuid: string): DocDataMap[K] | undefined => {
 	const r = rows.get(`${kind}:${uuid}`)
@@ -21,9 +23,16 @@ export const focusRaw = (groups: Iterable<MuscleGroup>): string => {
 	return MUSCLE_GROUPS.filter((g) => set.has(g)).join(',')
 }
 
-export function startWorkout(name: string, focus: Iterable<MuscleGroup>): string {
+/** Con una scheda: lista già pronta (una copia), nome della scheda se non ne dai uno, gruppi presi dagli esercizi. */
+export function startWorkout(name: string, focus: Iterable<MuscleGroup>, template?: Tpl): string {
 	const id = newUuid()
-	put('workout', id, { date: now(), endedAt: null, note: '', name: name.trim(), focus: focusRaw(focus) })
+	const exById = getModel().exById
+	const plan = (template?.items ?? []).filter((i) => exById.has(i.exercise))
+	const groups = template ? plan.map((i) => exById.get(i.exercise)!.muscleGroup) : focus
+	put('workout', id, {
+		date: now(), endedAt: null, note: '', name: name.trim() || template?.name || '', focus: focusRaw(groups),
+		template: template?.uuid ?? '', plan,
+	})
 	return id
 }
 
@@ -59,6 +68,46 @@ export function patchSet(id: string, patch: Partial<SetDoc>): boolean {
 }
 
 export const deleteSet = (id: string) => remove('set', id)
+
+// ---- schede e lista dell'allenamento ------------------------------------------------------------------------
+
+const planSets = (wk: Wk): PlanSet[] => wk.sets
+const exists = (id: string) => getModel().exById.has(id)
+
+/** La lista di oggi, in ordine, con gli obiettivi della scheda dove ci sono. */
+export const todayItems = (wk: Wk): TemplateItem[] => sessionItems(wk.plan, planSets(wk), exists)
+
+/** La lista di oggi scritta nel piano (anche gli esercizi fuori piano diventano righe). */
+export function setPlan(workout: string, items: TemplateItem[]) { patchWorkout(workout, { plan: items }) }
+
+export const addToPlan = (wk: Wk, exercise: string) => setPlan(wk.uuid, addItem(todayItems(wk), exercise))
+export const removeFromPlan = (wk: Wk, exercise: string) => setPlan(wk.uuid, removeItem(todayItems(wk), exercise))
+export const replaceInPlan = (wk: Wk, from: string, to: string) => setPlan(wk.uuid, replaceItem(todayItems(wk), from, to))
+export const moveInPlan = (wk: Wk, exercise: string, dir: -1 | 1) => setPlan(wk.uuid, moveItem(todayItems(wk), exercise, dir))
+
+/** Righe pronte per "salva come scheda": quello che si è fatto, dove si è fatto qualcosa. */
+export const itemsFromWorkout = (wk: Wk): TemplateItem[] => sessionItems(wk.plan, planSets(wk), exists, 'done')
+
+/** A fine allenamento: la lista è diversa dalla scheda da cui è partito? (la scheda può essere stata eliminata) */
+export function templateChanged(wk: Wk): Tpl | null {
+	const tpl = getModel().tplById.get(wk.template)
+	return tpl && differsFromTemplate(sessionItems(wk.plan, planSets(wk), exists, 'targets'), tpl.items, exists) ? tpl : null
+}
+
+/** Aggiorna la scheda con la lista di oggi, tenendo gli obiettivi scritti. */
+export function updateTemplateFromWorkout(tpl: Tpl, wk: Wk) {
+	saveTemplate(tpl.uuid, tpl.name, sessionItems(wk.plan, planSets(wk), exists, 'targets'))
+}
+
+export function saveTemplate(id: string | null, name: string, items: TemplateItem[]): string {
+	const uuid = id ?? newUuid()
+	const prev = getModel().tplById.get(uuid)
+	const top = getModel().templates.reduce((m, x) => Math.max(m, x.sortIndex), -1)
+	put('template', uuid, { name: name.trim(), items, sortIndex: prev?.sortIndex ?? top + 1, createdAt: prev?.createdAt ?? now() })
+	return uuid
+}
+
+export const deleteTemplate = (id: string) => remove('template', id)
 
 // ---- macchinari --------------------------------------------------------------------------------------------------
 

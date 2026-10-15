@@ -5,7 +5,7 @@
 	import { changeUnit, eraseAll, seedMissing, setSetting } from '../lib/actions.ts'
 	import { fromUnit, toUnit, unit } from '../lib/fmt.ts'
 	import { t, tn } from '../lib/i18n.ts'
-	import { go } from '../lib/router.svelte.ts'
+	import { go, route } from '../lib/router.svelte.ts'
 	import { S, getModel } from '../lib/store.svelte.ts'
 	import { disablePush, enablePush, pushState, type PushState } from '../lib/push.ts'
 	import { call, resync, syncNow } from '../lib/sync.ts'
@@ -97,17 +97,42 @@
 		const next = hasPlate(p) ? s.availablePlates.filter((x) => Math.abs(round2(toDisplay(x, s.unit)) - p) >= 0.01) : [...s.availablePlates, fromUnit(p)]
 		setSetting('availablePlates', next.sort((a, b) => b - a))
 	}
+	// le categorie sono sottopagine: #/impostazioni/<id> ('palestra' e non 'catalogo', che è già la lista dei macchinari)
+	const CATS = [
+		{ id: 'generale', icon: 'sliders', label: t('Generale') },
+		{ id: 'allenamento', icon: 'dumbbell', label: t('Allenamento') },
+		{ id: 'schede', icon: 'list', label: t('Schede') },
+		{ id: 'account', icon: 'cloud', label: t('Account yG') },
+		{ id: 'backup', icon: 'download', label: t('Backup') },
+		{ id: 'palestra', icon: 'archive', label: t('Catalogo') },
+	]
+	const cat = $derived(CATS.find((c) => c.id === route.parts[1]))
 	const stepBar = $derived(s.unit === 'kg' ? 2.5 : 5)
 </script>
 
-<main class="screen">
+<main class="screen" class:no-tabs={!!cat}>
+{#if !cat}
 	<div class="bar"><h1>{t('Impostazioni')}</h1></div>
 
 	{#if needsBackup}
 		<div class="banner"><Icon name="download" /><div class="grow"><b>{t('Fai un backup')}</b>{s.lastExportDate ? t('L\'ultimo risale a più di due settimane fa.') : t('Non hai ancora esportato i tuoi dati.')}</div><button class="btn small primary" onclick={exportNow} disabled={busy}>{t('Esporta adesso')}</button></div>
 	{/if}
 
-	<div class="sec-title">{t('Unità')}</div>
+	<div class="card list">
+		{#each CATS as c (c.id)}
+			<button class="item" onclick={() => go(`impostazioni/${c.id}`)}><Icon name={c.icon} size={22} /><div class="grow">{c.label}</div><Icon name="right" size={20} /></button>
+		{/each}
+	</div>
+
+	<p class="faint small" style="text-align:center;margin-top:24px">Peak · {__VERSION__}</p>
+{:else}
+	<div class="bar">
+		<button class="icon-btn" onclick={() => go('impostazioni')} aria-label={t('Indietro')}><Icon name="left" /></button>
+		<h1 class="small">{cat.label}</h1>
+		<span style="width:40px"></span>
+	</div>
+
+	{#if cat.id === 'generale'}
 	<div class="card stack">
 		<div class="seg"><button class:on={s.unit === 'kg'} onclick={() => changeUnit('kg')}>kg</button><button class:on={s.unit === 'lb'} onclick={() => changeUnit('lb')}>lb</button></div>
 		<div class="field"><span class="sec-title" style="margin:0 4px 6px">{t('Formula del 1RM')}</span>
@@ -121,7 +146,7 @@
 			</div></div>
 	</div>
 
-	<div class="sec-title">{t('Allenamento')}</div>
+	{:else if cat.id === 'allenamento'}
 	<div class="card stack">
 		<label class="row between"><span>{t('Timer di recupero')}</span><input class="toggle" type="checkbox" checked={s.restTimerEnabled} onchange={(e) => setSetting('restTimerEnabled', e.currentTarget.checked)} /></label>
 		{#if s.restTimerEnabled}<Stepper value={s.restSeconds} step={15} min={15} max={600} unit={t('secondi')} onchange={(v) => setSetting('restSeconds', v)} />
@@ -144,7 +169,16 @@
 		{/if}
 	</div>
 
-	<div class="sec-title">{t('Account yG')}</div>
+	{:else if cat.id === 'schede'}
+	<div class="card stack">
+		<p class="small muted">{t('Cosa mostrare nelle schede e nella lista dell\'allenamento. Valgono su tutti i tuoi dispositivi.')}</p>
+		<label class="row between"><span>{t('Serie')}</span><input class="toggle" type="checkbox" checked={s.templateSets} onchange={(e) => setSetting('templateSets', e.currentTarget.checked)} /></label>
+		<label class="row between"><span>{t('Ripetizioni')}</span><input class="toggle" type="checkbox" checked={s.templateReps} onchange={(e) => setSetting('templateReps', e.currentTarget.checked)} /></label>
+		<label class="row between"><span>{t('Peso')}</span><input class="toggle" type="checkbox" checked={s.templateWeight} onchange={(e) => setSetting('templateWeight', e.currentTarget.checked)} /></label>
+		<p class="small faint">{t('Senza peso scritto nella scheda si vede l\'ultimo usato. Gli obiettivi sono solo un promemoria: il foglio della serie non cambia.')}</p>
+		<button class="btn block" onclick={() => go('allenamenti')}>{t('Gestisci le schede')}</button>
+	</div>
+	{:else if cat.id === 'account'}
 	<div class="card stack">
 		<div class="row"><Icon name="cloud" size={24} /><div class="grow"><b>{S.user?.nome ?? '—'}</b><div class="small muted">{S.dirty ? tn(S.dirty, '1 modifica da sincronizzare', '{0} modifiche da sincronizzare') : t('Tutto sincronizzato')}{S.online ? '' : ' · ' + t('offline')}</div></div>
 			<button class="btn small" onclick={() => syncNow()} disabled={S.syncing}>{S.syncing ? '…' : t('Sincronizza')}</button></div>
@@ -158,7 +192,7 @@
 		<a class="btn block" href="/auth/logout">{t('Esci')}</a>
 	</div>
 
-	<div class="sec-title">{t('Backup')}</div>
+	{:else if cat.id === 'backup'}
 	<div class="card stack">
 		<button class="btn block" onclick={exportNow} disabled={busy}><Icon name="download" size={18} />{t('Esporta backup')}</button>
 		<label class="btn block" style="cursor:pointer"><Icon name="upload" size={18} />{t('Importa backup')}<input type="file" accept="application/json,.json" hidden onchange={chooseFile} /></label>
@@ -166,15 +200,15 @@
 		{#if result}<div class="banner">{result}</div>{/if}
 	</div>
 
-	<div class="sec-title">{t('Catalogo')}</div>
+	{:else if cat.id === 'palestra'}
 	<div class="card list">
 		<button class="item" onclick={() => go('impostazioni/catalogo')}><div class="grow">{t('La tua palestra')}</div><Icon name="right" size={20} /></button>
 		<button class="item" onclick={() => go('impostazioni/archivio')}><div class="grow">{t('Archiviati')} ({m.exercises.filter((e) => e.isArchived).length})</div><Icon name="right" size={20} /></button>
 		<button class="item" onclick={() => { const n = seedMissing(); toast(n ? tn(n, '1 macchinario aggiunto.', '{0} macchinari aggiunti.') : t('Hai già tutto il catalogo.')) }}><div class="grow">{t('Aggiungi i macchinari mancanti')}</div></button>
 		<button class="item" onclick={erase}><div class="grow neg">{t('Cancella tutti i dati')}</div></button>
 	</div>
-
-	<p class="faint small" style="text-align:center;margin-top:24px">Peak · {__VERSION__}</p>
+	{/if}
+{/if}
 </main>
 
 {#if importing}

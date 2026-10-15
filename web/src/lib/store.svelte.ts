@@ -3,12 +3,12 @@
 // e statistiche da zero a ogni modifica.
 // ponytail: ricalcolo completo a ogni scrittura, va bene per migliaia di serie; incrementale oltre le ~20k.
 
-import { SETTING_DEFAULTS, split, type DocDataMap, type Kind, type LiveDoc } from '@common/docs.ts'
+import { SETTING_DEFAULTS, split, upgradeDoc, type DocDataMap, type Kind, type LiveDoc } from '@common/docs.ts'
 import { glyphOf } from '@common/glyph.ts'
 import { bestOf } from '@common/domain.ts'
 import { deriveRecords, recordsByExercise } from '@common/records.ts'
 import * as idb from './idb.ts'
-import type { Bw, Ex, Model, SetItem, Settings, Wk } from './types.ts'
+import type { Bw, Ex, Model, SetItem, Settings, Tpl, Wk } from './types.ts'
 
 export type AuthState = 'ok' | 'expired' | 'none'
 
@@ -147,11 +147,14 @@ function compute(): Model {
 		const sets = (setsByWk.get(w.uuid) ?? []).sort((a, b) => a.order - b.order)
 		const working = sets.filter((s) => !s.isWarmup)
 		return {
-			...w.data, uuid: w.uuid, dateMs: Date.parse(w.data.date), endedMs: w.data.endedAt ? Date.parse(w.data.endedAt) : null,
+			...upgradeDoc('workout', w.data), uuid: w.uuid, dateMs: Date.parse(w.data.date), endedMs: w.data.endedAt ? Date.parse(w.data.endedAt) : null,
 			isActive: !w.data.endedAt, sets, volume: working.reduce((v, s) => v + s.weight * s.reps, 0),
 			workingSets: working.length, prCount: sets.filter((s) => s.isPR).length,
 		}
 	}).sort((a, b) => b.dateMs - a.dateMs)
+
+	const templates: Tpl[] = d.templates.map((x) => ({ ...x.data, uuid: x.uuid }))
+		.sort((a, b) => a.sortIndex - b.sortIndex || a.name.localeCompare(b.name))
 
 	const bodyweights: Bw[] = d.bodyweights.map((b) => ({ uuid: b.uuid, dateMs: Date.parse(b.data.date), weight: b.data.weight, fromHealth: b.data.fromHealth }))
 		.sort((a, b) => a.dateMs - b.dateMs)
@@ -161,6 +164,7 @@ function compute(): Model {
 
 	return {
 		exercises, exById: new Map(exercises.map((e) => [e.uuid, e])), workouts, wkById: new Map(workouts.map((w) => [w.uuid, w])),
+		templates, tplById: new Map(templates.map((x) => [x.uuid, x])),
 		bodyweights, settings: settings as unknown as Settings, hasData: d.exercises.length + d.workouts.length + d.records.length + d.bodyweights.length > 0,
 	}
 }
