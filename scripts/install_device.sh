@@ -44,6 +44,8 @@ EOF
 }
 IPHONE_ID=${IPHONE_ID:-$(pick iPhone)}
 WATCH_ID=${WATCH_ID:-$(pick appleWatch)}
+# SENZA_WATCH vale davvero: anche se l'orologio è tra i dispositivi, non lo si tocca
+[ -z "${SENZA_WATCH:-}" ] || WATCH_ID=""
 [ -n "$IPHONE_ID" ] || { echo "Nessun iPhone collegato." >&2; exit 1; }
 [ -n "$WATCH_ID" ] || [ -n "${SENZA_WATCH:-}" ] || { echo "Nessun Apple Watch collegato (SENZA_WATCH=1 per installare solo l'iPhone)." >&2; exit 1; }
 echo "iPhone $IPHONE_ID · Watch $WATCH_ID · team $TEAM"

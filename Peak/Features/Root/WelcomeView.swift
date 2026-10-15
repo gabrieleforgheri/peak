@@ -88,9 +88,12 @@ struct WelcomeView: View {
     private var peakScene: some View {
         let on = scene == 0
         return VStack(spacing: 14) {
-            Image(systemName: "mountain.2.fill")
-                .font(.system(size: 56, weight: .semibold))
-                .foregroundStyle(settings.accentColor)
+            // l'icona dell'app (come nel benvenuto web), non un simbolo
+            Image("WelcomeIcon")
+                .resizable()
+                .frame(width: 96, height: 96)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .shadow(color: settings.accentColor.opacity(0.3), radius: 20)
                 .reveal(on, delay: 0.1)
             Text("Peak")
                 .font(Theme.display(52))
