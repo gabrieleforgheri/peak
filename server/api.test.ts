@@ -216,10 +216,10 @@ test('revokeAccessExcept: toglie sessioni e dispositivi a chi non è nell\'elenc
   assert.equal(app.store.live(drop.user.id).length, 1, 'i dati restano')
 })
 
-test('pagina e statici: senza sessione si va al login; gli asset sono pubblici', async () => {
+test('pagina e statici: senza sessione si va al benvenuto; gli asset sono pubblici', async () => {
   const r = await call('/')
   assert.equal(r.status, 302)
-  assert.equal(r.headers.get('location'), '/auth/login')
+  assert.equal(r.headers.get('location'), '/benvenuto.html')
   const { h } = login('pg')
   const page = await call('/', { h: { cookie: h.cookie } })
   assert.equal(page.status, 200)

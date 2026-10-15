@@ -67,10 +67,10 @@ export function createApp({ dataDir, env = process.env, staticDir = join(ROOT, '
     if (await api(req, res, path, url.searchParams)) return
     if (req.method !== 'GET' && req.method !== 'HEAD') throw new HttpError(405, 'metodo')
 
-    // la pagina dell'app solo con una sessione: senza, al login. Il resto (asset, manifest, sw) è pubblico.
+    // la pagina dell'app solo con una sessione: senza, al benvenuto (con «Accedi con yG»). Il resto (asset, manifest, sw) è pubblico.
     const isShell = path === '/' || path === '/index.html'
     if (isShell && !auth.userOf(req, 'page')) {
-      res.writeHead(302, { location: '/auth/login', 'cache-control': 'no-store', ...SECURITY_HEADERS })
+      res.writeHead(302, { location: '/benvenuto.html', 'cache-control': 'no-store', ...SECURITY_HEADERS })
       res.end()
       return
     }
