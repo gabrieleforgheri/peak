@@ -2,6 +2,7 @@
 // l'API per web e iPhone e il login con yG. Sull'egg Pelican ogni riavvio è anche un deploy: git pull e questo file.
 
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
+import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -46,7 +47,25 @@ function loadStatic(dir: string): Map<string, { body: Buffer; type: string; cach
     }
   }
   if (existsSync(dir)) walk(dir, '')
+  versionLinks(out)
   return out
+}
+
+/**
+ * Cloudflare tiene in cache js, css e immagini senza hash (per ore, ignorando il nostro `no-cache`): dopo un
+ * aggiornamento la pagina nuova trovava lo script vecchio. Nelle pagine ogni file locale senza hash (benvenuto.js,
+ * .css, .mp4, icone) si chiama con `?v=<hash del contenuto>`: cambia il file, cambia l'indirizzo, e arriva subito.
+ */
+function versionLinks(files: Map<string, { body: Buffer; type: string; cache: string }>) {
+  for (const [url, page] of files) {
+    if (!url.endsWith('.html')) continue
+    const html = page.body.toString('utf8').replace(/\b(href|src)="(\/[^"?#]+)"/g, (whole, attr: string, target: string) => {
+      const file = files.get(target)
+      if (!file || target.startsWith('/assets/') || target.endsWith('.html')) return whole
+      return `${attr}="${target}?v=${createHash('sha256').update(file.body).digest('hex').slice(0, 10)}"`
+    })
+    page.body = Buffer.from(html)
+  }
 }
 
 export interface AppOptions { dataDir: string; env?: NodeJS.ProcessEnv; staticDir?: string; /** Per i test: al posto della vera chiamata al servizio push. */ send?: Send }

@@ -24,6 +24,8 @@ before(async () => {
   writeFileSync(join(dir, 'dist/index.html'), '<!doctype html><title>Peak</title>')
   writeFileSync(join(dir, 'dist/sw.js'), '// sw')
   writeFileSync(join(dir, 'dist/benvenuto.mp4'), '0123456789')
+  writeFileSync(join(dir, 'dist/benvenuto.js'), '// js')
+  writeFileSync(join(dir, 'dist/benvenuto.html'), '<link href="/benvenuto.css"><script src="/benvenuto.js"></script><video src="/benvenuto.mp4"></video><script src="/assets/index-abc.js"></script>')
   idp = createServer((req, res) => {
     const url = new URL(req.url!, idpUrl)
     if (url.pathname.endsWith('/.well-known/openid-configuration')) {
@@ -234,6 +236,13 @@ test('pagina e statici: senza sessione si va al benvenuto; gli asset sono pubbli
   assert.equal(await part.text(), '234')
   assert.equal((await call('/benvenuto.mp4', { h: { range: 'bytes=-3' } })).headers.get('content-range'), 'bytes 7-9/10')
   assert.equal((await call('/benvenuto.mp4', { h: { range: 'bytes=20-' } })).status, 416)
+  // le pagine chiamano i file senza hash con ?v=<hash del contenuto> (Cloudflare li tiene in cache per ore)
+  const welcome = await (await call('/benvenuto.html')).text()
+  assert.match(welcome, /src="\/benvenuto\.js\?v=[0-9a-f]{10}"/)
+  assert.match(welcome, /src="\/benvenuto\.mp4\?v=[0-9a-f]{10}"/)
+  assert.match(welcome, /href="\/benvenuto\.css"/, 'un file che non c\'è resta com\'è')
+  assert.match(welcome, /src="\/assets\/index-abc\.js"/, 'gli asset con hash non si toccano')
+  assert.equal((await call('/benvenuto.js?v=abc')).status, 200)
   assert.equal((await call('/segreto.txt')).status, 404)
   assert.equal((await call('/..%2f..%2fpackage.json')).status, 404)
   assert.equal((await call('/api/inesistente', { h })).status, 404)
