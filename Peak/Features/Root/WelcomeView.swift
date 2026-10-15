@@ -16,7 +16,7 @@ struct WelcomeView: View {
     @State private var restart = 0
 
     /// Quanto resta ogni scena, in secondi (come `durations` in benvenuto.js).
-    private static let durations: [Double] = [3.2, 5.5, 5, 4.5, 4.5, 4.5]
+    private static let durations: [Double] = [2.6, 4.4, 4.2, 4, 4, 3.6]
 
     var body: some View {
         Group {
@@ -69,7 +69,7 @@ struct WelcomeView: View {
                     .accessibilityLabel("Scena \(index + 1) di \(Self.durations.count)")
                 }
             }
-            .animation(.easeInOut(duration: 0.4), value: scene)
+            .animation(.easeInOut(duration: 0.3), value: scene)
 
             Button("Collega a yG") { connecting = true }
                 .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
@@ -93,22 +93,22 @@ struct WelcomeView: View {
                 return
             }
             if scene < 0 {
-                try? await Task.sleep(for: .milliseconds(150))
+                try? await Task.sleep(for: .milliseconds(120))
                 guard !Task.isCancelled else { return }
-                withAnimation(.easeInOut(duration: 0.6)) { scene = 0 }
+                withAnimation(.easeInOut(duration: 0.5)) { scene = 0 }
             }
             // ogni scena resta il suo tempo, poi passa alla prossima; una scelta a mano riavvia questo giro
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(Self.durations[scene]))
                 guard !Task.isCancelled else { return }
-                withAnimation(.easeInOut(duration: 0.6)) { scene = (scene + 1) % Self.durations.count }
+                withAnimation(.easeInOut(duration: 0.5)) { scene = (scene + 1) % Self.durations.count }
             }
         }
     }
 
     private func go(_ index: Int) {
         let count = Self.durations.count
-        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.6)) { scene = (index % count + count) % count }
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.5)) { scene = (index % count + count) % count }
         restart += 1
         Haptics.tap()
     }
@@ -135,15 +135,15 @@ struct WelcomeView: View {
                 .frame(width: 96, height: 96)
                 .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                 .shadow(color: settings.accentColor.opacity(0.3), radius: 20)
-                .reveal(on, delay: 0.1)
+                .reveal(on, delay: 0.08)
             Text("Peak")
                 .font(Theme.display(52))
                 .foregroundStyle(Theme.textPrimary)
-                .reveal(on, delay: 0.35)
+                .reveal(on, delay: 0.28)
             Text("Il tuo massimale vero.")
                 .font(Theme.rounded(18, .semibold))
                 .foregroundStyle(Theme.textSecondary)
-                .reveal(on, delay: 0.9)
+                .reveal(on, delay: 0.72)
         }
     }
 
@@ -151,10 +151,10 @@ struct WelcomeView: View {
         let on = scene == 1
         return VStack(alignment: .leading, spacing: 12) {
             sceneLabel("Massimali")
-            maxCard("Leg press", "× 6", "180", on: on, delay: 0.3)
-            maxCard("Panca piana", "× 5", "80", on: on, delay: 0.85)
-            maxCard("Lat machine", "× 8", "70", on: on, delay: 1.4)
-            caption("Il peso che hai alzato davvero, su ogni macchina.", on: on, delay: 2.4)
+            maxCard("Leg press", "× 6", "180", on: on, delay: 0.24)
+            maxCard("Panca piana", "× 5", "80", on: on, delay: 0.68)
+            maxCard("Lat machine", "× 8", "70", on: on, delay: 1.12)
+            caption("Il peso che hai alzato davvero, su ogni macchina.", on: on, delay: 1.9)
         }
     }
 
@@ -174,13 +174,13 @@ struct WelcomeView: View {
                             .font(Theme.rounded(13, .semibold))
                             .foregroundStyle(Theme.textTertiary)
                     }
-                    templateLine("Panca piana", "4 × 8–10 · 80 kg", on: on, delay: 0.8)
-                    templateLine("Leg press", "3 × 8–10 · 180 kg", on: on, delay: 1.3)
-                    templateLine("Lat machine", "3 × 10–12 · 70 kg", on: on, delay: 1.8)
+                    templateLine("Panca piana", "4 × 8–10 · 80 kg", on: on, delay: 0.64)
+                    templateLine("Leg press", "3 × 8–10 · 180 kg", on: on, delay: 1.04)
+                    templateLine("Lat machine", "3 × 10–12 · 70 kg", on: on, delay: 1.44)
                 }
             }
-            .reveal(on, delay: 0.2)
-            caption("La tua scheda, pronta a ogni allenamento.", on: on, delay: 2.9)
+            .reveal(on, delay: 0.16)
+            caption("La tua scheda, pronta a ogni allenamento.", on: on, delay: 2.0)
         }
     }
 
@@ -200,12 +200,12 @@ struct WelcomeView: View {
                             .fill(index == heights.count - 1 ? settings.accentColor : settings.accentColor.opacity(0.35))
                             .frame(maxWidth: .infinity)
                             .frame(height: 150 * (on ? heights[index] : 0.02), alignment: .bottom)
-                            .animation(on ? .spring(duration: 0.8, bounce: 0.1).delay(0.5 + Double(index) * 0.12) : .easeIn(duration: 0.3), value: on)
+                            .animation(on ? .spring(duration: 0.64, bounce: 0.1).delay(0.4 + Double(index) * 0.1) : .easeIn(duration: 0.25), value: on)
                     }
                 }
                 .frame(height: 150, alignment: .bottom)
             }
-            .reveal(on, delay: 0.2)
+            .reveal(on, delay: 0.16)
             GlassCard(padding: 16) {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
@@ -222,8 +222,8 @@ struct WelcomeView: View {
                         .foregroundStyle(Theme.positive)
                 }
             }
-            .reveal(on, delay: 2)
-            caption("Settimana dopo settimana.", on: on, delay: 2.9)
+            .reveal(on, delay: 1.5)
+            caption("Settimana dopo settimana.", on: on, delay: 2.1)
         }
     }
 
@@ -234,13 +234,13 @@ struct WelcomeView: View {
                 .font(Theme.rounded(24, .bold))
                 .foregroundStyle(Theme.textPrimary)
                 .multilineTextAlignment(.center)
-                .reveal(on, delay: 0.5)
+                .reveal(on, delay: 0.4)
             Text("Collega il tuo account yG: allenamenti e massimali si sincronizzano con peak.yrb4g.com e restano al sicuro sul server.")
                 .font(Theme.rounded(13, .medium))
                 .foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .reveal(on, delay: 1.2)
+                .reveal(on, delay: 0.96)
         }
     }
 
@@ -332,7 +332,7 @@ private struct SetScene: View {
                     }
                 }
             }
-            .reveal(on, delay: 0.2)
+            .reveal(on, delay: 0.16)
             Text("NUOVO RECORD")
                 .font(Theme.rounded(12, .heavy))
                 .tracking(1)
@@ -342,22 +342,22 @@ private struct SetScene: View {
                 .background(Theme.positive, in: Capsule())
                 .scaleEffect(on ? 1 : 0.7)
                 .opacity(on ? 1 : 0)
-                .animation(on ? .spring(duration: 0.6, bounce: 0.35).delay(2) : .easeIn(duration: 0.3), value: on)
+                .animation(on ? .spring(duration: 0.48, bounce: 0.35).delay(1.5) : .easeIn(duration: 0.25), value: on)
             Text("Un record? Lo vedi subito.")
                 .font(Theme.rounded(16, .semibold))
                 .foregroundStyle(Theme.textSecondary)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 8)
-                .reveal(on, delay: 3)
+                .reveal(on, delay: 2.1)
         }
         .task(id: on) {
             weight = 180
             guard on else { return }
-            try? await Task.sleep(for: .seconds(1.1))
+            try? await Task.sleep(for: .seconds(0.7))
             for step in 1...10 {
                 guard !Task.isCancelled else { return }
                 withAnimation(.snappy) { weight = 180 + step }
-                try? await Task.sleep(for: .seconds(0.1))
+                try? await Task.sleep(for: .seconds(0.07))
             }
         }
     }
@@ -372,7 +372,7 @@ private struct Reveal: ViewModifier {
         content
             .opacity(on ? 1 : 0)
             .offset(y: on ? 0 : 14)
-            .animation(reduceMotion ? nil : (on ? .easeOut(duration: 0.6).delay(delay) : .easeIn(duration: 0.3)), value: on)
+            .animation(reduceMotion ? nil : (on ? .easeOut(duration: 0.48).delay(delay) : .easeIn(duration: 0.25)), value: on)
     }
 }
 

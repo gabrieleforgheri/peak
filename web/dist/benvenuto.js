@@ -12,7 +12,7 @@ if (!navigator.language?.toLowerCase().startsWith('it')) {
 const scenes = [...document.querySelectorAll('.scene')]
 const dots = [...document.querySelectorAll('#dots i')]
 const count = document.getElementById('count')
-const durations = [3200, 5500, 5000, 4500, 4500, 4500]
+const durations = [2600, 4400, 4200, 4000, 4000, 3600]
 
 const logo = document.getElementById('logo')
 const rect = (id) => document.getElementById(id).getBoundingClientRect()
@@ -37,12 +37,12 @@ function show(n) {
 		counter = setTimeout(() => {
 			const t0 = performance.now()
 			const tick = (t) => {
-				const k = Math.min(1, (t - t0) / 1000)
+				const k = Math.min(1, (t - t0) / 700)
 				count.textContent = String(Math.round(180 + 10 * k))
 				if (k < 1 && at === 3) requestAnimationFrame(tick)
 			}
 			requestAnimationFrame(tick)
-		}, 1100)
+		}, 700)
 	}
 }
 
