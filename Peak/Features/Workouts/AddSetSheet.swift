@@ -38,7 +38,9 @@ struct AddSetSheet: View {
     /// Peso senza dischi, se l'esercizio si carica a dischi: bilanciere (anche panche e rack) o leva plate loaded.
     private var plateBase: Double? {
         guard settings.plateCalculatorEnabled else { return nil }
-        return Plates.barBase(glyph: exercise.glyph, name: exercise.name, barWeight: settings.barWeight)
+        // le voci del catalogo sanno che attrezzo sono: un «Leg Curl Sdraiato» con il pittogramma di una panca non è un bilanciere
+        let glyph = Catalog.entry(id: exercise.catalogID)?.machineGlyph ?? exercise.glyph
+        return Plates.barBase(glyph: glyph, name: exercise.name, barWeight: settings.barWeight)
     }
 
     private var suggestion: Progression.Suggestion? {

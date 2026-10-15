@@ -6,6 +6,7 @@
 	import { locale, t } from '../lib/i18n.ts'
 	import { getModel } from '../lib/store.svelte.ts'
 	import type { Ex, SetItem, Wk } from '../lib/types.ts'
+	import { loadCatalog } from '../lib/catalog.ts'
 	import PlateBar from './PlateBar.svelte'
 	import Sheet from './Sheet.svelte'
 	import Stepper from './Stepper.svelte'
@@ -37,7 +38,10 @@
 	const isRecord = $derived(!warm && beats(kg, reps, reference))
 	const next = $derived(set ? null : suggestionFor(ex, m))
 	const warmSteps = $derived(warmupFor(ex, m))
-	const mode = $derived(m.settings.plateCalculatorEnabled ? plateMode(ex.glyphName, ex.name) : null)
+	// le voci del catalogo sanno che attrezzo sono: un «Leg Curl Sdraiato» con il pittogramma di una panca non è un bilanciere
+	let catalogGlyph = $state('')
+	$effect(() => { const id = ex.catalog; if (id) loadCatalog().then((c) => (catalogGlyph = c.find((e) => e.id === id)?.glyph ?? '')) })
+	const mode = $derived(m.settings.plateCalculatorEnabled ? plateMode(catalogGlyph || ex.glyphName, ex.name) : null)
 	const plates = $derived(m.settings.availablePlates.map((p) => round2(toDisplay(p, m.settings.unit))))
 
 	function save() {
