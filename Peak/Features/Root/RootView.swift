@@ -25,7 +25,9 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.25), value: settings.didSeeWelcome)
         .task {
             runAutoBackup()
+            linkCatalogOnce()
             await SyncService.shared.syncNow()
+            await Catalog.refresh()
         }
         .onChange(of: scenePhase) { _, phase in
             // Alla chiusura dell'app il backup automatico resta allineato (se non si è collegati a yG,
@@ -54,6 +56,16 @@ struct RootView: View {
                 .tag(Tab.settings)
         }
         .tint(settings.accentColor)
+    }
+
+    /// Gli esercizi che c'erano prima del catalogo si collegano per nome, una volta sola; gli altri restano personalizzati.
+    private func linkCatalogOnce() {
+        guard !settings.didLinkCatalog, !AppStore.isFallback else { return }
+        for exercise in (try? context.fetch(FetchDescriptor<Exercise>())) ?? [] where exercise.catalogID.isEmpty {
+            exercise.catalogID = Catalog.match(name: exercise.name)?.id ?? ""
+        }
+        try? context.save()
+        settings.didLinkCatalog = true
     }
 
     private func runAutoBackup() {

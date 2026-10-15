@@ -88,6 +88,7 @@ final class AppSettings {
         static let barWeight = "settings.barWeight"
         static let availablePlates = "settings.availablePlates"
         static let didSeeWelcome = "settings.didSeeWelcome"
+        static let didLinkCatalog = "settings.didLinkCatalog"
     }
 
     private let defaults: UserDefaults
@@ -160,6 +161,11 @@ final class AppSettings {
         didSet { defaults.set(didSeeWelcome, forKey: Key.didSeeWelcome) }
     }
 
+    /// Gli esercizi già presenti sono stati collegati al catalogo (per nome), una volta sola.
+    var didLinkCatalog: Bool {
+        didSet { defaults.set(didLinkCatalog, forKey: Key.didLinkCatalog) }
+    }
+
     var lastBackupDate: Date? {
         didSet { defaults.set(lastBackupDate, forKey: Key.lastBackup) }
     }
@@ -180,6 +186,7 @@ final class AppSettings {
         self.availablePlates = defaults.array(forKey: Key.availablePlates) as? [Double]
             ?? [25, 20, 15, 10, 5, 2.5, 1.25]
         self.didSeeWelcome = defaults.bool(forKey: Key.didSeeWelcome)
+        self.didLinkCatalog = defaults.bool(forKey: Key.didLinkCatalog)
     }
 
     var accentColor: Color { accent.color }

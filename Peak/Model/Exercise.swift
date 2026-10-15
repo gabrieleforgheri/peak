@@ -27,6 +27,10 @@ final class Exercise {
     /// Recupero dopo ogni serie, in secondi. 0 = quello delle impostazioni.
     var restSeconds: Int = 0
     var createdAt: Date = Date()
+    /// Id della voce del catalogo (`Catalog`); vuoto = esercizio personalizzato, fuori dalle classifiche.
+    var catalogID: String = ""
+    /// Nascosto agli amici.
+    var isHidden: Bool = false
 
     @Relationship(deleteRule: .cascade, inverse: \MaxRecord.exercise)
     var records: [MaxRecord]? = []

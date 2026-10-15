@@ -33,6 +33,9 @@ struct ExerciseDTO: Codable {
     var isUnilateral: Bool?
     /// Opzionale per lo stesso motivo; assente = recupero delle impostazioni.
     var restSeconds: Int?
+    /// Opzionali: i backup scritti prima del catalogo non li hanno.
+    var catalogID: String?
+    var isHidden: Bool?
     var records: [MaxRecordDTO]
 }
 
@@ -65,6 +68,7 @@ struct TemplateDTO: Codable {
     var name: String
     var sortIndex: Int
     var createdAt: Date
+    var isHidden: Bool?
     var items: [TemplateItemDTO]
 }
 

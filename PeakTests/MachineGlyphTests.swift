@@ -45,9 +45,11 @@ final class MachineGlyphTests: XCTestCase {
 
     /// Ogni voce del catalogo deve avere un pittogramma e un disegno non vuoto.
     func testEveryCatalogEntryHasADrawableGlyph() {
-        for entry in SeedCatalog.entries {
-            let g = MachineGlyph.suggested(for: entry.name, group: entry.group)
-            XCTAssertFalse(g.shapes.isEmpty, "\(entry.name) senza disegno")
+        XCTAssertGreaterThanOrEqual(Catalog.entries.count, 250)
+        for entry in Catalog.entries {
+            XCTAssertNotNil(MachineGlyph(rawValue: entry.glyph), "\(entry.id): pittogramma sconosciuto")
+            let g = entry.machineGlyph
+            XCTAssertFalse(g.shapes.isEmpty, "\(entry.it) senza disegno")
             XCTAssertFalse(g.title.isEmpty)
         }
     }

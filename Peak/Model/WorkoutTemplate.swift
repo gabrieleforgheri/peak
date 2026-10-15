@@ -22,6 +22,8 @@ final class WorkoutTemplate {
     var itemsRaw: String = ""
     var sortIndex: Int = 0
     var createdAt: Date = Date()
+    /// Nascosta agli amici.
+    var isHidden: Bool = false
 
     init(name: String, items: [TemplateItem] = [], sortIndex: Int = 0) {
         self.uuid = UUID()

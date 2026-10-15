@@ -96,11 +96,21 @@ MassimaliTests/              1RM, riscaldamento, rilevamento record, statistiche
 
 ## Catalogo, riscaldamento e immagini
 
-Il catalogo iniziale ha **98 voci** fra macchine a pacco pesi, plate loaded, cavi,
-bilancieri, manubri e corpo libero, divise nei sei gruppi muscolari. Quello che la
-tua palestra non ha si archivia con uno swipe e sparisce dalle liste senza perdere
-nulla. Il catalogo viene seminato **solo al primo avvio**: per aggiungere voci nuove
-a un'installazione esistente c'è *Impostazioni → Aggiungi i macchinari mancanti*.
+Il **catalogo** (`common/catalog.json`, 291 voci) è la fonte unica per web, server e iPhone: ogni voce è un
+*esercizio* (attrezzo + movimento: «Panca piana bilanciere», «Leg press 45°») con un **id** slug inglese che non
+cambia mai, nome italiano e inglese, sinonimi per la ricerca, gruppo, passo del carico, pittogramma e note. Un
+macchinario nuovo si crea **cercando nel catalogo** (o come «personalizzato», senza id), poi gli si dà un nome
+familiare: l'id resta, ed è ciò che permette le classifiche fra amici.
+
+- **Non cambiare mai un id** né riusarlo; i nomi si possono correggere. I vecchi 98 nomi italiani restano come nome o
+  sinonimo, così gli esercizi già in uso si collegano da soli (`matchByName`).
+- **Collegamento degli esistenti**: il server (all'avvio, una volta per esercizio) e l'iPhone (una volta) mettono il
+  campo `catalog` per nome; gli altri restano personalizzati e si collegano a mano da *Modifica → Catalogo*.
+- **Dove sta**: il web lo carica a parte solo quando serve; il server lo serve da `/catalogo.json` (ETag); l'iPhone ne ha
+  una copia nel bundle e scarica quella del server se è più nuova (`Catalog.refresh`).
+- Un client più vecchio che non manda `catalog`/`hidden` non li cancella: il server tiene i valori che aveva.
+
+Quello che la tua palestra non ha non serve archiviarlo: i macchinari partono vuoti e si aggiungono cercando.
 
 Per ogni esercizio con un massimale registrato l'app propone il **riscaldamento**:
 rampa 40% × 10 → 60% × 6 → 80% × 3 **sul carico vero** dell'esercizio. I pesi stanno
@@ -132,7 +142,7 @@ Le serie si aggiungono, si **modificano** (tocco sulla riga) e si eliminano (men
 contestuale): correggendo una serie il massimale automatico viene ricalcolato, così
 una correzione al ribasso non lascia in giro un record mai fatto. Ogni sessione ha
 il suo campo **note**, e il selettore degli esercizi mette in cima quelli **usati di
-recente** — con 98 macchinari a catalogo è lì che si perde tempo.
+recente**.
 
 Dopo ogni serie parte il **timer di recupero** (attivabile in *Impostazioni →
 Allenamento*): durata predefinita lì, sovrascrivibile per macchinario nell'editor.

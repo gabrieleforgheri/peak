@@ -96,6 +96,8 @@ enum BackupService {
                     photoOffset: exercise.photoOffset == 0 ? nil : exercise.photoOffset,
                     isUnilateral: exercise.isUnilateral ? true : nil,
                     restSeconds: exercise.restSeconds == 0 ? nil : exercise.restSeconds,
+                    catalogID: exercise.catalogID.isEmpty ? nil : exercise.catalogID,
+                    isHidden: exercise.isHidden ? true : nil,
                     records: exercise.recordList.map { record in
                         MaxRecordDTO(
                             uuid: record.uuid,
@@ -148,6 +150,7 @@ enum BackupService {
                     name: template.name,
                     sortIndex: template.sortIndex,
                     createdAt: template.createdAt,
+                    isHidden: template.isHidden ? true : nil,
                     items: dtos(template.items)
                 )
             }
@@ -240,6 +243,9 @@ enum BackupService {
             exercise.photoOffset = dto.photoOffset ?? 0
             exercise.isUnilateral = dto.isUnilateral ?? false
             exercise.restSeconds = dto.restSeconds ?? 0
+            // un backup vecchio non ha l'id: lo si ricava dal nome
+            exercise.catalogID = dto.catalogID ?? Catalog.match(name: dto.name)?.id ?? ""
+            exercise.isHidden = dto.isHidden ?? false
             context.insert(exercise)
             exercisesByUUID[dto.uuid] = exercise
             addMissingRecords(from: dto, to: exercise, context: context)
@@ -300,6 +306,7 @@ enum BackupService {
             )
             template.uuid = dto.uuid
             template.createdAt = dto.createdAt
+            template.isHidden = dto.isHidden ?? false
             context.insert(template)
         }
 

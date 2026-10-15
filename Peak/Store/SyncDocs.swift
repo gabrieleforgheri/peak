@@ -86,7 +86,9 @@ enum SyncDocs {
                 "photo": photoSha(exercise),
                 "photoOffset": exercise.photoOffset,
                 "isUnilateral": exercise.isUnilateral,
-                "restSeconds": exercise.restSeconds
+                "restSeconds": exercise.restSeconds,
+                "catalog": exercise.catalogID,
+                "hidden": exercise.isHidden
             ]
             // solo i massimali inseriti a mano: gli altri si ricalcolano dalle serie
             for record in exercise.recordList where !record.isEstimated {
@@ -130,7 +132,8 @@ enum SyncDocs {
                 "name": template.name,
                 "items": TemplateItems.json(template.items),
                 "sortIndex": template.sortIndex,
-                "createdAt": PeakDates.string(template.createdAt)
+                "createdAt": PeakDates.string(template.createdAt),
+                "hidden": template.isHidden
             ]
         }
 
@@ -226,6 +229,8 @@ enum SyncDocs {
                 exercise.photoOffset = number(d, "photoOffset") ?? 0
                 exercise.isUnilateral = flag(d, "isUnilateral")
                 exercise.restSeconds = integer(d, "restSeconds") ?? 0
+                exercise.catalogID = text(d, "catalog") ?? ""
+                exercise.isHidden = flag(d, "hidden")
                 let sha = text(d, "photo") ?? ""
                 if sha.isEmpty { exercise.photo = nil }
                 else if let bytes = photos[sha] { exercise.photo = bytes }
@@ -262,6 +267,7 @@ enum SyncDocs {
                 template.items = TemplateItems.parse(d["items"])
                 template.sortIndex = integer(d, "sortIndex") ?? 0
                 template.createdAt = created
+                template.isHidden = flag(d, "hidden")
                 result.upserted.insert(key)
 
             case "record":

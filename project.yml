@@ -32,6 +32,9 @@ targets:
       - path: Peak
       - path: Shared
       - path: WatchShared
+      # il catalogo degli esercizi, lo stesso file del server e del web
+      - path: common/catalog.json
+        buildPhase: resources
     dependencies:
       - target: PeakWidgets
     settings:

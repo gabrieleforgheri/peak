@@ -33,6 +33,18 @@ struct ExerciseEditorView: View {
     private var glyph: MachineGlyph { pickedGlyph ?? MachineGlyph.suggested(for: name, group: group) }
     @State private var photoOffset: Double = 0
     @State private var dragStart: Double = 0
+    /// L'id della voce del catalogo; vuoto = personalizzato.
+    @State private var catalogID = ""
+    @State private var picking: CatalogPicking?
+
+    private enum CatalogPicking: String, Identifiable {
+        /// Un macchinario nuovo parte dalla ricerca; annullando si torna indietro.
+        case new
+        /// Collega (o cambia il collegamento di) un macchinario che c'è già.
+        case link
+        var id: String { rawValue }
+    }
+    private var linkedEntry: CatalogEntry? { catalogID.isEmpty ? nil : Catalog.entry(id: catalogID) }
 
     private let steps: [Double] = [1, 1.25, 2, 2.5, 5, 10]
 
@@ -48,6 +60,26 @@ struct ExerciseEditorView: View {
                             TextField("Es. Chest Press", text: $name)
                                 .font(Theme.rounded(17, .semibold))
                                 .textInputAutocapitalization(.words)
+                        }
+                    }
+
+                    GlassCard {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SectionHeader(title: "Catalogo")
+                            HStack {
+                                if catalogID.isEmpty {
+                                    Text("Non collegato: resta fuori dalle classifiche.")
+                                        .font(Theme.rounded(13, .medium))
+                                        .foregroundStyle(Theme.textTertiary)
+                                } else {
+                                    Text(linkedEntry?.it ?? catalogID)
+                                        .font(Theme.rounded(15, .semibold))
+                                }
+                                Spacer()
+                                Button(catalogID.isEmpty ? "Collega" : "Cambia") { picking = .link }
+                                    .font(Theme.rounded(14, .semibold))
+                                    .foregroundStyle(settings.accentColor)
+                            }
                         }
                     }
 
@@ -217,7 +249,27 @@ struct ExerciseEditorView: View {
                 Text("Verranno persi anche i massimali registrati. Le serie già svolte restano negli allenamenti.")
             }
             .onAppear(perform: load)
+            .sheet(item: $picking) { mode in
+                CatalogPickerSheet(
+                    title: mode == .new ? "Nuovo macchinario" : "Collega al catalogo",
+                    allowsCustom: mode == .new,
+                    onPick: { chosen($0, mode: mode) },
+                    onCancel: { if mode == .new, catalogID.isEmpty, name.isEmpty { dismiss() } }
+                )
+            }
         }
+    }
+
+    /// Una voce scelta: nel macchinario nuovo precompila tutto (il nome si può cambiare subito con uno familiare).
+    private func chosen(_ entry: CatalogEntry?, mode: CatalogPicking) {
+        catalogID = entry?.id ?? ""
+        guard let entry, mode == .new else { return }
+        name = entry.it
+        group = entry.muscleGroup
+        step = entry.step
+        customStep = !steps.contains(entry.step)
+        notes = entry.notes
+        pickedGlyph = entry.machineGlyph
     }
 
     // MARK: - Foto e pittogramma
@@ -446,7 +498,8 @@ struct ExerciseEditorView: View {
     private func load() {
         guard !didLoad else { return }
         didLoad = true
-        guard let exercise else { return }
+        guard let exercise else { picking = .new; return }
+        catalogID = exercise.catalogID
         name = exercise.name
         group = exercise.muscleGroup
         step = exercise.incrementStep
@@ -474,6 +527,7 @@ struct ExerciseEditorView: View {
             exercise.photo = photoData
             exercise.photoOffset = photoOffset
             exercise.glyphRaw = pickedGlyph?.rawValue ?? ""
+            exercise.catalogID = catalogID
         } else {
             let nextIndex = (allExercises.map(\.sortIndex).max() ?? 0) + 1
             let new = Exercise(
@@ -489,6 +543,7 @@ struct ExerciseEditorView: View {
             new.glyphRaw = pickedGlyph?.rawValue ?? ""
             new.isUnilateral = isUnilateral
             new.restSeconds = restSeconds
+            new.catalogID = catalogID
         }
         try? context.save()
         Haptics.commit()
