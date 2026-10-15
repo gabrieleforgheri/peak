@@ -8,7 +8,7 @@ import { suggestedGlyph, SHAPES, GLYPH_TITLES, glyphSvg } from './glyph.ts'
 import { GLYPHS } from './docs.ts'
 import { readFileSync } from 'node:fs'
 import type { CatalogEntry } from './catalog.ts'
-import { weeklyVolume, volumeByGroup, topMovers, tickIndices, weeklyStreak, weekStart } from './stats.ts'
+import { weeklyVolume, volumeByGroup, topMovers, tickIndices, weeklyStreak, weekStart, weeklyGoal } from './stats.ts'
 import * as fmt from './format.ts'
 
 const CATALOG = JSON.parse(readFileSync(new URL('./catalog.json', import.meta.url), 'utf8')) as CatalogEntry[]
@@ -211,4 +211,19 @@ test('formati', () => {
   assert.equal(fmt.delta(4.2, 'it'), '+4,2%')
   assert.equal(fmt.delta(-1, 'it'), '-1%')
   assert.equal(fmt.setLine(80, 5, 'kg', 'it'), '80 kg × 5')
+})
+
+test('obiettivo della settimana: la tua media, fra 2 e 5, 3 se non c\'è storia', () => {
+  const now = Date.now()
+  const WEEK = 7 * 86_400_000
+  const mk = (weeksAgo: number, n: number) => Array.from({ length: n }, (_, i) => ({ date: weekStart(now) - weeksAgo * WEEK + (i + 1) * 3_600_000 }))
+  assert.equal(weeklyGoal([], now), 3)
+  assert.equal(weeklyGoal(mk(1, 4), now), 3, 'una sola settimana di storia')
+  // quattro allenamenti a settimana per otto settimane
+  assert.equal(weeklyGoal([1, 2, 3, 4, 5, 6, 7, 8].flatMap((w) => mk(w, 4)), now), 4)
+  // sei a settimana: si ferma a 5; uno a settimana: sale a 2
+  assert.equal(weeklyGoal([1, 2, 3, 4, 5, 6, 7, 8].flatMap((w) => mk(w, 6)), now), 5)
+  assert.equal(weeklyGoal([1, 2, 3, 4, 5, 6, 7, 8].flatMap((w) => mk(w, 1)), now), 2)
+  // questa settimana non conta
+  assert.equal(weeklyGoal([...mk(0, 5), ...mk(1, 3), ...mk(2, 3)].concat([1, 2, 3, 4, 5, 6].flatMap((w) => mk(w + 2, 3))), now), 3)
 })

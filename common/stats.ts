@@ -83,3 +83,19 @@ export function weeklyStreak(workouts: { date: number }[], now = Date.now()): nu
   for (let cursor = weekStart(now); trained.has(cursor); cursor = weeksBefore(cursor, 1)) streak++
   return streak
 }
+
+/**
+ * L'obiettivo della settimana: quanti allenamenti fai di solito. La media delle ultime otto settimane (questa esclusa),
+ * arrotondata, fra 2 e 5; con meno di due settimane di storia, 3.
+ */
+export function weeklyGoal(workouts: { date: number }[], now = Date.now()): number {
+  const thisWeek = weekStart(now)
+  const perWeek = new Map<number, number>()
+  for (const w of workouts) {
+    const ws = weekStart(w.date)
+    if (ws < thisWeek && ws >= weeksBefore(thisWeek, 8)) perWeek.set(ws, (perWeek.get(ws) ?? 0) + 1)
+  }
+  if (perWeek.size < 2) return 3
+  const avg = [...perWeek.values()].reduce((a, b) => a + b, 0) / 8
+  return Math.min(5, Math.max(2, Math.round(avg)))
+}

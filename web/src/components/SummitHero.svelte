@@ -2,8 +2,8 @@
 	import { t, tn } from '../lib/i18n.ts'
 
 	/** La prima cosa che vedi: una montagna e una frase che cambia. Sotto, i due numeri che contano di più. */
-	let { greeting, name, streak, weekSessions, onavatar }: {
-		greeting: string; name: string; streak: number; weekSessions: number; onavatar: () => void
+	let { greeting, name, streak, weekSessions, goal, onavatar }: {
+		greeting: string; name: string; streak: number; weekSessions: number; goal: number; onavatar: () => void
 	} = $props()
 
 	const PHRASES = [
@@ -53,9 +53,15 @@
 
 	<div class="quote">{#key i}<p>{PHRASES[i]}</p>{/key}</div>
 
+	<!-- l'obiettivo della settimana: un segmento per allenamento -->
+	<div class="goal" role="progressbar" aria-valuemin="0" aria-valuemax={goal} aria-valuenow={Math.min(weekSessions, goal)} aria-label={t('Obiettivo della settimana')}>
+		<div class="gl"><span>{weekSessions >= goal ? t('Obiettivo raggiunto!') : t('Obiettivo della settimana')}</span><b>{weekSessions} / {goal}</b></div>
+		<div class="segs">{#each Array(goal) as _, k}<i class:on={k < weekSessions} class:last={k === weekSessions - 1}></i>{/each}</div>
+	</div>
+
 	<div class="foot">
 		<span class="pill"><b>{streak}</b> {t('settimane di fila')}</span>
-		<span class="pill">{tn(weekSessions, '1 allenamento questa settimana', '{0} allenamenti questa settimana')}</span>
+		{#if weekSessions > goal}<span class="pill">{tn(weekSessions - goal, '+1 oltre l\'obiettivo', '+{0} oltre l\'obiettivo')}</span>{/if}
 	</div>
 </section>
 
@@ -67,11 +73,18 @@
 	.top { position: relative; display: flex; align-items: center; justify-content: space-between; }
 	.who { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
 	.avatar { width: 40px; height: 40px; border-radius: 50%; border: 0; font-weight: 800; font-size: 17px; color: var(--on-accent); background: linear-gradient(135deg, var(--accent), rgba(var(--accent-rgb), .55)); box-shadow: 0 6px 18px rgba(var(--accent-rgb), .35); }
-	.quote { position: relative; margin-top: 30px; max-width: 74%; min-height: 108px; }
+	.quote { position: relative; margin-top: 22px; max-width: 74%; min-height: 96px; }
 	.quote p { margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.08; text-shadow: 0 4px 30px rgba(var(--accent-rgb), .45); animation: in .7s cubic-bezier(.22, 1, .36, 1); }
 	@keyframes in { from { opacity: 0; transform: translateY(10px); } }
 	@media (prefers-reduced-motion: reduce) { .quote p { animation: none; } }
-	.foot { position: relative; margin-top: auto; padding-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+	.goal { position: relative; margin-top: auto; padding-top: 14px; }
+	.gl { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--text-2); margin-bottom: 8px; text-shadow: 0 1px 10px rgba(0,0,0,.7); }
+	.gl b { font-size: 15px; color: var(--text); font-variant-numeric: tabular-nums; }
+	.segs { display: flex; gap: 6px; }
+	.segs i { flex: 1; height: 12px; border-radius: 6px; background: rgba(255,255,255,.14); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+	.segs i.on { background: linear-gradient(90deg, rgba(var(--accent-rgb), .7), rgb(var(--accent-rgb))); }
+	.segs i.last { box-shadow: 0 0 14px rgba(var(--accent-rgb), .7); }
+	.foot { position: relative; padding-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
 	.pill { padding: 6px 12px; border-radius: 999px; font-size: 12px; color: var(--text-2); background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.1); backdrop-filter: blur(6px); }
 	.pill b { color: var(--accent); font-size: 14px; margin-right: 2px; }
 </style>

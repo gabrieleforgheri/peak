@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte'
 	import { oneRepMax } from '@common/domain.ts'
 	import { medals, medalTotals, type MedalId } from '@common/medals.ts'
-	import { volumeByGroup, weekStart, weeklyStreak, workoutVolume, type StatWorkout } from '@common/stats.ts'
+	import { volumeByGroup, weekStart, weeklyGoal, weeklyStreak, workoutVolume, type StatWorkout } from '@common/stats.ts'
 	import { startWorkout } from '../lib/actions.ts'
 	import { entryName, loadCatalog } from '../lib/catalog.ts'
 	import { GROUP_NAMES, V, W, dateShort, relDay } from '../lib/fmt.ts'
@@ -106,7 +106,7 @@
 </script>
 
 <main class="screen">
-	<SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={finished.filter((w) => w.dateMs >= weekStart(Date.now())).length} onavatar={() => go('impostazioni/account')} />
+	<SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={finished.filter((w) => w.dateMs >= weekStart(Date.now())).length} goal={weeklyGoal(stat)} onavatar={() => go('impostazioni/account')} />
 
 	<!-- subito sotto: cosa fare adesso, in piccolo -->
 	<button class="next" onclick={begin} data-tour="start">

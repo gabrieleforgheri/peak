@@ -345,8 +345,6 @@
   "da conquistare": "to earn",
   "questa settimana": "this week",
   "settimane di fila": "weeks in a row",
-  "1 allenamento questa settimana": "1 workout this week",
-  "{0} allenamenti questa settimana": "{0} workouts this week",
   "Aggiungi il primo macchinario": "Add your first machine",
   "Avanti": "Next",
   "Chi si allena oggi ringrazia domani.": "Whoever trains today thanks themselves tomorrow.",
@@ -381,5 +379,9 @@
   "Rivedi il tutorial": "Replay the tutorial",
   "1 macchinario fuori catalogo": "1 machine outside the catalog",
   "{0} macchinari fuori catalogo": "{0} machines outside the catalog",
-  "Aprine uno → Modifica → Collega: così entra nelle classifiche con gli amici.": "Open one → Edit → Link: that way it joins the leaderboards with friends."
+  "Aprine uno → Modifica → Collega: così entra nelle classifiche con gli amici.": "Open one → Edit → Link: that way it joins the leaderboards with friends.",
+  "Obiettivo della settimana": "Weekly goal",
+  "Obiettivo raggiunto!": "Goal reached!",
+  "+1 oltre l'obiettivo": "+1 over the goal",
+  "+{0} oltre l'obiettivo": "+{0} over the goal"
 }
