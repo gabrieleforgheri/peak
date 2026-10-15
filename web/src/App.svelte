@@ -16,6 +16,7 @@
 	import Home from './pages/Home.svelte'
 	import FriendProfile from './pages/FriendProfile.svelte'
 	import Invite from './pages/Invite.svelte'
+	import Tour from './components/Tour.svelte'
 	import Settings from './pages/Settings.svelte'
 	import Archived from './pages/Archived.svelte'
 
@@ -75,10 +76,11 @@
 		{#if !deep}
 			<nav class="tabbar"><div class="tabbar-in">
 				{#each tabs as x}
-					<button class="tab" class:on={tab === x.id} onclick={() => go(x.id)}><Icon name={x.icon} />{t(x.label)}</button>
+					<button class="tab" class:on={tab === x.id} onclick={() => go(x.id)} data-tour="tab-{x.id}"><Icon name={x.icon} />{t(x.label)}</button>
 				{/each}
 			</div></nav>
 		{/if}
 	{/if}
+	{#if !loading && !showFirstRun && S.synced && !m.settings.tutorialDone}<Tour />{/if}
 	{#if T.msg}<div class="toast" role="status">{T.msg}</div>{/if}
 </div>

@@ -51,7 +51,7 @@
 		</div>
 	{/if}
 
-	<div class="row between"><div class="sec-title">{t('Schede')}</div><button class="link small" style="margin:20px 4px 8px" onclick={() => (editing = 'new')}>{t('Nuova scheda')}</button></div>
+	<div class="row between"><div class="sec-title">{t('Schede')}</div><button class="link small" style="margin:20px 4px 8px" onclick={() => (editing = 'new')} data-tour="new-template">{t('Nuova scheda')}</button></div>
 	{#if m.templates.length === 0}
 		<div class="empty">{t('Una scheda è una lista di esercizi con serie e ripetizioni: la scegli quando inizi e li trovi già pronti.')}</div>
 	{:else}

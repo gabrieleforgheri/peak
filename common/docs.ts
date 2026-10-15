@@ -83,6 +83,8 @@ export const SETTING_DEFAULTS = {
   restTimerEnabled: true, restSeconds: 120,
   progressionEnabled: true, repRangeMin: 8, repRangeMax: 12,
   plateCalculatorEnabled: true, barWeight: 20, availablePlates: [25, 20, 15, 10, 5, 2.5, 1.25],
+  /** Il tutorial l'hai già fatto (su un dispositivo qualsiasi). */
+  tutorialDone: false,
 } as const
 export type SettingKey = keyof typeof SETTING_DEFAULTS
 /** Impostazioni tolte nella 3.0: i client vecchi le mandano ancora; il server le ignora senza segnalarle come errori. */
@@ -103,7 +105,7 @@ function cleanSetting(key: string, v: unknown): unknown {
   switch (key) {
     case 'unit': return v === 'kg' || v === 'lb' ? v : undefined
     case 'accent': return (ACCENTS as readonly unknown[]).includes(v) ? v : undefined
-    case 'restTimerEnabled': case 'progressionEnabled': case 'plateCalculatorEnabled':
+    case 'restTimerEnabled': case 'progressionEnabled': case 'plateCalculatorEnabled': case 'tutorialDone':
       return typeof v === 'boolean' ? v : undefined
     case 'restSeconds': return int(v, 15, 600) ?? undefined
     case 'repRangeMin': case 'repRangeMax': return int(v, 1, 30) ?? undefined

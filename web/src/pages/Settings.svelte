@@ -133,6 +133,7 @@
 					<button aria-label={ACCENT_NAME[a]} onclick={() => setSetting('accent', a)} style="width:38px;height:38px;border-radius:50%;border:3px solid {s.accent === a ? '#fff' : 'transparent'};background:rgb({ACCENT_RGB[a]})"></button>
 				{/each}
 			</div></div>
+		<button class="btn block" onclick={() => setSetting('tutorialDone', false)}>{t('Rivedi il tutorial')}</button>
 	</div>
 
 	{:else if cat.id === 'allenamento'}

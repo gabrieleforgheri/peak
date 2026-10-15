@@ -3,7 +3,7 @@
 		import { patchExercise } from '../lib/actions.ts'
 	import { deltaOf, warmupFor } from '../lib/derive.ts'
 	import { GROUP_NAMES, W, delta, relDay, unit } from '../lib/fmt.ts'
-	import { locale, t } from '../lib/i18n.ts'
+	import { locale, t, tn } from '../lib/i18n.ts'
 	import { go } from '../lib/router.svelte.ts'
 	import { getModel } from '../lib/store.svelte.ts'
 	import type { Ex } from '../lib/types.ts'
@@ -22,6 +22,7 @@
 	const groups = $derived(MUSCLE_GROUPS.map((g) => ({ g, items: visible.filter((e) => e.muscleGroup === g) })).filter((x) => x.items.length))
 	const active = $derived(m.exercises.filter((e) => !e.isArchived))
 	const withMax = $derived(active.filter((e) => e.best).length)
+	const unlinked = $derived(active.filter((e) => !e.catalog).length)
 
 	// tenere premuto (o tasto destro) apre le azioni, al posto dello swipe di iOS
 	let pressTimer: ReturnType<typeof setTimeout> | undefined
@@ -45,9 +46,12 @@
 <main class="screen">
 	<div class="bar">
 		<h1>{t('Macchinari')}</h1>
-		<button class="icon-btn" onclick={() => (creating = true)} aria-label={t('Nuovo macchinario')}><Icon name="plus" /></button>
+		<button class="icon-btn" onclick={() => (creating = true)} aria-label={t('Nuovo macchinario')} data-tour="add-machine"><Icon name="plus" /></button>
 	</div>
 
+	{#if unlinked > 0}
+		<div class="banner"><Icon name="trophy" /><div class="grow"><b>{tn(unlinked, '1 macchinario fuori catalogo', '{0} macchinari fuori catalogo')}</b>{t('Aprine uno → Modifica → Collega: così entra nelle classifiche con gli amici.')}</div></div>
+	{/if}
 	<div style="position:relative;margin-bottom:10px">
 		<input class="input" style="padding-left:40px" type="search" placeholder={t('Cerca macchinario')} bind:value={query} />
 		<span style="position:absolute;left:12px;top:12px;color:var(--text-3)"><Icon name="search" size={22} /></span>

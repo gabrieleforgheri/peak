@@ -106,7 +106,7 @@
 </script>
 
 <main class="screen">
-	<SummitHero volumeKg={totalVolume} {greeting} name={first || 'Peak'} {streak} weekSessions={finished.filter((w) => w.dateMs >= weekStart(Date.now())).length} onavatar={() => go('impostazioni/account')} />
+	<SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={finished.filter((w) => w.dateMs >= weekStart(Date.now())).length} onavatar={() => go('impostazioni/account')} />
 
 	<!-- subito sotto: cosa fare adesso, in piccolo -->
 	<button class="next" onclick={begin} data-tour="start">
