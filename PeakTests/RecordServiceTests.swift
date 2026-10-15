@@ -117,6 +117,7 @@ final class RecordServiceTests: XCTestCase {
 
         workout.orderedSets[0].weight = 80
         RecordService.recompute(exercise, context: context)
+        try context.save() // il record cancellato esce da recordList solo dopo il salvataggio, come nell'app
 
         XCTAssertEqual(workout.orderedSets.map(\.isPersonalRecord), [true, true, true])
         XCTAssertEqual(exercise.recordList.count, 3)
