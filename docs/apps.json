@@ -13,6 +13,14 @@
       "tintColor": "34C759",
       "versions": [
         {
+          "version": "2.1",
+          "date": "2026-10-15T09:01:43Z",
+          "localizedDescription": "Peak 2.1: versione e descrizione AltStore",
+          "downloadURL": "https://github.com/gabrieleforgheri/peak/releases/download/v2.1/Peak.ipa",
+          "size": 1272235,
+          "minOSVersion": "17.0"
+        },
+        {
           "version": "2.0",
           "date": "2026-10-14T21:36:10Z",
           "localizedDescription": "Peak 2.0: accesso con yG e sincronizzazione col web, passi e dischi in lb, massimali ricalcolati dalle serie, pesate modificabili",
