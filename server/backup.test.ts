@@ -77,12 +77,16 @@ test('backup vecchi senza i campi opzionali, date con millisecondi, uuid minusco
   for (const e of raw.exercises) { delete e.photo; delete e.glyph; delete e.photoOffset; delete e.isUnilateral; delete e.restSeconds }
   raw.exercises[0].createdAt = '2026-09-01T08:00:00.123Z'
   raw.exercises[0].uuid = raw.exercises[0].uuid.toLowerCase()
+  raw.exercises[1].name = 'Pressa di casa'
   const f = parse(raw)
   assert.equal(f.exercises[0].createdAt, '2026-09-01T08:00:00Z')
   assert.equal(f.exercises[0].uuid, U(1))
   const plan = planImport(f, [], 'sostituisci')
   assert.equal(plan.conteggi.pesate, 0)
   assert.equal(plan.conteggi.allenamenti, 1)
+  // collegato al catalogo per nome, oppure personalizzato con l'icona che il nome gli dava
+  const ex = plan.put.filter((p) => p.kind === 'exercise').map((p) => p.data as { catalog: string; glyph: string })
+  assert.deepEqual(ex.map((e) => [e.catalog, e.glyph]), [['chest-press-machine', ''], ['', 'legPress']])
 })
 
 test('schede e piano dell\'allenamento: round-trip, unione per nome, backup vecchi senza schede', () => {

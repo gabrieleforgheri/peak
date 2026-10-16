@@ -60,16 +60,17 @@ final class Exercise {
         set { muscleGroupRaw = newValue.rawValue }
     }
 
-    var glyph: MachineGlyph {
-        get { MachineGlyph(rawValue: glyphRaw) ?? MachineGlyph.suggested(for: name, group: muscleGroup) }
-        set { glyphRaw = newValue.rawValue }
+    /// L'icona da mostrare: quella dell'attrezzo del catalogo; per un macchinario personalizzato
+    /// quella scelta a mano, altrimenti nessuna. Come `glyphOf` in common/glyph.ts.
+    var glyph: MachineGlyph? {
+        Catalog.entry(id: catalogID)?.machineGlyph ?? MachineGlyph(rawValue: glyphRaw)
     }
 
     /// Braccia o gambe, dedotto dal gruppo muscolare: serve al Watch per sapere
     /// se il polso si muove con l'esercizio.
     var worksLegs: Bool { muscleGroup == .gambe }
 
-    /// `true` se il pittogramma è stato scelto a mano invece che dedotto.
+    /// `true` se il pittogramma è stato scelto a mano.
     var hasCustomGlyph: Bool { MachineGlyph(rawValue: glyphRaw) != nil }
 
     var recordList: [MaxRecord] { records ?? [] }

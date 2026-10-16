@@ -8,6 +8,11 @@ export const GLYPHS = [
   'seatedPush', 'pecDeck', 'latPulldown', 'seatedRow', 'cableStation', 'cableCross', 'benchFlat',
   'benchIncline', 'barbell', 'dumbbell', 'plateLoaded', 'pullUpBar', 'legPress', 'legLever',
   'squatRack', 'smithMachine', 'hyperBench', 'calfPlatform', 'abBench', 'romanChair', 'bodyweight', 'machine',
+  // un attrezzo per voce del catalogo
+  'legCurlLying', 'legCurlSeated', 'hackSquat', 'squatMachine', 'hipThrust', 'gluteMachine', 'hipAdductor', 'calfSeated',
+  'ghd', 'kettlebell', 'trapBar', 'ezBar', 'landmine', 'preacherBench', 'dipStation', 'assistMachine', 'rowMachine',
+  'cableRope', 'cablePushdown', 'sled', 'dumbbellBench', 'inclineDumbbell', 'abMachine', 'deltMachine', 'floorMat',
+  'plate',
 ] as const
 export type GlyphName = (typeof GLYPHS)[number]
 

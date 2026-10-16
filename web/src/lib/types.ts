@@ -8,7 +8,8 @@ export interface SetItem {
 }
 export interface Ex extends ExerciseDoc {
 	uuid: string
-	glyphName: GlyphName
+	/** null = macchinario personalizzato senza icona scelta. */
+	glyphName: GlyphName | null
 	/** Massimali manuali + automatici, dal più recente. */
 	records: AnyRecord[]
 	best: AnyRecord | null

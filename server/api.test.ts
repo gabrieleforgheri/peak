@@ -371,14 +371,16 @@ test('catalogo: id e nascosto validati; un client vecchio non li cancella; un es
   assert.equal(docs.find((d) => d.uuid === U(71))!.data.catalog, 'bench-press-barbell')
 })
 
-test('catalogo: all\'avvio gli esercizi senza id si collegano per nome, una volta sola', async () => {
+test('catalogo: all\'avvio gli esercizi senza id si collegano per nome, una volta sola; i personalizzati tengono l\'icona', async () => {
   const u = app.store.upsertUser('mig', 'mig@x.it', 'mig', 'mig')
-  const rows: [string, string][] = [[U(80), 'Lat Machine'], [U(81), 'Attrezzo Mio']]
-  for (const [uuid, name] of rows) {
-    app.store.db.prepare("INSERT INTO docs (user_id, kind, uuid, data, m, rev, deleted) VALUES (?, 'exercise', ?, ?, 1, 1, 0)").run(u.id, uuid, JSON.stringify(exDoc(name)))
+  const rows: [string, string, string?][] = [[U(80), 'Lat Machine'], [U(81), 'Attrezzo Mio'], [U(82), 'Pressa di casa'], [U(83), 'Scelta a mano', 'kettlebell']]
+  for (const [uuid, name, glyph] of rows) {
+    app.store.db.prepare("INSERT INTO docs (user_id, kind, uuid, data, m, rev, deleted) VALUES (?, 'exercise', ?, ?, 1, 1, 0)").run(u.id, uuid, JSON.stringify({ ...exDoc(name), glyph }))
   }
-  assert.equal(app.store.migrateCatalog(), 2)
+  assert.equal(app.store.migrateCatalog(), 4)
   assert.equal(app.store.migrateCatalog(), 0)
-  const live = app.store.live(u.id).map((d) => (d.data as { catalog: string }).catalog)
-  assert.deepEqual(live, ['lat-pulldown', ''])
+  const live = app.store.live(u.id).map((d) => d.data as { catalog: string; glyph: string })
+  assert.deepEqual(live.map((d) => d.catalog), ['lat-pulldown', '', '', ''])
+  // quella del catalogo non si tocca; le altre come le deduceva il nome, o come scelte a mano
+  assert.deepEqual(live.map((d) => d.glyph ?? ''), ['', 'seatedPush', 'legPress', 'kettlebell'])
 })

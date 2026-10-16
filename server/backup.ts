@@ -4,12 +4,13 @@
 
 import { createHash } from 'node:crypto'
 import {
-  CATALOG_ID_RE, isoSec, normUuid, parseDoc, parseIso, split, MUSCLE_GROUPS, GLYPHS,
+  CATALOG_ID_RE, isoSec, normUuid, parseDoc, parseIso, split, MUSCLE_GROUPS,
   type DocDataMap, type ExerciseDoc, type Kind, type LiveDoc, type MuscleGroup, type TemplateItem,
 } from '../common/docs.ts'
 import { deriveRecords, type RecManual, type RecSet } from '../common/records.ts'
 import { EPSILON } from '../common/domain.ts'
 import { matchByName } from '../common/catalog.ts'
+import { isGlyph, suggestedGlyph } from '../common/glyph.ts'
 import { CATALOG } from './catalog.ts'
 
 export const BACKUP_VERSION = 1
@@ -302,14 +303,15 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
   for (const ex of file.exercises) {
     const group: MuscleGroup = (MUSCLE_GROUPS as readonly string[]).includes(ex.muscleGroup) ? (ex.muscleGroup as MuscleGroup) : 'petto'
     const photo = decodePhoto(ex.photo)
+    // un backup vecchio non ha l'id: lo si ricava dal nome; se resta personalizzato tiene l'icona che vedeva
+    const catalog = ex.catalogID ?? matchByName(CATALOG, ex.name)?.id ?? ''
     const doc = (): ExerciseDoc => ({
       name: ex.name.trim() || 'Senza nome', muscleGroup: group, notes: ex.notes, incrementStep: ex.incrementStep, sortIndex: ex.sortIndex,
       isArchived: ex.isArchived, createdAt: ex.createdAt,
-      glyph: (GLYPHS as readonly string[]).includes(ex.glyph ?? '') ? (ex.glyph as ExerciseDoc['glyph']) : '',
+      glyph: isGlyph(ex.glyph) ? ex.glyph : ex.catalogID === undefined && !catalog ? suggestedGlyph(ex.name, group) : '',
       photo: photo?.sha ?? '', photoOffset: Math.min(1, Math.max(-1, ex.photoOffset ?? 0)),
       isUnilateral: ex.isUnilateral === true, restSeconds: ex.restSeconds ?? 0,
-      // un backup vecchio non ha l'id: lo si ricava dal nome
-      catalog: ex.catalogID ?? matchByName(CATALOG, ex.name)?.id ?? '', hidden: ex.isHidden === true,
+      catalog, hidden: ex.isHidden === true,
     })
     let target = ex.uuid
     let isNew = true

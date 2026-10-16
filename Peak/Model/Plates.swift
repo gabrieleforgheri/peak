@@ -17,15 +17,15 @@ enum Plates {
     /// Bilanciere di serie: 20 kg, 45 lb.
     static func defaultBar(for unit: WeightUnit) -> Double { unit == .kg ? 20 : 45 * kilogramsPerPound }
 
-    /// Il calcolatore compare dove si carica a dischi: bilanciere, panche e rack (con il bilanciere),
-    /// plate loaded (senza). Non con i manubri: «Panca piana manubri» ha il pittogramma della panca.
+    /// Il calcolatore compare dove c'è un bilanciere (anche panche, rack, hip thrust, EZ, trap bar) e per le
+    /// plate loaded (senza). Non con i manubri: un vecchio «Panca piana manubri» personalizzato ha il pittogramma della panca.
     /// `nil` = niente calcolatore. Stessa regola del web (`plateMode` in common/domain.ts).
     static func barBase(glyph: MachineGlyph, name: String, barWeight: Double) -> Double? {
+        let name = name.lowercased()
+        if glyph == .plateLoaded || name.contains("plate loaded") { return 0 }
         switch glyph {
-        case .plateLoaded:
-            return 0
-        case .barbell, .benchFlat, .benchIncline, .squatRack:
-            return name.lowercased().contains("manubri") ? nil : barWeight
+        case .barbell, .benchFlat, .benchIncline, .squatRack, .hipThrust, .ezBar, .trapBar:
+            return name.contains("manubri") ? nil : barWeight
         default:
             return nil
         }

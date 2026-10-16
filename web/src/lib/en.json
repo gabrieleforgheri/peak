@@ -28,7 +28,6 @@
   "Archiviato": "Archived",
   "Arriva anche a telefono bloccato. Con la rete assente suona solo con la pagina aperta.": "It arrives even when the phone is locked. With no connection it only rings while the page is open.",
   "Aspetta i dati dall'iPhone": "Wait for data from the iPhone",
-  "Auto": "Auto",
   "Avviso a fine recupero": "Alert when rest is over",
   "Backup": "Backup",
   "Backup in versione {0}: serve una versione più recente di Peak.": "Backup version {0}: a newer version of Peak is needed.",
@@ -401,5 +400,7 @@
   "Continua": "Continue",
   "Cambia l'obiettivo della settimana": "Change the weekly goal",
   "allenamenti": "workouts",
-  "Toccando la tua iniziale in alto a destra apri le impostazioni: unità, colore, timer di recupero, backup e il tuo account yG. Il tutorial lo rivedi da Generale.": "Tap your initial at the top right to open settings: units, color, rest timer, backup and your yG account. You can replay the tutorial from General."
+  "Toccando la tua iniziale in alto a destra apri le impostazioni: unità, colore, timer di recupero, backup e il tuo account yG. Il tutorial lo rivedi da Generale.": "Tap your initial at the top right to open settings: units, color, rest timer, backup and your yG account. You can replay the tutorial from General.",
+  "Nessuno": "None",
+  "È quello dell'attrezzo del catalogo.": "It comes from the catalog equipment."
 }

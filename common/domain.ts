@@ -106,13 +106,14 @@ export function loadPlates(total: number, bar: number, plates: number[]): PlateL
 export type PlateMode = { bar: true } | { bar: false } | null
 
 /**
- * Il calcolatore dischi compare per bilanciere, panca piana/inclinata e rack (con il bilanciere),
- * per le plate loaded (senza). Con i manubri no: «Panca Piana Manubri» ha il pittogramma della panca.
+ * Il calcolatore dischi compare dove c'è un bilanciere (anche panche, rack, hip thrust, EZ, trap bar) e per le plate loaded
+ * (senza bilanciere). Con i manubri no: un vecchio «Panca Piana Manubri» personalizzato ha il pittogramma della panca.
  */
 export function plateMode(glyph: string, exerciseName: string): PlateMode {
-  if (glyph === 'plateLoaded') return { bar: false }
-  if (['barbell', 'benchFlat', 'benchIncline', 'squatRack'].includes(glyph)
-    && !exerciseName.toLowerCase().includes('manubri')) return { bar: true }
+  const name = exerciseName.toLowerCase()
+  if (glyph === 'plateLoaded' || name.includes('plate loaded')) return { bar: false }
+  if (['barbell', 'benchFlat', 'benchIncline', 'squatRack', 'hipThrust', 'ezBar', 'trapBar'].includes(glyph)
+    && !name.includes('manubri')) return { bar: true }
   return null
 }
 

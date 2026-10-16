@@ -4,7 +4,7 @@ import {
   oneRepMax, beats, warmupPlan, nearest, nextLoad, progressionFor, loadPlates, plateMode, toDisplay, toKg,
   displayStep, defaultPlates, defaultBar, settingsForUnitChange, PhotoFraming, KG_PER_LB,
 } from './domain.ts'
-import { suggestedGlyph, SHAPES, GLYPH_TITLES, glyphSvg } from './glyph.ts'
+import { suggestedGlyph, SHAPES, GLYPH_TITLES, glyphSvg, glyphOf, isGlyph } from './glyph.ts'
 import { GLYPHS } from './docs.ts'
 import { readFileSync } from 'node:fs'
 import type { CatalogEntry } from './catalog.ts'
@@ -92,10 +92,12 @@ test('calcolatore dischi: bilanciere e plate loaded, non manubri né multipower'
   assert.equal(plateMode('benchIncline', 'Panca Inclinata Manubri'), null)
   assert.equal(plateMode('smithMachine', 'Squat al Multipower'), null)
   assert.equal(plateMode('legPress', 'Leg Press 45°'), null)
-  // i nomi veri del catalogo: nessun manubri riceve il calcolatore
+  assert.deepEqual(plateMode('rowMachine', 'Rematore Plate Loaded'), { bar: false })
+  assert.deepEqual(plateMode('ezBar', 'Curl Bilanciere EZ'), { bar: true })
+  assert.equal(plateMode('legCurlLying', 'Leg Curl Sdraiato'), null)
+  // il catalogo: nessun manubrio, kettlebell o macchina a pacco pesi riceve il calcolatore con il bilanciere
   for (const e of CATALOG) {
-    const g = suggestedGlyph(e.it, e.group)
-    if (e.it.toLowerCase().includes('manubri')) assert.equal(plateMode(g, e.it), null, e.it)
+    if (/manubri|kettlebell|machine/i.test(e.it) && !/plate loaded/i.test(e.it)) assert.equal(plateMode(e.glyph, e.it), null, e.it)
   }
 })
 
@@ -155,8 +157,14 @@ test('pittogrammi', () => {
   assert.equal(g('Attrezzo Sconosciuto', 'gambe'), 'legLever')
   assert.equal(g('Attrezzo Sconosciuto', 'schiena'), 'seatedRow')
   assert.equal(g('', 'petto'), 'seatedPush')
-  for (const e of CATALOG) { const x = g(e.it, e.group); assert.equal(x, e.glyph, e.it); assert.ok(SHAPES[x].length > 0, e.it); assert.ok(GLYPH_TITLES[x]) }
-  assert.equal(GLYPHS.length, 22)
+  // ogni attrezzo del catalogo ha il suo disegno, e ogni disegno nuovo serve ad almeno una voce
+  for (const e of CATALOG) assert.ok(isGlyph(e.glyph) && SHAPES[e.glyph].length > 0 && GLYPH_TITLES[e.glyph], e.id)
+  for (const name of GLYPHS.slice(22)) assert.ok(CATALOG.some((e) => e.glyph === name), name)
+  // l'icona: del catalogo se collegato, altrimenti quella scelta, altrimenti nessuna
+  assert.equal(glyphOf({ glyph: 'barbell', catalog: 'lying-leg-curl' }, 'legCurlLying'), 'legCurlLying')
+  assert.equal(glyphOf({ glyph: 'barbell', catalog: 'lying-leg-curl' }, undefined), 'barbell')
+  assert.equal(glyphOf({ glyph: 'kettlebell', catalog: '' }, undefined), 'kettlebell')
+  assert.equal(glyphOf({ glyph: '', catalog: '' }, undefined), null)
   for (const name of GLYPHS) {
     for (const s of SHAPES[name]) {
       const n = s as number[] | (string | number)[]
@@ -226,4 +234,9 @@ test('obiettivo della settimana: la tua media, fra 2 e 5, 3 se non c\'è storia'
   assert.equal(weeklyGoal([1, 2, 3, 4, 5, 6, 7, 8].flatMap((w) => mk(w, 1)), now), 2)
   // questa settimana non conta
   assert.equal(weeklyGoal([...mk(0, 5), ...mk(1, 3), ...mk(2, 3)].concat([1, 2, 3, 4, 5, 6].flatMap((w) => mk(w + 2, 3))), now), 3)
+})
+
+test('i pittogrammi Swift sono generati da quelli del web e aggiornati', async () => {
+  const { swiftSource, SWIFT_FILE } = await import('../scripts/gen-glyphs.ts')
+  assert.equal(readFileSync(SWIFT_FILE, 'utf8'), swiftSource(), 'rilancia: node scripts/gen-glyphs.ts')
 })

@@ -7,8 +7,10 @@ import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   KEEP_IF_ABSENT, KINDS, LEGACY_SETTINGS, SETTING_DEFAULTS, normUuid, parseDoc, upgradeDoc, type DocDataMap, type Kind, type LiveDoc,
+  type MuscleGroup,
 } from '../common/docs.ts'
 import { matchByName } from '../common/catalog.ts'
+import { isGlyph, suggestedGlyph } from '../common/glyph.ts'
 import type { ImportPlan } from './backup.ts'
 import { CATALOG } from './catalog.ts'
 
@@ -292,8 +294,8 @@ export function openStore(dataDir: string) {
     },
 
     /**
-     * Collega al catalogo gli esercizi che non hanno mai avuto il campo `catalog` (per nome). Una volta sola per esercizio:
-     * poi il campo c'è, anche vuoto. Ritorna quanti ne ha toccati.
+     * Collega al catalogo gli esercizi che non hanno mai avuto il campo `catalog` (per nome), e a quelli che restano
+     * personalizzati fissa l'icona. Una volta sola per esercizio: poi il campo c'è, anche vuoto. Ritorna quanti ne ha toccati.
      */
     migrateCatalog(now = Date.now()): number {
       const rows = db.prepare("SELECT user_id, uuid, data, m FROM docs WHERE kind = 'exercise' AND deleted = 0 AND json_extract(data, '$.catalog') IS NULL").all() as
@@ -302,6 +304,8 @@ export function openStore(dataDir: string) {
         for (const r of rows) {
           const data = JSON.parse(r.data) as Record<string, unknown>
           data.catalog = matchByName(CATALOG, String(data.name))?.id ?? ''
+          // un personalizzato tiene l'icona che vedeva, dedotta dal nome: da ora in poi un'icona vuota resta vuota
+          if (!data.catalog && !isGlyph(data.glyph as string)) data.glyph = suggestedGlyph(String(data.name), data.muscleGroup as MuscleGroup)
           write(r.user_id, 'exercise', r.uuid, data, Math.max(Number(r.m) + 1, now), false)
         }
       })

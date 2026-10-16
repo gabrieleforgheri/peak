@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// L'immagine di un macchinario: la tua foto se c'è, altrimenti il pittogramma.
+/// L'immagine di un macchinario: la tua foto se c'è, altrimenti il pittogramma (se ce n'è uno).
 /// Un unico punto in tutta l'app, così la lista, il selettore e la sessione
 /// restano coerenti e basta cambiare qui per cambiarli tutti.
 struct ExerciseThumbnail: View {
@@ -37,11 +37,9 @@ struct ExerciseThumbnail: View {
                 FramedPhoto(image: image, offset: exercise.photoOffset, side: size)
             } else {
                 exercise.muscleGroup.tint.opacity(0.14)
-                MachineGlyphView(
-                    glyph: exercise.glyph,
-                    tint: exercise.muscleGroup.tint,
-                    size: size * glyphRatio
-                )
+                if let glyph = exercise.glyph {
+                    MachineGlyphView(glyph: glyph, tint: exercise.muscleGroup.tint, size: size * glyphRatio)
+                }
             }
         }
         .frame(width: size, height: size)

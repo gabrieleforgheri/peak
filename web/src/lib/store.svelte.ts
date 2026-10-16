@@ -5,6 +5,7 @@
 
 import { SETTING_DEFAULTS, split, upgradeDoc, type DocDataMap, type Kind, type LiveDoc } from '@common/docs.ts'
 import { glyphOf } from '@common/glyph.ts'
+import { loadCatalog } from './catalog.ts'
 import { bestOf } from '@common/domain.ts'
 import { deriveRecords, recordsByExercise } from '@common/records.ts'
 import * as idb from './idb.ts'
@@ -105,6 +106,10 @@ export async function wipeLocal() {
 
 // ---- modello derivato --------------------------------------------------------------------------------------
 
+/** L'icona di ogni voce del catalogo: arriva poco dopo l'avvio, e intanto i macchinari collegati mostrano quella salvata. */
+const catalog = $state({ glyphs: new Map<string, string>() })
+void loadCatalog().then((l) => (catalog.glyphs = new Map(l.map((e) => [e.id, e.glyph]))), () => {})
+
 function compute(): Model {
 	const live: LiveDoc[] = []
 	for (const r of rows.values()) if (!r.deleted) live.push({ kind: r.kind, uuid: r.uuid, data: r.data as DocDataMap[Kind] })
@@ -138,7 +143,7 @@ function compute(): Model {
 	const exercises: Ex[] = d.exercises.map((e) => {
 		const records = (byEx.get(e.uuid) ?? []).sort((a, b) => b.date - a.date)
 		return {
-			...e.data, uuid: e.uuid, glyphName: glyphOf(e.data), records, best: bestOf(records),
+			...e.data, uuid: e.uuid, glyphName: glyphOf(e.data, catalog.glyphs.get(e.data.catalog)), records, best: bestOf(records),
 			sets: (setsByEx.get(e.uuid) ?? []).sort((a, b) => b.createdAt - a.createdAt || b.order - a.order),
 		}
 	}).sort((a, b) => a.sortIndex - b.sortIndex || a.name.localeCompare(b.name))

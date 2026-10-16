@@ -128,7 +128,7 @@ export async function copyTemplate(src: { name: string; rows: { catalog: string;
 				uuid = newUuid()
 				put('exercise', uuid, {
 					name: entry ? entryName(entry) : r.name, muscleGroup: entry?.group ?? 'petto', notes: entry?.notes ?? '', incrementStep: entry?.step ?? 2.5,
-					sortIndex: ++top, isArchived: false, createdAt: now(), glyph: entry?.glyph ?? '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0,
+					sortIndex: ++top, isArchived: false, createdAt: now(), glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0,
 					catalog: entry?.id ?? '', hidden: false,
 				})
 				ex = { uuid, catalog: entry?.id ?? '', name: r.name } as Ex

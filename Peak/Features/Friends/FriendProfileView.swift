@@ -149,7 +149,6 @@ struct FriendProfileView: View {
                 let entry = Catalog.entry(id: row.catalog)
                 let created = Exercise(name: entry?.it ?? row.name, muscleGroup: entry?.muscleGroup ?? .petto, incrementStep: entry?.step ?? 2.5, notes: entry?.notes ?? "", sortIndex: nextIndex)
                 created.catalogID = entry?.id ?? ""
-                if let glyph = entry?.machineGlyph { created.glyphRaw = glyph.rawValue }
                 context.insert(created)
                 mineExercises.append(created)
                 nextIndex += 1

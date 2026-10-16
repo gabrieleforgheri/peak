@@ -31,7 +31,8 @@ struct ExerciseEditorView: View {
     @State private var showingCamera = false
     /// Il pittogramma scelto a mano; finché è `nil` lo deduce il nome (e cambia con lui).
     @State private var pickedGlyph: MachineGlyph?
-    private var glyph: MachineGlyph { pickedGlyph ?? MachineGlyph.suggested(for: name, group: group) }
+    /// Collegato: l'icona del suo attrezzo; personalizzato: quella che scegli, o nessuna.
+    private var glyph: MachineGlyph? { Catalog.entry(id: catalogID)?.machineGlyph ?? pickedGlyph }
     @State private var photoOffset: Double = 0
     @State private var dragStart: Double = 0
     /// L'id della voce del catalogo; vuoto = personalizzato.
@@ -283,7 +284,6 @@ struct ExerciseEditorView: View {
         step = entry.step
         customStep = !steps.contains(entry.step)
         notes = entry.notes
-        pickedGlyph = entry.machineGlyph
     }
 
     // MARK: - Foto e pittogramma
@@ -336,45 +336,62 @@ struct ExerciseEditorView: View {
                     Spacer()
                 }
 
-                Text(photoData == nil
-                     ? "Senza foto viene usato il pittogramma qui sotto, scelto in automatico dal nome."
-                     : "Trascina la foto per scegliere cosa si vede nel riquadro.")
+                Text(photoData != nil ? "Trascina la foto per scegliere cosa si vede nel riquadro."
+                     : catalogID.isEmpty ? "Senza foto si vede il pittogramma che scegli qui sotto."
+                     : "Senza foto si vede il pittogramma dell'attrezzo del catalogo.")
                     .font(Theme.rounded(11, .medium))
                     .foregroundStyle(Theme.textTertiary)
 
                 Divider().overlay(Theme.stroke)
 
-                SectionHeader(title: "Pittogramma", trailing: glyph.title)
+                SectionHeader(title: "Pittogramma", trailing: glyph?.title ?? "Nessuno")
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(MachineGlyph.allCases) { candidate in
+                if catalogID.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
                             Button {
-                                pickedGlyph = candidate
+                                pickedGlyph = nil
                                 Haptics.tap()
                             } label: {
-                                MachineGlyphView(
-                                    glyph: candidate,
-                                    tint: glyph == candidate ? group.tint : Theme.textTertiary,
-                                    size: 26
-                                )
-                                .frame(width: 44, height: 44)
-                                .background(
-                                    glyph == candidate ? group.tint.opacity(0.18) : Theme.card,
-                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .strokeBorder(glyph == candidate ? group.tint.opacity(0.5) : .clear, lineWidth: 1)
-                                )
+                                Text("Nessuno")
+                                    .font(Theme.rounded(13, .bold))
+                                    .foregroundStyle(glyph == nil ? group.tint : Theme.textTertiary)
+                                    .padding(.horizontal, 12)
+                                    .frame(height: 44)
+                                    .background(
+                                        glyph == nil ? group.tint.opacity(0.18) : Theme.card,
+                                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    )
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel(candidate.title)
+                            ForEach(MachineGlyph.allCases) { candidate in
+                                Button {
+                                    pickedGlyph = candidate
+                                    Haptics.tap()
+                                } label: {
+                                    MachineGlyphView(
+                                        glyph: candidate,
+                                        tint: glyph == candidate ? group.tint : Theme.textTertiary,
+                                        size: 26
+                                    )
+                                    .frame(width: 44, height: 44)
+                                    .background(
+                                        glyph == candidate ? group.tint.opacity(0.18) : Theme.card,
+                                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .strokeBorder(glyph == candidate ? group.tint.opacity(0.5) : .clear, lineWidth: 1)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(candidate.title)
+                            }
                         }
+                        .padding(.horizontal, 2)
                     }
-                    .padding(.horizontal, 2)
+                    .scrollClipDisabled()
                 }
-                .scrollClipDisabled()
             }
         }
         // A tutto schermo, non in una sheet: la fotocamera di UIKit disegna i suoi
@@ -481,7 +498,7 @@ struct ExerciseEditorView: View {
                     .scaledToFill()
             } else {
                 group.tint.opacity(0.14)
-                MachineGlyphView(glyph: glyph, tint: group.tint, size: 44)
+                if let glyph { MachineGlyphView(glyph: glyph, tint: group.tint, size: 44) }
             }
         }
         .frame(width: 78, height: 78)
@@ -526,7 +543,7 @@ struct ExerciseEditorView: View {
         photoData = exercise.photo
         photoOffset = exercise.photoOffset
         dragStart = exercise.photoOffset
-        pickedGlyph = exercise.hasCustomGlyph ? exercise.glyph : nil
+        pickedGlyph = MachineGlyph(rawValue: exercise.glyphRaw)
     }
 
     private func save() {

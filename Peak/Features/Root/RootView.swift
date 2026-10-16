@@ -78,11 +78,15 @@ struct RootView: View {
         }
     }
 
-    /// Gli esercizi che c'erano prima del catalogo si collegano per nome, una volta sola; gli altri restano personalizzati.
+    /// Gli esercizi che c'erano prima del catalogo si collegano per nome, una volta sola; gli altri restano personalizzati
+    /// e tengono l'icona che vedevano, dedotta dal nome (da ora in poi un'icona vuota resta vuota). Come `migrateCatalog` sul server.
     private func linkCatalogOnce() {
         guard !settings.didLinkCatalog, !AppStore.isFallback else { return }
         for exercise in (try? context.fetch(FetchDescriptor<Exercise>())) ?? [] where exercise.catalogID.isEmpty {
             exercise.catalogID = Catalog.match(name: exercise.name)?.id ?? ""
+            if exercise.catalogID.isEmpty, !exercise.hasCustomGlyph {
+                exercise.glyphRaw = MachineGlyph.suggested(for: exercise.name, group: exercise.muscleGroup).rawValue
+            }
         }
         try? context.save()
         settings.didLinkCatalog = true

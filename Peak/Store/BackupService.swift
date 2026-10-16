@@ -243,8 +243,11 @@ enum BackupService {
             exercise.photoOffset = dto.photoOffset ?? 0
             exercise.isUnilateral = dto.isUnilateral ?? false
             exercise.restSeconds = dto.restSeconds ?? 0
-            // un backup vecchio non ha l'id: lo si ricava dal nome
+            // un backup vecchio non ha l'id: lo si ricava dal nome; se resta personalizzato tiene l'icona che vedeva
             exercise.catalogID = dto.catalogID ?? Catalog.match(name: dto.name)?.id ?? ""
+            if dto.catalogID == nil, exercise.catalogID.isEmpty, !exercise.hasCustomGlyph {
+                exercise.glyphRaw = MachineGlyph.suggested(for: exercise.name, group: exercise.muscleGroup).rawValue
+            }
             exercise.isHidden = dto.isHidden ?? false
             context.insert(exercise)
             exercisesByUUID[dto.uuid] = exercise

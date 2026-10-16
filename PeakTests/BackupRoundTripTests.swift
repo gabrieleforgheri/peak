@@ -37,7 +37,7 @@ final class BackupRoundTripTests: XCTestCase {
         let source = try makeContext()
         let exercise = Exercise(name: "Rematore Plate Loaded", muscleGroup: .schiena, incrementStep: 5)
         source.insert(exercise)
-        exercise.glyph = .plateLoaded
+        exercise.glyphRaw = MachineGlyph.plateLoaded.rawValue
         exercise.isUnilateral = true
         exercise.restSeconds = 150
         exercise.photo = Data([0xFF, 0xD8, 0xFF, 0xE0, 0x01, 0x02, 0x03])
@@ -48,15 +48,17 @@ final class BackupRoundTripTests: XCTestCase {
         try BackupService.restore(from: data, context: destination, mode: .replace)
 
         let restored = try XCTUnwrap(try destination.fetch(FetchDescriptor<Exercise>()).first)
-        XCTAssertEqual(restored.glyph, .plateLoaded)
+        XCTAssertEqual(restored.glyphRaw, "plateLoaded")
         XCTAssertTrue(restored.hasCustomGlyph)
+        // collegato al catalogo per nome: si vede l'attrezzo del catalogo
+        XCTAssertEqual(restored.glyph, .rowMachine)
         XCTAssertTrue(restored.isUnilateral)
         XCTAssertEqual(restored.restSeconds, 150)
         XCTAssertEqual(restored.photo, Data([0xFF, 0xD8, 0xFF, 0xE0, 0x01, 0x02, 0x03]))
     }
 
     /// Un esercizio senza scelte manuali non deve portarsi dietro campi vuoti,
-    /// e al ritorno deve comunque avere un pittogramma dedotto dal nome.
+    /// e al ritorno ha l'icona della voce del catalogo con lo stesso nome.
     func testExerciseWithoutCustomGlyphStillResolvesOne() throws {
         let source = try makeContext()
         let exercise = Exercise(name: "Leg Press 45°", muscleGroup: .gambe, incrementStep: 10)

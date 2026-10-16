@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { GLYPHS, MUSCLE_GROUPS, type GlyphName, type MuscleGroup } from '@common/docs.ts'
-	import { GLYPH_TITLES, suggestedGlyph } from '@common/glyph.ts'
+	import { GLYPH_TITLES, glyphOf } from '@common/glyph.ts'
 	import { PhotoFraming } from '@common/domain.ts'
 	import { deleteExercise, saveExercise } from '../lib/actions.ts'
 	import { GROUP_NAMES } from '../lib/fmt.ts'
@@ -47,12 +47,13 @@
 		if (!e) return
 		if (wasNew) {
 			// precompila: il nome si può cambiare subito con uno familiare
-			name = startName.trim() || entryName(e); group = e.group; step = e.step; notes = e.notes; glyph = e.glyph
+			name = startName.trim() || entryName(e); group = e.group; step = e.step; notes = e.notes
 			custom = ![1, 1.25, 2, 2.5, 5, 10].includes(e.step)
 		}
 	}
 
-	const auto = $derived(suggestedGlyph(name, group))
+	// collegato: l'icona del suo attrezzo; personalizzato: quella che scegli, o nessuna
+	const shown = $derived(glyphOf({ glyph, catalog }, linked?.glyph))
 	let src = $state('')
 	let aspect = $state(1)
 	$effect(() => { const s = photo; src = ''; if (s) photoUrl(s).then((u) => { if (photo === s) src = u }) })
@@ -117,8 +118,8 @@
 					{#if photo && src}
 						<img {src} alt="" draggable="false" onload={(e) => { const i = e.currentTarget as HTMLImageElement; aspect = i.naturalWidth / i.naturalHeight }}
 							style="width:100%;height:100%;object-fit:cover;object-position:{50 - offset * 50}% {50 - offset * 50}%" />
-					{:else}
-						<div style="width:60%;height:60%"><Glyph name={glyph || auto} /></div>
+					{:else if shown}
+						<div style="width:60%;height:60%"><Glyph name={shown} /></div>
 					{/if}
 				</div>
 				<div class="stack" style="flex:1;gap:8px">
@@ -135,16 +136,18 @@
 
 		<div class="field">
 			<span class="sec-title" style="margin:0 4px 6px">{t('Pittogramma')}</span>
+			{#if catalog}
+				<p class="muted small" style="margin:0 4px">{t('È quello dell\'attrezzo del catalogo.')}</p>
+			{:else}
 			<div class="chips">
-				<button class="chip" class:on={glyph === ''} onclick={() => (glyph = '')} style="display:flex;align-items:center;gap:6px">
-					<span style="width:20px;height:20px;display:inline-block"><Glyph name={auto} /></span>{t('Auto')}
-				</button>
+				<button class="chip" class:on={glyph === ''} onclick={() => (glyph = '')}>{t('Nessuno')}</button>
 				{#each GLYPHS as g}
 					<button class="chip" class:on={glyph === g} onclick={() => (glyph = g)} title={GLYPH_TITLES[g]} aria-label={GLYPH_TITLES[g]} style="padding:0 10px">
 						<span style="width:24px;height:24px;display:inline-block;vertical-align:middle"><Glyph name={g} /></span>
 					</button>
 				{/each}
 			</div>
+			{/if}
 		</div>
 
 		<div class="field">

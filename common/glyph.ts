@@ -105,6 +105,103 @@ export const SHAPES: Record<GlyphName, Shape[]> = {
   machine: [
     ...stack(0.10, 0.26, 0.16, 0.56), line(0.34, 0.14, 0.34, 0.88), rect(0.42, 0.56, 0.28, 0.08), rect(0.42, 0.30, 0.07, 0.26), base,
   ],
+  // ---- un attrezzo per voce del catalogo ----
+  legCurlLying: [
+    rect(0.10, 0.46, 0.56, 0.08), line(0.20, 0.54, 0.20, 0.88), line(0.56, 0.54, 0.56, 0.88),
+    line(0.66, 0.50, 0.82, 0.30), dot(0.84, 0.27, 0.07), base,
+  ],
+  legCurlSeated: [
+    rect(0.16, 0.24, 0.08, 0.30), rect(0.20, 0.54, 0.30, 0.08), rect(0.30, 0.40, 0.20, 0.07),
+    line(0.50, 0.58, 0.80, 0.50), dot(0.82, 0.58, 0.07), line(0.34, 0.62, 0.34, 0.88), base,
+  ],
+  hackSquat: [
+    line(0.16, 0.88, 0.58, 0.12), bar(0.38, 0.66, 0.58, 0.32), dot(0.64, 0.30, 0.06), bar(0.36, 0.80, 0.68, 0.74), base,
+  ],
+  squatMachine: [
+    line(0.18, 0.36, 0.18, 0.88), bar(0.18, 0.36, 0.70, 0.28), dot(0.46, 0.39, 0.055), ring(0.78, 0.27, 0.11),
+    rect(0.30, 0.80, 0.42, 0.07), base,
+  ],
+  hipThrust: [
+    rect(0.06, 0.42, 0.26, 0.10), line(0.12, 0.52, 0.12, 0.88), line(0.26, 0.52, 0.26, 0.88),
+    ring(0.62, 0.64, 0.22), dot(0.62, 0.64, 0.06), base,
+  ],
+  gluteMachine: [
+    ...stack(0.06, 0.30, 0.12, 0.50), line(0.26, 0.14, 0.26, 0.88), rect(0.32, 0.30, 0.22, 0.07),
+    line(0.42, 0.58, 0.78, 0.42), bar(0.72, 0.32, 0.86, 0.54), base,
+  ],
+  hipAdductor: [
+    rect(0.40, 0.16, 0.20, 0.32), rect(0.28, 0.50, 0.44, 0.08), bar(0.42, 0.60, 0.18, 0.78), bar(0.58, 0.60, 0.82, 0.78),
+    line(0.50, 0.58, 0.50, 0.88), base,
+  ],
+  calfSeated: [
+    rect(0.10, 0.56, 0.28, 0.08), line(0.24, 0.64, 0.24, 0.88), rect(0.36, 0.42, 0.22, 0.07),
+    line(0.47, 0.44, 0.76, 0.38), ring(0.82, 0.37, 0.09), rect(0.50, 0.78, 0.16, 0.07), base,
+  ],
+  ghd: [
+    line(0.10, 0.74, 0.88, 0.74), line(0.18, 0.74, 0.18, 0.88), line(0.80, 0.74, 0.80, 0.88),
+    bar(0.20, 0.36, 0.20, 0.60), line(0.20, 0.60, 0.20, 0.74), dot(0.29, 0.42, 0.05), dot(0.29, 0.56, 0.05),
+    rect(0.48, 0.46, 0.32, 0.16), line(0.64, 0.62, 0.64, 0.74), base,
+  ],
+  kettlebell: [ring(0.50, 0.30, 0.15), dot(0.50, 0.60, 0.25)],
+  trapBar: [
+    bar(0.30, 0.50, 0.40, 0.32), bar(0.40, 0.32, 0.60, 0.32), bar(0.60, 0.32, 0.70, 0.50),
+    bar(0.70, 0.50, 0.60, 0.68), bar(0.60, 0.68, 0.40, 0.68), bar(0.40, 0.68, 0.30, 0.50),
+    bar(0.06, 0.50, 0.30, 0.50), bar(0.70, 0.50, 0.94, 0.50), rect(0.12, 0.32, 0.08, 0.36), rect(0.80, 0.32, 0.08, 0.36),
+    line(0.42, 0.44, 0.42, 0.56), line(0.58, 0.44, 0.58, 0.56),
+  ],
+  ezBar: [
+    bar(0.06, 0.50, 0.30, 0.50), bar(0.30, 0.50, 0.37, 0.40), bar(0.37, 0.40, 0.44, 0.58), bar(0.44, 0.58, 0.50, 0.48),
+    bar(0.50, 0.48, 0.56, 0.58), bar(0.56, 0.58, 0.63, 0.40), bar(0.63, 0.40, 0.70, 0.50), bar(0.70, 0.50, 0.94, 0.50),
+    rect(0.10, 0.32, 0.08, 0.36), rect(0.82, 0.32, 0.08, 0.36),
+  ],
+  landmine: [rect(0.06, 0.80, 0.16, 0.08), bar(0.14, 0.82, 0.74, 0.30), dot(0.78, 0.27, 0.13), base],
+  preacherBench: [
+    rect(0.10, 0.58, 0.24, 0.08), line(0.22, 0.66, 0.22, 0.88), bar(0.40, 0.32, 0.66, 0.54), line(0.52, 0.44, 0.52, 0.88),
+    dot(0.75, 0.60, 0.06), base,
+  ],
+  dipStation: [
+    line(0.24, 0.32, 0.24, 0.88), line(0.76, 0.32, 0.76, 0.88), bar(0.12, 0.32, 0.38, 0.32), bar(0.62, 0.32, 0.88, 0.32), base,
+  ],
+  assistMachine: [
+    ...stack(0.06, 0.34, 0.12, 0.46), line(0.26, 0.10, 0.26, 0.88), line(0.26, 0.12, 0.76, 0.12), dot(0.76, 0.12, 0.05),
+    bar(0.50, 0.40, 0.78, 0.40), rect(0.44, 0.62, 0.28, 0.07), line(0.26, 0.66, 0.44, 0.66), base,
+  ],
+  rowMachine: [
+    ...stack(0.06, 0.30, 0.12, 0.50), line(0.24, 0.16, 0.24, 0.88), line(0.24, 0.40, 0.40, 0.40), dot(0.43, 0.40, 0.055),
+    rect(0.54, 0.28, 0.07, 0.30), rect(0.54, 0.62, 0.30, 0.07), line(0.68, 0.69, 0.68, 0.88), base,
+  ],
+  cableRope: [
+    rect(0.10, 0.12, 0.10, 0.76), line(0.15, 0.14, 0.60, 0.14), ring(0.60, 0.20, 0.05), line(0.60, 0.25, 0.60, 0.46),
+    line(0.60, 0.46, 0.50, 0.68), line(0.60, 0.46, 0.70, 0.68), dot(0.49, 0.71, 0.05), dot(0.71, 0.71, 0.05), base,
+  ],
+  cablePushdown: [
+    rect(0.10, 0.12, 0.10, 0.76), line(0.15, 0.14, 0.60, 0.14), ring(0.60, 0.20, 0.05), line(0.60, 0.25, 0.60, 0.52),
+    bar(0.44, 0.54, 0.76, 0.54), base,
+  ],
+  sled: [
+    bar(0.10, 0.82, 0.74, 0.82), line(0.74, 0.82, 0.88, 0.70), bar(0.24, 0.80, 0.14, 0.20),
+    line(0.58, 0.82, 0.58, 0.34), rect(0.40, 0.60, 0.36, 0.09), rect(0.40, 0.46, 0.36, 0.09),
+  ],
+  dumbbellBench: [
+    rect(0.20, 0.58, 0.60, 0.09), line(0.30, 0.67, 0.30, 0.88), line(0.70, 0.67, 0.70, 0.88),
+    bar(0.40, 0.32, 0.60, 0.32), rect(0.29, 0.21, 0.10, 0.22), rect(0.61, 0.21, 0.10, 0.22),
+  ],
+  inclineDumbbell: [
+    bar(0.24, 0.76, 0.60, 0.48), line(0.28, 0.76, 0.28, 0.88), line(0.56, 0.52, 0.56, 0.88), rect(0.16, 0.74, 0.16, 0.07),
+    bar(0.62, 0.22, 0.80, 0.22), rect(0.53, 0.12, 0.09, 0.20), rect(0.80, 0.12, 0.09, 0.20),
+  ],
+  abMachine: [
+    ...stack(0.06, 0.30, 0.12, 0.50), line(0.26, 0.14, 0.26, 0.88), rect(0.36, 0.62, 0.26, 0.07), rect(0.36, 0.32, 0.07, 0.30),
+    line(0.40, 0.22, 0.70, 0.30), line(0.70, 0.30, 0.70, 0.44), dot(0.70, 0.47, 0.06), base,
+  ],
+  deltMachine: [
+    rect(0.42, 0.20, 0.16, 0.34), rect(0.32, 0.56, 0.36, 0.08), line(0.50, 0.64, 0.50, 0.88),
+    bar(0.40, 0.36, 0.14, 0.26), bar(0.60, 0.36, 0.86, 0.26), dot(0.12, 0.25, 0.06), dot(0.88, 0.25, 0.06), base,
+  ],
+  floorMat: [
+    rect(0.06, 0.78, 0.88, 0.07), dot(0.20, 0.44, 0.075), line(0.28, 0.48, 0.84, 0.70), line(0.30, 0.52, 0.30, 0.76),
+  ],
+  plate: [ring(0.50, 0.50, 0.36), ring(0.50, 0.50, 0.20), dot(0.50, 0.50, 0.07)],
 }
 
 export const GLYPH_TITLES: Record<GlyphName, string> = {
@@ -114,6 +211,13 @@ export const GLYPH_TITLES: Record<GlyphName, string> = {
   legPress: 'Pressa', legLever: 'Leva per gambe', squatRack: 'Rack', smithMachine: 'Multipower',
   hyperBench: 'Panca iperestensioni', calfPlatform: 'Pedana calf', abBench: 'Panca addominali',
   romanChair: 'Sedia romana', bodyweight: 'Corpo libero', machine: 'Macchina generica',
+  legCurlLying: 'Leg curl sdraiato', legCurlSeated: 'Leg curl seduto', hackSquat: 'Hack squat', squatMachine: 'Squat a leva',
+  hipThrust: 'Hip thrust', gluteMachine: 'Glute machine', hipAdductor: 'Adduttori / abduttori', calfSeated: 'Calf seduto',
+  ghd: 'Glute ham', kettlebell: 'Kettlebell', trapBar: 'Trap bar', ezBar: 'Bilanciere EZ', landmine: 'Landmine',
+  preacherBench: 'Panca Scott', dipStation: 'Parallele', assistMachine: 'Trazioni assistite', rowMachine: 'Rematore machine',
+  cableRope: 'Cavo con corda', cablePushdown: 'Cavo alto con barra', sled: 'Slitta', dumbbellBench: 'Panca e manubri',
+  inclineDumbbell: 'Panca inclinata e manubri', abMachine: 'Macchina addominali', deltMachine: 'Alzate laterali machine',
+  floorMat: 'A terra', plate: 'Disco',
 }
 
 // ---- riconoscimento dal nome ---------------------------------------------------------------------------
@@ -169,16 +273,25 @@ const GROUP_DEFAULT: Record<MuscleGroup, GlyphName> = {
   petto: 'seatedPush', spalle: 'seatedPush', schiena: 'seatedRow', gambe: 'legLever', braccia: 'dumbbell', core: 'bodyweight',
 }
 
-/** Pittogramma dedotto dal nome; se non riconosce nulla, il default del gruppo. */
+/**
+ * Pittogramma dedotto dal nome; se non riconosce nulla, il default del gruppo. Non si mostra più: serve al calcolatore dischi
+ * e a fissare, una volta, l'icona dei macchinari personalizzati di prima del catalogo. Le parole chiave restano quelle di
+ * allora apposta, così quei macchinari tengono l'icona che avevano.
+ */
 export function suggestedGlyph(name: string, group: MuscleGroup): GlyphName {
   const needle = name.toLowerCase()
   for (const [key, glyph] of KEYWORDS) if (needle.includes(key)) return glyph
   return GROUP_DEFAULT[group]
 }
 
-/** Il pittogramma da mostrare: quello scelto a mano, altrimenti quello dedotto dal nome. */
-export const glyphOf = (e: { glyph: string; name: string; muscleGroup: MuscleGroup }): GlyphName =>
-  (GLYPHS as readonly string[]).includes(e.glyph) ? (e.glyph as GlyphName) : suggestedGlyph(e.name, e.muscleGroup)
+export const isGlyph = (g: string | undefined): g is GlyphName => (GLYPHS as readonly string[]).includes(g ?? '')
+
+/**
+ * L'icona da mostrare: quella dell'attrezzo del catalogo; per un macchinario personalizzato quella scelta a mano,
+ * altrimenti nessuna. `catalogGlyph` è il pittogramma della voce `e.catalog` (undefined se il catalogo non è ancora caricato).
+ */
+export const glyphOf = (e: { glyph: string; catalog: string }, catalogGlyph: string | undefined): GlyphName | null =>
+  e.catalog && isGlyph(catalogGlyph) ? catalogGlyph : isGlyph(e.glyph) ? e.glyph : null
 
 // ---- SVG ------------------------------------------------------------------------------------------------
 

@@ -121,10 +121,13 @@ pulsanti di compilazione rapida quando aggiungi una serie di riscaldamento.
 
 Ogni macchinario ha un'**immagine**, con due livelli:
 
-- un **pittogramma vettoriale** disegnato in `Design/MachineGlyph.swift` — 22
-  archetipi (spinta da seduto, lat machine, pressa, multipower, cavi…) assegnati
-  automaticamente dal nome dell'esercizio, quindi funzionano anche sui macchinari
-  che aggiungi tu;
+- un **pittogramma vettoriale**, uno per tipo di attrezzo (48: leg curl sdraiato,
+  hip thrust, trap bar, panca Scott, cavo con corda…). Le forme stanno in
+  `common/glyph.ts`; `node scripts/gen-glyphs.ts` ne scrive la copia Swift
+  (`Design/MachineGlyphShapes.swift`, e un test controlla che sia aggiornata). Un
+  macchinario collegato al catalogo mostra sempre l'attrezzo della sua voce; uno
+  personalizzato non ha immagine finché non scegli un pittogramma o una foto (quelli
+  creati prima del catalogo tengono, fissata una volta, l'icona dedotta dal nome);
 - una **foto tua**, scattata o presa dal rullino dalla schermata di modifica, che
   sostituisce il pittogramma ovunque. Viene ridotta a 640 px e ricompressa in JPEG
   (`Utils/ImageStore.swift`) prima di finire nel database, e viaggia dentro i backup
@@ -133,8 +136,8 @@ Ogni macchinario ha un'**immagine**, con due livelli:
 Nella stessa schermata si sceglie l'**esecuzione**: entrambe le braccia/gambe insieme
 oppure un lato alla volta. Braccia o gambe si deducono dal gruppo muscolare.
 
-Se il pittogramma dedotto non ti convince, nella schermata di modifica c'è la
-striscia con tutti e 22 per sceglierlo a mano.
+Per un macchinario personalizzato, nella schermata di modifica c'è la striscia con
+tutti i pittogrammi per sceglierlo a mano.
 
 ## Durante l'allenamento
 
@@ -155,7 +158,7 @@ carico hanno raggiunto il massimo del range (8–12 di default, in *Impostazioni
 di un passo e si riparte dal minimo, altrimenti si resta sul carico con una ripetizione
 in più. Compare nel dettaglio del macchinario e come scorciatoia quando aggiungi una serie.
 
-Sugli esercizi con pittogramma *Bilanciere* o *Plate loaded* l'aggiunta della serie
+Sugli esercizi con un bilanciere (anche panche, rack, hip thrust, EZ, trap bar) o *plate loaded* l'aggiunta della serie
 mostra il **calcolatore dischi** (`Model/Plates.swift`, `Design/PlateBarView.swift`):
 mezzo bilanciere con i dischi colorati che entrano a molla a ogni cambio di carico,
 la lista per lato e quanto manca se i dischi della palestra non bastano. Peso del
