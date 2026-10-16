@@ -1,0 +1,49 @@
+name: Controlli
+
+# Server, common e web: gli stessi controlli che si lanciano a mano (HANDOFF.md), sul Node dell'egg Pelican.
+# L'app iPhone resta fuori (serve macOS): la compila altstore-release.yml ai tag.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Dipendenze
+        run: |
+          npm install --no-audit --no-fund
+          npm ci --prefix web --no-audit --no-fund
+
+      - name: Test (common e server)
+        run: npm test
+
+      - name: Tipi (common e server)
+        run: npm run typecheck
+
+      - name: "Web: svelte-check e traduzioni"
+        working-directory: web
+        run: |
+          npm run check
+          node scripts/check-i18n.mjs
+
+      # il server serve web/dist così com'è nel repo: deve essere la build dei sorgenti
+      - name: web/dist aggiornata
+        run: |
+          npm run build
+          if [ -n "$(git status --porcelain -- web/dist)" ]; then
+            git status --short -- web/dist
+            echo "web/dist non corrisponde ai sorgenti: lancia npm run build e committa"
+            exit 1
+          fi

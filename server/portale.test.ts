@@ -31,7 +31,7 @@ function seed(sub: string, email: string) {
   const now = Date.now()
   const at = (ms: number) => isoSec(ms)
   app.store.applyPlan(u.id, { photos: new Map(), del: [], put: [
-    { kind: 'exercise', uuid: ex, data: { name: 'Chest Press', muscleGroup: 'petto', notes: '', incrementStep: 5, sortIndex: 0, isArchived: false, createdAt: at(now - 90 * DAY), glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0 } },
+    { kind: 'exercise', uuid: ex, data: { name: 'Chest Press', muscleGroup: 'petto', notes: '', incrementStep: 5, sortIndex: 0, isArchived: false, createdAt: at(now - 90 * DAY), glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0, catalog: '', hidden: false } },
     { kind: 'workout', uuid: w2, data: { date: at(now - 60 * DAY), endedAt: at(now - 60 * DAY + 3600_000), note: '', name: 'Vecchio', focus: '', template: '', plan: [] } },
     { kind: 'set', uuid: newUuid(), data: { workout: w2, exercise: ex, weight: 50, reps: 5, rpe: null, isWarmup: false, order: 0, createdAt: at(now - 60 * DAY + 600_000), noRecord: false } },
     { kind: 'workout', uuid: w1, data: { date: at(now - DAY), endedAt: at(now - DAY + 2700_000), note: '', name: 'Push', focus: 'petto', template: '', plan: [] } },

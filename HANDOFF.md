@@ -74,7 +74,7 @@ cambiati di proposito: i dati degli utenti non si toccano.
 - Il codice TypeScript sta in `common/`, non in `shared/`: su macOS `shared/` e `Shared/` (Swift) sono la stessa cartella.
 - Su Pelican (egg 1) ogni riavvio è anche un deploy: `git pull --ff-only` e `node server/index.ts`, **niente npm**. Il server stampa
   `Server avviato sulla porta N`: Wings lo cerca per segnare il server come avviato.
-- Provato solo con Node 26; l'egg usa `nodejs_24`.
+- Provato con Node 26 e 24 (l'egg usa `nodejs_24`): `npm test` passa i file per glob perché Node 24 non accetta cartelle. La CI `check.yml` gira test, tipi, svelte-check, traduzioni e controlla che `web/dist` sia la build dei sorgenti.
 - Mai `xcodebuild test` o simulatore senza chiedere (blocca il Mac). La regola dei record in Swift si prova con
   `scripts/check_records.sh` (solo swiftc) sugli stessi vettori di `common/fixtures/records.json`.
 

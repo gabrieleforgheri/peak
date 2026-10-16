@@ -155,7 +155,7 @@ test('unisci: stesso nome ma uuid diverso → un solo macchinario, serie e foto 
     // il catalogo del web: "Chest Press" con un altro uuid, senza foto
     s.applyPlan(uid, { photos: new Map(), del: [], put: [{ kind: 'exercise', uuid: U(900), data: {
       name: 'chest press ', muscleGroup: 'petto', notes: '', incrementStep: 5, sortIndex: 0, isArchived: false,
-      createdAt: '2026-01-01T00:00:00Z', glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0 } }] })
+      createdAt: '2026-01-01T00:00:00Z', glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0, catalog: '', hidden: false } }] })
     const plan = planImport(parse(sample()), s.live(uid), 'unisci')
     s.applyPlan(uid, plan)
     const d = s.live(uid)
