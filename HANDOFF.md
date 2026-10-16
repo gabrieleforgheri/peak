@@ -16,6 +16,7 @@ compilano e i test passano (`npm test`: 94; iPhone: `build-for-testing` per disp
 Da sapere:
 - Un client vecchio (AltStore 2.1) che non manda `catalog`/`hidden` non li cancella (`KEEP_IF_ABSENT`, `server/store.ts`); le impostazioni tolte restano accettate e ignorate (`LEGACY_SETTINGS`).
 - Il server collega al catalogo gli esercizi senza id all'avvio (`migrateCatalog`), l'iPhone una volta (`linkCatalogOnce`).
+- **Lingua** (web): Impostazioni → Generale → Lingua (Automatica / Italiano / English), per dispositivo. Sta in `localStorage` `peak.lang`, nel cookie `peak_lang` (pagine del server: `langOf`) e nella cache `peak-lingua` (testo del Web Push in `sw.js`); il benvenuto la legge da `localStorage`. L'app iPhone è solo in italiano: lì non c'è la scelta.
 - **Mai emoji nell'interfaccia**: SVG sul web, SF Symbols su iPhone.
 - Versione 3.0 (build 9) in `project.yml` e `web/package.json`: tenerle uguali.
 

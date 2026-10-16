@@ -283,6 +283,15 @@ test('login web: chi non è nel gruppo vede la pagina 403 di Peak, nessuna sessi
   assert.equal(app.store.userBySub('oidc-2'), undefined)
 })
 
+test('lingua delle pagine del server: il cookie peak_lang batte quella del browser', async () => {
+  const page = async (h: Record<string, string>) => (await (await call('/auth/logout', { h })).text()).slice(0, 40)
+  assert.match(await page({ 'accept-language': 'it-IT,it' }), /lang="it"/)
+  assert.match(await page({ 'accept-language': 'en-US,en' }), /lang="en"/)
+  assert.match(await page({ 'accept-language': 'en-US,en', cookie: 'peak_lang=it' }), /lang="it"/)
+  assert.match(await page({ 'accept-language': 'it-IT', cookie: 'peak_lang=en' }), /lang="en"/)
+  assert.match(await page({ 'accept-language': 'en-US', cookie: 'peak_lang=xx' }), /lang="en"/, 'un valore sconosciuto non conta')
+})
+
 test('login iPhone: conferma obbligatoria, codice monouso, verifier PKCE, poi Bearer', async () => {
   const verifier = 'v'.repeat(64)
   const challenge = createHash('sha256').update(verifier).digest('base64url')

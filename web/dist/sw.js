@@ -7,8 +7,8 @@
  * - Le foto dei macchinari (/api/foto/<sha256>) non cambiano mai: prima la cache.
  * - L'API non si tocca: i dati stanno in IndexedDB e li sincronizza l'app. */
 
-const SHELL = ["/","/assets/index-B1cSJ28v.js","/assets/catalog-Cq8tN4wu.js","/assets/index-BeKbI-z2.css","/manifest.webmanifest","/icon-192.png"]
-const VERSION = "c8813cca67"
+const SHELL = ["/","/assets/index-DUUPC9ua.js","/assets/catalog-Cq8tN4wu.js","/assets/index-BeKbI-z2.css","/manifest.webmanifest","/icon-192.png"]
+const VERSION = "5c785dedcf"
 const SHELL_CACHE = `peak-guscio-${VERSION}`
 const PHOTOS = 'peak-foto'
 
@@ -69,11 +69,14 @@ self.addEventListener('fetch', (e) => {
 	}
 })
 
-/* Web Push: il server manda un avviso senza testo quando finisce il recupero; il testo è qui, tradotto. */
+/* Web Push: il server manda un avviso senza testo quando finisce il recupero; il testo è qui, tradotto.
+ * La lingua scelta nelle impostazioni la scrive la pagina nella cache peak-lingua (src/lib/i18n.ts); vuota = del browser. */
 self.addEventListener('push', (e) => {
-	const it = (self.navigator.language || 'it').toLowerCase().startsWith('it')
-	e.waitUntil(self.registration.showNotification(it ? 'Recupero finito' : 'Rest over', {
-		body: it ? 'Tocca alla prossima serie.' : 'Time for your next set.', tag: 'recupero', icon: '/icon-192.png',
+	e.waitUntil(caches.open('peak-lingua').then((c) => c.match('/lingua')).then((r) => (r ? r.text() : '')).catch(() => '').then((chosen) => {
+		const it = (chosen || self.navigator.language || 'it').toLowerCase().startsWith('it')
+		return self.registration.showNotification(it ? 'Recupero finito' : 'Rest over', {
+			body: it ? 'Tocca alla prossima serie.' : 'Time for your next set.', tag: 'recupero', icon: '/icon-192.png',
+		})
 	}))
 })
 

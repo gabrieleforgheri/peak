@@ -4,7 +4,7 @@
 	import { PLATES_KG_ALL, PLATES_LB_ALL, round2, toDisplay } from '@common/domain.ts'
 	import { changeUnit, eraseAll, setSetting } from '../lib/actions.ts'
 	import { fromUnit, toUnit, unit } from '../lib/fmt.ts'
-	import { t, tn } from '../lib/i18n.ts'
+	import { langPref, setLangPref, t, tn, type LangPref } from '../lib/i18n.ts'
 	import { go, route } from '../lib/router.svelte.ts'
 	import { S, getModel } from '../lib/store.svelte.ts'
 	import { disablePush, enablePush, pushState, type PushState } from '../lib/push.ts'
@@ -18,6 +18,8 @@
 	const s = $derived(m.settings)
 	const ACCENT_RGB: Record<string, string> = { lime: '184,240,77', ember: '255,148,61', ice: '115,204,255', violet: '173,140,255', coral: '255,115,115' }
 	const ACCENT_NAME: Record<string, string> = { lime: 'Lime', ember: 'Brace', ice: 'Ghiaccio', violet: 'Viola', coral: 'Corallo' }
+	// ogni lingua col suo nome, così la ritrova anche chi non legge quella attuale
+	const LANGS: [LangPref, string][] = [['auto', t('Automatica')], ['it', 'Italiano'], ['en', 'English']]
 
 	let devices = $state<{ id: number; name: string; created_at: number; used_at: number | null }[]>([])
 	const loadDevices = async () => { try { const r = await call('/api/dispositivi'); if (r.ok) devices = (await r.json()).dispositivi } catch { /* offline */ } }
@@ -137,6 +139,9 @@
 					<button aria-label={ACCENT_NAME[a]} onclick={() => setSetting('accent', a)} style="width:38px;height:38px;border-radius:50%;border:3px solid {s.accent === a ? '#fff' : 'transparent'};background:rgb({ACCENT_RGB[a]})"></button>
 				{/each}
 			</div></div>
+		<div class="field"><span class="sec-title" style="margin:0 4px 6px">{t('Lingua')}</span>
+			<div class="seg">{#each LANGS as [id, label] (id)}<button class:on={langPref === id} onclick={() => setLangPref(id)}>{label}</button>{/each}</div>
+			<span class="small muted" style="display:block;margin:6px 4px 0">{t('Vale su questo dispositivo. «Automatica» segue la lingua del browser.')}</span></div>
 		<button class="btn block" onclick={() => setSetting('tutorialDone', false)}>{t('Rivedi il tutorial')}</button>
 	</div>
 

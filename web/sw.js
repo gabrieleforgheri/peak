@@ -69,11 +69,14 @@ self.addEventListener('fetch', (e) => {
 	}
 })
 
-/* Web Push: il server manda un avviso senza testo quando finisce il recupero; il testo è qui, tradotto. */
+/* Web Push: il server manda un avviso senza testo quando finisce il recupero; il testo è qui, tradotto.
+ * La lingua scelta nelle impostazioni la scrive la pagina nella cache peak-lingua (src/lib/i18n.ts); vuota = del browser. */
 self.addEventListener('push', (e) => {
-	const it = (self.navigator.language || 'it').toLowerCase().startsWith('it')
-	e.waitUntil(self.registration.showNotification(it ? 'Recupero finito' : 'Rest over', {
-		body: it ? 'Tocca alla prossima serie.' : 'Time for your next set.', tag: 'recupero', icon: '/icon-192.png',
+	e.waitUntil(caches.open('peak-lingua').then((c) => c.match('/lingua')).then((r) => (r ? r.text() : '')).catch(() => '').then((chosen) => {
+		const it = (chosen || self.navigator.language || 'it').toLowerCase().startsWith('it')
+		return self.registration.showNotification(it ? 'Recupero finito' : 'Rest over', {
+			body: it ? 'Tocca alla prossima serie.' : 'Time for your next set.', tag: 'recupero', icon: '/icon-192.png',
+		})
 	}))
 })
 

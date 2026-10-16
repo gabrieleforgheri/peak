@@ -4,7 +4,10 @@ const en = {
 	set: 'Set', new: 'NEW RECORD', cap3: 'A record? You see it right away.', prog: 'Progress', gain: 'Biggest gainers',
 	cap4: 'Week after week.', cap5: 'On the web and on iPhone.<br />Always in sync.', login: 'Sign in with yG', note: 'Peak uses your yG account.'
 }
-if (!navigator.language?.toLowerCase().startsWith('it')) {
+// la lingua scelta nelle impostazioni dell'app (stessa chiave di src/lib/i18n.ts), altrimenti quella del browser
+let chosen = null
+try { chosen = localStorage.getItem('peak.lang') } catch { /* modalità privata */ }
+if (chosen !== 'it' && (chosen === 'en' || !navigator.language?.toLowerCase().startsWith('it'))) {
 	document.documentElement.lang = 'en'
 	for (const el of document.querySelectorAll('[data-t]')) el.innerHTML = en[el.dataset.t]
 }

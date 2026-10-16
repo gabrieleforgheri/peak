@@ -49,8 +49,10 @@ export function cookies(req: IncomingMessage): Record<string, string> {
 export const escapeHtml = (s: string): string =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
-/** Italiano salvo che la prima lingua del browser sia un'altra. */
+/** La lingua scelta nell'app (cookie `peak_lang`, web/src/lib/i18n.ts); se no italiano, salvo che la prima del browser sia un'altra. */
 export function langOf(req: IncomingMessage): 'it' | 'en' {
+  const chosen = cookies(req).peak_lang
+  if (chosen === 'it' || chosen === 'en') return chosen
   const first = String(req.headers['accept-language'] ?? '').split(',')[0]?.trim().toLowerCase() ?? ''
   return first === '' || first.startsWith('it') ? 'it' : 'en'
 }
