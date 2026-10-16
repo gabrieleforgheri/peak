@@ -89,6 +89,7 @@ final class AppSettings {
         static let availablePlates = "settings.availablePlates"
         static let didSeeWelcome = "settings.didSeeWelcome"
         static let didLinkCatalog = "settings.didLinkCatalog"
+        static let didFreezeGlyphs = "settings.didFreezeGlyphs"
         static let tutorialDone = "settings.tutorialDone"
         static let weeklyGoal = "settings.weeklyGoal"
     }
@@ -168,6 +169,11 @@ final class AppSettings {
         didSet { defaults.set(didLinkCatalog, forKey: Key.didLinkCatalog) }
     }
 
+    /// I macchinari personalizzati con l'icona automatica di prima hanno fissato la loro, una volta sola.
+    var didFreezeGlyphs: Bool {
+        didSet { defaults.set(didFreezeGlyphs, forKey: Key.didFreezeGlyphs) }
+    }
+
     /// Il tutorial l'hai già fatto (su un dispositivo qualsiasi). Segue l'account.
     var tutorialDone: Bool {
         didSet { defaults.set(tutorialDone, forKey: Key.tutorialDone) }
@@ -199,6 +205,7 @@ final class AppSettings {
             ?? [25, 20, 15, 10, 5, 2.5, 1.25]
         self.didSeeWelcome = defaults.bool(forKey: Key.didSeeWelcome)
         self.didLinkCatalog = defaults.bool(forKey: Key.didLinkCatalog)
+        self.didFreezeGlyphs = defaults.bool(forKey: Key.didFreezeGlyphs)
         self.tutorialDone = defaults.bool(forKey: Key.tutorialDone)
         self.weeklyGoal = defaults.integer(forKey: Key.weeklyGoal)
     }

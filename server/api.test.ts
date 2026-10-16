@@ -384,3 +384,17 @@ test('catalogo: all\'avvio gli esercizi senza id si collegano per nome, una volt
   // quella del catalogo non si tocca; le altre come le deduceva il nome, o come scelte a mano
   assert.deepEqual(live.map((d) => d.glyph ?? ''), ['', 'seatedPush', 'legPress', 'kettlebell'])
 })
+
+test('icone: un database già collegato da una 3.0 di prima le fissa una volta (versione 2)', async () => {
+  const u = app.store.upsertUser('mig2', 'mig2@x.it', 'mig2', 'mig2')
+  const put = (uuid: string, name: string, catalog: string, glyph: string) =>
+    app.store.db.prepare("INSERT INTO docs (user_id, kind, uuid, data, m, rev, deleted) VALUES (?, 'exercise', ?, ?, 1, 1, 0)").run(u.id, uuid, JSON.stringify({ ...exDoc(name), catalog, glyph }))
+  put(U(90), 'Calf Machine', '', '')
+  put(U(91), 'Lat Machine', 'lat-pulldown', '')
+  put(U(92), 'Scelta a mano', '', 'kettlebell')
+  app.store.db.exec('PRAGMA user_version = 1')
+  assert.ok(app.store.migrateCatalog() >= 1)
+  assert.equal(app.store.migrateCatalog(), 0)
+  const glyphs = app.store.live(u.id).map((d) => (d.data as { glyph: string }).glyph)
+  assert.deepEqual(glyphs, ['calfPlatform', '', 'kettlebell'])
+})

@@ -1,7 +1,7 @@
 # Peak 3.0 — stato al 15 ottobre 2026 (leggere per primo)
 
 Il piano è `~/.claude/plans/semplifica-l-app-implementiamo-una-goofy-coral.md`. **Tutto è su `main`, niente è pubblicato**: web, server e iPhone
-compilano e i test passano (`npm test`: 93; iPhone: `build-for-testing` per dispositivo, i test Swift non sono mai stati eseguiti).
+compilano e i test passano (`npm test`: 94; iPhone: `build-for-testing` per dispositivo, i test Swift non sono mai stati eseguiti).
 
 | Pezzo | Dove |
 |---|---|
@@ -11,7 +11,7 @@ compilano e i test passano (`npm test`: 93; iPhone: `build-for-testing` per disp
 | **Nuova navigazione** a 6 schede: Home, Allenamento, Progressi, Macchinari, Amici, Impostazioni | `web/src/App.svelte`, `Peak/Features/Root/RootView.swift` |
 | **Home**: montagna con frasi a rotazione, barra dell'obiettivo, attività, grafici, medaglie | `web/src/pages/Home.svelte`, `Peak/Features/Home/`, `common/medals.ts` |
 | **Obiettivo settimanale** scelto all'apertura (schermata a tutto schermo) e **tutorial** sulle schermate vere; impostazioni `weeklyGoal` e `tutorialDone` sincronizzate | `GoalPicker.svelte`, `Tour.svelte`, `GoalPickerView.swift`, `TourOverlay.swift` |
-| **Icone per attrezzo** (16 ott): 26 pittogrammi nuovi (48 in tutto), ogni voce del catalogo riassegnata a mano; un collegato mostra sempre l'attrezzo del catalogo, un personalizzato nessuna immagine finché non la scegli; i personalizzati di prima tengono l'icona dedotta dal nome (fissata una volta da `migrateCatalog`, `linkCatalogOnce` e dall'import di backup vecchi). Calcolatore dischi anche per hip thrust, EZ, trap bar e ogni «plate loaded» | `common/glyph.ts` (fonte), `scripts/gen-glyphs.ts` → `Peak/Design/MachineGlyphShapes.swift` (test di parità in `npm test`) |
+| **Icone per attrezzo** (16 ott): 26 pittogrammi nuovi (48 in tutto), ogni voce del catalogo riassegnata a mano; un collegato mostra sempre l'attrezzo del catalogo, un personalizzato nessuna immagine finché non la scegli; i personalizzati di prima tengono l'icona dedotta dal nome (fissata una volta: sul server `migrateCatalog` con `user_version` 2, sull'iPhone `freezeGlyphsOnce`, e all'import di backup vecchi). Calcolatore dischi anche per hip thrust, EZ, trap bar e ogni «plate loaded» | `common/glyph.ts` (fonte), `scripts/gen-glyphs.ts` → `Peak/Design/MachineGlyphShapes.swift` (test di parità in `npm test`) |
 
 Da sapere:
 - Un client vecchio (AltStore 2.1) che non manda `catalog`/`hidden` non li cancella (`KEEP_IF_ABSENT`, `server/store.ts`); le impostazioni tolte restano accettate e ignorate (`LEGACY_SETTINGS`).

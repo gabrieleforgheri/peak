@@ -26,6 +26,7 @@ struct RootView: View {
         .task {
             runAutoBackup()
             linkCatalogOnce()
+            freezeGlyphsOnce()
             await SyncService.shared.syncNow()
             await Catalog.refresh()
         }
@@ -78,18 +79,26 @@ struct RootView: View {
         }
     }
 
-    /// Gli esercizi che c'erano prima del catalogo si collegano per nome, una volta sola; gli altri restano personalizzati
-    /// e tengono l'icona che vedevano, dedotta dal nome (da ora in poi un'icona vuota resta vuota). Come `migrateCatalog` sul server.
+    /// Gli esercizi che c'erano prima del catalogo si collegano per nome, una volta sola; gli altri restano personalizzati.
     private func linkCatalogOnce() {
         guard !settings.didLinkCatalog, !AppStore.isFallback else { return }
         for exercise in (try? context.fetch(FetchDescriptor<Exercise>())) ?? [] where exercise.catalogID.isEmpty {
             exercise.catalogID = Catalog.match(name: exercise.name)?.id ?? ""
-            if exercise.catalogID.isEmpty, !exercise.hasCustomGlyph {
-                exercise.glyphRaw = MachineGlyph.suggested(for: exercise.name, group: exercise.muscleGroup).rawValue
-            }
         }
         try? context.save()
         settings.didLinkCatalog = true
+    }
+
+    /// Prima un'icona vuota voleva dire «dedotta dal nome», ora vuol dire «nessuna»: i personalizzati che c'erano tengono,
+    /// fissata una volta, l'icona che vedevano. Separato da `linkCatalogOnce`, che sui telefoni già in 3.0 è passato senza.
+    /// Come `migrateCatalog` sul server.
+    private func freezeGlyphsOnce() {
+        guard !settings.didFreezeGlyphs, !AppStore.isFallback else { return }
+        for exercise in (try? context.fetch(FetchDescriptor<Exercise>())) ?? [] where exercise.catalogID.isEmpty && !exercise.hasCustomGlyph {
+            exercise.glyphRaw = MachineGlyph.suggested(for: exercise.name, group: exercise.muscleGroup).rawValue
+        }
+        try? context.save()
+        settings.didFreezeGlyphs = true
     }
 
     private func runAutoBackup() {

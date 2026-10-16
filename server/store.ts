@@ -66,7 +66,8 @@ export function openStore(dataDir: string) {
   db.exec('PRAGMA busy_timeout = 5000')
   db.exec('PRAGMA foreign_keys = ON')
   db.exec(SCHEMA)
-  db.exec('PRAGMA user_version = 1')
+  const version = () => Number((db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version)
+  if (version() < 1) db.exec('PRAGMA user_version = 1')
 
   let rev = Number((db.prepare('SELECT COALESCE(MAX(rev), 0) AS r FROM docs').get() as { r: number }).r)
 
@@ -309,7 +310,20 @@ export function openStore(dataDir: string) {
           write(r.user_id, 'exercise', r.uuid, data, Math.max(Number(r.m) + 1, now), false)
         }
       })
-      return rows.length
+      // una volta per database (versione 2): prima un'icona vuota voleva dire «dedotta dal nome», ora «nessuna». Fissa anche
+      // quelle degli esercizi collegati da una 3.0 di prima, che il giro sopra non rivede.
+      if (version() >= 2) return rows.length
+      const blank = db.prepare("SELECT user_id, uuid, data, m FROM docs WHERE kind = 'exercise' AND deleted = 0 AND json_extract(data, '$.catalog') = '' AND COALESCE(json_extract(data, '$.glyph'), '') = ''").all() as
+        { user_id: number; uuid: string; data: string; m: number }[]
+      tx(() => {
+        for (const r of blank) {
+          const data = JSON.parse(r.data) as Record<string, unknown>
+          data.glyph = suggestedGlyph(String(data.name), data.muscleGroup as MuscleGroup)
+          write(r.user_id, 'exercise', r.uuid, data, Math.max(Number(r.m) + 1, now), false)
+        }
+        db.exec('PRAGMA user_version = 2')
+      })
+      return rows.length + blank.length
     },
 
     live(userId: number): LiveDoc[] {
