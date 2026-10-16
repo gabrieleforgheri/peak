@@ -9,3 +9,7 @@ data/
 .env
 node_modules/
 /package-lock.json
+
+# clip della pagina yrb4g.com/studio/peak: i render si rifanno, non si tengono
+studio-clips/renders/
+studio-clips/.hyperframes/

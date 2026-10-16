@@ -1,0 +1,69 @@
+<!doctype html>
+<!-- Clip di apertura della pagina yrb4g.com/studio/peak: la montagna della Home che sale, l'icona e il nome.
+     Nessuna parola da tradurre. Gira in loop sulla pagina: parte e finisce sul fondo vuoto. -->
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=780, height=1688" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@900&display=swap" rel="stylesheet" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 780px; height: 1688px; overflow: hidden; background: #0b0d14; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #0b0d14; font-family: "Nunito", sans-serif; }
+      #bg {
+        position: absolute; inset: 0;
+        background-image:
+          radial-gradient(ellipse 760px 760px at 14% 6%, rgba(184, 240, 77, 0.26), transparent 62%),
+          radial-gradient(ellipse 700px 700px at 98% 12%, rgba(74, 91, 255, 0.2), transparent 62%);
+      }
+      #scene { position: absolute; inset: 0; }
+      #mount { position: absolute; left: 0; bottom: 0; width: 780px; height: 900px; }
+      #mount path { transform-box: fill-box; }
+      #brand { position: absolute; left: 0; right: 0; top: 330px; display: flex; flex-direction: column; align-items: center; gap: 34px; }
+      #icon { width: 220px; height: 220px; border-radius: 50px; box-shadow: 0 0 120px rgba(184, 240, 77, 0.34); }
+      #word { font-weight: 900; font-size: 168px; letter-spacing: -0.045em; line-height: 1; color: rgba(255, 255, 255, 0.95); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="intro" data-start="0" data-duration="6" data-width="780" data-height="1688">
+      <div id="bg"></div>
+      <section id="scene" class="clip" data-start="0" data-duration="6">
+        <!-- Le forme di web/src/components/SummitHero.svelte, ingrandite. -->
+        <svg id="mount" viewBox="0 0 360 220" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">
+          <defs>
+            <linearGradient id="ridge" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="rgb(184,240,77)" stop-opacity=".42" />
+              <stop offset="1" stop-color="rgb(184,240,77)" stop-opacity=".04" />
+            </linearGradient>
+          </defs>
+          <path id="back" d="M0 150 L40 122 L84 140 L132 92 L182 128 L232 72 L292 122 L332 96 L360 114 V220 H0Z" fill="rgba(255,255,255,.05)" />
+          <path id="front" d="M0 182 L58 146 L112 164 L168 110 L214 142 L262 48 L304 104 L338 84 L360 96 V220 H0Z" fill="url(#ridge)" />
+          <path id="snow" d="M262 48 L246 78 L256 72 L262 82 L270 72 L282 80 Z" fill="rgba(255,255,255,.85)" />
+          <path id="shade" d="M0 220 V184 L70 170 L132 188 L202 160 L262 180 L330 164 L360 176 V220Z" fill="rgba(0,0,0,.38)" />
+          <path id="flag" d="M262 48 V26 L282 33 L262 40" fill="rgb(184,240,77)" stroke="rgb(184,240,77)" stroke-width="1.5" stroke-linejoin="round" />
+        </svg>
+        <div id="brand">
+          <img id="icon" src="assets/icon.png" alt="" />
+          <div id="word">Peak</div>
+        </div>
+      </section>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#bg", { opacity: 0 }, { opacity: 1, duration: 0.9, ease: "none" }, 0);
+      tl.fromTo("#back", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1.1, ease: "power3.out" }, 0.2);
+      tl.fromTo("#front", { y: 60, opacity: 0 }, { y: 0, opacity: 1, duration: 1.1, ease: "power3.out" }, 0.45);
+      tl.fromTo("#shade", { opacity: 0 }, { opacity: 1, duration: 0.8, ease: "power1.out" }, 0.6);
+      tl.fromTo("#snow", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.out" }, 1.15);
+      tl.fromTo("#flag", { scaleY: 0, transformOrigin: "0% 100%" }, { scaleY: 1, duration: 0.5, ease: "back.out(2)" }, 1.4);
+      tl.fromTo("#icon", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.6)" }, 1.7);
+      tl.fromTo("#word", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 2.05);
+      // Ritorno al fondo vuoto: la pagina la fa ripartire da capo senza salto.
+      tl.to("#scene", { opacity: 0, duration: 0.7, ease: "power1.in" }, 5.0);
+      tl.to("#bg", { opacity: 0, duration: 0.7, ease: "power1.in" }, 5.1);
+      window.__timelines["intro"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

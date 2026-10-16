@@ -1,0 +1,117 @@
+<!doctype html>
+<!-- Clip «record» della pagina yrb4g.com/studio/peak: tre serie di leg press, la terza sale di un passo e scatta
+     il badge, come in AddSetSheet. Lingua con la variabile `lang` (render con --variables '{"lang":"en"}'). -->
+<html
+  lang="it"
+  data-composition-variables='[{"id":"lang","type":"enum","label":"Lingua","default":"it","options":[{"value":"it","label":"Italiano"},{"value":"en","label":"English"}]}]'
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=780, height=1688" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 780px; height: 1688px; overflow: hidden; background: #0b0d14; }
+      :root {
+        --card: rgba(255, 255, 255, 0.055); --stroke: rgba(255, 255, 255, 0.1); --stroke-strong: rgba(255, 255, 255, 0.18);
+        --text: rgba(255, 255, 255, 0.95); --text-2: rgba(255, 255, 255, 0.58); --text-3: rgba(255, 255, 255, 0.35);
+        --lime: rgb(184, 240, 77); --legs: rgb(140, 217, 107);
+      }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #0b0d14; font-family: "Nunito", sans-serif; color: var(--text); }
+      #bg {
+        position: absolute; inset: 0;
+        background-image:
+          radial-gradient(ellipse 760px 760px at 14% 4%, rgba(184, 240, 77, 0.2), transparent 62%),
+          radial-gradient(ellipse 700px 700px at 98% 10%, rgba(74, 91, 255, 0.16), transparent 62%);
+      }
+      #scene { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 44px; }
+      .card {
+        background: var(--card); border: 2px solid var(--stroke); border-top-color: var(--stroke-strong);
+        border-radius: 40px; padding: 36px; box-shadow: 0 20px 36px rgba(0, 0, 0, 0.35);
+      }
+      #glow { position: absolute; inset: -2px; border-radius: 40px; box-shadow: 0 0 0 3px rgba(184, 240, 77, 0.55), 0 0 140px rgba(184, 240, 77, 0.22); opacity: 0; }
+      .head { display: flex; align-items: center; gap: 28px; }
+      .tile { width: 112px; height: 112px; border-radius: 30px; display: grid; place-items: center; background: rgba(140, 217, 107, 0.16); color: var(--legs); flex: none; }
+      .tile svg { width: 74px; height: 74px; }
+      .name { font-weight: 900; font-size: 50px; letter-spacing: -0.01em; }
+      .sub { font-weight: 800; font-size: 31px; color: var(--text-2); margin-top: 4px; font-variant-numeric: tabular-nums; }
+      .rows { margin-top: 30px; display: flex; flex-direction: column; gap: 6px; }
+      .row { display: flex; align-items: center; gap: 24px; white-space: nowrap; padding: 22px 6px; font-variant-numeric: tabular-nums; }
+      .row + .row { border-top: 2px solid var(--stroke); }
+      .n { width: 30px; font-weight: 800; font-size: 34px; color: var(--text-3); }
+      .w { font-weight: 900; font-size: 54px; }
+      .w i { font-style: normal; font-size: 34px; color: var(--text-2); margin-left: 6px; }
+      #r3 .w { color: var(--lime); }
+      #badge {
+        margin-left: auto; padding: 10px 20px; border-radius: 999px; background: var(--lime); color: #0b0d14;
+        font-weight: 900; font-size: 22px; letter-spacing: 0.08em; white-space: nowrap;
+      }
+      #pos { position: relative; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="record" data-start="0" data-duration="6.5" data-width="780" data-height="1688">
+      <div id="bg"></div>
+      <section id="scene" class="clip" data-start="0" data-duration="6.5">
+        <div id="pos">
+          <div class="card" id="card">
+            <div id="glow"></div>
+            <div class="head">
+              <div class="tile">
+                <svg viewBox="0 0 1 1" aria-hidden="true"><line x1="0.2" y1="0.78" x2="0.72" y2="0.34" stroke="currentColor" stroke-width="0.1" stroke-linecap="round"/><line x1="0.64" y1="0.2" x2="0.86" y2="0.44" stroke="currentColor" stroke-width="0.1" stroke-linecap="round"/><rect x="0.1" y="0.62" width="0.22" height="0.08" rx="0.028" fill="currentColor"/><circle cx="0.48" cy="0.58" r="0.09" fill="none" stroke="currentColor" stroke-width="0.055"/><line x1="0.08" y1="0.88" x2="0.92" y2="0.88" stroke="currentColor" stroke-width="0.055" stroke-linecap="round"/></svg>
+              </div>
+              <div>
+                <div class="name" id="name">Leg Press 45°</div>
+                <div class="sub">max <span id="max">170</span> kg × 10</div>
+              </div>
+            </div>
+            <div class="rows">
+              <div class="row" id="r1"><span class="n">1</span><span class="w">170<i>kg</i> × 10</span></div>
+              <div class="row" id="r2"><span class="n">2</span><span class="w">170<i>kg</i> × 10</span></div>
+              <div class="row" id="r3"><span class="n">3</span><span class="w"><span id="count">170</span><i>kg</i> × 10</span><span id="badge">NUOVO RECORD</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <script>
+      const { lang } = window.__hyperframes.getVariables();
+      if (lang === "en") {
+        document.documentElement.lang = "en";
+        document.getElementById("name").textContent = "45° Leg Press";
+        document.getElementById("badge").textContent = "NEW RECORD";
+      }
+      const tl = gsap.timeline({ paused: true });
+      const rise = (sel, at, d = 0.5) => tl.fromTo(sel, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: d, ease: "power2.out" }, at);
+      tl.fromTo("#bg", { opacity: 0 }, { opacity: 1, duration: 0.7, ease: "none" }, 0);
+      rise("#card", 0.15, 0.6);
+      rise("#r1", 0.75);
+      rise("#r2", 1.25);
+      rise("#r3", 1.85);
+      // Il peso della terza serie sale di un passo: 170 → 175.
+      const c = { v: 170 };
+      const count = document.getElementById("count");
+      const max = document.getElementById("max");
+      tl.fromTo(c, { v: 170 }, {
+        v: 175, duration: 0.7, ease: "power1.inOut",
+        onUpdate: () => { count.textContent = String(Math.round(c.v)); },
+        onReverseComplete: () => { count.textContent = "170"; },
+      }, 2.15);
+      tl.fromTo("#badge", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2.2)" }, 2.9);
+      tl.fromTo("#glow", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power1.out" }, 2.9);
+      const m = { v: 170 };
+      tl.fromTo(m, { v: 170 }, {
+        v: 175, duration: 0.3, ease: "none",
+        onUpdate: () => { max.textContent = String(Math.round(m.v)); },
+        onReverseComplete: () => { max.textContent = "170"; },
+      }, 3.1);
+      tl.fromTo(".sub", { color: "rgba(255,255,255,0.58)" }, { color: "rgb(184,240,77)", duration: 0.3, ease: "power1.out" }, 3.1);
+      // Ritorno al fondo vuoto per il loop.
+      tl.to("#scene", { opacity: 0, duration: 0.6, ease: "power1.in" }, 5.6);
+      tl.to("#bg", { opacity: 0, duration: 0.6, ease: "power1.in" }, 5.7);
+      window.__timelines["record"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
