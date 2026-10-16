@@ -1,16 +1,17 @@
 // Le schermate della pagina di presentazione (yrb4g.com/studio/peak, repo yG): un Peak di prova con otto settimane
-// di allenamenti, tre schede e due amici, fotografato a 390×844 (×3) in italiano e in inglese.
+// di allenamenti, tre schede e due amici, fotografato a 390×844 (×2) in italiano e in inglese: la schermata, la
+// pagina intera piena e vuota (senza i grafici) e un JSON con dove stanno i pezzi che le clip fanno comparire.
 // La pagina mostra sempre l'ultima versione dell'app: a ogni rilascio si rilancia e si copiano i file in yG.
 // Uso: npm i --no-save playwright-core   (una volta; usa il Chrome di sistema)
-//      node scripts/studio-shots.ts <cartellaUscita>
-import { mkdtempSync, mkdirSync } from 'node:fs'
+//      node scripts/studio-shots.ts            (scrive in studio-clips/shots/, poi: node studio-clips/schermate.ts)
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createApp } from '../server/index.ts'
 import { isoSec } from '../common/docs.ts'
 import type { WireDoc } from '../server/store.ts'
 
-const out = process.argv[2] ?? 'studio-shots'
+const out = process.argv[2] ?? 'studio-clips/shots'
 mkdirSync(out, { recursive: true })
 process.env.TZ = 'Europe/Rome'
 const { server, store } = createApp({ dataDir: mkdtempSync(join(tmpdir(), 'peak-shots-')), env: {} })
@@ -106,20 +107,87 @@ await new Promise<void>((ok) => server.listen(0, '127.0.0.1', ok))
 const base = `http://127.0.0.1:${(server.address() as { port: number }).port}`
 const { chromium } = await import('playwright-core')
 const browser = await chromium.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' })
-const shots: [string, string][] = [
-  ['home', '#/home'], ['sessione', `#/allenamento/${live}`], ['schede', '#/allenamento'],
-  ['esercizio', `#/macchinari/${legPress}`], ['progressi', '#/progressi'], ['amici', '#/amici'],
+// La coreografia delle clip (studio-clips/schermate.ts): per ogni schermata cosa compare, da dove e quando (secondi).
+// up = cresce dal basso, right = si riempie da sinistra, pop = salta fuori, fade = sale e appare.
+// `scroll` porta l'elemento a `offset` px dal bordo alto; `callouts` cerchia l'elemento e ci punta una freccia.
+type Beat = { sel: string; kind: 'up' | 'right' | 'pop' | 'fade'; at: number; step?: number; dur?: number }
+type Spec = { name: string; hash: string; beats: Beat[]; scroll?: { sel: string; at: number; dur: number; offset?: number }[]; callouts?: { sel: string; at: number }[] }
+const shots: Spec[] = [
+  { name: 'home', hash: '#/home', beats: [
+    { sel: '.peak .mount', kind: 'up', at: 0.3, dur: 0.9 },
+    { sel: '.peak .segs i.on', kind: 'right', at: 1.0, step: 0.22, dur: 0.3 },
+    { sel: '.stats .stat', kind: 'pop', at: 1.5, step: 0.12, dur: 0.45 },
+    { sel: '.grid .col', kind: 'up', at: 2.1, step: 0.05, dur: 0.3 },
+    { sel: 'main .bars > div', kind: 'up', at: 4.3, step: 0.06, dur: 0.45 },
+    { sel: '.donut', kind: 'pop', at: 5.2, dur: 0.6 },
+  ], scroll: [{ sel: 'main .bars', at: 3.2, dur: 1.0, offset: 260 }], callouts: [{ sel: '.stat.flame', at: 2.0 }] },
+  { name: 'schede', hash: '#/allenamento', beats: [
+    { sel: '.card.list .item', kind: 'fade', at: 0.4, step: 0.15, dur: 0.45 },
+    { sel: 'main .stack > .card', kind: 'fade', at: 1.0, step: 0.15, dur: 0.45 },
+  ], callouts: [{ sel: '.card.list .item', at: 1.8 }] },
+  { name: 'sessione', hash: `#/allenamento/${live}`, beats: [
+    { sel: 'main .list .item', kind: 'fade', at: 0.4, step: 0.2, dur: 0.4 },
+    { sel: 'main .badge.pos', kind: 'pop', at: 1.4, step: 0.15, dur: 0.45 },
+  ], scroll: [{ sel: 'main .card:nth-of-type(3)', at: 3.0, dur: 1.0, offset: 120 }], callouts: [{ sel: 'main .badge.pos', at: 1.7 }] },
+  { name: 'esercizio', hash: `#/macchinari/${legPress}`, beats: [
+    { sel: 'main .big.num', kind: 'fade', at: 0.3, dur: 0.5 },
+    { sel: 'main .badge.pos', kind: 'pop', at: 0.7, dur: 0.45 },
+    { sel: 'main .card .stack > button', kind: 'right', at: 1.3, step: 0.18, dur: 0.5 },
+    { sel: 'svg.chart', kind: 'right', at: 3.8, dur: 1.4 },
+  ], scroll: [{ sel: 'svg.chart', at: 2.6, dur: 1.1, offset: 320 }], callouts: [{ sel: 'main .badge.pos', at: 1.0 }] },
+  { name: 'progressi', hash: '#/progressi', beats: [
+    { sel: '.tiles .tile', kind: 'pop', at: 0.3, step: 0.12, dur: 0.45 },
+    { sel: 'svg.chart', kind: 'right', at: 0.9, dur: 1.2 },
+    { sel: 'main .bars > div', kind: 'up', at: 3.0, step: 0.08, dur: 0.45 },
+    { sel: 'main .hbar > div', kind: 'right', at: 5.2, step: 0.15, dur: 0.5 },
+    { sel: 'main .card.list .badge', kind: 'pop', at: 6.0, step: 0.12, dur: 0.4 },
+  ], scroll: [{ sel: 'main .bars', at: 2.0, dur: 1.0, offset: 200 }, { sel: 'main .hbar', at: 4.2, dur: 1.0, offset: 240 }],
+  callouts: [{ sel: '.tiles .tile:nth-child(4)', at: 1.2 }] },
+  { name: 'amici', hash: '#/amici', beats: [
+    { sel: '.podium .ped', kind: 'up', at: 0.4, step: 0.25, dur: 0.6 },
+    { sel: '.podium .who', kind: 'pop', at: 0.8, step: 0.25, dur: 0.45 },
+    { sel: 'main .card.list .hbar > div', kind: 'right', at: 3.3, step: 0.18, dur: 0.5 },
+  ], scroll: [{ sel: 'main .card.list', at: 2.3, dur: 1.0, offset: 300 }], callouts: [{ sel: '.podium .you', at: 1.6 }] },
 ]
+const hide = (sels: string[]) => `${sels.join(',')}{visibility:hidden!important}`
 for (const lang of ['it', 'en']) {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, locale: lang === 'it' ? 'it-IT' : 'en-GB', timezoneId: 'Europe/Rome' })
+  // movimento ridotto: la frase della Home non cambia fra una foto e l'altra
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: lang === 'it' ? 'it-IT' : 'en-GB', timezoneId: 'Europe/Rome', reducedMotion: 'reduce' })
   await ctx.addCookies([{ name: 'peak', value: cookie, url: base }])
-  const page = await ctx.newPage()
-  for (const [name, hash] of shots) {
-    await page.goto(`${base}/${hash}`)
+  for (const spec of shots) {
+    // una pagina nuova per schermata: i percorsi sono a hash, e gli stili iniettati resterebbero
+    const page = await ctx.newPage()
+    const file = (suffix: string) => join(out, `${spec.name}-${lang}${suffix}`)
+    await page.goto(`${base}/${spec.hash}`)
     await page.waitForLoadState('networkidle')
     await page.waitForTimeout(1200)
-    await page.screenshot({ path: join(out, `${name}-${lang}.png`) })
-    console.log(`${name}-${lang}.png`)
+    await page.screenshot({ path: file('.png') })
+    const data = await page.evaluate((spec) => {
+      const r = (e: Element) => { const b = e.getBoundingClientRect(); return [b.x, b.y + scrollY, b.width, b.height].map((v) => Math.round(v * 10) / 10) }
+      const all = (s: string) => [...document.querySelectorAll(s)].filter((e) => e.getBoundingClientRect().width > 0)
+      const tab = document.querySelector('.tabbar')
+      return {
+        height: document.documentElement.scrollHeight, tab: tab ? r(tab) : null,
+        beats: spec.beats.map((b) => ({ ...b, rects: all(b.sel).map(r) })),
+        scroll: (spec.scroll ?? []).map((s) => ({ ...s, y: all(s.sel)[0] ? r(all(s.sel)[0]!)[1]! - (s.offset ?? 100) : 0 })),
+        callouts: (spec.callouts ?? []).map((c) => ({ ...c, rect: all(c.sel)[0] ? r(all(c.sel)[0]!) : null })),
+      }
+    }, spec)
+    for (const b of data.beats) if (!b.rects.length) console.warn(`  ${spec.name}-${lang}: nessun elemento per ${b.sel}`)
+    // la barra delle schede da sola: è semitrasparente, e nella clip la pagina sotto scorre
+    if (data.tab) {
+      const vuota = await page.addStyleTag({ content: 'main{visibility:hidden!important}' })
+      const [x, y, width, height] = data.tab
+      await page.screenshot({ path: file('-tab.png'), clip: { x: x!, y: y!, width: width!, height: height! } })
+      await vuota.evaluate((e) => e.remove())
+    }
+    await page.addStyleTag({ content: '.tabbar{display:none!important}' })
+    await page.screenshot({ path: file('-full.png'), fullPage: true })
+    await page.addStyleTag({ content: hide(spec.beats.map((b) => b.sel)) })
+    await page.screenshot({ path: file('-empty.png'), fullPage: true })
+    writeFileSync(file('.json'), JSON.stringify(data))
+    console.log(`${spec.name}-${lang}`, data.beats.map((b) => b.rects.length).join('/'), `h=${data.height}`)
+    await page.close()
   }
   await ctx.close()
 }
