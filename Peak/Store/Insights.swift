@@ -34,8 +34,10 @@ final class Insights {
         self.container = container
         self.settings = settings
         if observer == nil {
-            observer = NotificationCenter.default.addObserver(forName: ModelContext.didSave, object: nil, queue: .main) { _ in
-                Task { @MainActor in Insights.shared.schedule() }
+            observer = NotificationCenter.default.addObserver(forName: ModelContext.didSave, object: nil, queue: .main) { note in
+                // dopo una cancellazione subito: le liste qui non devono tenere oggetti che non ci sono più
+                let deleted = (note.userInfo?[ModelContext.NotificationKey.deletedIdentifiers.rawValue] as? [PersistentIdentifier])?.isEmpty == false
+                Task { @MainActor in deleted ? Insights.shared.refresh() : Insights.shared.schedule() }
             }
         }
         refresh()
