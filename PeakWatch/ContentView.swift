@@ -26,42 +26,23 @@ private struct ExerciseView: View {
 
     var body: some View {
         @Bindable var model = model
-        ScrollView {
-            VStack(spacing: 8) {
-                Text(exercise.name)
-                    .font(.headline)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
+        // una sola schermata, senza scorrere: peso, ripetizioni, riscaldamento e salva
+        VStack(spacing: 6) {
+            stepper(model.displayWeight(model.weight), size: 22,
+                    minus: { model.weightSteps = max(model.weightSteps - 1, model.weightStepRange.lowerBound) },
+                    plus: { model.weightSteps = min(model.weightSteps + 1, model.weightStepRange.upperBound) })
+            stepper("\(model.reps)", size: 34,
+                    minus: { if model.reps > 0 { model.reps -= 1 } },
+                    plus: { model.reps += 1 })
 
-                if let target = exercise.target {
-                    Text(target)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
+            Toggle("Riscaldamento", isOn: $model.isWarmup)
+                .font(.footnote)
 
-                stepper(model.displayWeight(model.weight), size: 22,
-                        minus: { model.weightSteps = max(model.weightSteps - 1, model.weightStepRange.lowerBound) },
-                        plus: { model.weightSteps = min(model.weightSteps + 1, model.weightStepRange.upperBound) })
-                stepper("\(model.reps)", size: 40,
-                        minus: { if model.reps > 0 { model.reps -= 1 } },
-                        plus: { model.reps += 1 })
-
-                Toggle("Riscaldamento", isOn: $model.isWarmup)
-                    .font(.footnote)
-
-                Button("Registra") { model.send() }
-                    .tint(.green)
-                    .disabled(model.reps == 0)
-
-                if let last = model.lastSent {
-                    Text("Registrata: \(model.displayWeight(last.weight)) × \(last.reps)")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            Button("Salva") { model.send() }
+                .tint(.green)
+                .disabled(model.reps == 0)
         }
-        .navigationTitle("Peak")
+        .padding(.horizontal, 4)
     }
 
     /// Valore al centro, − e + ai lati.
@@ -76,5 +57,6 @@ private struct ExerciseView: View {
             Button(action: plus) { Image(systemName: "plus") }
         }
         .buttonStyle(.bordered)
+        .controlSize(.small)
     }
 }
