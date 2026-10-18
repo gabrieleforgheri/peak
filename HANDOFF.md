@@ -1,6 +1,6 @@
 # Frasi motivazionali ampliate e rotazione a 7s (18 ottobre 2026, sera — su `main`, PR #1 mergiata)
 
-Unite su `main` tramite PR #1. Aggiunte 16 nuove frasi motivazionali (32 totali) con traduzioni complete in italiano e inglese e virgola singola per l'a capo armonioso sia su web che su iOS. Intervallo di rotazione accelerato a 7 secondi (prima 10s). Ambiente locale verificato con Google Chrome su account `dev` con dati di test realistici (8 settimane di allenamenti, medaglie e record).
+Unite su `main` tramite PR #1. Aggiunte 16 nuove frasi motivazionali (32 totali) con traduzioni complete in italiano e inglese e virgola singola per l'a capo armonioso sia su web che su iOS. Intervallo di rotazione accelerato a 7 secondi (prima 10s). Ambiente locale verificato con Google Chrome su account `dev` con dati di test realistici (8 settimane di allenamenti, medaglie e record). **Installato con successo su iPhone e Apple Watch via wireless** (`scripts/install_device.sh`).
 
 | Fatto | Dove |
 |---|---|
@@ -9,6 +9,7 @@ Unite su `main` tramite PR #1. Aggiunte 16 nuove frasi motivazionali (32 totali)
 | Login rapido locale `/auth/dev` (attivo solo se OIDC non è configurato) che rilascia il cookie di sessione per l'utente dev | `server/auth.ts` |
 | Script per popolare l'account dev locale con 8 settimane di allenamenti, macchinari dal catalogo, schede e amici | `scripts/seed-dev.ts` |
 | Verifiche: `npm test` (102/102 verdi), `svelte-check` (0 errori/avvisi), `check-i18n` (0 mancanti), `vite build` | Eseguite in locale |
+| Installazione su dispositivi fisici: iPhone e Watch aggiornati via wireless | `scripts/install_device.sh` |
 
 ---
 
