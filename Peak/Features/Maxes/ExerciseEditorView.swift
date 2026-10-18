@@ -76,7 +76,7 @@ struct ExerciseEditorView: View {
                                         .font(Theme.rounded(13, .medium))
                                         .foregroundStyle(Theme.textTertiary)
                                 } else {
-                                    Text(linkedEntry?.it ?? catalogID)
+                                    Text(verbatim: linkedEntry?.name ?? catalogID)
                                         .font(Theme.rounded(15, .semibold))
                                 }
                                 Spacer()
@@ -277,7 +277,7 @@ struct ExerciseEditorView: View {
         catalogID = entry?.id ?? ""
         if entry == nil, mode == .new { isCustom = true; if let picked { group = picked } }
         guard let entry, mode == .new else { return }
-        name = entry.it
+        name = entry.name
         group = entry.muscleGroup
         step = entry.step
         notes = entry.notes

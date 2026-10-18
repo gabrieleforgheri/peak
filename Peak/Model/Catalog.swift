@@ -32,6 +32,10 @@ struct CatalogEntry: Codable, Identifiable, Hashable {
         view = try c.decodeIfPresent(String.self, forKey: .view) ?? ""
     }
 
+    /// Il nome nella lingua dell'app, e l'altro (serve a riconoscere la voce).
+    var name: String { Lang.isItalian ? it : en }
+    var otherName: String { Lang.isItalian ? en : it }
+
     var muscleGroup: MuscleGroup { MuscleGroup(rawValue: group) ?? .petto }
     var machineGlyph: MachineGlyph { MachineGlyph(rawValue: glyph) ?? MachineGlyph.suggested(for: it, group: muscleGroup) }
 }

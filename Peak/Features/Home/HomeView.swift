@@ -184,7 +184,7 @@ struct NewsRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 1) {
-                Text("@\(event.username) · \(Catalog.entry(id: event.catalog)?.it ?? event.name)").font(Theme.rounded(14, .bold)).lineLimit(1)
+                Text("@\(event.username) · \(Catalog.entry(id: event.catalog)?.name ?? event.name)").font(Theme.rounded(14, .bold)).lineLimit(1)
                 Text(Fmt.relativeDay(event.date)).font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
             }
             Spacer()

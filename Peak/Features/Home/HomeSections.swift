@@ -107,7 +107,10 @@ struct HomeHero: View {
                     .tracking(-0.8)
                     .lineSpacing(-2)
                     .shadow(color: settings.accentColor.opacity(0.45), radius: 14)
-                    .frame(maxWidth: 230, alignment: .leading)
+                    // mai troncata: va a capo quanto serve e lascia libera la vetta a destra
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.trailing, 100)
                     .frame(minHeight: 96, alignment: .topLeading)
                     .padding(.top, 22)
                     .transition(.opacity.combined(with: .offset(y: 10)))
@@ -124,7 +127,7 @@ struct HomeHero: View {
             }
             .padding(18)
         }
-        .frame(height: 320)
+        .frame(minHeight: 320)
         .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(settings.accentColor.opacity(0.3), lineWidth: 1))
         .task(id: reduceMotion) {
             guard !reduceMotion else { return }
@@ -155,8 +158,6 @@ struct HomeHero: View {
                         .shadow(color: k == weekSessions - 1 ? settings.accentColor.opacity(0.7) : .clear, radius: 7)
                 }
             }
-            Text("L'obiettivo è quanti allenamenti ti dai a settimana: tocca la barra per cambiarlo.")
-                .font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textTertiary)
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: onChangeGoal)

@@ -67,10 +67,10 @@ struct CatalogPickerSheet: View {
                                 .fill(entry.muscleGroup.tint)
                                 .frame(width: 10, height: 10)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(entry.it)
+                                Text(verbatim: entry.name)
                                     .font(Theme.rounded(16, .semibold))
                                     .foregroundStyle(Theme.textPrimary)
-                                Text("\(entry.en) · \(entry.muscleGroup.title)")
+                                Text("\(entry.otherName) · \(entry.muscleGroup.title.tr)")
                                     .font(Theme.rounded(12, .medium))
                                     .foregroundStyle(Theme.textTertiary)
                             }

@@ -255,7 +255,7 @@ struct FriendsView: View {
                         HStack(spacing: 8) {
                             ForEach(linkedMine) { e in
                                 Button { pick = e.catalogID } label: {
-                                    Text(Catalog.entry(id: e.catalogID)?.it ?? e.name).font(Theme.rounded(13, .semibold))
+                                    Text(verbatim: Catalog.entry(id: e.catalogID)?.name ?? e.name).font(Theme.rounded(13, .semibold))
                                         .foregroundStyle(current == e.catalogID ? Color.black.opacity(0.85) : Theme.textSecondary)
                                         .padding(.horizontal, 14).padding(.vertical, 8)
                                         .background(Capsule().fill(current == e.catalogID ? settings.accentColor : Theme.card))

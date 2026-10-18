@@ -95,8 +95,8 @@ struct FriendProfileView: View {
         return HStack(spacing: 10) {
             Circle().fill((entry?.muscleGroup ?? .core).tint).frame(width: 10, height: 10)
             VStack(alignment: .leading, spacing: 1) {
-                Text(entry?.it ?? m.name).font(Theme.rounded(15, .bold)).lineLimit(1)
-                Text((entry != nil && entry?.it != m.name ? "\(m.name) · " : "") + Fmt.relativeDay(m.date))
+                Text(verbatim: entry?.name ?? m.name).font(Theme.rounded(15, .bold)).lineLimit(1)
+                Text((entry != nil && entry?.name != m.name ? "\(m.name) · " : "") + Fmt.relativeDay(m.date))
                     .font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary).lineLimit(1)
             }
             Spacer()
@@ -120,7 +120,7 @@ struct FriendProfileView: View {
                 }
                 ForEach(Array(t.rows.enumerated()), id: \.offset) { _, r in
                     HStack {
-                        Text(Catalog.entry(id: r.catalog)?.it ?? r.name).font(Theme.rounded(13, .medium)).lineLimit(1)
+                        Text(verbatim: Catalog.entry(id: r.catalog)?.name ?? r.name).font(Theme.rounded(13, .medium)).lineLimit(1)
                         Spacer()
                         Text(target(r)).font(Theme.rounded(12, .semibold)).foregroundStyle(Theme.textSecondary)
                     }
@@ -147,7 +147,7 @@ struct FriendProfileView: View {
                 : mineExercises.first { $0.catalogID == row.catalog }
             if exercise == nil {
                 let entry = Catalog.entry(id: row.catalog)
-                let created = Exercise(name: entry?.it ?? row.name, muscleGroup: entry?.muscleGroup ?? .petto, incrementStep: entry?.step ?? 2.5, notes: entry?.notes ?? "", sortIndex: nextIndex)
+                let created = Exercise(name: entry?.name ?? row.name, muscleGroup: entry?.muscleGroup ?? .petto, incrementStep: entry?.step ?? 2.5, notes: entry?.notes ?? "", sortIndex: nextIndex)
                 created.catalogID = entry?.id ?? ""
                 created.isCustom = entry == nil
                 context.insert(created)

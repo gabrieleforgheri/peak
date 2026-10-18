@@ -39,8 +39,8 @@ final class RestTimer {
             // Al primo uso chiede il permesso; le volte dopo risponde subito.
             guard (try? await center.requestAuthorization(options: [.alert, .sound])) == true else { return }
             let content = UNMutableNotificationContent()
-            content.title = "Recupero finito"
-            content.body = "Tocca alla prossima serie."
+            content.title = "Recupero finito".tr
+            content.body = "Tocca alla prossima serie.".tr
             content.sound = .default
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
             try? await center.add(UNNotificationRequest(identifier: Self.notificationID, content: content, trigger: trigger))

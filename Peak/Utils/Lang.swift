@@ -8,7 +8,7 @@ import Foundation
 /// per i testi passati come `String` (titoli, righe di elenco) si usa `.tr`.
 enum Lang {
     /// Quella con cui l'app è partita: `.tr` e i `Text` devono andare d'accordo fino alla chiusura.
-    private static let launched: String = {
+    static let launched: String = {
         let saved = UserDefaults.standard.string(forKey: "settings.language") ?? ""
         return code(for: saved)
     }()
@@ -24,16 +24,65 @@ enum Lang {
         else { UserDefaults.standard.removeObject(forKey: "AppleLanguages") }
     }
 
+    static var isItalian: Bool { launched == "it" }
+
     /// La lingua è già quella scelta, o serve riaprire l'app?
     static func needsRestart(_ setting: String) -> Bool { code(for: setting) != launched }
 
-    private static var bundle: Bundle = {
-        launched == "en" ? (Bundle.main.path(forResource: "en", ofType: "lproj").flatMap(Bundle.init(path:)) ?? .main) : .main
+    /// Le traduzioni: la chiave è il testo italiano. Quelle con segnaposto (`%@`, `%lld`) valgono anche per i testi già composti
+    /// ("3 esercizi" ↔ "%@ esercizi"), così basta un elenco per i testi fissi e per quelli con numeri e nomi dentro.
+    private static let table: (exact: [String: String], patterns: [(regex: NSRegularExpression, value: String)]) = {
+        guard launched == "en",
+              let path = Bundle.main.path(forResource: "Localizable", ofType: "strings", inDirectory: nil, forLocalization: "en"),
+              let dict = NSDictionary(contentsOfFile: path) as? [String: String] else { return ([:], []) }
+        var patterns: [(NSRegularExpression, String)] = []
+        for (key, value) in dict where key.contains("%@") || key.contains("%lld") {
+            // senza almeno un po' di testo fisso il modello combacerebbe con qualsiasi cosa
+            let fixed = key.replacingOccurrences(of: "%@", with: "").replacingOccurrences(of: "%lld", with: "").replacingOccurrences(of: "%lf", with: "")
+            guard fixed.filter(\.isLetter).count >= 3 else { continue }
+            var source = NSRegularExpression.escapedPattern(for: key)
+            for token in ["%@", "%lld", "%lf"] { source = source.replacingOccurrences(of: NSRegularExpression.escapedPattern(for: token), with: "(.+?)") }
+            source = source.replacingOccurrences(of: "%%", with: "%")
+            if let regex = try? NSRegularExpression(pattern: "^" + source + "$", options: [.dotMatchesLineSeparators]) { patterns.append((regex, value)) }
+        }
+        // i più lunghi (più specifici) per primi
+        patterns.sort { $0.0.pattern.count > $1.0.pattern.count }
+        return (dict, patterns)
     }()
 
+    /// Le risposte già calcolate (anche «nessuna traduzione»): lo stesso testo si ridisegna spesso, e provare tutti i modelli costa.
+    private static var memo: [String: String] = [:]
+    private static let lock = NSLock()
+
     static func tr(_ key: String) -> String {
-        guard launched == "en" else { return key }
-        return bundle.localizedString(forKey: key, value: key, table: nil)
+        guard launched == "en", !key.isEmpty else { return key }
+        lock.lock()
+        if let cached = memo[key] { lock.unlock(); return cached }
+        lock.unlock()
+        let value = translate(key)
+        lock.lock()
+        if memo.count > 4000 { memo.removeAll(keepingCapacity: true) }
+        memo[key] = value
+        lock.unlock()
+        return value
+    }
+
+    private static func translate(_ key: String) -> String {
+        if let hit = table.exact[key] { return hit }
+        let range = NSRange(key.startIndex..., in: key)
+        for (regex, value) in table.patterns {
+            guard let m = regex.firstMatch(in: key, range: range) else { continue }
+            var out = value
+            for i in 1..<m.numberOfRanges {
+                guard let r = Range(m.range(at: i), in: key) else { continue }
+                // le parti dentro (un nome, un numero) si traducono a loro volta se sono testo noto
+                let raw = String(key[r])
+                let part = raw == key ? raw : translate(raw)
+                if let at = out.range(of: "%@") ?? out.range(of: "%lld") ?? out.range(of: "%lf") { out.replaceSubrange(at, with: part) }
+            }
+            return out.replacingOccurrences(of: "%%", with: "%")
+        }
+        return key
     }
 }
 
