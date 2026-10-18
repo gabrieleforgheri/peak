@@ -5,6 +5,7 @@
 	import { changeUnit, eraseAll, setSetting } from '../lib/actions.ts'
 	import { fromUnit, toUnit, unit } from '../lib/fmt.ts'
 	import { applyLang, lang, t, tn } from '../lib/i18n.ts'
+	import { play, setSounds, soundsOn } from '../lib/sound.ts'
 	import { go, route } from '../lib/router.svelte.ts'
 	import { S, getModel } from '../lib/store.svelte.ts'
 	import { disablePush, enablePush, pushState, type PushState } from '../lib/push.ts'
@@ -22,6 +23,7 @@
 	let devices = $state<{ id: number; name: string; created_at: number; used_at: number | null }[]>([])
 	const loadDevices = async () => { try { const r = await call('/api/dispositivi'); if (r.ok) devices = (await r.json()).dispositivi } catch { /* offline */ } }
 	let push = $state<PushState>('unsupported')
+	let sounds = $state(soundsOn()) // solo di questo dispositivo, non segue l'account
 	onMount(() => { void loadDevices(); void pushState().then((p) => (push = p)) })
 	async function togglePush(on: boolean) {
 		try { push = on ? await enablePush(S.user?.vapid ?? '') : await disablePush() } catch { toast(t('Non è andata: riprova.')); push = await pushState() }
@@ -140,6 +142,8 @@
 					<button aria-label={ACCENT_NAME[a]} onclick={() => setSetting('accent', a)} style="width:38px;height:38px;border-radius:50%;border:3px solid {s.accent === a ? '#fff' : 'transparent'};background:rgb({ACCENT_RGB[a]})"></button>
 				{/each}
 			</div></div>
+		<label class="row between"><span>{t('Suoni')}<br /><span class="small muted">{t('Effetti sonori per serie, record e fine allenamento.')}</span></span>
+			<input class="toggle" type="checkbox" checked={sounds} onchange={(e) => { sounds = e.currentTarget.checked; setSounds(sounds); play('set') }} /></label>
 		<button class="btn block" onclick={() => setSetting('tutorialDone', false)}>{t('Rivedi il tutorial')}</button>
 	</div>
 
