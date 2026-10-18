@@ -13,6 +13,11 @@ import SwiftData
 ///
 /// I massimali "da allenamento" non viaggiano: si ricalcolano dalle serie (RecordService).
 ///
+/// FUORI DAL MAIN. La codifica di tutto il database (e gli hash) si fa in un'istantanea (`SyncSnapshot`)
+/// su un contesto a parte, in background: il main resta libero. Si spinge ciò che l'istantanea contiene,
+/// e l'hash salvato è sempre quello dei byte spinti. Solo `commit` (documenti arrivati dal server)
+/// codifica sul main, per registrare esattamente ciò che ha applicato.
+///
 /// SICUREZZA DEI DATI. Prima di cancellare o sostituire qualcosa in locale si scrive
 /// `Documents/Peak-prima-del-collegamento.json`, e la rete si usa PRIMA delle modifiche locali:
 /// se manca la connessione a metà, i dati dell'iPhone non sono toccati. Se lo store non si apre
@@ -65,7 +70,13 @@ final class SyncService {
     private var settings: AppSettings?
     private var debounce: Task<Void, Never>?
     private var allowMassDeletion = false
-    private var photoCache: [UUID: (count: Int, hash: Int, sha: String)] = [:]
+    private let photoCache = PhotoShaCache()
+    /// Un salvataggio è arrivato durante un giro: ne serve un altro (l'istantanea potrebbe non averlo visto).
+    private var needsAnotherRound = false
+    /// Cresce quando lo stato cambia sotto un giro (sostituzione, collegamento): l'istantanea di prima non vale più.
+    private var generation = 0
+    /// Sha delle foto locali dell'ultima istantanea, solo durante un giro: evita di rileggerle tutte sul main.
+    private var knownPhotos: Set<String>?
 
     private static var stateURL: URL {
         let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -95,7 +106,8 @@ final class SyncService {
         }
         NotificationCenter.default.addObserver(forName: ModelContext.didSave, object: nil, queue: .main) { _ in
             Task { @MainActor in
-                if !SyncService.shared.isSyncing { SyncService.shared.requestSync() }
+                let sync = SyncService.shared
+                if sync.isSyncing { sync.needsAnotherRound = true } else { sync.requestSync() }
             }
         }
     }
@@ -115,12 +127,25 @@ final class SyncService {
     func syncNow() async {
         guard state == .connected, !AppStore.isFallback, !isSyncing, let api, container != nil else { return }
         isSyncing = true
-        defer { isSyncing = false; updatePending(); persist() }
+        let epoch = generation
+        // Il permesso vale per un solo confronto, ma solo se c'era già prima dell'istantanea: uno dato
+        // mentre lei lavora serve al giro dopo (che `needsAnotherRound` garantisce).
+        let permitted = allowMassDeletion
+        defer {
+            isSyncing = false; knownPhotos = nil; updatePending(); persist()
+            // Un salvataggio durante il giro: l'istantanea può non averlo visto. Il giro dopo, se non c'è
+            // nulla da spingere né da applicare, non salva niente e quindi non ne chiama un altro.
+            if needsAnotherRound { needsAnotherRound = false; requestSync() }
+        }
         do {
-            try detect()
-            try await uploadPhotos(api)
-            try detect()
-            try await push(api)
+            let snapshot = try await takeSnapshot()
+            // Nel frattempo è cambiato lo stato (sostituzione dei dati, scollegamento): l'istantanea è vecchia.
+            guard state == .connected, epoch == generation else { needsAnotherRound = state == .connected; return }
+            knownPhotos = snapshot.photoShas
+            try detect(snapshot)
+            if permitted { allowMassDeletion = false }
+            try await uploadPhotos(api, snapshot)
+            try await push(api, snapshot)
             try await pull(api)
             lastSync = Date()
             lastError = nil
@@ -135,32 +160,51 @@ final class SyncService {
 
     private func sha(of exercise: Exercise) -> String {
         guard let photo = exercise.photo, !photo.isEmpty else { return "" }
-        let hash = photo.hashValue
-        if let cached = photoCache[exercise.uuid], cached.count == photo.count, cached.hash == hash { return cached.sha }
-        let value = PeakAPI.sha256(photo)
-        photoCache[exercise.uuid] = (photo.count, hash, value)
-        return value
+        return photoCache.sha(exercise.uuid, photo)
     }
 
+    /// Tutto, sul contesto principale: solo per `commit`, che deve registrare ciò che ha appena applicato.
     private func encode() throws -> SyncDocs.Encoded {
         try SyncDocs.encodeAll(context: context, settings: settings!, photoSha: { sha(of: $0) })
     }
 
+    /// L'istantanea dei documenti locali. La parte pesante (leggere ogni macchinario, serie, pesata, codificare,
+    /// calcolare gli hash) gira in background su un contesto nuovo; sul main restano solo le impostazioni.
+    /// Un salvataggio fatto mentre l'istantanea si prepara può mancarle, ma non si perde: `needsAnotherRound` lo recupera.
+    private func takeSnapshot() async throws -> SyncSnapshot {
+        let container = container!
+        let cache = photoCache
+        let uploaded = store.uploadedPhotos
+        var snapshot = try await Task.detached(priority: .utility) { () throws -> SyncSnapshot in
+            let context = ModelContext(container)
+            var snapshot = SyncSnapshot()
+            let encoded = try SyncDocs.encodeModels(context: context, photoSha: { exercise in
+                guard let photo = exercise.photo, !photo.isEmpty else { return "" }
+                let sha = cache.sha(exercise.uuid, photo)
+                snapshot.photoShas.insert(sha)
+                if !uploaded.contains(sha) { snapshot.newPhotos[sha] = photo }
+                return sha
+            })
+            snapshot.add(encoded)
+            return snapshot
+        }.value
+        snapshot.add(SyncDocs.settingDocs(settings!))
+        return snapshot
+    }
+
     private static func nowMs() -> Int64 { Int64(Date().timeIntervalSince1970 * 1000) }
 
-    /// Confronta i documenti di adesso con quelli dell'ultima volta e segna cosa va spinto.
-    func detect() throws {
-        let encoded = try encode()
+    /// Confronta i documenti dell'istantanea con quelli dell'ultima volta e segna cosa va spinto.
+    private func detect(_ snapshot: SyncSnapshot) throws {
         let now = Self.nowMs()
 
-        for (key, data) in encoded {
-            let h = SyncDocs.hash(data)
+        for (key, h) in snapshot.hashes {
             if let entry = store.entries[key], entry.h == h, !entry.deleted { continue }
             let previous = store.entries[key]?.m ?? 0
             store.entries[key] = Entry(h: h, m: max(now, previous + 1), dirty: true, deleted: false)
         }
 
-        let gone = store.entries.filter { encoded[$0.key] == nil && !$0.value.deleted && !$0.value.skipped }
+        let gone = store.entries.filter { snapshot.hashes[$0.key] == nil && !$0.value.deleted && !$0.value.skipped }
         // Un'ondata di cancellazioni non voluta (un contenitore svuotato per un guasto) non deve
         // arrivare al server: si ferma finché non la si conferma (erase all).
         let live = store.entries.values.filter { !$0.deleted }.count
@@ -171,7 +215,6 @@ final class SyncService {
         for (key, entry) in gone {
             store.entries[key] = Entry(h: "", m: max(now, entry.m + 1), dirty: true, deleted: true)
         }
-        allowMassDeletion = false
     }
 
     private enum SyncGuardError: Error { case massDeletion }
@@ -188,10 +231,8 @@ final class SyncService {
     // MARK: - Foto
 
     /// Le foto nuove salgono PRIMA del documento che le richiama.
-    private func uploadPhotos(_ api: PeakAPI) async throws {
-        for exercise in try context.fetch(FetchDescriptor<Exercise>()) {
-            guard let data = exercise.photo, !data.isEmpty else { continue }
-            let digest = sha(of: exercise)
+    private func uploadPhotos(_ api: PeakAPI, _ snapshot: SyncSnapshot) async throws {
+        for (digest, data) in snapshot.newPhotos {
             guard !store.uploadedPhotos.contains(digest) else { continue }
             do {
                 try await api.putPhoto(sha: digest, data: data)
@@ -203,8 +244,11 @@ final class SyncService {
     }
 
     private func downloadPhotos(for docs: [WireDoc], _ api: PeakAPI) async throws -> [String: Data] {
-        var local = Set<String>()
-        for exercise in try context.fetch(FetchDescriptor<Exercise>()) { local.insert(sha(of: exercise)) }
+        // Durante un giro bastano gli sha dell'istantanea; altrimenti (es. sostituzione dei dati) si leggono tutte.
+        var local = knownPhotos ?? []
+        if knownPhotos == nil {
+            for exercise in try context.fetch(FetchDescriptor<Exercise>()) { local.insert(sha(of: exercise)) }
+        }
         var out: [String: Data] = [:]
         for doc in docs where doc.kind == "exercise" && !doc.deleted {
             guard let digest = doc.data?["photo"] as? String, !digest.isEmpty, !local.contains(digest), out[digest] == nil else { continue }
@@ -216,8 +260,7 @@ final class SyncService {
 
     // MARK: - Push e pull
 
-    private func push(_ api: PeakAPI) async throws {
-        let encoded = try encode()
+    private func push(_ api: PeakAPI, _ snapshot: SyncSnapshot) async throws {
         let dirty = store.entries.filter { $0.value.dirty }.sorted { $0.key < $1.key }
         let batchSize = 500
         var index = 0
@@ -228,12 +271,14 @@ final class SyncService {
                 let parts = key.split(separator: ":", maxSplits: 1).map(String.init)
                 guard parts.count == 2 else { return nil }
                 if entry.deleted { return WireDoc(kind: parts[0], uuid: parts[1], data: nil, m: entry.m, deleted: true) }
-                guard let data = encoded[key] else { return nil }
+                guard let bytes = snapshot.json[key], let data = (try? JSONSerialization.jsonObject(with: bytes)) as? [String: Any] else { return nil }
                 return WireDoc(kind: parts[0], uuid: parts[1], data: data, m: entry.m, deleted: false)
             }
             let answer = try await api.push(docs)
             let lost = Set(answer.rejected.map(\.key))
-            for (key, entry) in chunk where !lost.contains(key) {
+            // pulito solo ciò che è davvero partito
+            let sent = Set(docs.map(\.key))
+            for (key, entry) in chunk where sent.contains(key) && !lost.contains(key) {
                 if var current = store.entries[key], current.m == entry.m { current.dirty = false; store.entries[key] = current }
             }
             for key in answer.discarded { store.entries[key]?.dirty = false }
@@ -264,6 +309,7 @@ final class SyncService {
 
     /// La parte che tocca i modelli: sincrona, dopo che la rete ha finito.
     private func commit(_ docs: [WireDoc], photos: [String: Data]) throws {
+        knownPhotos = nil // le foto locali stanno per cambiare: l'elenco dell'istantanea non vale più
         let applied = try SyncDocs.apply(docs, context: context, settings: settings!, photos: photos)
         try context.save()
         RecordService.recomputeAll(context: context)
@@ -284,6 +330,7 @@ final class SyncService {
     /// memoria (stato `onboarding`) finché `completeConnection()` non lo salva nel portachiavi.
     func connect(_ credentials: PeakCredentials) {
         self.credentials = credentials
+        generation += 1
         store = SyncStore(sub: credentials.sub)
         state = .onboarding
         lastError = nil
@@ -312,6 +359,7 @@ final class SyncService {
         debounce?.cancel()
         PeakKeychain.clear()
         credentials = nil
+        generation += 1
         state = .disconnected
         store = SyncStore()
         lastSync = nil
@@ -383,6 +431,7 @@ final class SyncService {
     func replaceLocalWithServer() async throws {
         guard let api else { throw PeakAPIError.unauthorized }
         let answer = try await api.pull(since: 0)
+        knownPhotos = nil // un giro in corso non deve prestare il suo elenco: qui le foto locali si leggono davvero
         let photos = try await downloadPhotos(for: answer.docs, api)
 
         try context.delete(model: WorkoutSet.self)
@@ -393,7 +442,8 @@ final class SyncService {
         try context.delete(model: WorkoutTemplate.self)
         try context.delete(model: WorkoutProgram.self)
         try context.save()
-        photoCache = [:]
+        generation += 1
+        photoCache.reset()
         store.entries = [:]
 
         try commit(answer.docs, photos: photos)
@@ -401,5 +451,50 @@ final class SyncService {
         persist()
         updatePending()
         lastSync = Date()
+    }
+}
+
+// MARK: - Istantanea e cache delle foto (usate fuori dal main)
+
+/// I documenti locali a un certo istante: byte JSON (chiavi ordinate) e relativi hash.
+private struct SyncSnapshot: Sendable {
+    var hashes: [String: String] = [:]
+    var json: [String: Data] = [:]
+    /// Sha delle foto presenti in locale.
+    var photoShas: Set<String> = []
+    /// Foto non ancora salite, coi byte letti insieme allo sha: documento e file non possono divergere.
+    var newPhotos: [String: Data] = [:]
+
+    mutating func add(_ docs: SyncDocs.Encoded) {
+        for (key, doc) in docs {
+            let bytes = SyncDocs.bytes(doc)
+            json[key] = bytes
+            hashes[key] = PeakAPI.sha256(bytes)
+        }
+    }
+}
+
+/// Sha256 delle foto già calcolati (rileggerli costa): usata dal main e dal background.
+private final class PhotoShaCache: @unchecked Sendable {
+    private var items: [UUID: (count: Int, hash: Int, sha: String)] = [:]
+    private let lock = NSLock()
+
+    func sha(_ uuid: UUID, _ photo: Data) -> String {
+        let hash = photo.hashValue
+        lock.lock()
+        let cached = items[uuid]
+        lock.unlock()
+        if let cached, cached.count == photo.count, cached.hash == hash { return cached.sha }
+        let value = PeakAPI.sha256(photo)
+        lock.lock()
+        items[uuid] = (photo.count, hash, value)
+        lock.unlock()
+        return value
+    }
+
+    func reset() {
+        lock.lock()
+        items = [:]
+        lock.unlock()
     }
 }

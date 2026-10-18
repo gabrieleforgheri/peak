@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 /// I documenti sincronizzati con il server di Peak: come i modelli SwiftData diventano documenti
-/// (`encodeAll`) e come quelli che arrivano diventano modelli (`apply`).
+/// (`settingDocs` + `encodeModels`, insieme `encodeAll`) e come quelli che arrivano diventano modelli (`apply`).
 ///
 /// Cosa NON viaggia mai: i massimali "da allenamento" (`MaxRecord.isEstimated`) e il flag
 /// `isPersonalRecord`: si ricalcolano dalle serie (RecordService), uguali su ogni dispositivo.
@@ -16,7 +16,7 @@ enum SyncDocs {
     /// Ordine di applicazione: prima i genitori (macchinari, allenamenti), poi ciò che li richiama.
     static let applyOrder = ["setting", "exercise", "program", "template", "workout", "record", "set", "bodyweight"]
 
-    static func key(_ kind: String, _ uuid: UUID) -> String { "\(kind):\(uuid.uuidString)" }
+    nonisolated static func key(_ kind: String, _ uuid: UUID) -> String { "\(kind):\(uuid.uuidString)" }
 
     // MARK: - Impostazioni condivise
 
@@ -76,12 +76,19 @@ enum SyncDocs {
 
     // MARK: - Codifica
 
-    static func encodeAll(context: ModelContext, settings: AppSettings, photoSha: (Exercise) -> String) throws -> Encoded {
+    /// Le impostazioni: poche e economiche, restano sul main.
+    static func settingDocs(_ settings: AppSettings) -> Encoded {
         var out: Encoded = [:]
-
         for name in settingKeys {
             out["setting:\(name)"] = ["value": settingValue(name, settings)]
         }
+        return out
+    }
+
+    /// Tutto il resto, da un contesto qualunque (anche creato fuori dal main: la sincronizzazione lo fa per
+    /// non bloccare l'interfaccia). `photoSha` dà lo sha256 della foto di un macchinario.
+    nonisolated static func encodeModels(context: ModelContext, photoSha: (Exercise) -> String) throws -> Encoded {
+        var out: Encoded = [:]
 
         for exercise in try context.fetch(FetchDescriptor<Exercise>()) {
             out[key("exercise", exercise.uuid)] = [
@@ -172,11 +179,18 @@ enum SyncDocs {
         return out
     }
 
-    /// Hash del contenuto, a chiavi ordinate: lo stesso contenuto dà sempre lo stesso hash.
-    static func hash(_ data: [String: Any]) -> String {
-        let bytes = (try? JSONSerialization.data(withJSONObject: data, options: [.sortedKeys])) ?? Data()
-        return PeakAPI.sha256(bytes)
+    /// Impostazioni e modelli insieme, sul contesto principale: per ciò che si è appena applicato.
+    static func encodeAll(context: ModelContext, settings: AppSettings, photoSha: (Exercise) -> String) throws -> Encoded {
+        try settingDocs(settings).merging(encodeModels(context: context, photoSha: photoSha)) { first, _ in first }
     }
+
+    /// Il JSON del documento, a chiavi ordinate: lo stesso contenuto dà sempre gli stessi byte.
+    nonisolated static func bytes(_ data: [String: Any]) -> Data {
+        (try? JSONSerialization.data(withJSONObject: data, options: [.sortedKeys])) ?? Data()
+    }
+
+    /// Hash del contenuto (sha256 di `bytes`): lo stesso contenuto dà sempre lo stesso hash.
+    nonisolated static func hash(_ data: [String: Any]) -> String { PeakAPI.sha256(bytes(data)) }
 
     // MARK: - Applicazione
 
