@@ -74,7 +74,7 @@ struct StatTile: View {
                 HStack(spacing: 6) {
                     Image(systemName: symbol)
                         .font(.system(size: 11, weight: .bold))
-                    Text(title.uppercased())
+                    Text(title.tr.uppercased())
                         .font(Theme.rounded(10, .bold))
                         .tracking(0.7)
                         .lineLimit(1)
@@ -272,7 +272,7 @@ struct SectionHeader: View {
                 .foregroundStyle(Theme.textTertiary)
             Spacer()
             if let trailing {
-                Text(trailing)
+                Text(trailing.tr)
                     .font(Theme.rounded(11, .semibold))
                     .foregroundStyle(Theme.textTertiary)
             }

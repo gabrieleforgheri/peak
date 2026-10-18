@@ -22,10 +22,6 @@ struct MeView: View {
     private var hasTrainingData: Bool { !finished.isEmpty || !records.isEmpty }
 
     private var fullName: String { sync.credentials?.name ?? "" }
-    private var growingLift: Exercise? {
-        exercises.filter { $0.recordList.count >= 3 }.max { ($0.bestRecord?.estimatedOneRepMax ?? 0) < ($1.bestRecord?.estimatedOneRepMax ?? 0) }
-    }
-
     private var medalList: [Medal] {
         guard let s = stats else { return [] }
         return Medals.list(MedalInput(
@@ -49,29 +45,56 @@ struct MeView: View {
     private var header: some View {
         HStack(spacing: 14) {
             Text(String(fullName.first ?? "P").uppercased())
-                .font(Theme.rounded(26, .heavy))
+                .font(Theme.rounded(28, .heavy))
                 .foregroundStyle(Color.black.opacity(0.8))
-                .frame(width: 60, height: 60)
-                .background(Circle().fill(settings.accentColor))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(fullName.isEmpty ? "Me" : fullName).font(Theme.rounded(22, .heavy)).lineLimit(1)
-                if let s = stats {
-                    Text(s.streak == 1 ? "1 settimana di fila" : "\(s.streak) settimane di fila")
-                        .font(Theme.rounded(13, .medium)).foregroundStyle(Theme.textSecondary)
-                }
-            }
+                .frame(width: 64, height: 64)
+                .background(Circle().fill(LinearGradient(colors: [settings.accentColor, settings.accentColor.opacity(0.55)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+                .shadow(color: settings.accentColor.opacity(0.35), radius: 10, y: 6)
+            Text(fullName.isEmpty ? "Me" : fullName).font(Theme.rounded(26, .heavy)).lineLimit(1).minimumScaleFactor(0.7)
             Spacer()
             Button { showSettings = true } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 17, weight: .semibold))
-                    .frame(width: 40, height: 40)
-                    .glassSurface(radius: 20)
+                Image(systemName: "gearshape")
+                    .font(.system(size: 18, weight: .regular))
+                    .frame(width: 44, height: 44)
+                    .glassSurface(radius: 22)
             }
             .buttonStyle(.plain)
-            .foregroundStyle(Theme.textSecondary)
+            .foregroundStyle(Theme.textPrimary)
             .accessibilityLabel("Impostazioni")
         }
         .padding(.top, 8)
+    }
+
+    private var friendsButton: some View {
+        Button { nav.tab = .friends } label: {
+            Label(social.friendCount > 0 ? (social.friendCount == 1 ? "1 amico" : "\(social.friendCount) amici") : "Aggiungi amici", systemImage: "person.2")
+                .font(Theme.rounded(15, .semibold))
+                .frame(maxWidth: .infinity, minHeight: 50)
+                .glassSurface(radius: 16)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Theme.textPrimary)
+    }
+
+    private func overview(_ s: HomeStats) -> some View {
+        func cell(_ symbol: String, _ value: String, _ label: String) -> some View {
+            HStack(spacing: 12) {
+                Image(systemName: symbol).font(.system(size: 18, weight: .semibold)).foregroundStyle(settings.accentColor).frame(width: 26)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(value).font(Theme.rounded(22, .heavy)).lineLimit(1).minimumScaleFactor(0.6)
+                    Text(label).font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textSecondary)
+                }
+                Spacer(minLength: 0)
+            }
+        }
+        return GlassCard {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible())], alignment: .leading, spacing: 18) {
+                cell("flame", String(s.streak), "Settimane di fila")
+                cell("dumbbell", String(s.finished), "Allenamenti")
+                cell("scalemass", Fmt.volume(s.totalVolume, unit: settings.unit), "Sollevati")
+                cell("trophy", String(s.recordCount), "Record")
+            }
+        }
     }
 
     private func section<Content: View>(_ title: String, trailing: String? = nil, @ViewBuilder content: () -> Content) -> some View {
@@ -88,10 +111,15 @@ struct MeView: View {
             VStack(spacing: 14) {
                 header
 
+                friendsButton
+
                 if let s = stats, hasTrainingData {
-                    StatStrip(stats: s)
+                    section("Panoramica") { overview(s) }
                     let totals = Medals.totals(medalList)
                     section("Medaglie", trailing: "\(totals.earned) / \(totals.total)") {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) { ForEach(medalList) { MedalChip(medal: $0) } }
+                        }
                         VStack(spacing: 10) { ForEach(medalList) { MedalRow(medal: $0) } }
                     }
                     section("Attività", trailing: "ultime 14 settimane") { HeatmapCard(perDay: s.perDay, count: s.last98Days) }
@@ -101,7 +129,7 @@ struct MeView: View {
 
                 BodyWeightCard()
 
-                if let lift = growingLift { section("Il tuo sollevamento in crescita") { LiftChartCard(exercise: lift) } }
+                if exercises.contains(where: { Progression1RM.points($0).count >= 2 }) { section("Progressione") { ProgressionCard(exercises: exercises) } }
                 if !movers.isEmpty { moversCard }
                 if !records.isEmpty { recentRecordsCard }
 

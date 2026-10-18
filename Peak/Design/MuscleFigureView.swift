@@ -35,6 +35,8 @@ struct MuscleFigureView: View {
             }
         }
         .aspectRatio(box.width / box.height, contentMode: .fit)
+        // lo zoom ritaglia: ciò che sta fuori dalla zona che lavora non deve sbordare sul resto
+        .clipped()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(muscles.map(\.title).joined(separator: ", "))
     }
@@ -97,6 +99,7 @@ struct ExerciseFigure: View {
                 .padding(size * 0.08)
                 .frame(width: size, height: size)
                 .background(exercise.muscleGroup.tint.opacity(0.2), in: RoundedRectangle(cornerRadius: size * 0.3, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: size * 0.3, style: .continuous))
         }
     }
 }

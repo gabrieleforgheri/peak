@@ -114,6 +114,15 @@ struct WorkoutSessionView: View {
                     }
                     .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
                     .padding(.top, 4)
+                    // il popup nasce dal bottone, non dalla barra in alto
+                    .confirmationDialog(
+                        "Terminare l'allenamento?",
+                        isPresented: $showingFinishConfirm,
+                        titleVisibility: .visible
+                    ) {
+                        Button("Termina") { finish() }
+                        Button("Continua ad allenarti", role: .cancel) {}
+                    }
                 } else if settings.healthSyncEnabled {
                     // Serve per le sessioni chiuse prima di attivare Salute,
                     // o quando il primo invio è fallito.
@@ -205,14 +214,6 @@ struct WorkoutSessionView: View {
             Button("Ok", role: .cancel) {}
         } message: {
             Text(healthMessage ?? "")
-        }
-        .confirmationDialog(
-            "Terminare l'allenamento?",
-            isPresented: $showingFinishConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("Termina") { finish() }
-            Button("Continua ad allenarti", role: .cancel) {}
         }
     }
 

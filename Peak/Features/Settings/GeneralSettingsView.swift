@@ -7,6 +7,7 @@ struct GeneralSettingsView: View {
 
     var body: some View {
         SettingsPage {
+            languageCard
             unitCard
             accentCard
             GlassCard {
@@ -17,6 +18,24 @@ struct GeneralSettingsView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(settings.accentColor)
+            }
+        }
+    }
+
+    var languageCard: some View {
+        @Bindable var settings = settings
+        return GlassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "Lingua")
+                Picker("Lingua", selection: $settings.language) {
+                    Text("Telefono").tag("")
+                    Text("Italiano").tag("it")
+                    Text("English").tag("en")
+                }
+                .pickerStyle(.segmented)
+                Text("Segue il tuo account: la stessa lingua sul web e sull'iPhone.")
+                    .font(Theme.rounded(11, .medium))
+                    .foregroundStyle(Theme.textTertiary)
             }
         }
     }

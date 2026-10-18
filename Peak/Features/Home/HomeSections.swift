@@ -308,41 +308,51 @@ struct HeatmapCard: View {
     var body: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .top, spacing: 6) {
-                    // asse dei giorni: ogni riga è un giorno della settimana
-                    VStack(spacing: 4) {
-                        Color.clear.frame(height: 12)
-                        ForEach(0..<7, id: \.self) { r in
-                            Text(["L", "M", "M", "G", "V", "S", "D"][r])
-                                .font(Theme.rounded(9, .medium)).foregroundStyle(Theme.textTertiary)
-                                .frame(width: 10).frame(maxHeight: .infinity)
-                        }
-                    }
-                    VStack(spacing: 4) {
-                        // asse delle settimane: il mese sopra la prima colonna in cui cambia
-                        HStack(spacing: 4) {
-                            ForEach(Array(columns.enumerated()), id: \.offset) { i, column in
-                                let month = Calendar.current.component(.month, from: column[0].date)
-                                let prev = i > 0 ? Calendar.current.component(.month, from: columns[i - 1][0].date) : -1
-                                Text(month != prev ? column[0].date.formatted(.dateTime.month(.abbreviated)) : "")
-                                    .font(Theme.rounded(9, .medium)).foregroundStyle(Theme.textTertiary)
-                                    .lineLimit(1).fixedSize().frame(maxWidth: .infinity, alignment: .leading)
+                // cella quadrata calcolata sulla larghezza: lettere dei giorni a sinistra, mesi sopra
+                GeometryReader { geo in
+                    let gap: CGFloat = 4
+                    let label: CGFloat = 14
+                    let cell = (geo.size.width - label - 6 - gap * CGFloat(weeks - 1)) / CGFloat(weeks)
+                    VStack(alignment: .leading, spacing: gap) {
+                        HStack(spacing: 0) {
+                            Color.clear.frame(width: label + 6, height: 12)
+                            ZStack(alignment: .leading) {
+                                ForEach(Array(columns.enumerated()), id: \.offset) { i, column in
+                                    let month = Calendar.current.component(.month, from: column[0].date)
+                                    let prev = i > 0 ? Calendar.current.component(.month, from: columns[i - 1][0].date) : -1
+                                    if month != prev {
+                                        Text(column[0].date.formatted(.dateTime.month(.abbreviated)))
+                                            .font(Theme.rounded(9, .medium)).foregroundStyle(Theme.textTertiary)
+                                            .fixedSize()
+                                            .offset(x: CGFloat(i) * (cell + gap))
+                                    }
+                                }
                             }
+                            .frame(height: 12, alignment: .leading)
                         }
-                        .frame(height: 12)
-                        HStack(spacing: 4) {
-                            ForEach(Array(columns.enumerated()), id: \.offset) { _, column in
-                                VStack(spacing: 4) {
-                                    ForEach(Array(column.enumerated()), id: \.offset) { _, cell in
-                                        RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                            .fill(color(cell.sets))
-                                            .aspectRatio(1, contentMode: .fit)
+                        HStack(alignment: .top, spacing: 6) {
+                            VStack(spacing: gap) {
+                                ForEach(0..<7, id: \.self) { r in
+                                    Text(["L", "M", "M", "G", "V", "S", "D"][r])
+                                        .font(Theme.rounded(9, .medium)).foregroundStyle(Theme.textTertiary)
+                                        .frame(width: label, height: cell)
+                                }
+                            }
+                            HStack(spacing: gap) {
+                                ForEach(Array(columns.enumerated()), id: \.offset) { _, column in
+                                    VStack(spacing: gap) {
+                                        ForEach(Array(column.enumerated()), id: \.offset) { _, c in
+                                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                                .fill(color(c.sets))
+                                                .frame(width: cell, height: cell)
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+                .frame(height: 12 + 4 + 7 * 22 + 6 * 4)
                 Text("Una colonna = una settimana, un quadratino = un giorno")
                     .font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
                 Text(count == 1 ? "1 allenamento in 14 settimane" : "\(count) allenamenti in 14 settimane")
@@ -528,26 +538,52 @@ struct MedalRow: View {
     }
 }
 
-/// Una medaglia in breve, per il carosello della Home: simbolo, nome e livello.
+/// Una medaglia come sul sito: disco metallico col simbolo, anello che si riempie verso il livello dopo, nome e livello.
 struct MedalChip: View {
     @Environment(AppSettings.self) private var settings
     let medal: Medal
 
-    private var tint: Color { [Theme.textTertiary, Color(hex: 0xCD7F32), Color(hex: 0xC0C8D0), Color(hex: 0xFFD45E)][medal.tier] }
+    private var palette: (tint: Color, hi: Color, lo: Color, ink: Color) {
+        switch medal.tier {
+        case 1: return (Color(hex: 0xE0955A), Color(hex: 0xF1B27A), Color(hex: 0xA35F2A), Color(hex: 0x3A1D08))
+        case 2: return (Color(hex: 0xDFE4EC), Color(hex: 0xF4F6FA), Color(hex: 0x98A1B1), Color(hex: 0x232A36))
+        case 3: return (Color(hex: 0xFFD45E), Color(hex: 0xFFE69A), Color(hex: 0xD39A14), Color(hex: 0x3D2A00))
+        default: return (settings.accentColor, Color.white.opacity(0.08), Color.white.opacity(0.03), Theme.textTertiary)
+        }
+    }
+
+    private var caption: String {
+        let tier = ["", "Bronzo", "Argento", "Oro"][medal.tier]
+        guard let next = medal.next else { return tier }
+        let fmt: (Double) -> String = { v in
+            switch medal.kind {
+            case .volume: return Fmt.volume(v, unit: settings.unit)
+            case .strength: return Fmt.weight(v, unit: settings.unit)
+            default: return String(Int(v.rounded()))
+            }
+        }
+        return (tier.isEmpty ? "" : tier + " · ") + "\(fmt(medal.value))/\(fmt(next))"
+    }
 
     var body: some View {
+        let p = palette
         VStack(spacing: 6) {
-            Image(systemName: medal.kind.symbol)
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(medal.tier == 0 ? Theme.textTertiary : tint)
-                .frame(width: 52, height: 52)
-                .background(Circle().fill(tint.opacity(medal.tier == 0 ? 0.08 : 0.18)))
-                .overlay(Circle().strokeBorder(tint.opacity(medal.tier == 0 ? 0.2 : 0.8), lineWidth: 2))
-            Text(medal.kind.title).font(Theme.rounded(11, .semibold)).lineLimit(1)
-            ProgressView(value: medal.progress).tint(tint).frame(width: 52)
+            ZStack {
+                Circle().stroke(Color.white.opacity(0.1), lineWidth: 4)
+                Circle().trim(from: 0, to: medal.progress).stroke(p.tint, style: StrokeStyle(lineWidth: 4, lineCap: .butt)).rotationEffect(.degrees(-90))
+                Circle()
+                    .fill(RadialGradient(colors: [p.hi, p.lo], center: UnitPoint(x: 0.32, y: 0.26), startRadius: 0, endRadius: 50))
+                    .padding(6)
+                    .shadow(color: medal.tier == 0 ? .clear : p.tint.opacity(0.4), radius: 8, y: 4)
+                Image(systemName: medal.kind.symbol)
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(p.ink)
+            }
+            .frame(width: 76, height: 76)
+            Text(medal.kind.title).font(Theme.rounded(13, .bold)).lineLimit(1)
+            Text(caption).font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
+                .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
         }
-        .frame(width: 84)
-        .padding(.vertical, 10)
-        .glassSurface(radius: 16)
+        .frame(width: 104)
     }
 }
