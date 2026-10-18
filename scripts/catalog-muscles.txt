@@ -1,0 +1,295 @@
+# I muscoli principali di ogni voce del catalogo: `id: muscolo muscolo [view=front|back]`.
+# Solo i principali (niente secondari). `view` è facoltativa: senza, la figura mostra la vista con più muscoli.
+# Gli id dei muscoli sono quelli di common/muscle-info.ts. Rigenera catalog.json con scripts/gen-catalog-muscles.ts.
+
+chest-press-machine: chest triceps
+chest-press-plate-loaded: chest triceps
+pec-deck: chest
+bench-press-barbell: chest triceps
+bench-press-dumbbell: chest triceps
+incline-bench-press-barbell: chest deltoids
+incline-bench-press-dumbbell: chest deltoids
+decline-bench-press: chest triceps
+bench-press-smith: chest triceps
+cable-fly: chest
+dumbbell-fly: chest
+dumbbell-pullover: chest upperBack
+parallel-bar-dip: chest triceps
+dip-machine-assisted: chest triceps
+push-up: chest triceps
+incline-chest-press-machine: chest triceps
+incline-chest-press-plate-loaded: chest triceps
+decline-chest-press-machine: chest triceps
+wide-chest-press-machine: chest triceps
+bench-press-close-grip-smith: triceps chest
+incline-bench-press-smith: chest deltoids
+decline-bench-press-smith: chest triceps
+decline-bench-press-dumbbell: chest triceps
+neutral-grip-dumbbell-press: chest triceps
+dumbbell-squeeze-press: chest triceps
+floor-press-barbell: triceps chest
+floor-press-dumbbell: triceps chest
+incline-dumbbell-fly: chest deltoids
+decline-dumbbell-fly: chest
+low-cable-fly: chest
+high-cable-fly: chest
+cable-chest-press: chest triceps
+single-arm-cable-chest-press: chest triceps
+landmine-press: deltoids chest
+dip-weighted: chest triceps
+push-up-weighted: chest triceps
+push-up-decline: chest deltoids
+push-up-incline: chest triceps
+pullover-cable: upperBack
+lat-pulldown: upperBack
+lat-pulldown-close-grip: upperBack
+lat-pulldown-single-arm: upperBack
+seated-cable-row: upperBack trapezius
+row-machine: upperBack trapezius
+row-plate-loaded: upperBack trapezius
+cable-row: upperBack trapezius
+single-arm-cable-row: upperBack trapezius
+bent-over-row-barbell: upperBack trapezius lowerBack
+dumbbell-row: upperBack
+t-bar-row: upperBack trapezius
+pullover-machine: upperBack
+pull-up: upperBack
+assisted-pull-up: upperBack
+deadlift-barbell: lowerBack gluteal hamstring
+romanian-deadlift: hamstring gluteal lowerBack
+good-morning: lowerBack hamstring
+back-extension: lowerBack gluteal view=back
+face-pull: deltoids trapezius view=back
+chest-supported-row-machine: upperBack trapezius
+chest-supported-row-plate-loaded: upperBack trapezius
+chest-supported-dumbbell-row: upperBack trapezius
+incline-bench-dumbbell-row: upperBack trapezius
+pendlay-row: upperBack trapezius lowerBack
+yates-row: upperBack trapezius
+meadows-row: upperBack
+smith-row: upperBack trapezius
+inverted-row: upperBack trapezius
+seated-row-wide-grip: upperBack trapezius
+single-arm-lat-pulldown-cable-kneeling: upperBack
+straight-arm-pulldown: upperBack
+lat-pulldown-reverse-grip: upperBack
+lat-pulldown-wide-grip: upperBack
+pull-up-wide-grip: upperBack
+pull-up-neutral-grip: upperBack
+chin-up: upperBack
+pull-up-weighted: upperBack
+deadlift-sumo: gluteal hamstring lowerBack
+deadlift-trap-bar: quadriceps gluteal lowerBack
+rack-pull: lowerBack trapezius gluteal
+deficit-deadlift: lowerBack gluteal hamstring
+stiff-leg-deadlift-dumbbell: hamstring gluteal lowerBack
+single-leg-romanian-deadlift: hamstring gluteal
+reverse-hyperextension: gluteal lowerBack view=back
+back-extension-machine: lowerBack gluteal view=back
+back-extension-weighted: lowerBack gluteal view=back
+dumbbell-shrug-row: trapezius deltoids
+high-row-machine: upperBack trapezius deltoids
+low-row-machine: upperBack trapezius
+vertical-row-machine: upperBack trapezius deltoids
+lat-pulldown-machine-plate-loaded: upperBack
+pull-up-machine-plate-loaded: upperBack
+leg-press-45: quadriceps gluteal
+leg-press-horizontal: quadriceps gluteal
+leg-extension: quadriceps
+seated-leg-curl: hamstring view=back
+lying-leg-curl: hamstring view=back
+squat-barbell: quadriceps gluteal
+front-squat: quadriceps
+squat-smith: quadriceps gluteal
+hack-squat: quadriceps
+pendulum-squat: quadriceps
+dumbbell-lunge: quadriceps gluteal
+smith-lunge: quadriceps gluteal
+bulgarian-split-squat: quadriceps gluteal
+step-up: quadriceps gluteal
+stiff-leg-deadlift: hamstring gluteal lowerBack
+hip-thrust: gluteal hamstring view=back
+glute-machine: gluteal view=back
+adductor-machine: adductors
+abductor-machine: gluteal view=back
+standing-calf-machine: calves view=back
+seated-calf-machine: calves view=back
+leg-press-calf-raise: calves
+leg-press-single-leg: quadriceps gluteal
+leg-press-plate-loaded: quadriceps gluteal
+leg-press-vertical: quadriceps gluteal
+hack-squat-reverse: quadriceps
+hack-squat-barbell: quadriceps gluteal
+leverage-squat: quadriceps gluteal
+belt-squat: quadriceps gluteal
+squat-box: quadriceps gluteal
+squat-pause: quadriceps gluteal
+squat-overhead: quadriceps gluteal
+squat-goblet: quadriceps gluteal
+squat-zercher: quadriceps gluteal
+squat-safety-bar: quadriceps gluteal
+squat-machine: quadriceps gluteal
+split-squat: quadriceps gluteal
+reverse-lunge: quadriceps gluteal
+walking-lunge: quadriceps gluteal
+lunge-barbell: quadriceps gluteal
+lateral-lunge: adductors quadriceps
+step-up-barbell: quadriceps gluteal
+sissy-squat: quadriceps
+nordic-curl: hamstring
+glute-ham-raise: hamstring gluteal
+standing-leg-curl: hamstring view=back
+leg-curl-cable: hamstring view=back
+leg-extension-single: quadriceps
+glute-kickback-cable: gluteal view=back
+hip-thrust-machine: gluteal view=back
+hip-thrust-smith: gluteal view=back
+glute-bridge: gluteal hamstring view=back
+hip-thrust-single-leg: gluteal view=back
+hip-abduction-cable: gluteal view=back
+hip-adduction-cable: adductors
+standing-calf-raise-smith: calves view=back
+standing-calf-raise-dumbbell: calves view=back
+donkey-calf-raise: calves view=back
+tibialis-raise: tibialis view=front
+kettlebell-swing: gluteal hamstring lowerBack
+sled-push: quadriceps gluteal calves
+sled-pull: hamstring gluteal
+farmers-walk: forearm trapezius
+shoulder-press-machine: deltoids triceps
+shoulder-press-plate-loaded: deltoids triceps
+overhead-press-barbell: deltoids triceps
+overhead-press-dumbbell: deltoids triceps
+overhead-press-smith: deltoids triceps
+arnold-press: deltoids
+lateral-raise: deltoids
+cable-lateral-raise: deltoids
+lateral-raise-machine: deltoids
+front-raise: deltoids
+reverse-pec-deck: deltoids view=back
+rear-delt-fly-bench: deltoids view=back
+upright-row: deltoids trapezius
+barbell-shrug: trapezius
+dumbbell-shrug: trapezius
+overhead-press-seated-barbell: deltoids triceps
+overhead-press-behind-neck: deltoids triceps
+push-press: deltoids triceps
+dumbbell-push-press: deltoids triceps
+overhead-press-single-arm-dumbbell: deltoids triceps
+overhead-press-kettlebell: deltoids triceps
+landmine-shoulder-press: deltoids triceps
+shoulder-press-converging-machine: deltoids triceps
+cable-shoulder-press: deltoids triceps
+lateral-raise-single-arm-cable: deltoids
+lateral-raise-incline-bench: deltoids view=back
+lateral-raise-seated: deltoids
+lateral-raise-plate-loaded: deltoids
+front-raise-cable: deltoids
+front-raise-barbell: deltoids
+front-raise-plate: deltoids
+rear-delt-fly-cable: deltoids view=back
+rear-delt-row: deltoids upperBack view=back
+rear-delt-fly-machine-plate-loaded: deltoids view=back
+face-pull-rope: deltoids trapezius view=back
+reverse-fly-prone: deltoids view=back
+upright-row-cable: deltoids trapezius
+upright-row-dumbbell: deltoids trapezius
+shrug-smith: trapezius
+shrug-machine: trapezius
+shrug-trap-bar: trapezius
+shrug-cable: trapezius
+bradford-press: deltoids
+cuban-press: deltoids
+y-raise: deltoids trapezius view=back
+external-rotation-cable: deltoids view=back
+external-rotation-dumbbell: deltoids view=back
+handstand-push-up: deltoids triceps
+barbell-curl: biceps forearm
+ez-bar-curl: biceps forearm
+dumbbell-curl: biceps
+alternating-dumbbell-curl: biceps
+hammer-curl: biceps forearm
+curl-machine: biceps
+preacher-curl: biceps
+cable-curl: biceps
+concentration-curl: biceps
+triceps-pushdown: triceps view=back
+french-press-barbell: triceps view=back
+french-press-dumbbell: triceps view=back
+triceps-machine: triceps view=back
+close-grip-bench-press: triceps chest
+cable-kickback: triceps view=back
+wrist-curl: forearm view=front
+preacher-curl-machine: biceps
+preacher-curl-dumbbell: biceps
+preacher-curl-ez: biceps
+incline-dumbbell-curl: biceps
+spider-curl: biceps
+drag-curl: biceps
+reverse-curl: forearm biceps
+reverse-curl-ez: forearm biceps
+zottman-curl: biceps forearm
+cross-body-hammer-curl: biceps forearm
+cable-hammer-curl-rope: biceps forearm
+cable-curl-high: biceps
+cable-curl-single-arm: biceps
+cable-curl-ez: biceps
+curl-21s: biceps
+bayesian-curl: biceps
+triceps-pushdown-rope: triceps view=back
+triceps-pushdown-v-bar: triceps view=back
+triceps-pushdown-single-arm: triceps view=back
+triceps-pushdown-reverse-grip: triceps view=back
+overhead-triceps-extension-cable: triceps view=back
+overhead-triceps-extension-dumbbell: triceps view=back
+overhead-triceps-extension-ez: triceps view=back
+skull-crusher-ez: triceps view=back
+skull-crusher-cable: triceps view=back
+triceps-dip-bench: triceps chest view=back
+triceps-dip: triceps chest view=back
+triceps-extension-machine: triceps view=back
+triceps-kickback-dumbbell: triceps view=back
+jm-press: triceps chest
+tate-press: triceps chest
+diamond-push-up: triceps chest
+forearm-curl-dumbbell: forearm view=front
+reverse-wrist-curl: forearm view=back
+wrist-roller: forearm
+plate-pinch: forearm
+dead-hang: forearm upperBack
+crunch-machine: abs
+cable-crunch: abs
+rotary-torso: obliques
+roman-chair: abs
+hanging-leg-raise: abs
+decline-sit-up: abs
+floor-crunch: abs
+russian-twist: obliques abs
+dumbbell-side-bend: obliques
+ab-wheel: abs
+plank: abs obliques
+hanging-knee-raise: abs
+toes-to-bar: abs forearm
+lying-leg-raise: abs
+reverse-crunch: abs
+sit-up: abs
+sit-up-weighted: abs
+decline-crunch-weighted: abs
+cable-crunch-kneeling: abs
+cable-woodchop: obliques abs
+cable-woodchop-low: obliques abs
+pallof-press: obliques abs
+side-plank: obliques
+plank-weighted: abs obliques
+dead-bug: abs
+bird-dog: lowerBack
+hollow-hold: abs
+v-up: abs
+bicycle-crunch: abs obliques
+mountain-climber: abs
+landmine-rotation: obliques abs
+ab-coaster: abs
+suitcase-carry: obliques forearm
+dragon-flag: abs
+l-sit: abs forearm
+back-raise-ab-low-back-machine: lowerBack abs view=back

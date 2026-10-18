@@ -1,6 +1,7 @@
 // Il catalogo degli esercizi: `catalog.json` è la fonte (id stabili, mai cambiati né riusati). Qui solo i tipi e la ricerca,
 // così il client carica il JSON a parte e solo quando serve.
 import type { GlyphName, MuscleGroup } from './docs.ts'
+import type { Muscle, View } from './muscle-info.ts'
 export { CATALOG_ID_RE } from './docs.ts'
 
 export interface CatalogEntry {
@@ -14,6 +15,10 @@ export interface CatalogEntry {
   step: number
   glyph: GlyphName
   notes: string
+  /** I muscoli principali che lavorano (vedi muscle-info.ts). */
+  muscles: Muscle[]
+  /** Vista forzata della figura, '' = automatica. */
+  view: '' | View
 }
 
 /** Minuscole, senza accenti né punteggiatura, spazi singoli: "Leg Press 45°" → "leg press 45". */

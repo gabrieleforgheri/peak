@@ -5,8 +5,7 @@
 import { createHash } from 'node:crypto'
 import {
   CATALOG_ID_RE, isoSec, normUuid, parseDoc, parseIso, split, MUSCLE_GROUPS,
-  type DocDataMap, type ExerciseDoc, type Kind, type LiveDoc, type MuscleGroup, type TemplateItem,
-} from '../common/docs.ts'
+  type DocDataMap, type ExerciseDoc, type Kind, type LiveDoc, type MuscleGroup, type TemplateItem, cleanMuscles } from '../common/docs.ts'
 import { deriveRecords, type RecManual, type RecSet } from '../common/records.ts'
 import { EPSILON } from '../common/domain.ts'
 import { matchByName } from '../common/catalog.ts'
@@ -24,7 +23,9 @@ export interface SetDTO {
 export interface ExerciseDTO {
   uuid: string; name: string; muscleGroup: string; notes: string; incrementStep: number; sortIndex: number
   isArchived: boolean; createdAt: string; glyph?: string; photo?: string; photoOffset?: number
-  isUnilateral?: boolean; restSeconds?: number; catalogID?: string; isHidden?: boolean; records: RecordDTO[]
+  isUnilateral?: boolean; restSeconds?: number; catalogID?: string; isHidden?: boolean
+  /** La figura dei muscoli: solo per i macchinari personalizzati; assenti nei backup vecchi. */
+  muscles?: string[]; view?: string; records: RecordDTO[]
 }
 /** Riga di scheda; `weight` assente = si mostra l'ultimo usato. */
 export interface ItemDTO { exerciseUUID: string; sets: number; repsMin: number; repsMax: number; weight?: number }
@@ -88,6 +89,8 @@ export function exportBackup(docs: Iterable<LiveDoc>, photo: (sha: string) => Ui
       if (e.restSeconds) dto.restSeconds = e.restSeconds
       if (e.catalog) dto.catalogID = e.catalog
       if (e.hidden) dto.isHidden = true
+      if (e.muscles.length) dto.muscles = e.muscles
+      if (e.view) dto.view = e.view
       return dto
     })
 
@@ -171,6 +174,7 @@ export function parseBackup(raw: unknown): ParseResult {
       photoOffset: typeof e.photoOffset === 'number' ? e.photoOffset : undefined, isUnilateral: e.isUnilateral === true ? true : undefined,
       restSeconds: typeof e.restSeconds === 'number' ? e.restSeconds : undefined, records,
       catalogID: typeof e.catalogID === 'string' && CATALOG_ID_RE.test(e.catalogID) ? e.catalogID : undefined, isHidden: e.isHidden === true ? true : undefined,
+      muscles: Array.isArray(e.muscles) ? e.muscles.map(String) : undefined, view: typeof e.view === 'string' ? e.view : undefined,
     })
   }
   /** Righe di scheda del file: tollerante, una riga rotta si scarta (non invalida tutto il backup). */
@@ -312,6 +316,7 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
       photo: photo?.sha ?? '', photoOffset: Math.min(1, Math.max(-1, ex.photoOffset ?? 0)),
       isUnilateral: ex.isUnilateral === true, restSeconds: ex.restSeconds ?? 0,
       catalog, hidden: ex.isHidden === true,
+      muscles: cleanMuscles(ex.muscles ?? []) ?? [], view: ex.view === 'front' || ex.view === 'back' ? ex.view : '',
     })
     let target = ex.uuid
     let isNew = true

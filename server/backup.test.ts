@@ -184,3 +184,19 @@ test('l\'allenamento eliminato non lascia record; il record automatico segue le 
     assert.ok(out.exercises.every((e) => e.records.every((r) => !r.isEstimated)), 'nessun record automatico senza serie')
   } finally { done() }
 })
+
+test('figura dei muscoli: il macchinario personalizzato la tiene nel backup', () => {
+  const { s, done } = store()
+  try {
+    const uid = s.upsertUser('sub-m', 'm@b.it', 'm', 'M').id
+    const file = sample()
+    file.exercises[1].muscles = ['deltoids']
+    file.exercises[1].view = 'back'
+    s.applyPlan(uid, planImport(parse(file), [], 'sostituisci'))
+    const out = exportBackup(s.live(uid), photoOf(s, uid), Date.parse('2026-10-14T12:00:00Z'))
+    const lat = out.exercises.find((e) => e.name === 'Lat Machine')!
+    assert.deepEqual(lat.muscles, ['deltoids'])
+    assert.equal(lat.view, 'back')
+    assert.equal(out.exercises.find((e) => e.name === 'Chest Press')!.muscles, undefined, 'nessun muscolo: niente campo')
+  } finally { done() }
+})

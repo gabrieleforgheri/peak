@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { CATALOG_ID_RE, matchByName, norm, searchCatalog, type CatalogEntry } from './catalog.ts'
 import { GLYPHS, MUSCLE_GROUPS } from './docs.ts'
+import { isMuscle } from './muscle-info.ts'
 
 const CATALOG = JSON.parse(readFileSync(new URL('./catalog.json', import.meta.url), 'utf8')) as CatalogEntry[]
 
@@ -16,6 +17,8 @@ test('catalogo: id unici e ben formati, campi validi', () => {
     assert.ok((GLYPHS as readonly string[]).includes(e.glyph), e.id)
     assert.ok(e.step > 0 && e.step <= 100, e.id)
     assert.ok(Array.isArray(e.alias) && typeof e.notes === 'string', e.id)
+    assert.ok(Array.isArray(e.muscles) && e.muscles.length > 0 && e.muscles.every(isMuscle), e.id)
+    assert.ok(e.view === '' || e.view === 'front' || e.view === 'back', e.id)
   }
   assert.ok(CATALOG.length >= 250)
 })

@@ -1,6 +1,8 @@
 // Documenti sincronizzati: tipi, validatori (confine di fiducia del server) e utilità di data/uuid.
 // Solo sintassi cancellabile: gira sia nel server (Node, type stripping) sia nel client (Vite).
 
+import { isMuscle, type Muscle, type View } from './muscle-info.ts'
+
 export const MUSCLE_GROUPS = ['petto', 'schiena', 'gambe', 'spalle', 'braccia', 'core'] as const
 export type MuscleGroup = (typeof MUSCLE_GROUPS)[number]
 
@@ -57,6 +59,10 @@ export interface ExerciseDoc {
   isUnilateral: boolean; restSeconds: number
   /** Id della voce del catalogo (vedi `catalog.json`); '' = esercizio personalizzato, fuori dalle classifiche. */
   catalog: string
+  /** Muscoli principali di un macchinario personalizzato (vuoto per le voci del catalogo, che hanno i loro). */
+  muscles: Muscle[]
+  /** Vista forzata della figura: '' = automatica. */
+  view: '' | View
   /** Nascosto agli amici. */
   hidden: boolean
 }
@@ -90,6 +96,8 @@ export const SETTING_DEFAULTS = {
   plateCalculatorEnabled: true, barWeight: 20, availablePlates: [25, 20, 15, 10, 5, 2.5, 1.25],
   /** Il tutorial l'hai già fatto (su un dispositivo qualsiasi). */
   tutorialDone: false,
+  /** L'ultimo giro del tutorial visto: 1 = quello di prima, 2 = con figure e medaglie. */
+  tourSeen: 1,
   /** Allenamenti a settimana che ti sei dato come obiettivo; 0 = non l'hai ancora scelto. */
   weeklyGoal: 0,
 } as const
@@ -116,6 +124,7 @@ function cleanSetting(key: string, v: unknown): unknown {
       return typeof v === 'boolean' ? v : undefined
     case 'restSeconds': return int(v, 15, 600) ?? undefined
     case 'weeklyGoal': return int(v, 0, 7) ?? undefined
+    case 'tourSeen': return int(v, 1, 10) ?? undefined
     case 'repRangeMin': case 'repRangeMax': return int(v, 1, 30) ?? undefined
     case 'barWeight': return num(v, 0, 100) ?? undefined
     case 'availablePlates':
@@ -135,6 +144,12 @@ export function cleanFocus(raw: unknown): string | null {
   const parts = raw.split(',').filter(Boolean)
   if (!parts.every((p) => (MUSCLE_GROUPS as readonly string[]).includes(p))) return null
   return MUSCLE_GROUPS.filter((g) => parts.includes(g)).join(',')
+}
+
+/** Muscoli validi, senza doppioni, al massimo tutti: null se qualcosa non torna. */
+export function cleanMuscles(raw: unknown): Muscle[] | null {
+  if (!Array.isArray(raw) || raw.length > 16 || !raw.every(isMuscle)) return null
+  return [...new Set(raw)] as Muscle[]
 }
 
 /** Forma di un id del catalogo (slug inglese). */
@@ -194,6 +209,10 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
       if (sortIndex === null) return fail('sortIndex')
       if (createdAt === null) return fail('createdAt')
       if (photoOffset === null) return fail('photoOffset')
+      const muscles = cleanMuscles(o.muscles ?? [])
+      if (muscles === null) return fail('muscles')
+      const view = o.view ?? ''
+      if (!(view === '' || view === 'front' || view === 'back')) return fail('view')
       if (restSeconds === null) return fail('restSeconds')
       return {
         data: {
@@ -201,6 +220,7 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
           isArchived: o.isArchived === true, createdAt: isoSec(createdAt), glyph: glyph as ExerciseDoc['glyph'],
           photo: photo as string, photoOffset, isUnilateral: o.isUnilateral === true, restSeconds,
           catalog: catalog as string, hidden: o.hidden === true,
+          muscles, view: view as ExerciseDoc['view'],
         },
       }
     }
@@ -281,13 +301,13 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
 export function upgradeDoc<T>(kind: Kind, data: T): T {
   if (!data) return data
   if (kind === 'workout') return { template: '', plan: [], ...data } as T
-  if (kind === 'exercise') return { catalog: '', hidden: false, ...data } as T
+  if (kind === 'exercise') return { catalog: '', hidden: false, muscles: [], view: '', ...data } as T
   if (kind === 'template') return { hidden: false, ...data } as T
   return data
 }
 
 /** Campi aggiunti dopo la 2.1: un client vecchio non li manda, e il server non deve cancellarli. */
-export const KEEP_IF_ABSENT: Partial<Record<Kind, readonly string[]>> = { exercise: ['catalog', 'hidden'], template: ['hidden'] }
+export const KEEP_IF_ABSENT: Partial<Record<Kind, readonly string[]>> = { exercise: ['catalog', 'hidden', 'muscles', 'view'], template: ['hidden'] }
 
 /** Chiave unica di un documento, per mappe in memoria. */
 export const docKey = (kind: Kind, uuid: string): string => `${kind}:${uuid}`

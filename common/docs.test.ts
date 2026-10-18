@@ -37,7 +37,7 @@ test('impostazioni tolte: restano in LEGACY_SETTINGS e non fra quelle vere', () 
 test('upgradeDoc: un allenamento salvato prima delle schede prende scheda vuota e piano vuoto', () => {
   const old = { date: '2026-10-01T08:00:00Z', endedAt: null, note: '', name: '', focus: '' }
   assert.deepEqual(upgradeDoc('workout', old), { ...old, template: '', plan: [] })
-  assert.deepEqual(upgradeDoc('exercise', old), { ...old, catalog: '', hidden: false })
+  assert.deepEqual(upgradeDoc('exercise', old), { ...old, catalog: '', hidden: false, muscles: [], view: '' })
   assert.deepEqual(upgradeDoc('template', old), { ...old, hidden: false })
   assert.deepEqual(upgradeDoc('bodyweight', old), old)
 })
