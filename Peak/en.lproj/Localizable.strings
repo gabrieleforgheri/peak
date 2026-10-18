@@ -810,3 +810,9 @@
 "Il collegamento è scaduto: riprova." = "The link has expired: try again.";
 "Peak ha risposto con un errore (%@)." = "Peak answered with an error (%@).";
 "Peak ha risposto con un errore (%lld)." = "Peak answered with an error (%lld).";
+"Apple Watch" = "Apple Watch";
+"Usa l'Apple Watch" = "Use the Apple Watch";
+"Conta le ripetizioni sul polso e registra la serie sull'iPhone." = "Counts reps on your wrist and logs the set on the iPhone.";
+"Spento: l'orologio non riceve né invia nulla." = "Off: the watch neither receives nor sends anything.";
+"Collegato: durante un allenamento puoi far partire la serie dal Watch." = "Linked: during a workout you can start the set from the Watch.";
+"L'app non è sull'orologio abbinato. Si installa dal Mac." = "The app is not on the paired watch. It is installed from the Mac.";

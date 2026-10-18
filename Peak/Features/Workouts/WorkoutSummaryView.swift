@@ -3,9 +3,6 @@ import SwiftData
 
 /// Riepilogo di fine sessione, con i record ottenuti.
 struct WorkoutSummaryView: View {
-    /// Una vista per volta della figura dei muscoli della seduta.
-    @State private var figureSide: AnatomyView = .front
-
     /// I muscoli di tutti gli esercizi della seduta, senza doppioni.
     private var workoutMuscles: [MuscleId] {
         var seen = Set<MuscleId>()
@@ -184,12 +181,12 @@ struct WorkoutSummaryView: View {
                         GlassCard {
                             VStack(spacing: 12) {
                                 SectionHeader(title: "Muscoli lavorati")
-                                MuscleFigureView(muscles: workoutMuscles, view: figureSide, zoom: false)
-                                    .frame(maxWidth: 220)
-                                Button(figureSide == .front ? "Vedi di schiena" : "Vedi di fronte") {
-                                    figureSide = figureSide == .front ? .back : .front
+                                // davanti e dietro affiancati: c'è posto per entrambi
+                                HStack(alignment: .top, spacing: 8) {
+                                    MuscleFigureView(muscles: workoutMuscles, view: .front, zoom: false)
+                                    MuscleFigureView(muscles: workoutMuscles, view: .back, zoom: false)
                                 }
-                                .buttonStyle(.bordered)
+                                .frame(maxWidth: 340)
                             }
                             .frame(maxWidth: .infinity)
                         }

@@ -45,6 +45,7 @@ final class WatchBridge: NSObject, WCSessionDelegate {
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = .traditionalStrengthTraining
         configuration.locationType = .indoor
+        guard settings?.watchEnabled != false else { return }
         HKHealthStore().startWatchApp(with: configuration) { _, _ in }
         push(exercise: watchExercise(exercise, in: workout), start: true)
     }
@@ -55,6 +56,12 @@ final class WatchBridge: NSObject, WCSessionDelegate {
         push(exercise: nil, start: false)
     }
 
+    /// Acceso o spento dalle impostazioni: da spento il Watch torna in attesa e non riceve più nulla.
+    @MainActor
+    func enabledChanged() {
+        if settings?.watchEnabled == true { settingsChanged() } else { push(exercise: nil, start: false, force: true) }
+    }
+
     /// Reinvia le impostazioni cambiate senza toccare l'esercizio mostrato.
     @MainActor
     func settingsChanged() {
@@ -63,8 +70,9 @@ final class WatchBridge: NSObject, WCSessionDelegate {
     }
 
     @MainActor
-    private func push(exercise: WatchExercise?, start: Bool) {
-        guard let settings,
+    private func push(exercise: WatchExercise?, start: Bool, force: Bool = false) {
+        // con l'Apple Watch spento non si manda niente (tranne il «torna in attesa» di quando lo si spegne)
+        guard let settings, settings.watchEnabled || force,
               WCSession.isSupported(), WCSession.default.activationState == .activated else { return }
         let context = WatchContext(
             exercise: exercise,
@@ -100,8 +108,8 @@ final class WatchBridge: NSObject, WCSessionDelegate {
     private func target(for exercise: Exercise, in workout: Workout) -> String? {
         guard let settings, let item = workout.plan.first(where: { $0.exercise == exercise.uuid }) else { return nil }
         let done = workout.sets(for: exercise).filter { !$0.isWarmup }.count
-        let last = exercise.setList.max(by: { $0.createdAt < $1.createdAt })?.weight
-        let line = Plan.targetLine(item, done: done, lastKilograms: last, settings: settings)
+        // niente «ultimo peso» sull'orologio: solo l'obiettivo scritto nel giorno
+        let line = Plan.targetLine(item, done: done, lastKilograms: nil, settings: settings)
         return line.isEmpty ? nil : line
     }
 
@@ -116,6 +124,7 @@ final class WatchBridge: NSObject, WCSessionDelegate {
     }
 
     private func receive(_ payload: [String: Any]) {
+        guard settings?.watchEnabled != false else { return }
         guard let set = WatchSet(watchPayload: payload, key: WatchSet.key) else { return }
         Task { @MainActor in self.record(set) }
     }

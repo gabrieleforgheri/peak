@@ -3,7 +3,7 @@ import SwiftData
 
 /// Le sottopagine delle impostazioni.
 enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
-    case general, training, account, health, backup, data
+    case general, training, account, health, watch, backup, data
 
     var id: String { rawValue }
 
@@ -13,6 +13,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
         case .training: return "Allenamento"
         case .account: return "Account yG"
         case .health: return "App Salute"
+        case .watch: return "Apple Watch"
         case .backup: return "Backup"
         case .data: return "Dati"
         }
@@ -24,6 +25,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
         case .training: return "dumbbell"
         case .account: return "icloud"
         case .health: return "heart"
+        case .watch: return "applewatch"
         case .backup: return "externaldrive"
         case .data: return "archivebox"
         }
@@ -77,6 +79,7 @@ struct SettingsView: View {
         case .training: TrainingSettingsView()
         case .account: AccountSettingsView()
         case .health: HealthSettingsView()
+        case .watch: WatchSettingsView()
         case .backup: BackupSettingsView()
         case .data: DataSettingsView()
         }

@@ -94,6 +94,7 @@ final class AppSettings {
         static let tourSeen = "settings.tourSeen"
         static let weeklyGoal = "settings.weeklyGoal"
         static let language = "settings.language"
+        static let watchEnabled = "settings.watchEnabled"
         static let activeProgram = "settings.activeProgram"
     }
 
@@ -192,6 +193,11 @@ final class AppSettings {
         didSet { defaults.set(weeklyGoal, forKey: Key.weeklyGoal) }
     }
 
+    /// Usa l'Apple Watch per le serie. Resta di questo iPhone (non segue l'account).
+    var watchEnabled: Bool {
+        didSet { defaults.set(watchEnabled, forKey: Key.watchEnabled) }
+    }
+
     /// Lingua dell'interfaccia: "" = quella del dispositivo, "it" o "en". Segue l'account.
     var language: String {
         didSet { defaults.set(language, forKey: Key.language); Lang.apply(language) }
@@ -229,6 +235,7 @@ final class AppSettings {
         self.weeklyGoal = defaults.integer(forKey: Key.weeklyGoal)
         self.language = defaults.string(forKey: Key.language) ?? ""
         self.activeProgram = defaults.string(forKey: Key.activeProgram) ?? ""
+        self.watchEnabled = defaults.object(forKey: Key.watchEnabled) as? Bool ?? true
         Lang.apply(language)
     }
 

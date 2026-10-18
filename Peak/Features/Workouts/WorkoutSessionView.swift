@@ -28,7 +28,7 @@ struct WorkoutSessionView: View {
     @State private var sendingToHealth = false
 
     private var canUseWatch: Bool {
-        workout.isActive && WatchBridge.shared.isWatchAppInstalled
+        workout.isActive && settings.watchEnabled && WatchBridge.shared.isWatchAppInstalled
     }
 
     private var recordCount: Int {

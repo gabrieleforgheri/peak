@@ -266,7 +266,7 @@ struct SectionHeader: View {
 
     var body: some View {
         HStack {
-            Text(title.uppercased())
+            Text(verbatim: title.tr.uppercased())
                 .font(Theme.rounded(11, .bold))
                 .tracking(0.8)
                 .foregroundStyle(Theme.textTertiary)
