@@ -13,7 +13,7 @@
 
 **In corso / da fare**
 - **I suoni sintetizzati NON piacciono all'utente** («vorrei qualcosa di più professionale»): pagina di ascolto con 4 candidati per momento (Kenney CC0, Mixkit, Pixabay) in preparazione nello scratchpad della sessione (`suoni-prova/index.html`). L'utente sceglie una lettera per momento; poi si sostituiscono i file in `web/src/sounds/` e `Peak/Sounds/` con gli stessi nomi (il codice non cambia) e si aggiungono i crediti se una licenza li chiede.
-- **Animazioni web** (stesse dell'iPhone) in un worktree non ancora unito: `.claude/worktrees/agent-ad3a182f427adba1a` (Summary, Session, AddSetSheet, toast, app.css, `lib/fx.ts`). Se il lavoro è a metà, controllarlo e finirlo, poi `npm run check` e build.
+- Animazioni web: unite su `main` (9a4f224), check e build ok; `web/dist` da ricostruire prima del deploy.
 - Da provare sul telefono: lag di Allenamento e Me, animazioni, barra in basso e blur in alto della web app (solo dopo il deploy).
 - Riga vecchia più sotto: «Impostazioni → Apple Watch» ora esiste davvero (interruttore «Usa l'Apple Watch»).
 
