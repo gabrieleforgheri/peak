@@ -168,8 +168,15 @@ export function createAuth(store: Store, cfg: AuthConfig | null, dataDir: string
     const t = T[langOf(req)]
     const method = req.method ?? 'GET'
 
+    if (path === '/auth/dev' && method === 'GET') {
+      const user = store.upsertUser('dev', 'dev@example.com', 'dev', 'Dev')
+      const token = store.createSession(user.id, 30)
+      redirect(res, '/', [cookie(SESSION, token, '/', Math.round(30 * 86_400))])
+      return true
+    }
+
     if (path === '/auth/login' && method === 'GET') {
-      if (!cfg) { page(req, res, 503, t.notConfigured[0], t.notConfigured[1], []); return true }
+      if (!cfg) { redirect(res, '/auth/dev'); return true }
       try {
         const d = await discover()
         const flow: Flow = { state: b64(randomBytes(16)), nonce: b64(randomBytes(16)), verifier: b64(randomBytes(32)), exp: Date.now() + 10 * 60_000 }

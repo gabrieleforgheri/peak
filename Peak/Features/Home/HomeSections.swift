@@ -156,7 +156,7 @@ struct HomeHero: View {
         .task(id: reduceMotion) {
             guard !reduceMotion else { return }
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(10))
+                try? await Task.sleep(for: .seconds(7))
                 guard !Task.isCancelled else { return }
                 withAnimation(.easeInOut(duration: 0.6)) { index = (index + 1) % Motivation.phrases.count }
             }

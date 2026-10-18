@@ -25,13 +25,29 @@
 		t('Chi si allena oggi ringrazia domani.'),
 		t('Riposa se serve, ma non mollare.'),
 		t('Un allenamento alla volta.'),
+		t('Costruisci oggi, quello che sarai domani.'),
+		t('La disciplina è la via, per ogni vetta.'),
+		t('Non contare i giorni, fai contare i giorni.'),
+		t('La forza cresce, quando pensi di non farcela.'),
+		t('Focalizzati sull\'obiettivo, dimentica il rumore.'),
+		t('Ogni goccia di sudore, è un passo avanti.'),
+		t('Vinci la mente, e il corpo seguirà.'),
+		t('Il ferro non mente mai, ti dice sempre chi sei.'),
+		t('Supera i tuoi limiti, un chilo alla volta.'),
+		t('La determinazione, trasforma la fatica in forza.'),
+		t('Non fermarti quando sei stanco, fermati quando hai finito.'),
+		t('Non cercare scorciatoie, la salita fa parte del viaggio.'),
+		t('La motivazione ti fa partire, l\'abitudine ti fa andare avanti.'),
+		t('Una serie in più oggi, un record in più domani.'),
+		t('Fidati del processo, i risultati arriveranno.'),
+		t('Non serve essere perfetti, basta essere costanti.'),
 	]
-	// una frase diversa ogni giorno, e ogni dieci secondi la successiva; chi non vuole movimento ne vede una sola
+	// una frase diversa ogni giorno, e ogni sette secondi la successiva; chi non vuole movimento ne vede una sola
 	const day = Math.floor((Date.now() - new Date().getTimezoneOffset() * 60_000) / 86_400_000)
 	let i = $state(day % PHRASES.length)
 	$effect(() => {
 		if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
-		const id = setInterval(() => { i = (i + 1) % PHRASES.length }, 10_000)
+		const id = setInterval(() => { i = (i + 1) % PHRASES.length }, 7_000)
 		return () => clearInterval(id)
 	})
 </script>
