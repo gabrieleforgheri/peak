@@ -114,7 +114,7 @@ enum Medals {
 
 /// Le frasi della Home: una diversa ogni giorno, poi a rotazione.
 enum Motivation {
-    static let phrases = [
+    private static let italian = [
         "Oggi è un buon giorno per battere il tuo record.",
         "Ogni vetta comincia con un primo passo.",
         "La costanza batte il talento.",
@@ -133,8 +133,14 @@ enum Motivation {
         "Un allenamento alla volta."
     ]
 
+    /// Già tradotte e spezzate dopo la virgola. Si traduce PRIMA di andare a capo: la chiave di `.tr`
+    /// è l'italiano, con "\n" dentro non si trova più. La vista poi non trova chiave e lascia com'è.
+    static var phrases: [String] {
+        italian.map { $0.tr.replacingOccurrences(of: ", ", with: ",\n") }
+    }
+
     static func startIndex(now: Date = Date(), calendar: Calendar = .current) -> Int {
         let day = calendar.ordinality(of: .day, in: .era, for: now) ?? 0
-        return day % phrases.count
+        return day % italian.count
     }
 }
