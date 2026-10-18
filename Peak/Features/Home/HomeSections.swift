@@ -63,6 +63,7 @@ struct HomeHero: View {
     @Environment(AppSettings.self) private var settings
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
+    private let nav = AppNav.shared
 
     let name: String
     let streak: Int
@@ -160,10 +161,11 @@ struct HomeHero: View {
                 withAnimation(.easeInOut(duration: 0.6)) { index = (index + 1) % Motivation.phrases.count }
             }
         }
-        // alla comparsa (e se i numeri cambiano mentre la Home è aperta) festeggia solo ciò che non è ancora stato festeggiato
-        .task(id: [weekSessions, streak, scenePhase == .active ? 1 : 0]) { await celebrate() }
+        // festeggia solo ciò che non è ancora stato festeggiato e solo quando la Home si vede (le altre schede restano vive sotto)
+        .task(id: [weekSessions, streak, scenePhase == .active ? 1 : 0, nav.tab == .home ? 1 : 0]) { await celebrate() }
         .onChange(of: weekSessions) { catchUp() }
         .onChange(of: streak) { catchUp() }
+        .onChange(of: nav.tab) { catchUp() }
     }
 
     /// Se i numeri sono saliti mentre la Home non si vedeva e il riepilogo li ha già festeggiati, la barra li segue senza festa.
@@ -177,7 +179,8 @@ struct HomeHero: View {
     /// Prima volta in assoluto, nessun aumento o calo: si allinea e basta. I valori nuovi si salvano subito, così non si ripete.
     @MainActor
     private func celebrate() async {
-        guard scenePhase == .active else { return }
+        // fuori vista non si fa e non si salva nulla: la festa tocca quando la Home si guarda davvero
+        guard scenePhase == .active, nav.tab == .home else { return }
         let start = Celebrated.weekStart()
         let seenWeek = Celebrated.week(start: start)
         let seenStreak = Celebrated.streak
