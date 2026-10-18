@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Impostazioni → Generale: unità e colore.
+/// Impostazioni → Generale: lingua, unità, colore e suoni.
 struct GeneralSettingsView: View {
     @Environment(AppSettings.self) private var settings
 
@@ -10,6 +10,7 @@ struct GeneralSettingsView: View {
             languageCard
             unitCard
             accentCard
+            soundsCard
             GlassCard {
                 Button { settings.tutorialDone = false; AppNav.shared.tab = .home } label: {
                     Label("Rivedi il tutorial", systemImage: "questionmark.circle")
@@ -55,6 +56,24 @@ struct GeneralSettingsView: View {
                     .font(Theme.rounded(11, .medium))
                     .foregroundStyle(Theme.textTertiary)
             }
+        }
+    }
+
+    var soundsCard: some View {
+        GlassCard {
+            Toggle(isOn: Binding(
+                get: { settings.soundsEnabled },
+                set: { settings.soundsEnabled = $0; if $0 { SoundFX.play(.set) } }
+            )) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Suoni")
+                        .font(Theme.rounded(15, .semibold))
+                    Text("Effetti sonori per serie, record e fine allenamento.")
+                        .font(Theme.rounded(11, .medium))
+                        .foregroundStyle(Theme.textTertiary)
+                }
+            }
+            .tint(settings.accentColor)
         }
     }
 

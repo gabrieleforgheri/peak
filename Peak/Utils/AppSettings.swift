@@ -95,6 +95,7 @@ final class AppSettings {
         static let weeklyGoal = "settings.weeklyGoal"
         static let language = "settings.language"
         static let watchEnabled = "settings.watchEnabled"
+        static let soundsEnabled = SoundFX.enabledKey
         static let activeProgram = "settings.activeProgram"
     }
 
@@ -198,6 +199,11 @@ final class AppSettings {
         didSet { defaults.set(watchEnabled, forKey: Key.watchEnabled) }
     }
 
+    /// Effetti sonori (serie, record, fine allenamento…). Resta di questo iPhone (non segue l'account); `SoundFX` legge la stessa chiave.
+    var soundsEnabled: Bool {
+        didSet { defaults.set(soundsEnabled, forKey: Key.soundsEnabled) }
+    }
+
     /// Lingua dell'interfaccia: "" = quella del dispositivo, "it" o "en". Segue l'account.
     var language: String {
         didSet { defaults.set(language, forKey: Key.language); Lang.apply(language) }
@@ -236,6 +242,7 @@ final class AppSettings {
         self.language = defaults.string(forKey: Key.language) ?? ""
         self.activeProgram = defaults.string(forKey: Key.activeProgram) ?? ""
         self.watchEnabled = defaults.object(forKey: Key.watchEnabled) as? Bool ?? true
+        self.soundsEnabled = defaults.object(forKey: Key.soundsEnabled) as? Bool ?? true
         Lang.apply(language)
     }
 
