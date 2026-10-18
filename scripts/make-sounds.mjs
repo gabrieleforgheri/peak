@@ -197,7 +197,8 @@ for (const { name, trim, S } of built) {
 	const wavFile = join(tmp, `${name}.wav`), m4a = join(tmp, `${name}.m4a`), back = join(tmp, `${name}-dec.wav`)
 	writeFileSync(wavFile, wav(x))
 	execFileSync('afconvert', ['-f', 'm4af', '-d', 'aac', '-b', '128000', wavFile, m4a])
-	for (const d of outDirs) copyFileSync(m4a, join(d, `${name}.m4a`))
+	// set e record vengono da librerie scelte dall'utente (web/src/sounds/CREDITS.md): non si sovrascrivono
+	if (!['set', 'record'].includes(name)) for (const d of outDirs) copyFileSync(m4a, join(d, `${name}.m4a`))
 	execFileSync('afconvert', ['-f', 'WAVE', '-d', 'LEI16', m4a, back]) // controllo: si decodifica e non sfora
 	const dec = readWav(back), mean = x.reduce((s, v) => s + v, 0) / x.length
 	const tailLvl = peakOf(x.subarray(Math.round(x.length - 0.06 * SR), Math.round(x.length - 0.05 * SR)))
