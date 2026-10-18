@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte'
+	import { onDestroy, onMount, untrack } from 'svelte'
 	import { oneRepMax } from '@common/domain.ts'
 	import { medals, medalTotals } from '@common/medals.ts'
 	import { weekStart, weeklyGoal, weeklyStreak, workoutVolume, type StatWorkout } from '@common/stats.ts'
@@ -12,6 +12,8 @@
 	import { go } from '../lib/router.svelte.ts'
 	import { F, loadFriends, loadNews } from '../lib/social.svelte.ts'
 	import { S, getModel } from '../lib/store.svelte.ts'
+	import { celebrated, confetti, countUp, sequence, wiggle } from '../lib/fx.ts'
+	import { play, playDay } from '../lib/sound.ts'
 	import GoalPicker from '../components/GoalPicker.svelte'
 	import SummitHero from '../components/SummitHero.svelte'
 	import Icon from '../components/Icon.svelte'
@@ -40,6 +42,43 @@
 	// ---- numeri ----
 	const stat = $derived<StatWorkout[]>(finished.map((w) => ({ date: w.dateMs, sets: w.sets.map((s) => ({ exercise: s.exercise, weight: s.weight, reps: s.reps, isWarmup: s.isWarmup })) })))
 	const streak = $derived(weeklyStreak(stat))
+	const weekCount = $derived(finished.filter((w) => w.dateMs >= weekStart(Date.now())).length)
+	const goalN = $derived(m.settings.weeklyGoal || weeklyGoal(stat))
+
+	// ---- festa: quello che è salito da quando l'hai visto l'ultima volta (un allenamento fatto sull'iPhone e arrivato con la sincronizzazione) ----
+	// Il confronto è con ciò che Riepilogo o questa stessa pagina hanno già festeggiato (celebrated); la prima volta si salva in silenzio.
+	let shown = $state<number | null>(null) // segmenti mostrati mentre si festeggia (null: quelli veri)
+	let roll = $state<{ from: number; delay: number } | undefined>() // la serie sale da `from`
+	let heroBox = $state<HTMLElement>()
+	let flame = $state<HTMLElement>()
+	const tl = sequence()
+	onDestroy(tl.stop) // uscendo dalla Home non resta nessun suono in coda
+	// $effect.pre: il confronto avviene prima che il DOM mostri i numeri nuovi, così non c'è il lampo del valore finale
+	$effect.pre(() => {
+		if (!S.synced) return
+		const n = weekCount, s = streak, g = goalN, ws = weekStart(Date.now())
+		untrack(() => {
+			const cw = celebrated.week(), cs = celebrated.streak()
+			celebrated.setWeek(ws, n)
+			celebrated.setStreak(s)
+			const base = cw ? (cw.ws === ws ? cw.n : 0) : n // un'altra settimana: si riparte da zero
+			const streakUp = cs !== null && s > cs
+			if (n <= base && !streakUp) return
+			tl.stop()
+			let t = 500
+			if (n > base) {
+				shown = base
+				for (let k = base; k < n; k++, t += 160) tl.at(t, () => { shown = k + 1; playDay(k) }) // un segmento e una nota alla volta
+				if (n >= g && base < g) { tl.at(t, () => { play('goal'); confetti(heroBox) }); t += 450 }
+			}
+			if (streakUp) {
+				roll = { from: cs, delay: t }
+				tl.at(t, () => { wiggle(flame); play('streak') })
+				t += 900
+			}
+			tl.at(t, () => { shown = null; roll = undefined })
+		})
+	})
 	const totalVolume = $derived(stat.reduce((v, w) => v + workoutVolume(w), 0))
 	const recordCount = $derived(m.exercises.reduce((n, e) => n + e.records.length, 0))
 	const used = $derived(m.exercises.filter((e) => e.records.length || e.sets.length))
@@ -59,7 +98,7 @@
 <main class="screen page home">
 	<!-- a schermo largo: a sinistra la montagna, il giorno che tocca e le medaglie; a destra record e novità -->
 	<div class="blk main">
-		<SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={finished.filter((w) => w.dateMs >= weekStart(Date.now())).length} goal={m.settings.weeklyGoal || weeklyGoal(stat)} onchangegoal={() => (choosing = true)} onavatar={() => go('me')} />
+		<div bind:this={heroBox}><SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={shown ?? weekCount} goal={goalN} {roll} onchangegoal={() => (choosing = true)} onavatar={() => go('me')} /></div>
 
 		{#if choosing}<GoalPicker current={m.settings.weeklyGoal} suggested={weeklyGoal(stat)} onclose={() => (choosing = false)} />{/if}
 
@@ -78,7 +117,7 @@
 			<div class="stat"><div class="n">{finished.length}</div><div class="l">{t('Allenamenti')}</div></div>
 			<div class="stat"><div class="n">{V(totalVolume)}</div><div class="l">{t('Sollevati')}</div></div>
 			<div class="stat"><div class="n">{recordCount}</div><div class="l">{t('Record')}</div></div>
-			<div class="stat flame"><div class="n"><Icon name="flame" size={22} />{streak}</div><div class="l">{t('Settimane di fila')}</div></div>
+			<div class="stat flame"><div class="n"><span class="fl" bind:this={flame}><Icon name="flame" size={22} /></span><span use:countUp={{ value: streak, from: roll?.from, delay: roll?.delay }}></span></div><div class="l">{t('Settimane di fila')}</div></div>
 		</div>
 
 		<div class="row between sec-row"><div class="sec-title">{t('Medaglie')}</div><button class="link small" onclick={() => go('me')}>{totals.earned} / {totals.total} · {t('Vedi tutto')}</button></div>
@@ -128,6 +167,7 @@
 	.stat .n { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; display: flex; align-items: center; justify-content: center; gap: 2px; }
 	.stat .l { font-size: 10px; color: var(--text-3); margin-top: 2px; line-height: 1.2; }
 	.stat.flame .n { color: var(--accent); }
+	.fl { display: inline-flex; }
 	/* schermi larghi: colonna principale più larga; a tre colonne record e novità si separano (la .fan si scioglie) */
 	@media (min-width: 900px) { .home { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }
 	@media (min-width: 1400px) { .home { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) minmax(0, 2fr); } }

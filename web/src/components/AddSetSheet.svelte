@@ -5,6 +5,7 @@
 	import { W, fromUnit, setLine, toUnit, unit } from '../lib/fmt.ts'
 	import { locale, t } from '../lib/i18n.ts'
 	import { getModel } from '../lib/store.svelte.ts'
+	import { play } from '../lib/sound.ts'
 	import type { Ex, SetItem, Wk } from '../lib/types.ts'
 	import { suggestedGlyph } from '@common/glyph.ts'
 	import PlateBar from './PlateBar.svelte'
@@ -12,7 +13,7 @@
 	import Stepper from './Stepper.svelte'
 
 	let { workout, ex, set = null, onclose, onadded }: {
-		workout: Wk; ex: Ex; set?: SetItem | null; onclose: () => void; onadded?: (r: { isPR: boolean; isWarmup: boolean }) => void
+		workout: Wk; ex: Ex; set?: SetItem | null; onclose: () => void; onadded?: (r: { isPR: boolean; isWarmup: boolean; uuid?: string }) => void
 	} = $props()
 	const m = getModel()
 	const step = stepOf(ex, m)
@@ -45,12 +46,13 @@
 	function save() {
 		if (!(weight > 0) || reps < 1) return
 		if (set) { patchSet(set.uuid, { weight: kg, reps, isWarmup: warm }); onadded?.({ isPR: false, isWarmup: warm }) }
-		else { const r = addSet(workout.uuid, ex.uuid, kg, reps, warm); onadded?.({ isPR: r.isPR, isWarmup: warm }) }
+		else { const r = addSet(workout.uuid, ex.uuid, kg, reps, warm); onadded?.({ isPR: r.isPR, isWarmup: warm, uuid: r.uuid }) }
 		onclose()
 	}
 	function remove() {
 		if (!set) return
 		deleteSet(set.uuid)
+		play('remove')
 		onclose()
 	}
 </script>

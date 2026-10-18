@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { t, tn } from '../lib/i18n.ts'
+	import { countUp } from '../lib/fx.ts'
 
-	/** La prima cosa che vedi: una montagna e una frase che cambia. Sotto, i due numeri che contano di più. */
-	let { greeting, name, streak, weekSessions, goal, onavatar, onchangegoal }: {
-		greeting: string; name: string; streak: number; weekSessions: number; goal: number; onavatar: () => void; onchangegoal: () => void
+	/** La prima cosa che vedi: una montagna e una frase che cambia. Sotto, i due numeri che contano di più.
+	 *  `roll`: la serie di settimane sale da `from` (festa dopo un allenamento arrivato dalla sincronizzazione), dopo `delay` ms. */
+	let { greeting, name, streak, weekSessions, goal, roll, onavatar, onchangegoal }: {
+		greeting: string; name: string; streak: number; weekSessions: number; goal: number; roll?: { from: number; delay: number }; onavatar: () => void; onchangegoal: () => void
 	} = $props()
 
 	const PHRASES = [
@@ -60,7 +62,7 @@
 	</button>
 
 	<div class="foot">
-		<span class="pill"><b>{streak}</b> {t('settimane di fila')}</span>
+		<span class="pill"><b use:countUp={{ value: streak, from: roll?.from, delay: roll?.delay }}></b> {t('settimane di fila')}</span>
 		{#if weekSessions > goal}<span class="pill">{tn(weekSessions - goal, '+1 oltre l\'obiettivo', '+{0} oltre l\'obiettivo')}</span>{/if}
 	</div>
 </section>
@@ -81,9 +83,11 @@
 	.gl { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--text-2); margin-bottom: 8px; text-shadow: 0 1px 10px rgba(0,0,0,.7); }
 	.gl b { font-size: 15px; color: var(--text); font-variant-numeric: tabular-nums; }
 	.segs { display: flex; gap: 6px; }
-	.segs i { flex: 1; height: 12px; border-radius: 6px; background: rgba(255,255,255,.14); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
-	.segs i.on { background: linear-gradient(90deg, rgba(var(--accent-rgb), .7), rgb(var(--accent-rgb))); }
-	.segs i.last { box-shadow: 0 0 14px rgba(var(--accent-rgb), .7); }
+	.segs i { position: relative; flex: 1; height: 12px; border-radius: 6px; background: rgba(255,255,255,.14); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+	/* il riempimento è un velo che si allunga da sinistra (transform), così un segmento nuovo si riempie invece di comparire */
+	.segs i::after { content: ''; position: absolute; inset: 0; border-radius: 6px; background: linear-gradient(90deg, rgba(var(--accent-rgb), .7), rgb(var(--accent-rgb))); transform: scaleX(0); transform-origin: left; transition: transform 220ms var(--ease-out); }
+	.segs i.on::after { transform: none; }
+	.segs i.last::after { box-shadow: 0 0 14px rgba(var(--accent-rgb), .7); }
 	.foot { position: relative; padding-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
 	.pill { padding: 6px 12px; border-radius: 999px; font-size: 12px; color: var(--text-2); background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.1); backdrop-filter: blur(6px); }
 	.pill b { color: var(--accent); font-size: 14px; margin-right: 2px; }

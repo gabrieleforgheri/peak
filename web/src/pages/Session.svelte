@@ -9,6 +9,8 @@
 	import { getModel } from '../lib/store.svelte.ts'
 	import { R, shiftRest, startRest, stopRest } from '../lib/timer.svelte.ts'
 	import { toast } from '../lib/toast.svelte.ts'
+	import { confetti, rowIn, rowOut } from '../lib/fx.ts'
+	import { play } from '../lib/sound.ts'
 	import type { Ex, SetItem } from '../lib/types.ts'
 	import AddSetSheet from '../components/AddSetSheet.svelte'
 	import ExercisePicker from '../components/ExercisePicker.svelte'
@@ -28,7 +30,7 @@
 	$effect(() => { current ? sessionStorage.setItem(store('current'), current) : sessionStorage.removeItem(store('current')) })
 
 	let now = $state(Date.now())
-	onMount(() => { const i = setInterval(() => (now = Date.now()), 1000); return () => clearInterval(i) })
+	onMount(() => { const i = setInterval(() => (now = Date.now()), 1000); return () => { clearInterval(i); clearTimeout(freshTimer) } })
 
 	let pickingEx = $state(false)
 	let editFocus = $state(false)
@@ -46,16 +48,27 @@
 	const orphanSets = $derived(wk?.sets.filter((s) => !s.exercise) ?? [])
 	const seconds = $derived(wk ? ((wk.endedMs ?? now) - wk.dateMs) / 1000 : 0)
 
-	function added(ex: Ex, r: { isPR: boolean; isWarmup: boolean }) {
+	// la serie appena salvata: solo lei ha la festa del record (lampo verde e badge PR che fa «pop»), per un secondo e mezzo
+	let fresh = $state('')
+	let freshTimer: ReturnType<typeof setTimeout> | undefined
+	function added(ex: Ex, r: { isPR: boolean; isWarmup: boolean; uuid?: string }) {
 		current = ex.uuid
-		if (r.isPR) toast(t('Nuovo massimale!'))
+		fresh = r.uuid ?? ''
+		clearTimeout(freshTimer)
+		freshTimer = setTimeout(() => (fresh = ''), 1500)
+		if (r.isPR) {
+			toast(t('Nuovo massimale!'), 2600, 'trophy')
+			confetti({ x: innerWidth / 2, y: 120 })
+			play('record')
+		} else play('set')
 		if (wk?.isActive && m.settings.restTimerEnabled) startRest(ex.restSeconds || m.settings.restSeconds)
 	}
 
 	function repeat(ex: Ex) {
 		const last = [...(wk?.sets ?? [])].reverse().find((s) => s.exercise === ex.uuid)
 		if (!last || !wk) return
-		added(ex, addSet(wk.uuid, ex.uuid, last.weight, last.reps, last.isWarmup).isPR ? { isPR: true, isWarmup: last.isWarmup } : { isPR: false, isWarmup: last.isWarmup })
+		const r = addSet(wk.uuid, ex.uuid, last.weight, last.reps, last.isWarmup)
+		added(ex, { isPR: r.isPR, isWarmup: last.isWarmup, uuid: r.uuid })
 	}
 
 	function finish() {
@@ -128,19 +141,18 @@
 						{#if goal}<span class="small muted num" style="display:block">{goal}</span>{/if}</div>
 				</button>
 				{#if wk.isActive}<button class="icon-btn" onclick={() => (menuFor = ex)} aria-label={t('Altro')}><Icon name="more" /></button>{/if}</div>
-				{#if sets.length}
-					<div class="list" style="margin-top:10px">
-						{#each sets as s, i (s.uuid)}
-							<button class="item" onclick={() => (adding = { ex, set: s })}>
-								<span class="muted num" style="width:20px">{i + 1}</span>
-								<div class="grow num" style="font-weight:700">{setLine(s.weight, s.reps)}</div>
-								{#if s.isWarmup}<span class="badge">{t('risc.')}</span>{/if}
-								{#if s.isPR}<span class="badge pos">PR</span>{/if}
-								{#if s.reps > 1 && !s.isWarmup}<span class="small muted num">≈ {W(oneRepMax(s.weight, s.reps))}</span>{/if}
-							</button>
-						{/each}
-					</div>
-				{/if}
+				<!-- sempre presente (vuota non occupa nulla): così anche la prima serie di un esercizio entra con la sua transizione -->
+				<div class="list" style:margin-top={sets.length ? '10px' : '0'}>
+					{#each sets as s, i (s.uuid)}
+						<button class="item" class:flash={s.isPR && s.uuid === fresh} onclick={() => (adding = { ex, set: s })} in:rowIn out:rowOut>
+							<span class="muted num" style="width:20px">{i + 1}</span>
+							<div class="grow num" style="font-weight:700">{setLine(s.weight, s.reps)}</div>
+							{#if s.isWarmup}<span class="badge">{t('risc.')}</span>{/if}
+							{#if s.isPR}<span class="badge pos">PR</span>{/if}
+							{#if s.reps > 1 && !s.isWarmup}<span class="small muted num">≈ {W(oneRepMax(s.weight, s.reps))}</span>{/if}
+						</button>
+					{/each}
+				</div>
 				<div class="row" style="margin-top:12px">
 					<button class="btn small grow" onclick={() => (adding = { ex, set: null })}><Icon name="plus" size={18} />{t('Serie')}</button>
 					{#if sets.length}<button class="btn small" onclick={() => repeat(ex)} aria-label={t('Ripeti l\'ultima serie')}><Icon name="repeat" size={18} /></button>{/if}
@@ -188,3 +200,11 @@
 {#if savingTemplate && wk}<TemplateEditor initial={{ name: wk.name, items: itemsFromWorkout(wk) }} onclose={() => (savingTemplate = false)} onsaved={() => toast(t('Giorno salvato.'))} />{/if}
 {#if editFocus && wk}<FocusPicker workout={wk} onclose={() => (editFocus = false)} />{/if}
 {#if adding && wk}<AddSetSheet workout={wk} ex={adding.ex} set={adding.set} onclose={() => (adding = null)} onadded={(r) => added(adding!.ex, r)} />{/if}
+
+<style>
+	/* serie nuova che è un record: lampo verde sotto la riga (solo opacità, 600 ms) e il badge PR fa «pop» */
+	.item.flash { position: relative; isolation: isolate; }
+	.item.flash::before { content: ''; position: absolute; inset: 2px -8px; z-index: -1; border-radius: 10px; background: rgba(95, 217, 138, .22); pointer-events: none; animation: flash 600ms var(--ease-out); }
+	.item.flash .badge.pos { animation: pop 450ms var(--ease-out) 120ms backwards; }
+	@keyframes flash { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
+</style>
