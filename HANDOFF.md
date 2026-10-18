@@ -1,3 +1,22 @@
+# Lag, web a tutto schermo, animazioni e suoni (18 ottobre 2026, sera — su `main`, NON pushato né pubblicato)
+
+**iPhone installato sul telefono e sul Watch** (`scripts/install_device.sh`) con tutto quello qui sotto. Il web è unito ma `web/dist` NON è ricostruito e niente è online: per pubblicare servono build (`cd web && npx svelte-check && node scripts/check-i18n.mjs && npx vite build`), commit di `web/dist`, push e deploy, **ognuno con l'OK dell'utente**. Dopo il deploy: purge Cloudflare di `/sw.js` (con OK).
+
+| Fatto | Dove |
+|---|---|
+| Lag iPhone: Home e Me leggono i numeri da `Insights` (ricalcolati una volta per raffica di salvataggi, subito dopo una cancellazione); record ricalcolati per differenza; sessione e riepilogo senza conti ripetuti; note salvate a fine digitazione; figure dei muscoli appiattite | `Peak/Store/Insights.swift`, `RecordService.swift`, `MeView.swift`, `HomeView.swift`, `ProgressionCard.swift`, `WorkoutSessionView.swift`, `WorkoutSummaryView.swift`, `MuscleFigureView.swift` |
+| Sincronizzazione iPhone fuori dal main: un'istantanea in background (contesto nuovo) per giro, hash uguali a prima, giro in più se si salva durante la sincronizzazione; `commit` resta sul main | `Peak/Store/SyncService.swift`, `SyncDocs.swift` |
+| Frasi della Home tradotte anche con la virgola | `Peak/Model/Medals.swift` (`Motivation`) |
+| Suoni: 14 file (set, record, finish, streak, goal, medal, remove, day1–7) uguali su web e iPhone; interruttore «Suoni» (del dispositivo) in Impostazioni → Generale; iPhone sessione `.ambient` | `scripts/make-sounds.mjs` (sintetizzati), `web/src/sounds/`, `Peak/Sounds/`, `web/src/lib/sound.ts`, `Peak/Utils/SoundFX.swift` |
+| Animazioni iPhone: fine allenamento (coriandoli, numeri, giorni con note che salgono, obiettivo, serie di settimane, medaglie, record), record in sessione (badge, coriandoli, avviso), Home che festeggia solo novità non viste e solo quando si vede | `Peak/Design/Celebration.swift`, `WorkoutSummaryView.swift`, `WorkoutSessionView.swift`, `HomeSections.swift` |
+| Web a tutto schermo ≥900px (binario a sinistra, pagine a 2–3 colonne, fogli come finestre); barra in basso che arriva al bordo; fascia piena sotto la barra di stato (meta `black-translucent`) al posto del blur | `web/src/app.css`, `App.svelte`, pagine principali, `index.html` |
+
+**In corso / da fare**
+- **I suoni sintetizzati NON piacciono all'utente** («vorrei qualcosa di più professionale»): pagina di ascolto con 4 candidati per momento (Kenney CC0, Mixkit, Pixabay) in preparazione nello scratchpad della sessione (`suoni-prova/index.html`). L'utente sceglie una lettera per momento; poi si sostituiscono i file in `web/src/sounds/` e `Peak/Sounds/` con gli stessi nomi (il codice non cambia) e si aggiungono i crediti se una licenza li chiede.
+- **Animazioni web** (stesse dell'iPhone) in un worktree non ancora unito: `.claude/worktrees/agent-ad3a182f427adba1a` (Summary, Session, AddSetSheet, toast, app.css, `lib/fx.ts`). Se il lavoro è a metà, controllarlo e finirlo, poi `npm run check` e build.
+- Da provare sul telefono: lag di Allenamento e Me, animazioni, barra in basso e blur in alto della web app (solo dopo il deploy).
+- Riga vecchia più sotto: «Impostazioni → Apple Watch» ora esiste davvero (interruttore «Usa l'Apple Watch»).
+
 # Web: ME, scheda generale, icone (18 ottobre 2026, ramo feature/figure-muscoli, non committato)
 
 Web e server pubblicati il 18 ott. **iPhone portato** (scheda generale, Me, riepilogo, macchinario per gruppo, passo 0,25, dischi su due lati): compila (`swiftc -typecheck`), **non provato su telefono né con i test** (da chiedere prima). Manca sull'iPhone: inglese (l'app ha solo italiano; la lingua si sincronizza ma non cambia nulla), icone SVG (qui simboli di sistema), selettore icone «Tutte», montagna della Home.
