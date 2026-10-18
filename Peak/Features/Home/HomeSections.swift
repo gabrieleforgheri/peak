@@ -62,6 +62,7 @@ struct HomeStats {
 struct HomeHero: View {
     @Environment(AppSettings.self) private var settings
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     let name: String
     let streak: Int
@@ -71,6 +72,24 @@ struct HomeHero: View {
     var onChangeGoal: () -> Void
 
     @State private var index = Motivation.startIndex()
+    /// Quello che la Home mostra: parte da quanto è già stato festeggiato (`Celebrated`) e sale al valore vero se c'è una novità
+    /// (un allenamento registrato dal web, arrivato con la sincronizzazione). Se non c'è niente di nuovo coincide con quello vero.
+    @State private var shownWeek: Int
+    @State private var shownStreak: Int
+    @State private var flameTick = 0
+
+    init(name: String, streak: Int, weekSessions: Int, goal: Int, onAvatar: @escaping () -> Void, onChangeGoal: @escaping () -> Void) {
+        self.name = name
+        self.streak = streak
+        self.weekSessions = weekSessions
+        self.goal = goal
+        self.onAvatar = onAvatar
+        self.onChangeGoal = onChangeGoal
+        let seenWeek = Celebrated.week(start: Celebrated.weekStart())
+        let seenStreak = Celebrated.streak
+        _shownWeek = State(initialValue: min(weekSessions, seenWeek ?? weekSessions))
+        _shownStreak = State(initialValue: min(streak, seenStreak ?? streak))
+    }
 
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: Date())
@@ -124,7 +143,7 @@ struct HomeHero: View {
                 goalBar
 
                 HStack(spacing: 8) {
-                    pill("\(streak)", "settimane di fila")
+                    pill("\(shownStreak)", "settimane di fila", symbol: "flame.fill")
                     if weekSessions > goal { pill(nil, "+\(weekSessions - goal) oltre l'obiettivo") }
                 }
                 .padding(.top, 12)
@@ -141,25 +160,98 @@ struct HomeHero: View {
                 withAnimation(.easeInOut(duration: 0.6)) { index = (index + 1) % Motivation.phrases.count }
             }
         }
+        // alla comparsa (e se i numeri cambiano mentre la Home è aperta) festeggia solo ciò che non è ancora stato festeggiato
+        .task(id: [weekSessions, streak, scenePhase == .active ? 1 : 0]) { await celebrate() }
+        .onChange(of: weekSessions) { catchUp() }
+        .onChange(of: streak) { catchUp() }
+    }
+
+    /// Se i numeri sono saliti mentre la Home non si vedeva e il riepilogo li ha già festeggiati, la barra li segue senza festa.
+    private func catchUp() {
+        if (Celebrated.week(start: Celebrated.weekStart()) ?? 0) >= weekSessions { shownWeek = weekSessions }
+        if (Celebrated.streak ?? 0) >= streak { shownStreak = streak }
+    }
+
+    /// Una novità non ancora vista: la barra dell'obiettivo si riempie dal vecchio al nuovo valore (una nota per segmento,
+    /// più alta a ogni giorno), `Obiettivo raggiunto` se l'ha appena raggiunto, e la fiamma si scuote mentre la serie sale.
+    /// Prima volta in assoluto, nessun aumento o calo: si allinea e basta. I valori nuovi si salvano subito, così non si ripete.
+    @MainActor
+    private func celebrate() async {
+        guard scenePhase == .active else { return }
+        let start = Celebrated.weekStart()
+        let seenWeek = Celebrated.week(start: start)
+        let seenStreak = Celebrated.streak
+        Celebrated.store(week: weekSessions, start: start)
+        Celebrated.streak = streak
+
+        let weekUp = seenWeek.map { weekSessions > $0 } ?? false
+        let streakUp = seenStreak.map { streak > $0 } ?? false
+        guard weekUp || streakUp else {
+            shownWeek = weekSessions
+            shownStreak = streak
+            return
+        }
+        do {
+            if let seenWeek, weekUp {
+                shownWeek = seenWeek
+                try await Task.sleep(for: .seconds(0.4)) // il tempo di vedere la Home, poi parte
+                let segments = min(weekSessions, goal) // la barra ha un segmento per allenamento, fino all'obiettivo
+                if seenWeek < segments {
+                    for k in seenWeek..<segments {
+                        withAnimation(.spring(duration: 0.3, bounce: 0.15)) { shownWeek = k + 1 }
+                        SoundFX.playDay(k)
+                        Haptics.tap()
+                        try await Task.sleep(for: .seconds(0.14))
+                    }
+                }
+                withAnimation(.snappy) { shownWeek = weekSessions }
+                if weekSessions >= goal, seenWeek < goal {
+                    try await Task.sleep(for: .seconds(0.15))
+                    SoundFX.play(.goal)
+                    Haptics.success()
+                    try await Task.sleep(for: .seconds(0.5))
+                }
+            } else {
+                shownWeek = weekSessions
+                try await Task.sleep(for: .seconds(0.4))
+            }
+            if streakUp {
+                flameTick += 1
+                withAnimation(.smooth(duration: 0.8)) { shownStreak = streak }
+                SoundFX.play(.streak)
+                Haptics.commit()
+            } else {
+                shownStreak = streak
+            }
+        } catch {
+            // lasciata a metà (cambio scheda): si allinea senza festa
+            shownWeek = weekSessions
+            shownStreak = streak
+        }
     }
 
     /// L'obiettivo della settimana: un segmento per allenamento.
     private var goalBar: some View {
         VStack(spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                Text(weekSessions >= goal ? "Obiettivo raggiunto!" : "Obiettivo della settimana")
+                Text(shownWeek >= goal ? "Obiettivo raggiunto!" : "Obiettivo della settimana")
                     .font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textSecondary)
                 Spacer()
-                Text("\(weekSessions) / \(goal)").font(Theme.rounded(15, .heavy)).monospacedDigit()
+                Text("\(shownWeek) / \(goal)").font(Theme.rounded(15, .heavy)).monospacedDigit()
+                    .contentTransition(.numericText(value: Double(shownWeek)))
             }
             HStack(spacing: 6) {
                 ForEach(0..<goal, id: \.self) { k in
-                    Capsule()
-                        .fill(k < weekSessions
-                              ? AnyShapeStyle(LinearGradient(colors: [settings.accentColor.opacity(0.7), settings.accentColor], startPoint: .leading, endPoint: .trailing))
-                              : AnyShapeStyle(Color.white.opacity(0.14)))
-                        .frame(height: 12)
-                        .shadow(color: k == weekSessions - 1 ? settings.accentColor.opacity(0.7) : .clear, radius: 7)
+                    let filled = k < shownWeek
+                    // il segmento pieno cresce da sinistra sopra quello vuoto
+                    Capsule().fill(Color.white.opacity(0.14)).frame(height: 12)
+                        .overlay {
+                            Capsule()
+                                .fill(LinearGradient(colors: [settings.accentColor.opacity(0.7), settings.accentColor], startPoint: .leading, endPoint: .trailing))
+                                .scaleEffect(x: filled || reduceMotion ? 1 : 0.3, anchor: .leading)
+                                .opacity(filled ? 1 : 0)
+                        }
+                        .shadow(color: k == shownWeek - 1 ? settings.accentColor.opacity(0.7) : .clear, radius: 7)
                 }
             }
         }
@@ -172,9 +264,16 @@ struct HomeHero: View {
     }
 
 
-    private func pill(_ number: String?, _ text: String) -> some View {
+    private func pill(_ number: String?, _ text: String, symbol: String? = nil) -> some View {
         HStack(spacing: 4) {
-            if let number { Text(number).font(Theme.rounded(14, .heavy)).foregroundStyle(settings.accentColor) }
+            if let symbol {
+                Image(systemName: symbol).font(.system(size: 12, weight: .bold)).foregroundStyle(settings.accentColor)
+                    .bounce(trigger: flameTick, peak: 1.3, wobble: 10)
+            }
+            if let number {
+                Text(number).font(Theme.rounded(14, .heavy)).foregroundStyle(settings.accentColor)
+                    .contentTransition(.numericText(value: Double(number) ?? 0))
+            }
             Text(text).font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textSecondary)
         }
         .padding(.horizontal, 12).padding(.vertical, 6)
@@ -266,7 +365,7 @@ struct StatStrip: View {
         VStack(spacing: 2) {
             HStack(spacing: 3) {
                 if let symbol { Image(systemName: symbol).font(.system(size: 15, weight: .bold)) }
-                Text(value).font(Theme.rounded(19, .heavy)).minimumScaleFactor(0.6).lineLimit(1)
+                Text(value).font(Theme.rounded(19, .heavy)).minimumScaleFactor(0.6).lineLimit(1).rolls(on: value)
             }
             .foregroundStyle(accent ? settings.accentColor : Theme.textPrimary)
             Text(label).font(Theme.rounded(10, .medium)).foregroundStyle(Theme.textTertiary).multilineTextAlignment(.center).lineLimit(2)
