@@ -35,6 +35,8 @@ final class Exercise {
     var musclesRaw: String = ""
     /// Vista forzata della figura: "" = automatica, "front" o "back".
     var viewRaw: String = ""
+    /// Creato a mano di proposito: non è «fuori catalogo da sistemare». Segue l'account.
+    var isCustom: Bool = false
 
     @Relationship(deleteRule: .cascade, inverse: \MaxRecord.exercise)
     var records: [MaxRecord]? = []

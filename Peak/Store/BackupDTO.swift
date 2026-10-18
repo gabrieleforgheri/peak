@@ -10,6 +10,8 @@ struct BackupFile: Codable {
     var bodyWeights: [BodyWeightDTO]?
     /// Opzionale: i backup scritti prima delle schede restano leggibili.
     var templates: [TemplateDTO]?
+    /// Opzionale: i backup scritti prima delle schede generali restano leggibili.
+    var programs: [ProgramDTO]?
 
     static let currentVersion = 1
 }
@@ -39,6 +41,8 @@ struct ExerciseDTO: Codable {
     /// Opzionali: i backup scritti prima della figura dei muscoli non li hanno.
     var muscles: [String]?
     var view: String?
+    /// Opzionale: creato a mano di proposito.
+    var isCustom: Bool?
     var records: [MaxRecordDTO]
 }
 
@@ -72,7 +76,19 @@ struct TemplateDTO: Codable {
     var sortIndex: Int
     var createdAt: Date
     var isHidden: Bool?
+    /// Opzionali: i backup scritti prima delle schede generali non li hanno.
+    var icon: String?
+    var programID: UUID?
+    var weekday: Int?
     var items: [TemplateItemDTO]
+}
+
+struct ProgramDTO: Codable {
+    var uuid: UUID
+    var name: String
+    var sortIndex: Int
+    var createdAt: Date
+    var useDays: Bool?
 }
 
 /// Una riga di scheda. `weight` assente = si mostra l'ultimo usato.

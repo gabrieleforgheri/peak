@@ -93,6 +93,8 @@ final class AppSettings {
         static let tutorialDone = "settings.tutorialDone"
         static let tourSeen = "settings.tourSeen"
         static let weeklyGoal = "settings.weeklyGoal"
+        static let language = "settings.language"
+        static let activeProgram = "settings.activeProgram"
     }
 
     private let defaults: UserDefaults
@@ -190,6 +192,16 @@ final class AppSettings {
         didSet { defaults.set(weeklyGoal, forKey: Key.weeklyGoal) }
     }
 
+    /// Lingua dell'interfaccia: "" = quella del dispositivo, "it" o "en". Segue l'account.
+    var language: String {
+        didSet { defaults.set(language, forKey: Key.language) }
+    }
+
+    /// uuid della scheda in uso; vuoto = la prima. Segue l'account.
+    var activeProgram: String {
+        didSet { defaults.set(activeProgram, forKey: Key.activeProgram) }
+    }
+
     var lastBackupDate: Date? {
         didSet { defaults.set(lastBackupDate, forKey: Key.lastBackup) }
     }
@@ -215,6 +227,8 @@ final class AppSettings {
         self.tutorialDone = defaults.bool(forKey: Key.tutorialDone)
         self.tourSeen = defaults.object(forKey: Key.tourSeen) == nil ? 1 : defaults.integer(forKey: Key.tourSeen)
         self.weeklyGoal = defaults.integer(forKey: Key.weeklyGoal)
+        self.language = defaults.string(forKey: Key.language) ?? ""
+        self.activeProgram = defaults.string(forKey: Key.activeProgram) ?? ""
     }
 
     var accentColor: Color { accent.color }

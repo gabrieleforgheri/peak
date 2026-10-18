@@ -14,7 +14,7 @@ enum SyncDocs {
     typealias Encoded = [String: [String: Any]]
 
     /// Ordine di applicazione: prima i genitori (macchinari, allenamenti), poi ciò che li richiama.
-    static let applyOrder = ["setting", "exercise", "template", "workout", "record", "set", "bodyweight"]
+    static let applyOrder = ["setting", "exercise", "program", "template", "workout", "record", "set", "bodyweight"]
 
     static func key(_ kind: String, _ uuid: UUID) -> String { "\(kind):\(uuid.uuidString)" }
 
@@ -23,7 +23,7 @@ enum SyncDocs {
     /// Le impostazioni che seguono l'account. Quelle del Watch, di Salute e dei dati interni restano del dispositivo.
     static let settingKeys = [
         "unit", "accent", "restTimerEnabled", "restSeconds", "progressionEnabled", "repRangeMin",
-        "repRangeMax", "plateCalculatorEnabled", "barWeight", "availablePlates", "tutorialDone", "tourSeen", "weeklyGoal"
+        "repRangeMax", "plateCalculatorEnabled", "barWeight", "availablePlates", "tutorialDone", "tourSeen", "weeklyGoal", "language", "activeProgram"
     ]
 
     private static func settingValue(_ name: String, _ settings: AppSettings) -> Any {
@@ -41,6 +41,8 @@ enum SyncDocs {
         case "tutorialDone": return settings.tutorialDone
         case "tourSeen": return settings.tourSeen
         case "weeklyGoal": return settings.weeklyGoal
+        case "language": return settings.language
+        case "activeProgram": return settings.activeProgram
         default: return NSNull()
         }
     }
@@ -62,6 +64,8 @@ enum SyncDocs {
         case "tutorialDone": guard let v = value as? Bool else { return false }; settings.tutorialDone = v
         case "tourSeen": guard let v = number(1, 10) else { return false }; settings.tourSeen = Int(v)
         case "weeklyGoal": guard let v = number(0, 7) else { return false }; settings.weeklyGoal = Int(v)
+        case "language": guard let v = value as? String, ["", "it", "en"].contains(v) else { return false }; settings.language = v
+        case "activeProgram": guard let v = value as? String, v.isEmpty || UUID(uuidString: v) != nil else { return false }; settings.activeProgram = v.uppercased()
         case "availablePlates":
             guard let list = value as? [NSNumber] else { return false }
             settings.availablePlates = list.map(\.doubleValue)
@@ -96,7 +100,8 @@ enum SyncDocs {
                 "catalog": exercise.catalogID,
                 "hidden": exercise.isHidden,
                 "muscles": exercise.muscleIDs.map(\.rawValue),
-                "view": exercise.viewRaw
+                "view": exercise.viewRaw,
+                "custom": exercise.isCustom
             ]
             // solo i massimali inseriti a mano: gli altri si ricalcolano dalle serie
             for record in exercise.recordList where !record.isEstimated {
@@ -141,7 +146,19 @@ enum SyncDocs {
                 "items": TemplateItems.json(template.items),
                 "sortIndex": template.sortIndex,
                 "createdAt": PeakDates.string(template.createdAt),
-                "hidden": template.isHidden
+                "hidden": template.isHidden,
+                "icon": template.iconRaw,
+                "program": template.programRaw,
+                "weekday": template.weekday
+            ]
+        }
+
+        for program in try context.fetch(FetchDescriptor<WorkoutProgram>()) {
+            out[key("program", program.uuid)] = [
+                "name": program.name,
+                "sortIndex": program.sortIndex,
+                "createdAt": PeakDates.string(program.createdAt),
+                "useDays": program.useDays
             ]
         }
 
@@ -181,6 +198,7 @@ enum SyncDocs {
         var exercises = try index(Exercise.self, \.uuid)
         var workouts = try index(Workout.self, \.uuid)
         var templates = try index(WorkoutTemplate.self, \.uuid)
+        var programs = try index(WorkoutProgram.self, \.uuid)
         var records = try index(MaxRecord.self, \.uuid)
         var sets = try index(WorkoutSet.self, \.uuid)
         var weights = try index(BodyWeightEntry.self, \.uuid)
@@ -202,6 +220,7 @@ enum SyncDocs {
                     case "exercise": if let m = exercises.removeValue(forKey: uuid) { context.delete(m) }
                     case "workout": if let m = workouts.removeValue(forKey: uuid) { context.delete(m) }
                     case "template": if let m = templates.removeValue(forKey: uuid) { context.delete(m) }
+                    case "program": if let m = programs.removeValue(forKey: uuid) { context.delete(m) }
                     case "record": if let m = records.removeValue(forKey: uuid) { context.delete(m) }
                     case "set": if let m = sets.removeValue(forKey: uuid) { context.delete(m) }
                     case "bodyweight": if let m = weights.removeValue(forKey: uuid) { context.delete(m) }
@@ -242,6 +261,7 @@ enum SyncDocs {
                 // i campi dei muscoli: un server vecchio non li manda, e allora restano quelli che ci sono
                 if let muscles = d["muscles"] as? [String] { exercise.musclesRaw = muscles.joined(separator: ",") }
                 if let view = text(d, "view") { exercise.viewRaw = view }
+                if let custom = d["custom"] as? Bool { exercise.isCustom = custom }
                 let sha = text(d, "photo") ?? ""
                 if sha.isEmpty { exercise.photo = nil }
                 else if let bytes = photos[sha] { exercise.photo = bytes }
@@ -279,6 +299,24 @@ enum SyncDocs {
                 template.sortIndex = integer(d, "sortIndex") ?? 0
                 template.createdAt = created
                 template.isHidden = flag(d, "hidden")
+                template.iconRaw = text(d, "icon") ?? ""
+                template.programRaw = text(d, "program")?.uppercased() ?? ""
+                template.weekday = integer(d, "weekday") ?? -1
+                result.upserted.insert(key)
+
+            case "program":
+                guard let uuid, let name = text(d, "name"), let created = date(d, "createdAt") else { result.skipped.insert(key); continue }
+                let program = programs[uuid] ?? {
+                    let p = WorkoutProgram(name: name)
+                    p.uuid = uuid
+                    context.insert(p)
+                    programs[uuid] = p
+                    return p
+                }()
+                program.name = name
+                program.sortIndex = integer(d, "sortIndex") ?? 0
+                program.createdAt = created
+                program.useDays = flag(d, "useDays")
                 result.upserted.insert(key)
 
             case "record":

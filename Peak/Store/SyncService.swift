@@ -391,6 +391,7 @@ final class SyncService {
         try context.delete(model: Exercise.self)
         try context.delete(model: BodyWeightEntry.self)
         try context.delete(model: WorkoutTemplate.self)
+        try context.delete(model: WorkoutProgram.self)
         try context.save()
         photoCache = [:]
         store.entries = [:]

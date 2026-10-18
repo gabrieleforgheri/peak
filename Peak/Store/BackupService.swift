@@ -73,6 +73,9 @@ enum BackupService {
         let templates = try context.fetch(
             FetchDescriptor<WorkoutTemplate>(sortBy: [SortDescriptor(\.sortIndex)])
         )
+        let programs = try context.fetch(
+            FetchDescriptor<WorkoutProgram>(sortBy: [SortDescriptor(\.sortIndex)])
+        )
         let liveExercises = Set(exercises.map(\.uuid))
         func dtos(_ items: [TemplateItem]) -> [TemplateItemDTO] {
             items.filter { liveExercises.contains($0.exercise) }.map(TemplateItemDTO.init)
@@ -100,6 +103,7 @@ enum BackupService {
                     isHidden: exercise.isHidden ? true : nil,
                     muscles: exercise.muscleIDs.isEmpty ? nil : exercise.muscleIDs.map(\.rawValue),
                     view: exercise.viewRaw.isEmpty ? nil : exercise.viewRaw,
+                    isCustom: exercise.isCustom ? true : nil,
                     records: exercise.recordList.map { record in
                         MaxRecordDTO(
                             uuid: record.uuid,
@@ -153,8 +157,15 @@ enum BackupService {
                     sortIndex: template.sortIndex,
                     createdAt: template.createdAt,
                     isHidden: template.isHidden ? true : nil,
+                    icon: template.iconRaw.isEmpty ? nil : template.iconRaw,
+                    programID: UUID(uuidString: template.programRaw),
+                    weekday: template.weekday >= 0 ? template.weekday : nil,
                     items: dtos(template.items)
                 )
+            },
+            programs: programs.isEmpty ? nil : programs.map { program in
+                ProgramDTO(uuid: program.uuid, name: program.name, sortIndex: program.sortIndex,
+                           createdAt: program.createdAt, useDays: program.useDays ? true : nil)
             }
         )
     }
@@ -212,6 +223,7 @@ enum BackupService {
             try context.delete(model: Exercise.self)
             try context.delete(model: BodyWeightEntry.self)
             try context.delete(model: WorkoutTemplate.self)
+            try context.delete(model: WorkoutProgram.self)
             try context.save()
         }
 
@@ -253,6 +265,7 @@ enum BackupService {
             exercise.isHidden = dto.isHidden ?? false
             exercise.musclesRaw = (dto.muscles ?? []).joined(separator: ",")
             exercise.viewRaw = dto.view ?? ""
+            exercise.isCustom = dto.isCustom ?? false
             context.insert(exercise)
             exercisesByUUID[dto.uuid] = exercise
             addMissingRecords(from: dto, to: exercise, context: context)
@@ -301,6 +314,17 @@ enum BackupService {
             context.insert(entry)
         }
 
+        var existingProgramUUIDs = Set<UUID>()
+        for program in try context.fetch(FetchDescriptor<WorkoutProgram>()) { existingProgramUUIDs.insert(program.uuid) }
+        for dto in file.programs ?? [] where !existingProgramUUIDs.contains(dto.uuid) {
+            let program = WorkoutProgram(name: dto.name, sortIndex: dto.sortIndex)
+            program.uuid = dto.uuid
+            program.createdAt = dto.createdAt
+            program.useDays = dto.useDays ?? false
+            context.insert(program)
+            existingProgramUUIDs.insert(dto.uuid)
+        }
+
         var existingTemplateUUIDs = Set<UUID>()
         for template in try context.fetch(FetchDescriptor<WorkoutTemplate>()) {
             existingTemplateUUIDs.insert(template.uuid)
@@ -314,6 +338,9 @@ enum BackupService {
             template.uuid = dto.uuid
             template.createdAt = dto.createdAt
             template.isHidden = dto.isHidden ?? false
+            template.iconRaw = dto.icon ?? ""
+            template.programRaw = dto.programID.flatMap { existingProgramUUIDs.contains($0) ? $0.uuidString : nil } ?? ""
+            template.weekday = (0...6).contains(dto.weekday ?? -1) ? dto.weekday! : -1
             context.insert(template)
         }
 

@@ -77,6 +77,7 @@ struct DataSettingsView: View {
             try context.delete(model: Exercise.self)
             try context.delete(model: BodyWeightEntry.self)
             try context.delete(model: WorkoutTemplate.self)
+            try context.delete(model: WorkoutProgram.self)
             // collegato, la cancellazione deve arrivare al server: la guardia contro le cancellazioni di massa non la ferma
             sync.permitMassDeletion()
             try context.save()

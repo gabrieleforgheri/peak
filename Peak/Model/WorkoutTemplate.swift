@@ -24,6 +24,12 @@ final class WorkoutTemplate {
     var createdAt: Date = Date()
     /// Nascosta agli amici.
     var isHidden: Bool = false
+    /// Icona del giorno (nome di `TemplateIcon`); vuoto = dedotta dal nome.
+    var iconRaw: String = ""
+    /// uuid della scheda che lo contiene; vuoto = fuori da ogni scheda (si adotta in «La mia scheda»).
+    var programRaw: String = ""
+    /// Giorno fisso della settimana, 0 = lunedì … 6 = domenica; −1 = nessuno.
+    var weekday: Int = -1
 
     init(name: String, items: [TemplateItem] = [], sortIndex: Int = 0) {
         self.uuid = UUID()
@@ -36,6 +42,25 @@ final class WorkoutTemplate {
         get { TemplateItems.decode(itemsRaw) }
         set { itemsRaw = TemplateItems.encode(newValue) }
     }
+}
+
+/// La scheda generale: un contenitore di giorni (`WorkoutTemplate`). Con `useDays` ogni giorno può avere un giorno fisso della settimana.
+@Model
+final class WorkoutProgram {
+    var uuid: UUID = UUID()
+    var name: String = ""
+    var sortIndex: Int = 0
+    var createdAt: Date = Date()
+    var useDays: Bool = false
+
+    init(name: String, sortIndex: Int = 0) {
+        self.uuid = UUID()
+        self.name = name
+        self.sortIndex = sortIndex
+    }
+
+    /// Stesso uuid del web (`DEFAULT_PROGRAM` in actions.ts): «La mia scheda» è la stessa su ogni dispositivo.
+    static let defaultUUID = UUID(uuidString: "00000000-0000-4000-8000-5045414B0001")!
 }
 
 /// Conversioni delle righe: JSON per il disco e per il backup, dizionari per i documenti del server.
