@@ -33,9 +33,11 @@ struct GeneralSettingsView: View {
                     Text("English").tag("en")
                 }
                 .pickerStyle(.segmented)
-                Text("Segue il tuo account: la stessa lingua sul web e sull'iPhone.")
+                Text(Lang.needsRestart(settings.language)
+                     ? "Chiudi e riapri Peak per cambiare lingua."
+                     : "Segue il tuo account: la stessa lingua sul web e sull'iPhone.")
                     .font(Theme.rounded(11, .medium))
-                    .foregroundStyle(Theme.textTertiary)
+                    .foregroundStyle(Lang.needsRestart(settings.language) ? settings.accentColor : Theme.textTertiary)
             }
         }
     }

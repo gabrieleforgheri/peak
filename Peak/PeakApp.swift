@@ -9,8 +9,6 @@ struct PeakApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .id(settings.language)   // cambiando lingua tutto si ridisegna
-                .environment(\.locale, Locale(identifier: Lang.code(for: settings.language)))
                 .environment(settings)
                 .tint(settings.accentColor)
                 .preferredColorScheme(.dark)

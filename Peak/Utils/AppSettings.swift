@@ -194,7 +194,7 @@ final class AppSettings {
 
     /// Lingua dell'interfaccia: "" = quella del dispositivo, "it" o "en". Segue l'account.
     var language: String {
-        didSet { defaults.set(language, forKey: Key.language) }
+        didSet { defaults.set(language, forKey: Key.language); Lang.apply(language) }
     }
 
     /// uuid della scheda in uso; vuoto = la prima. Segue l'account.
@@ -229,6 +229,7 @@ final class AppSettings {
         self.weeklyGoal = defaults.integer(forKey: Key.weeklyGoal)
         self.language = defaults.string(forKey: Key.language) ?? ""
         self.activeProgram = defaults.string(forKey: Key.activeProgram) ?? ""
+        Lang.apply(language)
     }
 
     var accentColor: Color { accent.color }
