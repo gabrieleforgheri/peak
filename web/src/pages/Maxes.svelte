@@ -54,15 +54,17 @@
 		<div class="banner" style="align-items:flex-start"><Icon name="trophy" /><div class="grow"><b>{tn(unlinked.length, '1 macchinario fuori catalogo', '{0} macchinari fuori catalogo')}</b>{t('Aprine uno → Modifica → Collega: così entra nelle classifiche con gli amici.')}
 			<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">{#each unlinked as u (u.uuid)}<button class="chip" onclick={() => go(`macchinari/${u.uuid}`)}>{u.name}</button>{/each}</div></div></div>
 	{/if}
-	<div style="position:relative;margin-bottom:10px">
-		<input class="input" style="padding-left:40px" type="search" placeholder={t('Cerca macchinario')} bind:value={query} />
-		<span style="position:absolute;left:12px;top:12px;color:var(--text-3)"><Icon name="search" size={22} /></span>
-	</div>
-	<div class="chips" style="margin-bottom:6px">
-		<button class="chip" class:on={filter === null} onclick={() => (filter = null)}>{t('Tutti')}</button>
-		{#each MUSCLE_GROUPS as g}
-			<button class="chip" class:on={filter === g} onclick={() => (filter = filter === g ? null : g)}>{GROUP_NAMES[g]}</button>
-		{/each}
+	<div class="tools">
+		<div class="find">
+			<input class="input" style="padding-left:40px" type="search" placeholder={t('Cerca macchinario')} bind:value={query} />
+			<span style="position:absolute;left:12px;top:12px;color:var(--text-3)"><Icon name="search" size={22} /></span>
+		</div>
+		<div class="chips">
+			<button class="chip" class:on={filter === null} onclick={() => (filter = null)}>{t('Tutti')}</button>
+			{#each MUSCLE_GROUPS as g}
+				<button class="chip" class:on={filter === g} onclick={() => (filter = filter === g ? null : g)}>{GROUP_NAMES[g]}</button>
+			{/each}
+		</div>
 	</div>
 
 	{#if active.length === 0}
@@ -70,7 +72,7 @@
 	{:else}
 		{#each groups as { g, items }}
 			<div class="sec-title" style="display:flex;justify-content:space-between"><span style="color:var(--{g})">{GROUP_NAMES[g]}</span><span>{items.length}</span></div>
-			<div class="card list">
+			<div class="card list cells">
 				{#each items as ex (ex.uuid)}
 					<button class="item" onclick={() => open(ex)} onpointerdown={(e) => press(e, ex)} onpointerup={release} onpointerleave={release} onpointercancel={release}
 						oncontextmenu={(e) => { e.preventDefault(); menu = ex }}>
@@ -103,3 +105,14 @@
 		</div>
 	</Sheet>
 {/if}
+
+<style>
+	.find { position: relative; margin-bottom: 10px; }
+	.chips { margin-bottom: 6px; }
+	/* schermi larghi: ricerca e filtri sulla stessa riga */
+	@media (min-width: 900px) {
+		.tools { display: flex; align-items: center; gap: 16px; margin-bottom: 4px; }
+		.find { flex: 0 0 min(340px, 40%); margin-bottom: 0; }
+		.tools .chips { flex: 1; min-width: 0; margin-bottom: 0; }
+	}
+</style>

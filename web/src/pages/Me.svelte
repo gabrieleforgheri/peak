@@ -72,8 +72,8 @@
 	const latest = $derived([...allRecords].sort((a, b) => b.date - a.date).slice(0, 8))
 </script>
 
-<main class="screen">
-	<header class="head">
+<main class="screen page">
+	<header class="head span">
 		<div class="av">{name.slice(0, 1).toUpperCase()}</div>
 		<div class="grow">
 			<h1 class="ellipsis">{name}</h1>
@@ -82,83 +82,101 @@
 		<button class="icon-btn" onclick={() => go('impostazioni')} aria-label={t('Impostazioni')} data-tour="settings"><Icon name="settings" /></button>
 	</header>
 
-	<div class="row" style="margin:14px 0 4px;gap:10px">
+	<div class="row friends span">
 		<button class="btn block grow" onclick={() => go('amici')}><Icon name="users" size={18} />{friendCount ? tn(friendCount, '1 amico', '{0} amici') : t('Aggiungi amici')}</button>
 	</div>
 
-	<div class="sec-title">{t('Panoramica')}</div>
-	<div class="card ov">
-		<div><Icon name="flame" size={22} /><div><b class="num">{streak}</b><span class="small muted">{t('Settimane di fila')}</span></div></div>
-		<div><Icon name="dumbbell" size={22} /><div><b class="num">{finished.length}</b><span class="small muted">{t('Allenamenti')}</span></div></div>
-		<div><Icon name="scale" size={22} /><div><b class="num">{V(totalVolume)}</b><span class="small muted">{t('Sollevati')}</span></div></div>
-		<div><Icon name="trophy" size={22} /><div><b class="num">{allRecords.length}</b><span class="small muted">{t('Record')}</span></div></div>
+	<div class="blk">
+		<div class="sec-title">{t('Panoramica')}</div>
+		<div class="card ov">
+			<div><Icon name="flame" size={22} /><div><b class="num">{streak}</b><span class="small muted">{t('Settimane di fila')}</span></div></div>
+			<div><Icon name="dumbbell" size={22} /><div><b class="num">{finished.length}</b><span class="small muted">{t('Allenamenti')}</span></div></div>
+			<div><Icon name="scale" size={22} /><div><b class="num">{V(totalVolume)}</b><span class="small muted">{t('Sollevati')}</span></div></div>
+			<div><Icon name="trophy" size={22} /><div><b class="num">{allRecords.length}</b><span class="small muted">{t('Record')}</span></div></div>
+		</div>
 	</div>
 
-	<div class="row between"><div class="sec-title">{t('Medaglie')}</div><span class="small muted" style="margin:20px 4px 8px">{totals.earned} / {totals.total}</span></div>
-	<div class="medals">
-		{#each medalList as md (md.id)}<Medal medal={md} icon={MEDAL[md.id].icon} title={MEDAL[md.id].title} sub={medalSub(md)} />{/each}
-	</div>
-	<div class="card list" data-tour="medals" style="margin-top:8px">
-		{#each medalList as md (md.id)}
-			<div class="item" style="flex-direction:column;align-items:stretch;gap:6px">
-				<div class="row between"><span class="row" style="gap:10px"><Icon name={MEDAL[md.id].icon} size={20} /><b>{MEDAL[md.id].title}</b></span><span class="small" style="color:var(--accent);font-weight:700">{TIERS[md.tier]}</span></div>
-				<div class="small muted">{MEDAL_INFO[md.id]}</div>
-				<div class="tiny muted num">{TIERS[1]} {fmtMedal(md.id, md.tiers[0])} · {TIERS[2]} {fmtMedal(md.id, md.tiers[1])} · {TIERS[3]} {fmtMedal(md.id, md.tiers[2])}</div>
-				<div style="height:6px;border-radius:3px;background:var(--stroke);overflow:hidden"><div style="height:100%;width:{Math.round(md.progress * 100)}%;background:var(--accent)"></div></div>
-				<div class="small">{nextLine(md)}</div>
-			</div>
-		{/each}
-	</div>
-
-	<div class="sec-title">{t('Attività')}</div>
-	<div class="card">
-		<Heatmap sets={perDay} />
-		<div class="row between small muted" style="margin-top:10px"><span>{tn(last90, '1 allenamento in 14 settimane', '{0} allenamenti in 14 settimane')}</span></div>
+	<div class="blk span">
+		<div class="row between sec-row"><div class="sec-title">{t('Medaglie')}</div><span class="small muted">{totals.earned} / {totals.total}</span></div>
+		<div class="medals">
+			{#each medalList as md (md.id)}<Medal medal={md} icon={MEDAL[md.id].icon} title={MEDAL[md.id].title} sub={medalSub(md)} />{/each}
+		</div>
+		<div class="card list cells" data-tour="medals" style="margin-top:8px">
+			{#each medalList as md (md.id)}
+				<div class="item" style="flex-direction:column;align-items:stretch;gap:6px">
+					<div class="row between"><span class="row" style="gap:10px"><Icon name={MEDAL[md.id].icon} size={20} /><b>{MEDAL[md.id].title}</b></span><span class="small" style="color:var(--accent);font-weight:700">{TIERS[md.tier]}</span></div>
+					<div class="small muted">{MEDAL_INFO[md.id]}</div>
+					<div class="tiny muted num">{TIERS[1]} {fmtMedal(md.id, md.tiers[0])} · {TIERS[2]} {fmtMedal(md.id, md.tiers[1])} · {TIERS[3]} {fmtMedal(md.id, md.tiers[2])}</div>
+					<div style="height:6px;border-radius:3px;background:var(--stroke);overflow:hidden"><div style="height:100%;width:{Math.round(md.progress * 100)}%;background:var(--accent)"></div></div>
+					<div class="small">{nextLine(md)}</div>
+				</div>
+			{/each}
+		</div>
 	</div>
 
-	<div class="sec-title">{t('Volume settimanale')}</div>
-	<div class="card"><WeekBars {weeks} /></div>
+	<div class="blk">
+		<div class="sec-title">{t('Attività')}</div>
+		<div class="card">
+			<Heatmap sets={perDay} />
+			<div class="row between small muted" style="margin-top:10px"><span>{tn(last90, '1 allenamento in 14 settimane', '{0} allenamenti in 14 settimane')}</span></div>
+		</div>
+	</div>
+
+	<div class="blk">
+		<div class="sec-title">{t('Volume settimanale')}</div>
+		<div class="card"><WeekBars {weeks} /></div>
+	</div>
 
 	{#if groups.length}
-		<div class="sec-title">{t('Dove va il lavoro')}</div>
-		<div class="card split">
-			<div class="donut"><Donut parts={groups.map((g) => ({ color: `var(--${g.group})`, value: g.volume }))} center={V(groupTotal)} label={t('Dove va il lavoro')} /></div>
-			<div class="stack" style="gap:8px;flex:1">
-				{#each groups as g}<div class="row between small"><span class="row" style="gap:8px"><i class="dot" style="background:var(--{g.group})"></i>{GROUP_NAMES[g.group]}</span><b class="num">{Math.round((g.volume / groupTotal) * 100)}%</b></div>{/each}
-				<div class="tiny faint">{t('Ultimi 30 giorni')}</div>
+		<div class="blk">
+			<div class="sec-title">{t('Dove va il lavoro')}</div>
+			<div class="card split">
+				<div class="donut"><Donut parts={groups.map((g) => ({ color: `var(--${g.group})`, value: g.volume }))} center={V(groupTotal)} label={t('Dove va il lavoro')} /></div>
+				<div class="stack" style="gap:8px;flex:1">
+					{#each groups as g}<div class="row between small"><span class="row" style="gap:8px"><i class="dot" style="background:var(--{g.group})"></i>{GROUP_NAMES[g.group]}</span><b class="num">{Math.round((g.volume / groupTotal) * 100)}%</b></div>{/each}
+					<div class="tiny faint">{t('Ultimi 30 giorni')}</div>
+				</div>
 			</div>
 		</div>
 	{/if}
 
-	<div class="sec-title">{t('Peso corporeo')}</div>
-	<BodyWeightCard />
+	<div class="blk">
+		<div class="sec-title">{t('Peso corporeo')}</div>
+		<BodyWeightCard />
+	</div>
 
 	{#if lift}
-		<div class="sec-title">{t('Il tuo sollevamento in crescita')}</div>
-		<div class="card">
-			<div class="row between"><b>{lift.name}</b><span class="badge pos">{W(lift.from)} → {W(lift.to)}</span></div>
-			<div class="small muted" style="margin-bottom:6px">{t('1RM stimato')}</div>
-			<LineChart points={lift.points} domain={lift.domain} />
+		<div class="blk">
+			<div class="sec-title">{t('Il tuo sollevamento in crescita')}</div>
+			<div class="card">
+				<div class="row between"><b>{lift.name}</b><span class="badge pos">{W(lift.from)} → {W(lift.to)}</span></div>
+				<div class="small muted" style="margin-bottom:6px">{t('1RM stimato')}</div>
+				<LineChart points={lift.points} domain={lift.domain} />
+			</div>
 		</div>
 	{/if}
 
 	{#if movers.length}
-		<div class="sec-title">{t('Cresciuti di più')}</div>
-		<div class="card list">
-			{#each movers as mv (mv.exercise)}
-				<div class="item"><div class="grow ellipsis" style="font-weight:600">{m.exById.get(mv.exercise)?.name}</div>
-					{#if mv.previous > 0}<span class="badge pos">{delta(mv.deltaPercent)}</span>{:else}<span class="badge accent">{t('NUOVO')}</span>{/if}
-				</div>
-			{/each}
+		<div class="blk">
+			<div class="sec-title">{t('Cresciuti di più')}</div>
+			<div class="card list">
+				{#each movers as mv (mv.exercise)}
+					<div class="item"><div class="grow ellipsis" style="font-weight:600">{m.exById.get(mv.exercise)?.name}</div>
+						{#if mv.previous > 0}<span class="badge pos">{delta(mv.deltaPercent)}</span>{:else}<span class="badge accent">{t('NUOVO')}</span>{/if}
+					</div>
+				{/each}
+			</div>
 		</div>
 	{/if}
 
 	{#if latest.length}
-		<div class="sec-title">{t('Ultimi record')}</div>
-		<div class="card list">
-			{#each latest as r (r.uuid)}
-				<div class="item"><div class="grow"><b class="ellipsis" style="display:block">{r.name}</b><span class="small muted">{relDay(r.date)}</span></div><b class="num">{W(r.weight)} × {r.reps}</b></div>
-			{/each}
+		<div class="blk">
+			<div class="sec-title">{t('Ultimi record')}</div>
+			<div class="card list">
+				{#each latest as r (r.uuid)}
+					<div class="item"><div class="grow"><b class="ellipsis" style="display:block">{r.name}</b><span class="small muted">{relDay(r.date)}</span></div><b class="num">{W(r.weight)} × {r.reps}</b></div>
+				{/each}
+			</div>
 		</div>
 	{/if}
 </main>
@@ -171,9 +189,9 @@
 	.ov > div { display: flex; align-items: center; gap: 12px; color: var(--accent); }
 	.ov b { display: block; font-size: 22px; color: var(--text); letter-spacing: -0.02em; }
 	.ov span { display: block; }
-	.medals { display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x proximity; padding: 4px 2px 10px; margin: 0 -4px; scrollbar-width: none; }
-	.medals::-webkit-scrollbar { display: none; }
 	.split { display: flex; gap: 18px; align-items: center; }
 	.donut { width: 132px; flex: none; color: var(--text); }
+	.friends { margin: 14px 0 4px; gap: 10px; }
+	@media (min-width: 900px) { .friends { margin: 0; } .friends > .btn { flex: none; width: auto; min-width: 240px; } }
 	.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 </style>

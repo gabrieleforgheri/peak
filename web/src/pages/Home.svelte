@@ -56,56 +56,65 @@
 	const news = $derived((F.news ?? []).slice(0, 4))
 </script>
 
-<main class="screen">
-	<SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={finished.filter((w) => w.dateMs >= weekStart(Date.now())).length} goal={m.settings.weeklyGoal || weeklyGoal(stat)} onchangegoal={() => (choosing = true)} onavatar={() => go('me')} />
+<main class="screen page home">
+	<!-- a schermo largo: a sinistra la montagna, il giorno che tocca e le medaglie; a destra record e novità -->
+	<div class="blk main">
+		<SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={finished.filter((w) => w.dateMs >= weekStart(Date.now())).length} goal={m.settings.weeklyGoal || weeklyGoal(stat)} onchangegoal={() => (choosing = true)} onavatar={() => go('me')} />
 
-	{#if choosing}<GoalPicker current={m.settings.weeklyGoal} suggested={weeklyGoal(stat)} onclose={() => (choosing = false)} />{/if}
+		{#if choosing}<GoalPicker current={m.settings.weeklyGoal} suggested={weeklyGoal(stat)} onclose={() => (choosing = false)} />{/if}
 
-	<!-- subito sotto: cosa fare adesso, in piccolo -->
-	<button class="next" onclick={begin} data-tour="start">
-		<span class="ni">{#if active || !next}<Icon name={active ? 'repeat' : 'dumbbell'} size={22} />{:else}<TemplateIconView icon={next.icon} name={next.name} size={26} />{/if}</span>
-		<span class="nt">
-			<b>{active ? t('Riprendi allenamento') : next ? t('Avvia {0}', next.name) : t('Inizia un allenamento')}</b>
-			<span class="small muted">{active ? `${tn(active.workingSets, '1 serie', '{0} serie')} · ${V(active.volume)}` : next ? tn(next.items.length, '1 esercizio', '{0} esercizi') : t('Crea un giorno con i tuoi esercizi, oppure allenati a mano.')}</span>
-		</span>
-		<Icon name="right" size={20} />
-	</button>
+		<!-- subito sotto: cosa fare adesso, in piccolo -->
+		<button class="next" onclick={begin} data-tour="start">
+			<span class="ni">{#if active || !next}<Icon name={active ? 'repeat' : 'dumbbell'} size={22} />{:else}<TemplateIconView icon={next.icon} name={next.name} size={26} />{/if}</span>
+			<span class="nt">
+				<b>{active ? t('Riprendi allenamento') : next ? t('Avvia {0}', next.name) : t('Inizia un allenamento')}</b>
+				<span class="small muted">{active ? `${tn(active.workingSets, '1 serie', '{0} serie')} · ${V(active.volume)}` : next ? tn(next.items.length, '1 esercizio', '{0} esercizi') : t('Crea un giorno con i tuoi esercizi, oppure allenati a mano.')}</span>
+			</span>
+			<Icon name="right" size={20} />
+		</button>
 
-	<!-- i numeri della tua storia -->
-	<div class="stats">
-		<div class="stat"><div class="n">{finished.length}</div><div class="l">{t('Allenamenti')}</div></div>
-		<div class="stat"><div class="n">{V(totalVolume)}</div><div class="l">{t('Sollevati')}</div></div>
-		<div class="stat"><div class="n">{recordCount}</div><div class="l">{t('Record')}</div></div>
-		<div class="stat flame"><div class="n"><Icon name="flame" size={22} />{streak}</div><div class="l">{t('Settimane di fila')}</div></div>
+		<!-- i numeri della tua storia -->
+		<div class="stats">
+			<div class="stat"><div class="n">{finished.length}</div><div class="l">{t('Allenamenti')}</div></div>
+			<div class="stat"><div class="n">{V(totalVolume)}</div><div class="l">{t('Sollevati')}</div></div>
+			<div class="stat"><div class="n">{recordCount}</div><div class="l">{t('Record')}</div></div>
+			<div class="stat flame"><div class="n"><Icon name="flame" size={22} />{streak}</div><div class="l">{t('Settimane di fila')}</div></div>
+		</div>
+
+		<div class="row between sec-row"><div class="sec-title">{t('Medaglie')}</div><button class="link small" onclick={() => go('me')}>{totals.earned} / {totals.total} · {t('Vedi tutto')}</button></div>
+		<div class="medals" data-tour="medals">
+			{#each medalList as md (md.id)}<Medal medal={md} icon={MEDAL[md.id].icon} title={MEDAL[md.id].title} sub={medalSub(md)} />{/each}
+		</div>
 	</div>
 
-	<div class="row between"><div class="sec-title">{t('Medaglie')}</div><button class="link small" style="margin:20px 4px 8px" onclick={() => go('me')}>{totals.earned} / {totals.total} · {t('Vedi tutto')}</button></div>
-	<div class="medals" data-tour="medals">
-		{#each medalList as md (md.id)}<Medal medal={md} icon={MEDAL[md.id].icon} title={MEDAL[md.id].title} sub={medalSub(md)} />{/each}
+	<div class="blk side fan">
+		{#if latest.length}
+			<div class="blk">
+				<div class="sec-title">{t('Record recenti')}</div>
+				<div class="card list">
+					{#each latest as r (r.uuid)}
+						<div class="item"><span class="trophy"><Icon name="trophy" size={18} /></span><div class="grow ellipsis"><b>{r.name}</b><div class="small muted">{relDay(r.date)}</div></div><b class="num">{W(r.weight)} × {r.reps}</b></div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
+		<div class="blk">
+			<div class="row between sec-row"><div class="sec-title">{t('Novità degli amici')}</div><button class="link small" onclick={() => go('amici')}>{friendCount ? t('Amici') : t('Invita')}</button></div>
+			{#if news.length}
+				<div class="card list">
+					{#each news as e (e.id + e.catalog)}
+						<button class="item" onclick={() => go(`amici/${e.id}`)}>
+							<div class="grow ellipsis"><b>@{e.username}</b> · {names.get(e.catalog) ?? e.name}<div class="small muted">{relDay(e.date)}</div></div>
+							<div style="text-align:right"><b class="num">{W(e.weight)} × {e.reps}</b>{#if e.sorpasso}<div class="small" style="color:var(--neg)">{t('Ti ha superato')}</div>{/if}</div>
+						</button>
+					{/each}
+				</div>
+			{:else}
+				<div class="empty">{friendCount ? t('Nessun record dei tuoi amici negli ultimi giorni.') : t('Invita un amico: vedrai qui i suoi record e le classifiche.')}</div>
+			{/if}
+		</div>
 	</div>
-
-	{#if latest.length}
-		<div class="sec-title">{t('Record recenti')}</div>
-		<div class="card list">
-			{#each latest as r (r.uuid)}
-				<div class="item"><span class="trophy"><Icon name="trophy" size={18} /></span><div class="grow ellipsis"><b>{r.name}</b><div class="small muted">{relDay(r.date)}</div></div><b class="num">{W(r.weight)} × {r.reps}</b></div>
-			{/each}
-		</div>
-	{/if}
-
-	<div class="row between"><div class="sec-title">{t('Novità degli amici')}</div><button class="link small" style="margin:20px 4px 8px" onclick={() => go('amici')}>{friendCount ? t('Amici') : t('Invita')}</button></div>
-	{#if news.length}
-		<div class="card list">
-			{#each news as e (e.id + e.catalog)}
-				<button class="item" onclick={() => go(`amici/${e.id}`)}>
-					<div class="grow ellipsis"><b>@{e.username}</b> · {names.get(e.catalog) ?? e.name}<div class="small muted">{relDay(e.date)}</div></div>
-					<div style="text-align:right"><b class="num">{W(e.weight)} × {e.reps}</b>{#if e.sorpasso}<div class="small" style="color:var(--neg)">{t('Ti ha superato')}</div>{/if}</div>
-				</button>
-			{/each}
-		</div>
-	{:else}
-		<div class="empty">{friendCount ? t('Nessun record dei tuoi amici negli ultimi giorni.') : t('Invita un amico: vedrai qui i suoi record e le classifiche.')}</div>
-	{/if}
 </main>
 
 <style>
@@ -119,7 +128,8 @@
 	.stat .n { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; display: flex; align-items: center; justify-content: center; gap: 2px; }
 	.stat .l { font-size: 10px; color: var(--text-3); margin-top: 2px; line-height: 1.2; }
 	.stat.flame .n { color: var(--accent); }
-	.medals { display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x proximity; padding: 4px 2px 10px; margin: 0 -4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-	.medals::-webkit-scrollbar { display: none; }
+	/* schermi larghi: colonna principale più larga; a tre colonne record e novità si separano (la .fan si scioglie) */
+	@media (min-width: 900px) { .home { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }
+	@media (min-width: 1400px) { .home { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) minmax(0, 2fr); } }
 	.trophy { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,212,94,.14); color: #ffd45e; flex: none; }
 </style>

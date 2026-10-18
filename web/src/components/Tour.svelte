@@ -72,6 +72,8 @@
 	// il riquadro sta fuori dal buco: sotto se c'è posto, sopra altrimenti
 	const cardStyle = $derived.by(() => {
 		if (!hole) return 'top:50%;transform:translateY(-50%)'
+		// schermo largo, controllo nel binario a sinistra: il riquadro gli sta accanto
+		if (innerWidth >= 900 && hole.x + hole.w < 260) return `left:${hole.x + hole.w + 18}px;right:auto;margin:0;top:${Math.max(16, Math.min(hole.y, innerHeight - 230))}px`
 		const below = hole.y + hole.h + 14
 		return innerHeight - below > 190 ? `top:${below}px` : `bottom:${innerHeight - hole.y + 14}px`
 	})
