@@ -6,6 +6,7 @@ struct WorkoutSessionView: View {
     @Environment(\.modelContext) private var context
     @Environment(AppSettings.self) private var settings
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Bindable var workout: Workout
 
@@ -26,6 +27,11 @@ struct WorkoutSessionView: View {
     @State private var showingFinishConfirm = false
     @State private var healthMessage: String?
     @State private var sendingToHealth = false
+    /// Le serie che c'erano già: una serie che compare e non è qui dentro è nuova (dal telefono o dal Watch).
+    @State private var knownSets: Set<UUID> = []
+    /// La serie dell'ultimo record e quante feste di record ci sono state (il contatore fa ripartire coriandoli, toast e riga).
+    @State private var recordSet: UUID?
+    @State private var recordTick = 0
 
     private var canUseWatch: Bool {
         workout.isActive && settings.watchEnabled && WatchBridge.shared.isWatchAppInstalled
@@ -76,6 +82,8 @@ struct WorkoutSessionView: View {
                             settings: settings
                         ),
                         sets: sets,
+                        recordSet: recordSet,
+                        recordTick: recordTick,
                         onMove: workout.isActive ? { step in editPlan { Plan.moving($0, exercise.uuid, by: step) } } : nil,
                         onReplace: workout.isActive && sets.isEmpty ? { replacing = exercise } : nil,
                         onRemove: workout.isActive && sets.isEmpty ? { editPlan { Plan.removing($0, exercise.uuid) } } : nil,
@@ -142,7 +150,11 @@ struct WorkoutSessionView: View {
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 30)
+            // una serie in più o in meno (anche dal Watch): le righe entrano e escono piano, il resto scorre di conseguenza
+            .animation(.easeOut(duration: reduceMotion ? 0.15 : 0.22), value: workout.setList.count)
         }
+        .confettiLayer(["record": recordTick])
+        .celebrationToast("Nuovo massimale!", trigger: recordTick)
         .screenBackground(settings.accentColor)
         .navigationTitle(workout.name.isEmpty ? Fmt.relativeDay(workout.date) : workout.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -188,7 +200,11 @@ struct WorkoutSessionView: View {
                 try? context.save()
             }
         }
-        .onAppear { WorkoutActivity.start(for: workout, unit: settings.unit) }
+        .onAppear {
+            WorkoutActivity.start(for: workout, unit: settings.unit)
+            knownSets = Set(workout.setList.map(\.uuid))
+        }
+        .onChange(of: workout.setList.count) { setsChanged() }
         .task(id: RestTimer.shared.end) {
             guard let restEnd = RestTimer.shared.end else { return }
             try? await Task.sleep(for: .seconds(max(0, restEnd.timeIntervalSinceNow)))
@@ -336,6 +352,23 @@ struct WorkoutSessionView: View {
         if isRecord { Haptics.personalRecord() } else { Haptics.commit() }
     }
 
+    /// Il solo punto in cui si accorge di una serie nuova, da qualsiasi parte arrivi (+ Serie, ripeti, Watch): record o serie normale.
+    /// Le vibrazioni delle serie fatte dal telefono restano in `addSet`; qui solo suono e animazioni.
+    private func setsChanged() {
+        let sets = workout.setList
+        let added = sets.filter { !knownSets.contains($0.uuid) }
+        knownSets = Set(sets.map(\.uuid))
+        guard workout.isActive, !added.isEmpty else { return }
+        if let record = added.first(where: \.isPersonalRecord) { celebrateRecord(record) } else { SoundFX.play(.set) }
+    }
+
+    /// La festa del massimale: riga che si accende e badge che rimbalza (nelle righe), coriandoli, toast, suono.
+    private func celebrateRecord(_ set: WorkoutSet) {
+        recordSet = set.uuid
+        recordTick += 1
+        SoundFX.play(.record)
+    }
+
     // MARK: - Recupero
 
     private func restCard(until end: Date) -> some View {
@@ -398,11 +431,13 @@ struct WorkoutSessionView: View {
         set.weight = weight
         set.reps = reps
         set.isWarmup = isWarmup
+        let wasRecord = set.isPersonalRecord
         if let exercise = set.exercise { RecordService.recompute(exercise, context: context) }
         let isRecord = set.isPersonalRecord
         try? context.save()
         WorkoutActivity.update(for: workout, unit: settings.unit)
         if isRecord { Haptics.personalRecord() } else { Haptics.commit() }
+        if isRecord, !wasRecord { celebrateRecord(set) } // una correzione che diventa massimale: stessa festa
     }
 
     /// Manda la sessione a Salute. Le date si leggono **qui**, sul main actor,
@@ -438,6 +473,7 @@ struct WorkoutSessionView: View {
         }
         WorkoutActivity.update(for: workout, unit: settings.unit)
         Haptics.warning()
+        SoundFX.play(.remove)
     }
 
     /// La scheda di partenza, se la lista di oggi è diversa da lei (e lei esiste ancora).
@@ -479,11 +515,15 @@ struct WorkoutSessionView: View {
 
 private struct ExerciseSessionCard: View {
     @Environment(AppSettings.self) private var settings
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let exercise: Exercise
     /// Obiettivo della scheda («2/4 serie · 8–10 rip · 60 kg»), vuoto se non c'è.
     let goal: String
     let sets: [WorkoutSet]
+    /// La serie dell'ultimo record e il contatore delle feste: la sua riga si accende a ogni cambio.
+    let recordSet: UUID?
+    let recordTick: Int
     /// Menu dell'esercizio: `nil` = voce non disponibile (sposta solo a sessione in corso, sostituisci e togli
     /// solo senza serie).
     let onMove: ((Int) -> Void)?
@@ -573,52 +613,27 @@ private struct ExerciseSessionCard: View {
                         .foregroundStyle(Theme.textTertiary)
                 } else {
                     VStack(spacing: 6) {
-                        ForEach(Array(sets.enumerated()), id: \.element.persistentModelID) { index, set in
-                            HStack(spacing: 10) {
-                                Text("\(index + 1)")
-                                    .font(Theme.rounded(11, .bold))
-                                    .foregroundStyle(Theme.textTertiary)
-                                    .frame(width: 18)
-
-                                Text(Fmt.setLine(weight: set.weight, reps: set.reps, unit: settings.unit))
-                                    .font(Theme.rounded(15, .semibold))
-                                    .foregroundStyle(set.isWarmup ? Theme.textSecondary : Theme.textPrimary)
-
-                                if set.isPersonalRecord { PRBadge() }
-                                if set.isWarmup {
-                                    Text("risc.")
-                                        .font(Theme.rounded(10, .semibold))
-                                        .foregroundStyle(Theme.textTertiary)
+                        ForEach(Array(sets.enumerated()), id: \.element.uuid) { index, set in
+                            SetRow(index: index, set: set, pulse: set.uuid == recordSet ? recordTick : 0)
+                                .contentShape(Rectangle())
+                                .onTapGesture { onEditSet(set) }
+                                .contextMenu {
+                                    Button {
+                                        onEditSet(set)
+                                    } label: {
+                                        Label("Modifica serie", systemImage: "pencil")
+                                    }
+                                    Button(role: .destructive) {
+                                        onDeleteSet(set)
+                                    } label: {
+                                        Label("Elimina serie", systemImage: "trash")
+                                    }
                                 }
-
-                                Spacer()
-
-                                if set.reps > 1 {
-                                    Text("≈ \(Fmt.weight(set.estimatedOneRepMax, unit: settings.unit))")
-                                        .font(Theme.rounded(11, .medium))
-                                        .foregroundStyle(Theme.textTertiary)
-                                }
-                            }
-                            .padding(.vertical, 5)
-                            .padding(.horizontal, 8)
-                            .background(
-                                set.isPersonalRecord ? Theme.positive.opacity(0.10) : Color.clear,
-                                in: RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            )
-                            .contentShape(Rectangle())
-                            .onTapGesture { onEditSet(set) }
-                            .contextMenu {
-                                Button {
-                                    onEditSet(set)
-                                } label: {
-                                    Label("Modifica serie", systemImage: "pencil")
-                                }
-                                Button(role: .destructive) {
-                                    onDeleteSet(set)
-                                } label: {
-                                    Label("Elimina serie", systemImage: "trash")
-                                }
-                            }
+                                // entra piano (capita decine di volte a seduta), esce con una dissolvenza
+                                .transition(reduceMotion ? .opacity : .asymmetric(
+                                    insertion: .opacity.combined(with: .offset(y: 6)),
+                                    removal: .opacity.combined(with: .scale(scale: 0.98))
+                                ))
                         }
                     }
                 }
@@ -648,5 +663,61 @@ private struct ExerciseSessionCard: View {
                 }
             }
         }
+    }
+}
+
+/// Una riga di serie. Quando `pulse` sale (è la serie di un nuovo massimale) lo sfondo verde si accende e torna in ~0,6 s e il badge PR rimbalza.
+private struct SetRow: View {
+    @Environment(AppSettings.self) private var settings
+
+    let index: Int
+    let set: WorkoutSet
+    /// Cambia a ogni festa su questa serie; 0 = nessuna.
+    let pulse: Int
+    @State private var tick = 0
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text("\(index + 1)")
+                .font(Theme.rounded(11, .bold))
+                .foregroundStyle(Theme.textTertiary)
+                .frame(width: 18)
+
+            Text(Fmt.setLine(weight: set.weight, reps: set.reps, unit: settings.unit))
+                .font(Theme.rounded(15, .semibold))
+                .foregroundStyle(set.isWarmup ? Theme.textSecondary : Theme.textPrimary)
+
+            if set.isPersonalRecord { PRBadge().bounce(trigger: tick, peak: 1.35) }
+            if set.isWarmup {
+                Text("risc.")
+                    .font(Theme.rounded(10, .semibold))
+                    .foregroundStyle(Theme.textTertiary)
+            }
+
+            Spacer()
+
+            if set.reps > 1 {
+                Text("≈ \(Fmt.weight(set.estimatedOneRepMax, unit: settings.unit))")
+                    .font(Theme.rounded(11, .medium))
+                    .foregroundStyle(Theme.textTertiary)
+            }
+        }
+        .padding(.vertical, 5)
+        .padding(.horizontal, 8)
+        .background(
+            set.isPersonalRecord ? Theme.positive.opacity(0.10) : Color.clear,
+            in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+        )
+        .keyframeAnimator(initialValue: 0.0, trigger: tick) { view, glow in
+            view.overlay {
+                RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Theme.positive.opacity(0.32 * glow))
+            }
+        } keyframes: { _ in
+            KeyframeTrack {
+                CubicKeyframe(1, duration: 0.15)
+                CubicKeyframe(0, duration: 0.45)
+            }
+        }
+        .onChange(of: pulse) { if pulse > 0 { tick += 1 } }
     }
 }

@@ -72,7 +72,7 @@ struct MeView: View {
             HStack(spacing: 12) {
                 Image(systemName: symbol).font(.system(size: 18, weight: .semibold)).foregroundStyle(settings.accentColor).frame(width: 26)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(value).font(Theme.rounded(22, .heavy)).lineLimit(1).minimumScaleFactor(0.6)
+                    Text(value).font(Theme.rounded(22, .heavy)).lineLimit(1).minimumScaleFactor(0.6).rolls(on: value)
                     Text(label).font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textSecondary)
                 }
                 Spacer(minLength: 0)

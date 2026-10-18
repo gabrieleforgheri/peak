@@ -86,6 +86,7 @@ struct StatTile: View {
                     .foregroundStyle(Theme.textPrimary)
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
+                    .contentTransition(.numericText()) // il riepilogo lo fa scorrere dentro `withAnimation`
 
                 if let caption {
                     Text(caption)
@@ -255,6 +256,8 @@ struct SecondaryButtonStyle: ButtonStyle {
                     .strokeBorder(Theme.stroke, lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.7 : 1)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
