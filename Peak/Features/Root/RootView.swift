@@ -57,13 +57,13 @@ struct RootView: View {
                 .tabItem { Label("Allenamento", systemImage: "figure.strengthtraining.traditional") }
                 .tag(AppNav.Tab.workouts)
 
-            ProgressDashboardView()
-                .tabItem { Label("Progressi", systemImage: "chart.line.uptrend.xyaxis") }
-                .tag(AppNav.Tab.progress)
-
             MaxesListView()
                 .tabItem { Label { Text("Macchinari") } icon: { machinesIcon } }
                 .tag(AppNav.Tab.machines)
+
+            MeView()
+                .tabItem { Label("Me", systemImage: "person.crop.circle.fill") }
+                .tag(AppNav.Tab.me)
 
             FriendsView()
                 .tabItem { Label("Amici", systemImage: "person.2.fill") }
@@ -72,7 +72,7 @@ struct RootView: View {
         .tint(settings.accentColor)
         .overlayPreferenceValue(TourTargetKey.self) { anchors in
             GeometryReader { geo in
-                if settings.didSeeWelcome, settings.weeklyGoal > 0, !settings.tutorialDone || settings.tourSeen < 2, !AppStore.isFallback {
+                if settings.didSeeWelcome, settings.weeklyGoal > 0, !settings.tutorialDone || settings.tourSeen < 3, !AppStore.isFallback {
                     TourOverlay(rects: anchors.mapValues { geo[$0] }, size: geo.size)
                 }
             }

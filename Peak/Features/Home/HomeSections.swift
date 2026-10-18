@@ -308,17 +308,43 @@ struct HeatmapCard: View {
     var body: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 4) {
-                    ForEach(Array(columns.enumerated()), id: \.offset) { _, column in
-                        VStack(spacing: 4) {
-                            ForEach(Array(column.enumerated()), id: \.offset) { _, cell in
-                                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                    .fill(color(cell.sets))
-                                    .aspectRatio(1, contentMode: .fit)
+                HStack(alignment: .top, spacing: 6) {
+                    // asse dei giorni: ogni riga è un giorno della settimana
+                    VStack(spacing: 4) {
+                        Color.clear.frame(height: 12)
+                        ForEach(0..<7, id: \.self) { r in
+                            Text(["L", "M", "M", "G", "V", "S", "D"][r])
+                                .font(Theme.rounded(9, .medium)).foregroundStyle(Theme.textTertiary)
+                                .frame(width: 10).frame(maxHeight: .infinity)
+                        }
+                    }
+                    VStack(spacing: 4) {
+                        // asse delle settimane: il mese sopra la prima colonna in cui cambia
+                        HStack(spacing: 4) {
+                            ForEach(Array(columns.enumerated()), id: \.offset) { i, column in
+                                let month = Calendar.current.component(.month, from: column[0].date)
+                                let prev = i > 0 ? Calendar.current.component(.month, from: columns[i - 1][0].date) : -1
+                                Text(month != prev ? column[0].date.formatted(.dateTime.month(.abbreviated)) : "")
+                                    .font(Theme.rounded(9, .medium)).foregroundStyle(Theme.textTertiary)
+                                    .lineLimit(1).fixedSize().frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                        .frame(height: 12)
+                        HStack(spacing: 4) {
+                            ForEach(Array(columns.enumerated()), id: \.offset) { _, column in
+                                VStack(spacing: 4) {
+                                    ForEach(Array(column.enumerated()), id: \.offset) { _, cell in
+                                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                            .fill(color(cell.sets))
+                                            .aspectRatio(1, contentMode: .fit)
+                                    }
+                                }
                             }
                         }
                     }
                 }
+                Text("Una colonna = una settimana, un quadratino = un giorno")
+                    .font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
                 Text(count == 1 ? "1 allenamento in 14 settimane" : "\(count) allenamenti in 14 settimane")
                     .font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textSecondary)
             }
@@ -345,8 +371,16 @@ struct WeeklyBarsCard: View {
                     }
                 }
                 .frame(height: 110, alignment: .bottom)
+                // asse delle settimane: il giorno in cui inizia la settimana, una barra su due
+                HStack(spacing: 6) {
+                    ForEach(Array(weeks.enumerated()), id: \.offset) { i, w in
+                        Text(i % 2 == (weeks.count - 1) % 2 ? Fmt.shortDate(w.start) : "")
+                            .font(Theme.rounded(8, .medium)).foregroundStyle(Theme.textTertiary)
+                            .lineLimit(1).minimumScaleFactor(0.6).frame(maxWidth: .infinity)
+                    }
+                }
                 HStack {
-                    Text(weeks.first.map { Fmt.shortDate($0.start) } ?? "").foregroundStyle(Theme.textTertiary)
+                    Text("1 barra = 1 settimana").foregroundStyle(Theme.textTertiary)
                     Spacer()
                     Text("questa settimana: \(Fmt.volume(weeks.last?.volume ?? 0, unit: settings.unit))").foregroundStyle(Theme.textSecondary)
                 }
@@ -491,5 +525,29 @@ struct MedalRow: View {
                     .foregroundStyle(Theme.textSecondary)
             }
         }
+    }
+}
+
+/// Una medaglia in breve, per il carosello della Home: simbolo, nome e livello.
+struct MedalChip: View {
+    @Environment(AppSettings.self) private var settings
+    let medal: Medal
+
+    private var tint: Color { [Theme.textTertiary, Color(hex: 0xCD7F32), Color(hex: 0xC0C8D0), Color(hex: 0xFFD45E)][medal.tier] }
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Image(systemName: medal.kind.symbol)
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(medal.tier == 0 ? Theme.textTertiary : tint)
+                .frame(width: 52, height: 52)
+                .background(Circle().fill(tint.opacity(medal.tier == 0 ? 0.08 : 0.18)))
+                .overlay(Circle().strokeBorder(tint.opacity(medal.tier == 0 ? 0.2 : 0.8), lineWidth: 2))
+            Text(medal.kind.title).font(Theme.rounded(11, .semibold)).lineLimit(1)
+            ProgressView(value: medal.progress).tint(tint).frame(width: 52)
+        }
+        .frame(width: 84)
+        .padding(.vertical, 10)
+        .glassSurface(radius: 16)
     }
 }

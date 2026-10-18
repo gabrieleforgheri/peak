@@ -15,7 +15,6 @@ struct HomeView: View {
 
     @State private var stats: HomeStats?
     @State private var choosingGoal = false
-    @State private var showSettings = false
 
     private var active: Workout? { workouts.first(where: \.isActive) }
     /// Il giorno che tocca, nella scheda in uso.
@@ -26,11 +25,6 @@ struct HomeView: View {
     private var displayName: String {
         let full = sync.credentials?.name ?? ""
         return full.split(separator: " ").first.map(String.init) ?? (full.isEmpty ? "Peak" : full)
-    }
-
-    /// Il macchinario con più massimali (almeno tre) e 1RM più alto, per il grafico.
-    private var growingLift: Exercise? {
-        exercises.filter { $0.recordList.count >= 3 }.max { ($0.bestRecord?.estimatedOneRepMax ?? 0) < ($1.bestRecord?.estimatedOneRepMax ?? 0) }
     }
 
     private var medalList: [Medal] {
@@ -46,14 +40,10 @@ struct HomeView: View {
             ScrollView {
                 VStack(spacing: 14) {
                     if let s = stats {
-                        HomeHero(name: displayName, streak: s.streak, weekSessions: s.weekSessions, goal: s.goal, onAvatar: { showSettings = true }, onChangeGoal: { choosingGoal = true })
+                        HomeHero(name: displayName, streak: s.streak, weekSessions: s.weekSessions, goal: s.goal, onAvatar: { nav.tab = .me }, onChangeGoal: { choosingGoal = true })
                         nextBar
                         StatStrip(stats: s)
 
-                        section("Attività", hint: "Un quadratino per giorno: più è verde, più serie hai fatto.") { HeatmapCard(perDay: s.perDay, count: s.last98Days) }
-                        section("Volume settimanale", hint: "Kg sollevati ogni settimana, le ultime dodici. La barra accesa è questa settimana.") { WeeklyBarsCard(weeks: s.weeks) }
-                        if !s.groups.isEmpty { section("Dove va il lavoro", hint: "Quanto volume è andato a ogni gruppo muscolare negli ultimi 30 giorni.") { WorkDonutCard(groups: s.groups) } }
-                        if let lift = growingLift { section("Il tuo sollevamento in crescita") { LiftChartCard(exercise: lift) } }
                         medalsSection
                         recordsSection
                         newsSection
@@ -69,7 +59,6 @@ struct HomeView: View {
             stats = HomeStats(workouts: workouts, exercises: exercises, chosenGoal: settings.weeklyGoal)
         }
         .onChange(of: settings.weeklyGoal) { stats = HomeStats(workouts: workouts, exercises: exercises, chosenGoal: settings.weeklyGoal) }
-        .fullScreenCover(isPresented: $showSettings) { SettingsView() }
         .fullScreenCover(isPresented: $choosingGoal) {
             GoalPickerView(current: settings.weeklyGoal, suggested: Stats.weeklyGoal(workouts: workouts.filter { !$0.isActive })) { choosingGoal = false }
         }
@@ -115,12 +104,16 @@ struct HomeView: View {
     private var medalsSection: some View {
         let totals = Medals.totals(medalList)
         return VStack(alignment: .leading, spacing: 8) {
-            SectionHeader(title: "Medaglie", trailing: "\(totals.earned) / \(totals.total)").padding(.top, 6)
-            Text("Ogni medaglia ha tre livelli, bronzo, argento e oro. Si sbloccano a soglie crescenti, con quello che fai.")
-                .font(Theme.rounded(12, .medium))
-                .foregroundStyle(Theme.textTertiary)
-            VStack(spacing: 10) {
-                ForEach(medalList) { MedalRow(medal: $0) }
+            HStack {
+                SectionHeader(title: "Medaglie")
+                Button("\(totals.earned) / \(totals.total) · Vedi tutto") { nav.tab = .me }
+                    .font(Theme.rounded(13, .bold)).foregroundStyle(settings.accentColor).buttonStyle(.plain)
+            }
+            .padding(.top, 6)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(medalList) { MedalChip(medal: $0) }
+                }
             }
         }
     }

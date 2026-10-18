@@ -49,23 +49,21 @@ struct TourOverlay: View {
         Step(id: "welcome", tab: .home, target: nil, tabIndex: nil, title: "Benvenuto in Peak",
              text: "Un minuto per fare il giro: ti mostro dove sta ogni cosa e ti faccio creare il primo macchinario e la prima scheda."),
         Step(id: "home", tab: .home, target: nil, tabIndex: 0, title: "La tua Home",
-             text: "Qui trovi la tua settimana, i grafici, le medaglie e le novità dei tuoi amici. La barra sotto la frase è il tuo obiettivo."),
+             text: "Qui trovi a colpo d'occhio la tua settimana, le medaglie e le novità dei tuoi amici. La barra sotto la frase è il tuo obiettivo."),
         Step(id: "medals", tab: .home, target: nil, tabIndex: 0, title: "Medaglie e obiettivo",
              text: "Le medaglie hanno tre livelli e ti dicono cosa manca per il prossimo. L'obiettivo è quanti allenamenti ti dai a settimana.", since: 2),
-        Step(id: "settings", tab: .home, target: "avatar", tabIndex: nil, title: "Impostazioni",
-             text: "Toccando la tua iniziale in alto a destra apri le impostazioni: unità, colore, timer di recupero, backup e il tuo account yG. Il tutorial lo rivedi da Generale."),
         Step(id: "workout", tab: .workouts, target: nil, tabIndex: 1, title: "Allenamento",
-             text: "Qui alleni: scegli una scheda o parti a mano e registra le serie una per una."),
-        Step(id: "template", tab: .workouts, target: "new-template", tabIndex: nil, title: "Crea la tua prima scheda",
-             text: "Una scheda è una lista di esercizi con serie e ripetizioni: la scegli quando inizi e li trovi già pronti.", done: { $0.hasTemplate }),
-        Step(id: "progress", tab: .progress, target: nil, tabIndex: 2, title: "Progressi",
-             text: "I tuoi numeri nel tempo: volume, record, peso corporeo."),
-        Step(id: "machines", tab: .machines, target: nil, tabIndex: 3, title: "Macchinari",
+             text: "Qui alleni: scegli un giorno della scheda o parti a mano e registra le serie una per una."),
+        Step(id: "template", tab: .workouts, target: "new-template", tabIndex: nil, title: "Crea il tuo primo giorno",
+             text: "Un giorno è una lista di esercizi con serie e ripetizioni: lo scegli quando inizi e li trovi già pronti.", done: { $0.hasTemplate }),
+        Step(id: "machines", tab: .machines, target: nil, tabIndex: 2, title: "Macchinari",
              text: "Qui tieni i tuoi macchinari e i loro massimali. Si aggiungono cercando in un catalogo: così il tuo «Chest Press» è lo stesso dei tuoi amici e potete fare la classifica."),
         Step(id: "add-machine", tab: .machines, target: "add-machine", tabIndex: nil, title: "Aggiungi il primo macchinario",
              text: "Tocca + e cerca nel catalogo. Poi gli puoi dare un nome tuo.", done: { $0.hasMachine }),
-        Step(id: "figures", tab: .machines, target: nil, tabIndex: 3, title: "Figure dei muscoli",
+        Step(id: "figures", tab: .machines, target: nil, tabIndex: 2, title: "Figure dei muscoli",
              text: "Ogni macchinario mostra i muscoli che lavorano: la figura si ritaglia sulla zona. Nel riepilogo di una seduta vedi tutti i muscoli lavorati.", since: 2),
+        Step(id: "progress", tab: .me, target: nil, tabIndex: 3, title: "Me",
+             text: "Il tuo profilo: i numeri nel tempo, le medaglie, il peso corporeo. In alto a destra, con l'ingranaggio, ci sono le impostazioni: unità, lingua, colore, timer di recupero, backup e il tuo account yG.", since: 3),
         Step(id: "friends", tab: .friends, target: nil, tabIndex: 4, title: "Amici",
              text: "Invita gli amici con un link o un QR: vedete i massimali e le schede l'uno dell'altro e fate la classifica."),
         Step(id: "invite", tab: .friends, target: "invite", tabIndex: nil, title: "Invita un amico",
@@ -205,7 +203,7 @@ struct TourOverlay: View {
 
     private func finish() {
         settings.tutorialDone = true
-        settings.tourSeen = 2
+        settings.tourSeen = 3
         Haptics.success()
     }
 }
