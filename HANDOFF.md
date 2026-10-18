@@ -12,7 +12,7 @@
 | Web a tutto schermo ≥900px (binario a sinistra, pagine a 2–3 colonne, fogli come finestre); barra in basso che arriva al bordo; fascia piena sotto la barra di stato (meta `black-translucent`) al posto del blur | `web/src/app.css`, `App.svelte`, pagine principali, `index.html` |
 
 **In corso / da fare**
-- **I suoni sintetizzati NON piacciono all'utente** («vorrei qualcosa di più professionale»): pagina di ascolto PRONTA: `/private/tmp/claude-501/-Users-gab-Developer-massimali/7e2d33df-675b-4f0e-8e47-2385ee073e51/scratchpad/suoni-prova/index.html` (audio in `audio/<momento>-<A..D>.m4a`, giorni `day-<X>-1..7.m4a`; Kenney CC0 e Pixabay, Mixkit scartato per licenza ambigua; per il web meglio solo Kenney). L'utente sceglie una lettera per momento; poi si sostituiscono i file in `web/src/sounds/` e `Peak/Sounds/` con gli stessi nomi (il codice non cambia) e si aggiungono i crediti se una licenza li chiede.
+- Suoni scelti dall'utente (18 ott): serie = Kenney `drop_002`, record = Pixabay `notification`, gli altri restano quelli sintetizzati (crediti in `web/src/sounds/CREDITS.md`; `make-sounds.mjs` non li sovrascrive). Pagina di ascolto: `scratchpad/suoni-prova/index.html` della sessione 7e2d33df.
 - Animazioni web: unite su `main` (9a4f224), check e build ok; `web/dist` da ricostruire prima del deploy.
 - Da provare sul telefono: lag di Allenamento e Me, animazioni, barra in basso e blur in alto della web app (solo dopo il deploy).
 - Riga vecchia più sotto: «Impostazioni → Apple Watch» ora esiste davvero (interruttore «Usa l'Apple Watch»).
