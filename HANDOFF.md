@@ -1,6 +1,6 @@
-# Frasi motivazionali ampliate e rotazione a 7s (18 ottobre 2026, sera — su ramo `feature/frasi-motivazionali`, NON unito a `main`, NON pushato né in produzione)
+# Frasi motivazionali ampliate e rotazione a 7s (18 ottobre 2026, sera — su `main`, PR #1 mergiata)
 
-Ramo isolato `feature/frasi-motivazionali`. Aggiunte 16 nuove frasi motivazionali (32 totali) con traduzioni complete in italiano e inglese e virgola singola per l'a capo armonioso sia su web che su iOS. Intervallo di rotazione accelerato a 7 secondi (prima 10s). Ambiente locale verificato con Google Chrome su account `dev` con dati di test realistici (8 settimane di allenamenti, medaglie e record).
+Unite su `main` tramite PR #1. Aggiunte 16 nuove frasi motivazionali (32 totali) con traduzioni complete in italiano e inglese e virgola singola per l'a capo armonioso sia su web che su iOS. Intervallo di rotazione accelerato a 7 secondi (prima 10s). Ambiente locale verificato con Google Chrome su account `dev` con dati di test realistici (8 settimane di allenamenti, medaglie e record).
 
 | Fatto | Dove |
 |---|---|
