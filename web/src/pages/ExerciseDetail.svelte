@@ -47,17 +47,19 @@
 	})
 </script>
 
-<main class="screen no-tabs">
+<main class="screen no-tabs wide page two">
 	{#if !ex}
-		<div class="bar"><button class="icon-btn" onclick={() => back('macchinari')} aria-label={t('Indietro')}><Icon name="left" /></button></div>
-		<div class="empty">{t('Macchinario non trovato.')}</div>
+		<div class="bar span"><button class="icon-btn" onclick={() => back('macchinari')} aria-label={t('Indietro')}><Icon name="left" /></button></div>
+		<div class="empty span">{t('Macchinario non trovato.')}</div>
 	{:else}
-		<div class="bar">
+		<div class="bar span">
 			<button class="icon-btn" onclick={() => back('macchinari')} aria-label={t('Indietro')}><Icon name="left" /></button>
 			<h1 class="small ellipsis">{ex.name}</h1>
 			<button class="icon-btn" onclick={() => (editing = true)} aria-label={t('Modifica')}><Icon name="edit" /></button>
 		</div>
 
+		<!-- a schermo largo: a sinistra il massimale e cosa fare, a destra andamento e storico -->
+		<div class="blk">
 		<div class="card" style="--tint:var(--{ex.muscleGroup})">
 			{#if ex.figure.muscles.length}<div style="width:220px;margin:0 auto"><MuscleFigure muscles={ex.figure.muscles} view={ex.figure.view} /></div>{/if}
 			<div class="row" style="align-items:flex-start">
@@ -119,8 +121,11 @@
 			</div>
 		{/if}
 
+		</div>
+
+		<div class="blk">
 		{#if points.length >= 2}
-			<div class="card">
+			<div class="card lead">
 				<div class="row between" style="margin-bottom:10px">
 					<div class="sec-title" style="margin:0">{t('Andamento')}</div>
 					<div class="seg" style="width:auto"><button class:on={range === '3m'} onclick={() => (range = '3m')}>{t('3 mesi')}</button><button class:on={range === '1y'} onclick={() => (range = '1y')}>{t('1 anno')}</button><button class:on={range === 'all'} onclick={() => (range = 'all')}>{t('Tutto')}</button></div>
@@ -157,8 +162,15 @@
 		{/if}
 
 		{#if ex.notes}<div class="sec-title">{t('Note')}</div><div class="card muted" style="white-space:pre-wrap">{ex.notes}</div>{/if}
+		</div>
 	{/if}
 </main>
 
 {#if ex && editing}<ExerciseEditor id={ex.uuid} onclose={() => (editing = false)} ondeleted={() => back('macchinari')} />{/if}
 {#if ex && updating}<EditMaxSheet {ex} onclose={() => (updating = false)} />{/if}
+
+<style>
+	/* il primo riquadro della colonna a destra segue l'ultimo della sinistra: sul telefono la distanza è quella fra due card */
+	.lead { margin-top: 12px; }
+	@media (min-width: 900px) { .lead { margin-top: 0; } }
+</style>

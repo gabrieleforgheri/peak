@@ -17,7 +17,7 @@
 
 </script>
 
-<main class="screen no-tabs">
+<main class="screen no-tabs wide">
 	<div class="bar">
 		<button class="icon-btn" onclick={() => back('impostazioni')} aria-label={t('Indietro')}><Icon name="left" /></button>
 		<h1 class="small">{t('Archiviati')}</h1>
@@ -27,7 +27,7 @@
 
 	{#each groups as { g, items }}
 		<div class="sec-title" style="color:var(--{g})">{GROUP_NAMES[g]}</div>
-		<div class="card list">
+		<div class="card list cells">
 			{#each items as ex (ex.uuid)}
 				<div class="item">
 					<Thumb {ex} />
@@ -39,3 +39,8 @@
 	{/each}
 	{#if !list.length}<div class="empty">{t('Nessun macchinario archiviato.')}</div>{/if}
 </main>
+
+<style>
+	/* schermi larghi: la ricerca non si stira su tutta la riga */
+	@media (min-width: 900px) { .input { max-width: 360px; } }
+</style>

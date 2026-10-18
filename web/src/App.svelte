@@ -42,10 +42,13 @@
 	let started = $state(false)
 	const showFirstRun = $derived(S.ready && S.synced && !m.hasData && !started)
 	const loading = $derived(!S.ready || (!S.synced && !m.hasData && S.auth !== 'expired'))
+	// le schede (barra in basso o binario a sinistra) si vedono solo nelle pagine principali
+	const showNav = $derived(!deep && tab !== 'impostazioni')
+	const offline = $derived(S.error === 'offline' && !S.user)
 </script>
 
-<div class="app">
-	{#if S.error === 'offline' && !S.user}
+<div class="app" class:rail={showNav && !offline && !loading && !showFirstRun}>
+	{#if offline}
 		<main class="screen no-tabs"><div class="empty"><div class="mid">{t('Senza rete')}</div>{t('Apri Peak una volta con la connessione, poi funzionerà anche offline.')}</div></main>
 	{:else if loading}
 		<main class="screen no-tabs"><div class="empty">{t('Carico i tuoi dati…')}</div></main>
@@ -78,7 +81,7 @@
 				<Settings />
 			{/if}
 		{/key}
-		{#if !deep && tab !== 'impostazioni'}
+		{#if showNav}
 			<nav class="tabbar"><div class="tabbar-in">
 				{#each tabs as x}
 					<button class="tab" class:on={tab === x.id} onclick={() => go(x.id)} data-tour="tab-{x.id}"><Icon name={x.icon} />{t(x.label)}</button>

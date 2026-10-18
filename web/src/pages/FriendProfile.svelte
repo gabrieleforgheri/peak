@@ -46,17 +46,18 @@
 	}
 </script>
 
-<main class="screen no-tabs">
-	<div class="bar">
+<main class="screen no-tabs wide page two">
+	<div class="bar span">
 		<button class="icon-btn" onclick={() => back('amici')} aria-label={t('Indietro')}><Icon name="left" /></button>
 		<h1 class="small">{profile ? '@' + profile.username : ''}</h1>
 		<span style="width:40px"></span>
 	</div>
 	{#if failed}
-		<div class="empty">{t('Non riesco a caricare questo profilo.')}</div>
+		<div class="empty span">{t('Non riesco a caricare questo profilo.')}</div>
 	{:else if !profile}
-		<div class="empty">…</div>
+		<div class="empty span">…</div>
 	{:else}
+		<div class="blk">
 		<div class="sec-title">{t('Massimali')}</div>
 		{#if !profile.maxes.length}<div class="empty">{t('Ancora nessun massimale.')}</div>{:else}
 			<div class="card list">
@@ -71,6 +72,9 @@
 			</div>
 		{/if}
 
+		</div>
+
+		<div class="blk">
 		<div class="sec-title">{t('Schede')}</div>
 		{#if !profile.templates.length}<div class="empty">{t('Nessuna scheda condivisa.')}</div>{:else}
 			<div class="stack">
@@ -88,6 +92,14 @@
 			</div>
 		{/if}
 
-		<button class="btn danger block" style="margin-top:20px" onclick={unfriend}>{t('Togli dagli amici')}</button>
+		</div>
+
+		<button class="btn danger block span out" onclick={unfriend}>{t('Togli dagli amici')}</button>
 	{/if}
 </main>
+
+<style>
+	.btn.out { margin-top: 20px; }
+	/* a schermo largo il bottone non si stira su tutta la riga */
+	@media (min-width: 900px) { .btn.out { width: auto; min-width: 260px; justify-self: start; margin-top: 0; } }
+</style>
