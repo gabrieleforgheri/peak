@@ -17,6 +17,7 @@
 	import Sheet from '../components/Sheet.svelte'
 	import TemplateEditor from '../components/TemplateEditor.svelte'
 	import Thumb from '../components/Thumb.svelte'
+	import FigThumb from '../components/FigThumb.svelte'
 
 	let { id }: { id: string } = $props()
 	const m = $derived(getModel())
@@ -120,7 +121,7 @@
 			{@const goal = targetLine(it, sets.filter((s) => !s.isWarmup).length, ex.sets[0]?.weight ?? null)}
 			<div class="card" style={current === ex.uuid && wk.isActive ? 'border-color:rgba(var(--accent-rgb),.45)' : ''}>
 				<div class="row"><button class="row grow" style="background:none;border:0;text-align:left;padding:0;min-width:0" onclick={() => (current = ex.uuid)}>
-					<Thumb {ex} />
+					<Thumb {ex} />{#if ex.figure.muscles.length}<FigThumb muscles={ex.figure.muscles} view={ex.figure.view} group={ex.muscleGroup} />{/if}
 					<div class="grow"><b class="ellipsis" style="display:block">{ex.name}</b>
 						{#if current === ex.uuid && wk.isActive}<span class="tiny" style="color:var(--accent);font-weight:800;letter-spacing:.08em">{t('IN CORSO')}</span>
 						{:else if ex.best}<span class="small muted num">{t('max')} {setLine(ex.best.weight, ex.best.reps)}</span>{/if}

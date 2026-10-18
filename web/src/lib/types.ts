@@ -1,6 +1,7 @@
 import type { AnyRecord } from '@common/records.ts'
 import type { ExerciseDoc, GlyphName, TemplateDoc, WorkoutDoc } from '@common/docs.ts'
 import type { ACCENTS } from '@common/docs.ts'
+import type { Muscle, View } from '@common/muscle-info.ts'
 
 export interface SetItem {
 	uuid: string; workout: string; exercise: string | null; weight: number; reps: number; rpe: number | null
@@ -15,6 +16,8 @@ export interface Ex extends ExerciseDoc {
 	best: AnyRecord | null
 	/** Serie degli allenamenti esistenti, dalla più recente. */
 	sets: SetItem[]
+	/** La figura dei muscoli: della voce del catalogo se è collegato, altrimenti la sua. */
+	figure: { muscles: Muscle[]; view: '' | View }
 }
 export interface Wk extends WorkoutDoc {
 	uuid: string
@@ -31,7 +34,7 @@ export interface Bw { uuid: string; dateMs: number; weight: number; fromHealth: 
 export interface Settings {
 	unit: 'kg' | 'lb'; accent: (typeof ACCENTS)[number]
 	restTimerEnabled: boolean; restSeconds: number; progressionEnabled: boolean; repRangeMin: number; repRangeMax: number
-	plateCalculatorEnabled: boolean; barWeight: number; availablePlates: number[]; tutorialDone: boolean; weeklyGoal: number
+	plateCalculatorEnabled: boolean; barWeight: number; availablePlates: number[]; tutorialDone: boolean; tourSeen: number; weeklyGoal: number
 }
 export interface Model {
 	exercises: Ex[]

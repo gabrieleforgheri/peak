@@ -16,7 +16,6 @@
 	import SummitHero from '../components/SummitHero.svelte'
 	import Icon from '../components/Icon.svelte'
 	import LineChart from '../components/LineChart.svelte'
-	import Medal from '../components/Medal.svelte'
 
 	const m = $derived(getModel())
 	let names = $state(new Map<string, string>())
@@ -101,6 +100,14 @@
 	const TIERS = [t('da conquistare'), t('Bronzo'), t('Argento'), t('Oro')]
 	const medalSub = (md: (typeof medalList)[number]) => md.next === null ? TIERS[3] : md.tier === 0 ? `${fmtMedal(md.id, md.value)} / ${fmtMedal(md.id, md.next)}` : `${TIERS[md.tier]} · ${fmtMedal(md.id, md.value)}/${fmtMedal(md.id, md.next)}`
 	const fmtMedal = (id: MedalId, v: number) => id === 'volume' ? V(v) : id === 'strength' ? W(v) : String(Math.round(v))
+	// cosa misura ogni medaglia, in una riga
+	const MEDAL_INFO: Record<MedalId, string> = {
+		sessions: t('Ogni allenamento concluso conta.'), records: t('Ogni massimale battuto conta.'),
+		streak: t('Settimane di seguito con almeno un allenamento.'), volume: t('Tutto il peso sollevato, sommato.'),
+		strength: t('Il tuo miglior 1RM stimato, su un macchinario.'), variety: t('Quanti macchinari diversi hai usato.'),
+		friends: t('Quanti amici hai collegato.'),
+	}
+	const nextLine = (md: (typeof medalList)[number]) => md.next === null ? t('Oro conquistato.') : t('Mancano {0} per {1}.', fmtMedal(md.id, md.next - md.value), TIERS[md.tier + 1])
 
 	// ---- in breve ----
 	const latest = $derived(m.exercises.filter((e) => e.records.length).map((e) => ({ ...e.records[0]!, name: e.name })).sort((a, b) => b.date - a.date).slice(0, 4))
@@ -109,6 +116,7 @@
 
 <main class="screen">
 	<SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={finished.filter((w) => w.dateMs >= weekStart(Date.now())).length} goal={m.settings.weeklyGoal || weeklyGoal(stat)} onchangegoal={() => (choosing = true)} onavatar={() => go('impostazioni')} />
+	<p class="small muted" style="margin:4px 20px 12px">{t('L\'obiettivo è quanti allenamenti ti dai a settimana: tocca la barra per cambiarlo.')}</p>
 
 	{#if choosing}<GoalPicker current={m.settings.weeklyGoal} suggested={weeklyGoal(stat)} onclose={() => (choosing = false)} />{/if}
 
@@ -130,13 +138,16 @@
 		<div class="stat flame"><div class="n"><Icon name="flame" size={22} />{streak}</div><div class="l">{t('Settimane di fila')}</div></div>
 	</div>
 
+	<p class="small muted" style="margin:12px 4px 14px">{t('Settimane di fila: quante settimane di seguito hai fatto almeno un allenamento.')}</p>
 	<div class="sec-title">{t('Attività')}</div>
+	<p class="small muted" style="margin:-4px 4px 10px">{t('Un quadratino per giorno: più è verde, più serie hai fatto.')}</p>
 	<div class="card">
 		<Heatmap sets={perDay} />
 		<div class="row between small muted" style="margin-top:10px"><span>{tn(last90, '1 allenamento in 14 settimane', '{0} allenamenti in 14 settimane')}</span><span class="legend"><i data-l="0"></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i></span></div>
 	</div>
 
 	<div class="sec-title">{t('Volume settimanale')}</div>
+	<p class="small muted" style="margin:-4px 4px 10px">{t('Kg sollevati ogni settimana, le ultime dodici. La barra accesa è questa settimana.')}</p>
 	<div class="card">
 		<div class="bars">
 			{#each weeks as w, i}<div class:now={i === 11} class:zero={w.volume === 0} style="height:{Math.max(4, (w.volume / maxWeek) * 100)}%" title="{dateShort(w.ws)}: {V(w.volume)}"></div>{/each}
@@ -146,6 +157,7 @@
 
 	{#if groups.length}
 		<div class="sec-title">{t('Dove va il lavoro')}</div>
+		<p class="small muted" style="margin:-4px 4px 10px">{t('Quanto volume è andato a ogni gruppo muscolare negli ultimi 30 giorni.')}</p>
 		<div class="card split">
 			<div class="donut"><Donut parts={groups.map((g) => ({ color: `var(--${g.group})`, value: g.volume }))} center={V(groups.reduce((s, g) => s + g.volume, 0))} label={t('Dove va il lavoro')} /></div>
 			<div class="stack" style="gap:8px;flex:1">
@@ -165,8 +177,17 @@
 	{/if}
 
 	<div class="row between"><div class="sec-title">{t('Medaglie')}</div><span class="small muted" style="margin:20px 4px 8px">{totals.earned} / {totals.total}</span></div>
-	<div class="medals">
-		{#each medalList as md (md.id)}<Medal medal={md} icon={MEDAL[md.id].icon} title={MEDAL[md.id].title} sub={medalSub(md)} />{/each}
+	<p class="small muted" style="margin:-4px 4px 10px">{t('Ogni medaglia ha tre livelli, bronzo, argento e oro. Si sbloccano a soglie crescenti, con quello che fai.')}</p>
+	<div class="card list" data-tour="medals">
+		{#each medalList as md (md.id)}
+			<div class="item" style="flex-direction:column;align-items:stretch;gap:6px">
+				<div class="row between"><span class="row" style="gap:10px"><Icon name={MEDAL[md.id].icon} size={20} /><b>{MEDAL[md.id].title}</b></span><span class="small" style="color:var(--accent);font-weight:700">{md.tier ? TIERS[md.tier] : TIERS[0]}</span></div>
+				<div class="small muted">{MEDAL_INFO[md.id]}</div>
+				<div class="tiny muted num">{TIERS[1]} {fmtMedal(md.id, md.tiers[0])} · {TIERS[2]} {fmtMedal(md.id, md.tiers[1])} · {TIERS[3]} {fmtMedal(md.id, md.tiers[2])}</div>
+				<div style="height:6px;border-radius:3px;background:var(--stroke);overflow:hidden"><div style="height:100%;width:{Math.round(md.progress * 100)}%;background:var(--accent)"></div></div>
+				<div class="small">{nextLine(md)}</div>
+			</div>
+		{/each}
 	</div>
 
 	{#if latest.length}
@@ -215,7 +236,5 @@
 	.split { display: flex; gap: 18px; align-items: center; }
 	.donut { width: 132px; flex: none; color: var(--text); }
 	.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-	.medals { display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x proximity; padding: 4px 2px 10px; margin: 0 -4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-	.medals::-webkit-scrollbar { display: none; }
 	.trophy { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,212,94,.14); color: #ffd45e; flex: none; }
 </style>

@@ -7,6 +7,7 @@
 	import { toast } from '../lib/toast.svelte.ts'
 	import Icon from '../components/Icon.svelte'
 	import TemplateEditor from '../components/TemplateEditor.svelte'
+	import MuscleFigure from '../components/MuscleFigure.svelte'
 
 	let { id }: { id: string } = $props()
 	const m = $derived(getModel())
@@ -14,6 +15,9 @@
 	const prs = $derived(wk?.sets.filter((s) => s.isPR) ?? [])
 	let saving = $state(false)
 	const exCount = $derived(new Set(wk?.sets.map((s) => s.exercise).filter(Boolean)).size)
+	// i muscoli di tutta la seduta, senza doppioni: una vista per volta, come nelle schede
+	const muscles = $derived([...new Set(wk?.sets.flatMap((s) => (s.exercise ? (m.exById.get(s.exercise)?.figure.muscles ?? []) : [])) ?? [])])
+	let side = $state<'front' | 'back'>('front')
 </script>
 
 <main class="screen no-tabs">
@@ -28,6 +32,13 @@
 			<div class="card tile"><div class="tiny muted">{t('Serie')}</div><div class="big num">{wk.workingSets}</div></div>
 			<div class="card tile"><div class="tiny muted">{t('Esercizi')}</div><div class="big num">{exCount}</div></div>
 		</div>
+		{#if muscles.length}
+			<div class="sec-title">{t('Muscoli lavorati')}</div>
+			<div class="card" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px">
+				<div style="width:200px"><MuscleFigure {muscles} view={side} zoom={false} /></div>
+				<button class="chip" onclick={() => (side = side === 'front' ? 'back' : 'front')}>{side === 'front' ? t('Vedi di schiena') : t('Vedi di fronte')}</button>
+			</div>
+		{/if}
 		{#if prs.length}
 			<div class="sec-title">{t('Record di oggi')}</div>
 			<div class="card list">

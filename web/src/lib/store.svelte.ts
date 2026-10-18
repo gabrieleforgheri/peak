@@ -6,6 +6,7 @@
 import { SETTING_DEFAULTS, split, upgradeDoc, type DocDataMap, type Kind, type LiveDoc } from '@common/docs.ts'
 import { glyphOf } from '@common/glyph.ts'
 import { loadCatalog } from './catalog.ts'
+import type { Muscle, View } from '@common/muscle-info.ts'
 import { bestOf } from '@common/domain.ts'
 import { deriveRecords, recordsByExercise } from '@common/records.ts'
 import * as idb from './idb.ts'
@@ -107,8 +108,14 @@ export async function wipeLocal() {
 // ---- modello derivato --------------------------------------------------------------------------------------
 
 /** L'icona di ogni voce del catalogo: arriva poco dopo l'avvio, e intanto i macchinari collegati mostrano quella salvata. */
-const catalog = $state({ glyphs: new Map<string, string>() })
-void loadCatalog().then((l) => (catalog.glyphs = new Map(l.map((e) => [e.id, e.glyph]))), () => {})
+const catalog = $state({
+	glyphs: new Map<string, string>(),
+	figures: new Map<string, { muscles: Muscle[]; view: '' | View }>(),
+})
+void loadCatalog().then((l) => {
+	catalog.glyphs = new Map(l.map((e) => [e.id, e.glyph]))
+	catalog.figures = new Map(l.map((e) => [e.id, { muscles: e.muscles, view: e.view }]))
+}, () => {})
 
 function compute(): Model {
 	const live: LiveDoc[] = []
@@ -144,6 +151,8 @@ function compute(): Model {
 		const records = (byEx.get(e.uuid) ?? []).sort((a, b) => b.date - a.date)
 		return {
 			...e.data, uuid: e.uuid, glyphName: glyphOf(e.data, catalog.glyphs.get(e.data.catalog)), records, best: bestOf(records),
+			// la figura: quella della voce del catalogo se è collegato, altrimenti quella che hai toccato tu
+			figure: e.data.catalog ? (catalog.figures.get(e.data.catalog) ?? { muscles: [], view: '' as const }) : { muscles: e.data.muscles, view: e.data.view },
 			sets: (setsByEx.get(e.uuid) ?? []).sort((a, b) => b.createdAt - a.createdAt || b.order - a.order),
 		}
 	}).sort((a, b) => a.sortIndex - b.sortIndex || a.name.localeCompare(b.name))

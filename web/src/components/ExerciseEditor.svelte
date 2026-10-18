@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { GLYPHS, MUSCLE_GROUPS, type GlyphName, type MuscleGroup } from '@common/docs.ts'
+	import type { Muscle, View } from '@common/muscle-info.ts'
 	import { GLYPH_TITLES, glyphOf } from '@common/glyph.ts'
 	import { PhotoFraming } from '@common/domain.ts'
 	import { deleteExercise, saveExercise } from '../lib/actions.ts'
@@ -11,6 +12,7 @@
 	import { entryName, loadCatalog } from '../lib/catalog.ts'
 	import CatalogPicker from './CatalogPicker.svelte'
 	import Glyph from './Glyph.svelte'
+	import MuscleFigure from './MuscleFigure.svelte'
 	import Icon from './Icon.svelte'
 	import Sheet from './Sheet.svelte'
 	import Stepper from './Stepper.svelte'
@@ -31,6 +33,9 @@
 	let unilateral = $state(existing?.isUnilateral ?? false)
 	let rest = $state(existing?.restSeconds ?? 0)
 	let archived = $state(existing?.isArchived ?? false)
+	// i muscoli di un macchinario personalizzato: si tocca la figura. Collegato, valgono quelli della voce del catalogo
+	let muscles = $state<Muscle[]>(existing?.muscles ?? [])
+	let view = $state<'' | View>(existing?.view ?? '')
 	let hidden = $state(existing?.hidden ?? false)
 	let custom = $state(![1, 1.25, 2, 2.5, 5, 10].includes(existing?.incrementStep ?? 2.5))
 
@@ -75,13 +80,20 @@
 		offset = Math.max(-1, Math.min(1, drag.off + PhotoFraming.normalizedDelta(pts, aspect, 200)))
 	}
 
+	function toggleMuscle(m: Muscle) {
+		muscles = muscles.includes(m) ? muscles.filter((x) => x !== m) : [...muscles, m]
+	}
+	function flipView() {
+		view = (view || 'front') === 'front' ? 'back' : 'front'
+	}
+
 	const valid = $derived(name.trim().length > 0)
 	function save() {
 		if (!valid) return
 		const uuid = saveExercise(id, {
 			name: name.trim(), muscleGroup: group, notes, incrementStep: step, isArchived: archived, glyph, photo,
 			photoOffset: Math.round(offset * 1000) / 1000, isUnilateral: unilateral, restSeconds: rest,
-			catalog, hidden,
+			catalog, hidden, muscles, view,
 		})
 		onsaved?.(uuid)
 		onclose()
@@ -132,6 +144,18 @@
 					{/if}
 				</div>
 			</div>
+		</div>
+
+		<div class="field">
+			<span class="sec-title" style="margin:0 4px 6px">{t('Muscoli')}</span>
+			{#if catalog}
+				<p class="muted small" style="margin:0 4px 8px">{t('Sono quelli dell\'attrezzo del catalogo.')}</p>
+				<div style="max-width:200px"><MuscleFigure muscles={linked?.muscles ?? []} view={linked?.view ?? ''} /></div>
+			{:else}
+				<p class="muted small" style="margin:0 4px 8px">{t('Tocca i muscoli che lavorano sulla figura.')}</p>
+				<div style="max-width:220px"><MuscleFigure {muscles} view={view || 'front'} zoom={false} ontap={toggleMuscle} /></div>
+				<button class="chip" style="margin:8px 4px 0" onclick={flipView}>{(view || 'front') === 'front' ? t('Vedi di schiena') : t('Vedi di fronte')}</button>
+			{/if}
 		</div>
 
 		<div class="field">

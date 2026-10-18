@@ -11,21 +11,25 @@
 	 */
 	const m = $derived(getModel())
 
-	interface Step { id: string; route?: string; target?: string; title: string; text: string; done?: () => boolean; optional?: boolean }
+	interface Step { id: string; route?: string; target?: string; title: string; text: string; done?: () => boolean; optional?: boolean; since?: number }
 	const hasMachine = () => m.exercises.some((e) => !e.isArchived)
 	const hasTemplate = () => m.templates.length > 0
-	const steps = $derived<Step[]>([
+	const all = $derived<Step[]>([
 		{ id: 'welcome', route: 'home', title: t('Benvenuto in Peak'), text: t('Un minuto per fare il giro: ti mostro dove sta ogni cosa e ti faccio creare il primo macchinario e la prima scheda.') },
 		{ id: 'home', route: 'home', target: '[data-tour="hero"]', title: t('La tua Home'), text: t('Qui trovi la tua settimana, i grafici, le medaglie e le novità dei tuoi amici. Il pulsante sotto la montagna ti fa partire con la prossima scheda.') },
+		{ id: 'medals', route: 'home', target: '[data-tour="medals"]', since: 2, title: t('Medaglie e obiettivo'), text: t('Le medaglie hanno tre livelli e ti dicono cosa manca per il prossimo. L\'obiettivo è quanti allenamenti ti dai a settimana.') },
 		{ id: 'settings', route: 'home', target: '[data-tour="avatar"]', title: t('Impostazioni'), text: t('Toccando la tua iniziale in alto a destra apri le impostazioni: unità, colore, timer di recupero, backup e il tuo account yG. Il tutorial lo rivedi da Generale.') },
 		{ id: 'workout', route: 'allenamento', target: '[data-tour="tab-allenamento"]', title: t('Allenamento'), text: t('Qui alleni: scegli una scheda o parti a mano e registra le serie una per una.') },
 		{ id: 'template', route: 'allenamento', target: '[data-tour="new-template"]', title: t('Crea la tua prima scheda'), text: t('Una scheda è una lista di esercizi con serie e ripetizioni: la scegli quando inizi e li trovi già pronti.'), done: hasTemplate },
 		{ id: 'progress', route: 'progressi', target: '[data-tour="tab-progressi"]', title: t('Progressi'), text: t('I tuoi numeri nel tempo: volume, record, peso corporeo.') },
 		{ id: 'machines', route: 'macchinari', target: '[data-tour="tab-macchinari"]', title: t('Macchinari'), text: t('Qui tieni i tuoi macchinari e i loro massimali. Si aggiungono cercando in un catalogo: così il tuo «Chest Press» è lo stesso dei tuoi amici e potete fare la classifica.') },
 		{ id: 'add-machine', route: 'macchinari', target: '[data-tour="add-machine"]', title: t('Aggiungi il primo macchinario'), text: t('Tocca + e cerca nel catalogo. Poi gli puoi dare un nome tuo.'), done: hasMachine },
+		{ id: 'figures', route: 'macchinari', target: '[data-tour="tab-macchinari"]', since: 2, title: t('Figure dei muscoli'), text: t('Ogni macchinario mostra i muscoli che lavorano: la figura si ritaglia sulla zona. Nel riepilogo di una seduta vedi tutti i muscoli lavorati.') },
 		{ id: 'friends', route: 'amici', target: '[data-tour="tab-amici"]', title: t('Amici'), text: t('Invita gli amici con un link o un QR: vedete i massimali e le schede l\'uno dell\'altro e fate la classifica.') },
 		{ id: 'invite', route: 'amici', target: '[data-tour="invite"]', title: t('Invita un amico'), text: t('Quando vuoi. Il link vale una volta sola.'), optional: true },
 	])
+	// chi ha già finito il tutorial vede solo i passi nuovi
+	const steps = $derived(all.filter((s) => !m.settings.tutorialDone || (s.since ?? 1) > m.settings.tourSeen))
 
 	// si parte dal primo passo che non è già soddisfatto
 	let at = $state(0)
@@ -34,7 +38,7 @@
 	const step = $derived(steps[at])
 	const last = $derived(at === steps.length - 1)
 
-	function finish() { setSetting('tutorialDone', true) }
+	function finish() { setSetting('tutorialDone', true); setSetting('tourSeen', 2) }
 	function advance() {
 		let n = at + 1
 		while (n < steps.length && steps[n]!.done?.()) n++ // chi l'ha già fatto salta il passo

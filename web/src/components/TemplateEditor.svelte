@@ -9,6 +9,7 @@
 	import Icon from './Icon.svelte'
 	import Sheet from './Sheet.svelte'
 	import Thumb from './Thumb.svelte'
+	import FigThumb from './FigThumb.svelte'
 
 	/** `tpl`: modifica una scheda; `initial`: righe già pronte (salva come scheda), la scheda è nuova. */
 	let { tpl = null, initial = null, onclose, onsaved }: {
@@ -65,7 +66,7 @@
 			{#if ex}
 				<div class="card">
 					<div class="row">
-						<Thumb {ex} />
+						<Thumb {ex} />{#if ex.figure.muscles.length}<FigThumb muscles={ex.figure.muscles} view={ex.figure.view} group={ex.muscleGroup} />{/if}
 						<b class="grow ellipsis">{ex.name}</b>
 						<button class="icon-btn" onclick={() => move(i, -1)} disabled={i === 0} aria-label={t('Su')}><Icon name="up" /></button>
 						<button class="icon-btn" onclick={() => move(i, 1)} disabled={i === rows.length - 1} aria-label={t('Giù')}><Icon name="down" /></button>

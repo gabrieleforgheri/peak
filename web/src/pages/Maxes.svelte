@@ -11,6 +11,7 @@
 	import Icon from '../components/Icon.svelte'
 	import Sheet from '../components/Sheet.svelte'
 	import Thumb from '../components/Thumb.svelte'
+	import FigThumb from '../components/FigThumb.svelte'
 
 	const m = $derived(getModel())
 	let query = $state('')
@@ -72,7 +73,7 @@
 				{#each items as ex (ex.uuid)}
 					<button class="item" onclick={() => open(ex)} onpointerdown={(e) => press(e, ex)} onpointerup={release} onpointerleave={release} onpointercancel={release}
 						oncontextmenu={(e) => { e.preventDefault(); menu = ex }}>
-						<Thumb {ex} />
+						<Thumb {ex} />{#if ex.figure.muscles.length}<FigThumb muscles={ex.figure.muscles} view={ex.figure.view} group={ex.muscleGroup} />{/if}
 						<div class="grow">
 							<div class="ellipsis" style="font-weight:600">{ex.name}</div>
 							<div class="small muted ellipsis">{sub(ex)}</div>

@@ -13,6 +13,7 @@
 	import Icon from '../components/Icon.svelte'
 	import LineChart from '../components/LineChart.svelte'
 	import Thumb from '../components/Thumb.svelte'
+	import MuscleFigure from '../components/MuscleFigure.svelte'
 
 	let { id }: { id: string } = $props()
 	const m = $derived(getModel())
@@ -58,6 +59,7 @@
 		</div>
 
 		<div class="card" style="--tint:var(--{ex.muscleGroup})">
+			{#if ex.figure.muscles.length}<div style="width:220px;margin:0 auto"><MuscleFigure muscles={ex.figure.muscles} view={ex.figure.view} /></div>{/if}
 			<div class="row" style="align-items:flex-start">
 				<Thumb {ex} large />
 				<div class="grow">

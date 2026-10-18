@@ -129,7 +129,7 @@ export async function copyTemplate(src: { name: string; rows: { catalog: string;
 				put('exercise', uuid, {
 					name: entry ? entryName(entry) : r.name, muscleGroup: entry?.group ?? 'petto', notes: entry?.notes ?? '', incrementStep: entry?.step ?? 2.5,
 					sortIndex: ++top, isArchived: false, createdAt: now(), glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0,
-					catalog: entry?.id ?? '', hidden: false,
+					catalog: entry?.id ?? '', hidden: false, muscles: [], view: '',
 				})
 				ex = { uuid, catalog: entry?.id ?? '', name: r.name } as Ex
 				mine.push(ex)

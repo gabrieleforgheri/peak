@@ -83,6 +83,6 @@
 	{/if}
 	<!-- la prima volta: prima l'obiettivo, poi il tutorial -->
 	{#if !loading && !showFirstRun && S.synced && !m.settings.weeklyGoal}<GoalPicker onclose={() => {}} />
-	{:else if !loading && !showFirstRun && S.synced && !m.settings.tutorialDone}<Tour />{/if}
+	{:else if !loading && !showFirstRun && S.synced && (!m.settings.tutorialDone || m.settings.tourSeen < 2)}<Tour />{/if}
 	{#if T.msg}<div class="toast" role="status">{T.msg}</div>{/if}
 </div>
