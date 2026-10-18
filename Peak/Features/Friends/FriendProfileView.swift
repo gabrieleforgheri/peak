@@ -149,6 +149,7 @@ struct FriendProfileView: View {
                 let entry = Catalog.entry(id: row.catalog)
                 let created = Exercise(name: entry?.it ?? row.name, muscleGroup: entry?.muscleGroup ?? .petto, incrementStep: entry?.step ?? 2.5, notes: entry?.notes ?? "", sortIndex: nextIndex)
                 created.catalogID = entry?.id ?? ""
+                created.isCustom = entry == nil
                 context.insert(created)
                 mineExercises.append(created)
                 nextIndex += 1
@@ -160,9 +161,10 @@ struct FriendProfileView: View {
         }
         let top = ((try? context.fetch(FetchDescriptor<WorkoutTemplate>()))?.map(\.sortIndex).max() ?? -1) + 1
         let template = WorkoutTemplate(name: shared.name, items: items, sortIndex: top)
+        template.programRaw = Programs.current(context: context, settings: settings).uuid.uuidString
         context.insert(template)
         try? context.save()
         Haptics.success()
-        copiedMessage = "Scheda copiata fra le tue."
+        copiedMessage = "Giorno copiato fra i tuoi."
     }
 }

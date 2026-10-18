@@ -72,8 +72,20 @@ struct AddSetSheet: View {
                         VStack(spacing: 18) {
                             SectionHeader(title: "Carico")
                             WeightStepper(kilograms: $weight, step: exercise.incrementStep, unit: settings.unit, tint: tint)
-                            if let plateBase {
-                                Divider().overlay(Theme.stroke)
+                        }
+                    }
+
+                    GlassCard(padding: 18) {
+                        VStack(spacing: 16) {
+                            SectionHeader(title: "Ripetizioni")
+                            RepsStepper(reps: $reps, tint: tint)
+                        }
+                    }
+
+                    if let plateBase {
+                        GlassCard(padding: 18) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                SectionHeader(title: "Dischi per lato")
                                 PlateBarView(
                                     load: Plates.load(total: weight, bar: plateBase, plates: settings.availablePlates),
                                     unit: settings.unit,
@@ -83,10 +95,28 @@ struct AddSetSheet: View {
                         }
                     }
 
-                    GlassCard(padding: 18) {
-                        VStack(spacing: 16) {
-                            SectionHeader(title: "Ripetizioni")
-                            RepsStepper(reps: $reps, tint: tint)
+                    if !isWarmup {
+                        GlassCard(padding: 16, tint: isRecord ? Theme.positive : nil) {
+                            HStack(alignment: .firstTextBaseline) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(isRecord ? "QUESTA SERIE" : "MASSIMALE DA BATTERE")
+                                        .font(Theme.rounded(10, .bold))
+                                        .tracking(0.7)
+                                        .foregroundStyle(Theme.textTertiary)
+                                    Text(reference)
+                                        .font(Theme.display(24))
+                                        .foregroundStyle(isRecord ? Theme.positive : Theme.textPrimary)
+                                        .contentTransition(.numericText())
+                                        .animation(.snappy, value: reference)
+                                    if reps > 1 {
+                                        Text("questa serie ≈ \(Fmt.weight(estimated, unit: settings.unit)) di 1RM")
+                                            .font(Theme.rounded(11, .medium))
+                                            .foregroundStyle(Theme.textTertiary)
+                                    }
+                                }
+                                Spacer()
+                                if isRecord { PRBadge(text: "NUOVO RECORD") }
+                            }
                         }
                     }
 
@@ -161,31 +191,6 @@ struct AddSetSheet: View {
                             .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
                         .buttonStyle(.plain)
-                    }
-
-                    if !isWarmup {
-                        GlassCard(padding: 16, tint: isRecord ? Theme.positive : nil) {
-                            HStack(alignment: .firstTextBaseline) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(isRecord ? "QUESTA SERIE" : "MASSIMALE DA BATTERE")
-                                        .font(Theme.rounded(10, .bold))
-                                        .tracking(0.7)
-                                        .foregroundStyle(Theme.textTertiary)
-                                    Text(reference)
-                                        .font(Theme.display(24))
-                                        .foregroundStyle(isRecord ? Theme.positive : Theme.textPrimary)
-                                        .contentTransition(.numericText())
-                                        .animation(.snappy, value: reference)
-                                    if reps > 1 {
-                                        Text("questa serie ≈ \(Fmt.weight(estimated, unit: settings.unit)) di 1RM")
-                                            .font(Theme.rounded(11, .medium))
-                                            .foregroundStyle(Theme.textTertiary)
-                                    }
-                                }
-                                Spacer()
-                                if isRecord { PRBadge(text: "NUOVO RECORD") }
-                            }
-                        }
                     }
 
                     Button {

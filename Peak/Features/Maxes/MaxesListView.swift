@@ -71,16 +71,31 @@ struct MaxesListView: View {
         }
     }
 
-    /// I macchinari fuori catalogo non entrano nelle classifiche con gli amici.
+    /// I macchinari fuori catalogo (e non creati a mano di proposito) non entrano nelle classifiche con gli amici.
     @ViewBuilder
     private var unlinkedBanner: some View {
-        let count = allExercises.filter { !$0.isArchived && $0.catalogID.isEmpty }.count
-        if count > 0 {
-            Text("\(count == 1 ? "1 macchinario fuori catalogo" : "\(count) macchinari fuori catalogo"): aprine uno → Modifica → Collega, così entra nelle classifiche con gli amici.")
-                .font(Theme.rounded(11, .medium))
-                .foregroundStyle(Theme.textTertiary)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 6)
+        let unlinked = allExercises.filter { !$0.isArchived && $0.catalogID.isEmpty && !$0.isCustom }
+        if !unlinked.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("\(unlinked.count == 1 ? "1 macchinario fuori catalogo" : "\(unlinked.count) macchinari fuori catalogo"): aprine uno → Modifica → Collega, così entra nelle classifiche con gli amici.")
+                    .font(Theme.rounded(11, .medium))
+                    .foregroundStyle(Theme.textTertiary)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(unlinked) { e in
+                            NavigationLink { ExerciseDetailView(exercise: e) } label: {
+                                Text(e.name).font(Theme.rounded(12, .semibold)).lineLimit(1)
+                                    .padding(.horizontal, 12).padding(.vertical, 7)
+                                    .background(Theme.card, in: Capsule())
+                                    .overlay(Capsule().strokeBorder(Theme.stroke, lineWidth: 1))
+                                    .foregroundStyle(Theme.textPrimary)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 8)
         }
     }
 
@@ -223,7 +238,6 @@ private struct ExerciseRow: View {
         GlassCard(padding: 14) {
             HStack(spacing: 14) {
                 ExerciseThumbnail(exercise: exercise, size: 42, zoomable: true)
-                ExerciseFigure(exercise: exercise, size: 42)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(exercise.name)

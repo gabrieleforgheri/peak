@@ -99,7 +99,7 @@ struct WorkoutSessionView: View {
                     Button {
                         showingSaveTemplate = true
                     } label: {
-                        Label("Salva come scheda", systemImage: "list.bullet")
+                        Label("Salva come giorno", systemImage: "list.bullet")
                     }
                     .buttonStyle(SecondaryButtonStyle())
                 }
@@ -189,7 +189,7 @@ struct WorkoutSessionView: View {
             WorkoutSummaryView(workout: workout) { dismiss() }
         }
         .alert(
-            "Aggiornare la scheda «\(templateToUpdate?.name ?? "")» con le modifiche di oggi?",
+            "Aggiornare il giorno «\(templateToUpdate?.name ?? "")» con le modifiche di oggi?",
             isPresented: Binding(get: { templateToUpdate != nil }, set: { if !$0 { templateToUpdate = nil } })
         ) {
             Button("Aggiorna") {

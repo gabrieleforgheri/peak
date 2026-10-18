@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Mezzo bilanciere visto di lato: i dischi di un lato entrano a molla dall'esterno
+/// Il bilanciere visto di lato, con i dischi su entrambi i lati: entrano a molla dall'esterno
 /// a ogni cambio di carico, così si vede subito cosa aggiungere o togliere.
 struct PlateBarView: View {
     let load: Plates.Load
@@ -9,23 +9,19 @@ struct PlateBarView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            // Il bilanciere visto di lato, con i dischi su entrambi i lati: sinistra specchiata, destra uguale.
             HStack(spacing: 2) {
-                // Bilanciere e fermo, poi il manicotto con i dischi.
-                Capsule().fill(Theme.textTertiary).frame(width: 34, height: 6)
-                RoundedRectangle(cornerRadius: 2).fill(Theme.textSecondary).frame(width: 8, height: 26)
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Theme.textTertiary.opacity(0.7)).frame(height: 10)
-                    HStack(spacing: 2) {
-                        ForEach(slots) { slot in
-                            plateShape(slot.plate)
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                                    removal: .opacity.combined(with: .scale(scale: 0.6))
-                                ))
-                        }
-                    }
+                Capsule().fill(Theme.textTertiary).frame(width: 18, height: 6)
+                HStack(spacing: 2) {
+                    ForEach(slots.reversed()) { slot in plateShape(slot.plate) }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                RoundedRectangle(cornerRadius: 2).fill(Theme.textSecondary).frame(width: 6, height: 26)
+                Capsule().fill(Theme.textTertiary.opacity(0.7)).frame(maxWidth: .infinity).frame(height: 10)
+                RoundedRectangle(cornerRadius: 2).fill(Theme.textSecondary).frame(width: 6, height: 26)
+                HStack(spacing: 2) {
+                    ForEach(slots) { slot in plateShape(slot.plate) }
+                }
+                Capsule().fill(Theme.textTertiary).frame(width: 18, height: 6)
             }
             .frame(height: 92)
             .animation(.spring(response: 0.38, dampingFraction: 0.68), value: load)

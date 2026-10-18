@@ -71,6 +71,16 @@ struct TemplateEditorView: View {
                     iconCard
                     placeCard
 
+                    if !rows.isEmpty {
+                        Button("Azzera i campi") {
+                            for i in rows.indices { rows[i].sets = ""; rows[i].repsMin = ""; rows[i].repsMax = ""; rows[i].weight = "" }
+                            Haptics.tap()
+                        }
+                        .font(Theme.rounded(13, .semibold))
+                        .foregroundStyle(settings.accentColor)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                         if let exercise = byUUID[row.exercise] {
                             rowCard(index: index, exercise: exercise)

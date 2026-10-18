@@ -18,7 +18,6 @@ struct ExerciseEditorView: View {
     @State private var group: MuscleGroup = .petto
     @State private var step: Double = 2.5
     /// Incremento scritto a mano invece di uno dei valori preimpostati.
-    @State private var customStep = false
     @State private var notes = ""
     @State private var isUnilateral = false
     @State private var restSeconds = 0
@@ -37,6 +36,8 @@ struct ExerciseEditorView: View {
     @State private var dragStart: Double = 0
     /// L'id della voce del catalogo; vuoto = personalizzato.
     @State private var catalogID = ""
+    /// Creato a mano di proposito: non serve collegarlo al catalogo.
+    @State private var isCustom = false
     /// I muscoli di un macchinario personalizzato, toccati sulla figura. Collegato, valgono quelli della voce.
     @State private var muscles: [MuscleId] = []
     @State private var figureSide: AnatomyView = .front
@@ -50,8 +51,6 @@ struct ExerciseEditorView: View {
         var id: String { rawValue }
     }
     private var linkedEntry: CatalogEntry? { catalogID.isEmpty ? nil : Catalog.entry(id: catalogID) }
-
-    private let steps: [Double] = [1, 1.25, 2, 2.5, 5, 10]
 
     private var isNew: Bool { exercise == nil }
 
@@ -73,7 +72,7 @@ struct ExerciseEditorView: View {
                             SectionHeader(title: "Catalogo")
                             HStack {
                                 if catalogID.isEmpty {
-                                    Text("Non collegato: resta fuori dalle classifiche.")
+                                    Text(isCustom ? "Macchinario tuo: resta fuori dalle classifiche." : "Non collegato: resta fuori dalle classifiche.")
                                         .font(Theme.rounded(13, .medium))
                                         .foregroundStyle(Theme.textTertiary)
                                 } else {
@@ -84,6 +83,11 @@ struct ExerciseEditorView: View {
                                 Button(catalogID.isEmpty ? "Collega" : "Cambia") { picking = .link }
                                     .font(Theme.rounded(14, .semibold))
                                     .foregroundStyle(settings.accentColor)
+                            }
+                            if catalogID.isEmpty {
+                                Toggle("È un macchinario mio", isOn: $isCustom)
+                                    .font(Theme.rounded(14, .semibold))
+                                    .tint(settings.accentColor)
                             }
                         }
                     }
@@ -125,35 +129,25 @@ struct ExerciseEditorView: View {
 
                     GlassCard {
                         VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "Incremento del carico", trailing: "\(Fmt.weight(step, unit: .kg))")
-                            HStack(spacing: 8) {
-                                ForEach(steps, id: \.self) { candidate in
-                                    stepChip(
-                                        candidate.formatted(.number.precision(.fractionLength(0...2))),
-                                        isOn: !customStep && step == candidate
-                                    ) {
-                                        step = candidate
-                                        customStep = false
-                                    }
+                            SectionHeader(title: "Incremento del carico")
+                            HStack(spacing: 14) {
+                                Button { step = max(0.25, step - 0.25); Haptics.tap() } label: { Image(systemName: "minus").frame(width: 38, height: 38).background(Theme.card, in: Circle()) }
+                                    .buttonStyle(.plain)
+                                // il numero si tocca e si scrive
+                                HStack(spacing: 4) {
+                                    TextField("2,5", value: Binding(get: { step }, set: { if $0 >= 0.25, $0 <= 50 { step = $0 } }),
+                                              format: .number.precision(.fractionLength(0...2)))
+                                        .keyboardType(.decimalPad)
+                                        .multilineTextAlignment(.trailing)
+                                        .font(Theme.rounded(20, .heavy))
+                                        .frame(width: 70)
+                                    Text("kg").font(Theme.rounded(13, .semibold)).foregroundStyle(Theme.textTertiary)
                                 }
-                                stepChip("Altro", isOn: customStep) { customStep = true }
+                                Button { step = min(50, step + 0.25); Haptics.tap() } label: { Image(systemName: "plus").frame(width: 38, height: 38).background(Theme.card, in: Circle()) }
+                                    .buttonStyle(.plain)
+                                Spacer()
                             }
-                            if customStep {
-                                HStack {
-                                    TextField("Es. 3,5", value: Binding(
-                                        get: { step },
-                                        set: { if $0 > 0 { step = $0 } }
-                                    ), format: .number.precision(.fractionLength(0...2)))
-                                    .keyboardType(.decimalPad)
-                                    .font(Theme.rounded(17, .semibold))
-                                    Text("kg")
-                                        .font(Theme.rounded(13, .semibold))
-                                        .foregroundStyle(Theme.textTertiary)
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 10)
-                                .background(Theme.card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            }
+                            .foregroundStyle(Theme.textPrimary)
                             Text("È il salto minimo tra un carico e l'altro su questo macchinario: definisce i pulsanti + e −.")
                                 .font(Theme.rounded(11, .medium))
                                 .foregroundStyle(Theme.textTertiary)
@@ -271,7 +265,7 @@ struct ExerciseEditorView: View {
                 CatalogPickerSheet(
                     title: mode == .new ? "Nuovo macchinario" : "Collega al catalogo",
                     allowsCustom: mode == .new,
-                    onPick: { chosen($0, mode: mode) },
+                    onPick: { chosen($0, group: $1, mode: mode) },
                     onCancel: { if mode == .new, catalogID.isEmpty, name.isEmpty { dismiss() } }
                 )
             }
@@ -279,13 +273,13 @@ struct ExerciseEditorView: View {
     }
 
     /// Una voce scelta: nel macchinario nuovo precompila tutto (il nome si può cambiare subito con uno familiare).
-    private func chosen(_ entry: CatalogEntry?, mode: CatalogPicking) {
+    private func chosen(_ entry: CatalogEntry?, group picked: MuscleGroup?, mode: CatalogPicking) {
         catalogID = entry?.id ?? ""
+        if entry == nil, mode == .new { isCustom = true; if let picked { group = picked } }
         guard let entry, mode == .new else { return }
         name = entry.it
         group = entry.muscleGroup
         step = entry.step
-        customStep = !steps.contains(entry.step)
         notes = entry.notes
     }
 
@@ -557,12 +551,12 @@ struct ExerciseEditorView: View {
         didLoad = true
         guard let exercise else { picking = .new; return }
         catalogID = exercise.catalogID
+        isCustom = exercise.isCustom
         muscles = exercise.muscleIDs
         figureSide = AnatomyView(rawValue: exercise.viewRaw) ?? anatomyView(for: exercise.muscleIDs)
         name = exercise.name
         group = exercise.muscleGroup
         step = exercise.incrementStep
-        customStep = !steps.contains(step)
         notes = exercise.notes
         isUnilateral = exercise.isUnilateral
         restSeconds = exercise.restSeconds
@@ -589,6 +583,7 @@ struct ExerciseEditorView: View {
             exercise.photoOffset = photoOffset
             exercise.glyphRaw = pickedGlyph?.rawValue ?? ""
             exercise.catalogID = catalogID
+            exercise.isCustom = catalogID.isEmpty && isCustom
             exercise.musclesRaw = muscles.map(\.rawValue).joined(separator: ",")
             exercise.viewRaw = figureSide.rawValue
         } else {
@@ -607,6 +602,7 @@ struct ExerciseEditorView: View {
             new.isUnilateral = isUnilateral
             new.restSeconds = restSeconds
             new.catalogID = catalogID
+            new.isCustom = catalogID.isEmpty && isCustom
             new.musclesRaw = muscles.map(\.rawValue).joined(separator: ",")
             new.viewRaw = figureSide.rawValue
             new.isHidden = isHidden
