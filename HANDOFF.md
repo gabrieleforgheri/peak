@@ -1,6 +1,6 @@
 # Web: ME, scheda generale, icone (18 ottobre 2026, ramo feature/figure-muscoli, non committato)
 
-Solo web e server: **l'iPhone non è toccato** (da fare dopo il verde dell'utente).
+Web e server pubblicati il 18 ott. **iPhone portato** (scheda generale, Me, riepilogo, macchinario per gruppo, passo 0,25, dischi su due lati): compila (`swiftc -typecheck`), **non provato su telefono né con i test** (da chiedere prima). Manca sull'iPhone: inglese (l'app ha solo italiano; la lingua si sincronizza ma non cambia nulla), icone SVG (qui simboli di sistema), selettore icone «Tutte», montagna della Home.
 
 | Pezzo | Dove |
 |---|---|
@@ -16,7 +16,7 @@ Solo web e server: **l'iPhone non è toccato** (da fare dopo il verde dell'utent
 
 Da sapere:
 - **Licenze icone**: Lucide (ISC) in `Icon.svelte`, game-icons.net (**CC BY 3.0, serve citare**) in `solid-icons.ts`; i testi in `web/src/components/*LICENSE.txt` e riga nelle Impostazioni.
-- **Ordine di rilascio**: prima il server (nuovo kind `program`, nuovi campi). Un iPhone vecchio riceve un kind che non conosce: da provare prima di pubblicare. `KEEP_IF_ABSENT` protegge `program`, `weekday`, `icon`, `custom`.
+- **Ordine di rilascio**: prima il server (nuovo kind `program`, nuovi campi). Un iPhone vecchio salta il kind `program` (`SyncDocs.apply` → `skipped`, mai cancellato): letto nel codice, non provato. `KEEP_IF_ABSENT` protegge `program`, `weekday`, `icon`, `custom`.
 - Nei testi italiani «scheda» = la generale, «giorno» = il vecchio piano; in inglese Program / Plan.
 - Corretto un `XX` che compariva nel selettore dei gruppi (`FocusPicker.svelte`).
 - Verifica: `npm test` 102; `svelte-check` 0; `check-i18n` ok; `vite build`; prova nel browser con dati finti.
