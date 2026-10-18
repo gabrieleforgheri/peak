@@ -5,26 +5,20 @@ import SwiftData
 struct MeView: View {
     @Environment(AppSettings.self) private var settings
 
-    @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
-    @Query(sort: \Exercise.sortIndex) private var exercises: [Exercise]
-    @Query(sort: \MaxRecord.date, order: .reverse) private var records: [MaxRecord]
     @Query private var weights: [BodyWeightEntry]
 
     private let nav = AppNav.shared
+    private let insights = Insights.shared
     private let social = SocialStore.shared
     private let sync = SyncService.shared
 
-    @State private var stats: HomeStats?
     @State private var showSettings = false
 
-    private var finished: [Workout] { workouts.filter { !$0.isActive } }
-    private var movers: [Stats.Mover] { Stats.topMovers(exercises: exercises, days: 90) }
-    private var hasTrainingData: Bool { !finished.isEmpty || !records.isEmpty }
+    private var hasTrainingData: Bool { (insights.stats?.finished ?? 0) > 0 || !insights.latestRecords.isEmpty }
 
     private var fullName: String { sync.credentials?.name ?? "" }
-    private var medalList: [Medal] {
-        guard let s = stats else { return [] }
-        return Medals.list(MedalInput(
+    private func medals(_ s: HomeStats) -> [Medal] {
+        Medals.list(MedalInput(
             sessions: s.finished, records: s.recordCount, streak: s.streak, volumeKg: s.totalVolume,
             bestOneRm: s.bestOneRm, machines: s.machinesUsed, friends: social.friendCount
         ))
@@ -35,9 +29,6 @@ struct MeView: View {
             content
                 .screenBackground(settings.accentColor)
                 .toolbar(.hidden, for: .navigationBar)
-        }
-        .task(id: workouts.count + exercises.count + records.count) {
-            stats = HomeStats(workouts: workouts, exercises: exercises, chosenGoal: settings.weeklyGoal)
         }
         .fullScreenCover(isPresented: $showSettings) { SettingsView() }
     }
@@ -113,8 +104,9 @@ struct MeView: View {
 
                 friendsButton
 
-                if let s = stats, hasTrainingData {
+                if let s = insights.stats, hasTrainingData {
                     section("Panoramica") { overview(s) }
+                    let medalList = medals(s)
                     let totals = Medals.totals(medalList)
                     section("Medaglie", trailing: "\(totals.earned) / \(totals.total)") {
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -129,9 +121,9 @@ struct MeView: View {
 
                 BodyWeightCard()
 
-                if exercises.contains(where: { Progression1RM.points($0).count >= 2 }) { section("Progressione") { ProgressionCard(exercises: exercises) } }
-                if !movers.isEmpty { moversCard }
-                if !records.isEmpty { recentRecordsCard }
+                if !insights.progression.isEmpty { section("Progressione") { ProgressionCard(series: insights.progression) } }
+                if !insights.movers.isEmpty { moversCard }
+                if !insights.latestRecords.isEmpty { recentRecordsCard }
 
                 if !hasTrainingData { emptyHint }
             }
@@ -158,7 +150,7 @@ struct MeView: View {
             VStack(alignment: .leading, spacing: 12) {
                 SectionHeader(title: "Cresciuti di più", trailing: "ultimi 90 giorni")
 
-                ForEach(movers) { mover in
+                ForEach(insights.movers) { mover in
                     HStack(spacing: 12) {
                         ExerciseThumbnail(exercise: mover.exercise, size: 32)
 
@@ -192,7 +184,7 @@ struct MeView: View {
             VStack(alignment: .leading, spacing: 12) {
                 SectionHeader(title: "Ultimi record")
 
-                ForEach(records.prefix(8)) { record in
+                ForEach(insights.latestRecords) { record in
                     HStack(spacing: 12) {
                         Text(Fmt.shortDate(record.date))
                             .font(Theme.rounded(11, .semibold))

@@ -21,9 +21,9 @@ struct WorkoutsListView: View {
     private var days: [WorkoutTemplate] { Programs.days(of: program, in: templates) }
 
     private var activeWorkout: Workout? { workouts.first(where: \.isActive) }
-    private var finishedWorkouts: [Workout] { workouts.filter { !$0.isActive } }
 
     var body: some View {
+        let finishedWorkouts = workouts.filter { !$0.isActive }
         NavigationStack(path: $path) {
             List {
                 Section {

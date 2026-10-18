@@ -43,10 +43,14 @@ struct HomeStats {
         var days: [Date: Int] = [:]
         for w in done { days[cal.startOfDay(for: w.date), default: 0] += w.workingSetCount }
         perDay = days
+        // L'inizio settimana di ogni allenamento si calcola una volta sola (il Calendar è lento).
+        var volumeByWeek: [Date: Double] = [:]
+        for w in done {
+            if let start = cal.dateInterval(of: .weekOfYear, for: w.date)?.start { volumeByWeek[start, default: 0] += w.totalVolume }
+        }
         weeks = (0..<12).map { i in
             let start = cal.date(byAdding: .weekOfYear, value: -(11 - i), to: weekStart) ?? weekStart
-            let volume = done.filter { cal.dateInterval(of: .weekOfYear, for: $0.date)?.start == start }.reduce(0) { $0 + $1.totalVolume }
-            return (start, volume)
+            return (start, volumeByWeek[start] ?? 0)
         }
         groups = Stats.volumeByGroup(workouts: done, days: 30, now: now)
         last98Days = done.filter { $0.date >= now.addingTimeInterval(-98 * 86_400) }.count

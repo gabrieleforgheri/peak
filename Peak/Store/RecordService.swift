@@ -28,16 +28,21 @@ enum RecordService {
         set.exercise = exercise
         set.workout = workout
         recompute(exercise, context: context)
-        try? context.save()
+        save(context)
         return set.isPersonalRecord
     }
 
-    /// Ricalcola i record di un macchinario: via i record automatici, poi uno per ogni serie
-    /// che batte il migliore fino a quel momento (il suo uuid è quello della serie).
+    /// Salva solo se c'è davvero qualcosa: ogni salvataggio fa rileggere tutte le query e parte la sincronizzazione.
+    private static func save(_ context: ModelContext) {
+        if context.hasChanges { try? context.save() }
+    }
+
+    /// Ricalcola i record di un macchinario: uno per ogni serie che batte il migliore fino a quel
+    /// momento (il suo uuid è quello della serie). Si confronta con quelli che ci sono già: restano
+    /// (aggiornati se la serie è cambiata), si cancellano quelli non più vincenti, si creano i mancanti.
     static func recompute(_ exercise: Exercise, context: ModelContext) {
         let records = exercise.recordList.filter { !$0.isDeleted }
         let manual = records.filter { !$0.isEstimated }
-        for record in records where record.isEstimated { context.delete(record) }
 
         // Solo le serie di un allenamento che esiste ancora.
         let sets = exercise.setList.filter { !$0.isDeleted && $0.workout != nil }
@@ -53,13 +58,25 @@ enum RecordService {
             }
         ))
 
+        // Un solo record automatico per serie vincente; il resto (non più vincenti, doppioni) via.
+        var kept: [UUID: MaxRecord] = [:]
+        for record in records where record.isEstimated {
+            if winners.contains(record.uuid.uuidString), kept[record.uuid] == nil { kept[record.uuid] = record } else { context.delete(record) }
+        }
+
+        let note = "Da allenamento"
         for set in sets {
             let isRecord = winners.contains(set.uuid.uuidString)
             if set.isPersonalRecord != isRecord { set.isPersonalRecord = isRecord }
             guard isRecord else { continue }
-            let record = MaxRecord(
-                weight: set.weight, reps: set.reps, date: set.createdAt, isEstimated: true, note: "Da allenamento"
-            )
+            if let record = kept[set.uuid] {
+                if record.weight != set.weight { record.weight = set.weight }
+                if record.reps != set.reps { record.reps = set.reps }
+                if record.date != set.createdAt { record.date = set.createdAt }
+                if record.note != note { record.note = note }
+                continue
+            }
+            let record = MaxRecord(weight: set.weight, reps: set.reps, date: set.createdAt, isEstimated: true, note: note)
             record.uuid = set.uuid
             context.insert(record)
             record.exercise = exercise
@@ -71,40 +88,40 @@ enum RecordService {
         for exercise in (try? context.fetch(FetchDescriptor<Exercise>())) ?? [] {
             recompute(exercise, context: context)
         }
-        try? context.save()
+        save(context)
     }
 
     /// Elimina una serie e ricalcola: se era un record, torna quello di prima (o il successivo).
     static func delete(_ set: WorkoutSet, context: ModelContext) {
         let exercise = set.exercise
         context.delete(set)
-        try? context.save()
+        save(context)
         if let exercise { recompute(exercise, context: context) }
-        try? context.save()
+        save(context)
     }
 
     /// Elimina un allenamento con le sue serie: i record che aveva fatto nascere spariscono con lui.
     static func delete(_ workout: Workout, context: ModelContext) {
         let exercises = Set(workout.setList.compactMap(\.exercise))
         context.delete(workout)
-        try? context.save()
+        save(context)
         for exercise in exercises { recompute(exercise, context: context) }
-        try? context.save()
+        save(context)
     }
 
     /// Elimina un massimale dallo storico. Uno inserito a mano sparisce. Uno "da allenamento"
     /// non si cancella da solo (si ricalcolerebbe): la serie che l'ha fatto nascere smette di
     /// contare per i record, e resta nell'allenamento.
     static func delete(_ record: MaxRecord, context: ModelContext) {
-        guard let exercise = record.exercise else { context.delete(record); try? context.save(); return }
+        guard let exercise = record.exercise else { context.delete(record); save(context); return }
         if record.isEstimated {
             if let set = exercise.setList.first(where: { $0.uuid == record.uuid }) { set.excludedFromRecords = true }
         } else {
             context.delete(record)
-            try? context.save()
+            save(context)
         }
         recompute(exercise, context: context)
-        try? context.save()
+        save(context)
     }
 
     /// Massimali toccati durante una sessione, per il riepilogo di fine allenamento.

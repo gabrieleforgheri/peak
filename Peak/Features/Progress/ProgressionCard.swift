@@ -20,41 +20,37 @@ enum Progression1RM {
 
 struct ProgressionCard: View {
     @Environment(AppSettings.self) private var settings
-    let exercises: [Exercise]
+    /// Già calcolate da `Insights`: qui non si ricalcola niente.
+    let series: [Insights.Series]
 
     @State private var pickedID: UUID?
 
-    private var candidates: [Exercise] {
-        exercises.filter { !$0.isArchived && Progression1RM.points($0).count >= 2 }
-            .sorted { ($0.bestRecord?.estimatedOneRepMax ?? 0) > ($1.bestRecord?.estimatedOneRepMax ?? 0) }
-    }
-    private var current: Exercise? { candidates.first { $0.uuid == pickedID } ?? candidates.first }
-
     var body: some View {
+        let current = series.first { $0.id == pickedID } ?? series.first
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(candidates) { e in
-                            Button { pickedID = e.uuid; Haptics.tap() } label: {
-                                Text(e.name).font(Theme.rounded(12, .semibold)).lineLimit(1)
+                        ForEach(series) { s in
+                            let picked = s.id == current?.id
+                            Button { pickedID = s.id; Haptics.tap() } label: {
+                                Text(s.exercise.name).font(Theme.rounded(12, .semibold)).lineLimit(1)
                                     .padding(.horizontal, 12).padding(.vertical, 7)
-                                    .background(e.uuid == current?.uuid ? settings.accentColor.opacity(0.22) : Theme.card, in: Capsule())
-                                    .overlay(Capsule().strokeBorder(e.uuid == current?.uuid ? settings.accentColor.opacity(0.7) : Theme.stroke, lineWidth: 1))
-                                    .foregroundStyle(e.uuid == current?.uuid ? settings.accentColor : Theme.textSecondary)
+                                    .background(picked ? settings.accentColor.opacity(0.22) : Theme.card, in: Capsule())
+                                    .overlay(Capsule().strokeBorder(picked ? settings.accentColor.opacity(0.7) : Theme.stroke, lineWidth: 1))
+                                    .foregroundStyle(picked ? settings.accentColor : Theme.textSecondary)
                             }
                             .buttonStyle(.plain)
                         }
                     }
                 }
-                if let e = current { chart(e) }
+                if let current { chart(current.points) }
             }
         }
     }
 
     @ViewBuilder
-    private func chart(_ e: Exercise) -> some View {
-        let pts = Progression1RM.points(e)
+    private func chart(_ pts: [Progression1RM.Point]) -> some View {
         let unit = settings.unit
         let lo = (pts.map(\.oneRm).min() ?? 0) * 0.95
         let hi = (pts.map(\.oneRm).max() ?? 1) * 1.05

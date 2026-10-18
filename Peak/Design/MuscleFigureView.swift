@@ -15,17 +15,23 @@ struct MuscleFigureView: View {
         let side = view ?? anatomyView(for: muscles)
         let box = zoom ? AnatomyZoom.rect(for: muscles, view: side) : CGRect(origin: .zero, size: AnatomyShapes.size)
         let hot = Set(muscles)
-        ZStack {
+        let figure = ZStack {
             ForEach(Array(AnatomyCache.pieces(side).enumerated()), id: \.offset) { _, piece in
                 if let muscle = piece.muscle {
                     let on = hot.contains(muscle)
-                    FigurePath(path: piece.path, box: box)
+                    let shape = FigurePath(path: piece.path, box: box)
                         .fill(on ? muscle.group.tint : Color(red: 0.29, green: 0.31, blue: 0.35).opacity(0.55))
                         .overlay(FigurePath(path: piece.path, box: box).fill(sheen).allowsHitTesting(false))
                         .shadow(color: on ? muscle.group.tint.opacity(0.7) : .clear, radius: 9)
                         .overlay(FigurePath(path: piece.path, box: box).stroke(Color(red: 0.11, green: 0.12, blue: 0.14), lineWidth: 1))
-                        .contentShape(FigurePath(path: piece.path, box: box))
-                        .onTapGesture { onTap?(muscle) }
+                    // il gesto solo se serve: ogni figura ne avrebbe una cinquantina
+                    if let onTap {
+                        shape
+                            .contentShape(FigurePath(path: piece.path, box: box))
+                            .onTapGesture { onTap(muscle) }
+                    } else {
+                        shape
+                    }
                 } else {
                     FigurePath(path: piece.path, box: box)
                         .fill(skin)
@@ -33,6 +39,10 @@ struct MuscleFigureView: View {
                         .allowsHitTesting(false)
                 }
             }
+        }
+        Group {
+            // una figura che non si tocca è una sola immagine: niente passaggio fuori schermo per ogni ombra
+            if onTap == nil { figure.drawingGroup() } else { figure }
         }
         .aspectRatio(box.width / box.height, contentMode: .fit)
         // lo zoom ritaglia: ciò che sta fuori dalla zona che lavora non deve sbordare sul resto

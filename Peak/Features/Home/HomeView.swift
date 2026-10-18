@@ -5,15 +5,14 @@ import SwiftData
 struct HomeView: View {
     @Environment(AppSettings.self) private var settings
     @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
-    @Query(sort: \Exercise.sortIndex) private var exercises: [Exercise]
     @Query(sort: \WorkoutTemplate.sortIndex) private var templates: [WorkoutTemplate]
     @Query(sort: \WorkoutProgram.sortIndex) private var programs: [WorkoutProgram]
 
     private let nav = AppNav.shared
+    private let insights = Insights.shared
     private let social = SocialStore.shared
     private let sync = SyncService.shared
 
-    @State private var stats: HomeStats?
     @State private var choosingGoal = false
 
     private var active: Workout? { workouts.first(where: \.isActive) }
@@ -28,7 +27,7 @@ struct HomeView: View {
     }
 
     private var medalList: [Medal] {
-        guard let s = stats else { return [] }
+        guard let s = insights.stats else { return [] }
         return Medals.list(MedalInput(
             sessions: s.finished, records: s.recordCount, streak: s.streak, volumeKg: s.totalVolume,
             bestOneRm: s.bestOneRm, machines: s.machinesUsed, friends: social.friendCount
@@ -39,7 +38,7 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    if let s = stats {
+                    if let s = insights.stats {
                         HomeHero(name: displayName, streak: s.streak, weekSessions: s.weekSessions, goal: s.goal, onAvatar: { nav.tab = .me }, onChangeGoal: { choosingGoal = true })
                         nextBar
                         StatStrip(stats: s)
@@ -55,10 +54,7 @@ struct HomeView: View {
             .screenBackground(settings.accentColor)
             .toolbar(.hidden, for: .navigationBar)
         }
-        .task(id: workouts.count + exercises.count + exercises.reduce(0) { $0 + $1.recordList.count }) {
-            stats = HomeStats(workouts: workouts, exercises: exercises, chosenGoal: settings.weeklyGoal)
-        }
-        .onChange(of: settings.weeklyGoal) { stats = HomeStats(workouts: workouts, exercises: exercises, chosenGoal: settings.weeklyGoal) }
+        .onChange(of: settings.weeklyGoal) { Insights.shared.refresh() }
         .fullScreenCover(isPresented: $choosingGoal) {
             GoalPickerView(current: settings.weeklyGoal, suggested: Stats.weeklyGoal(workouts: workouts.filter { !$0.isActive })) { choosingGoal = false }
         }
@@ -119,7 +115,7 @@ struct HomeView: View {
     }
 
     private var recordsSection: some View {
-        let latest = exercises.compactMap { e in e.recordsByDateDesc.first.map { (e, $0) } }.sorted { $0.1.date > $1.1.date }.prefix(4)
+        let latest = insights.recentByExercise
         return Group {
             if !latest.isEmpty {
                 section("Record recenti") {
@@ -130,11 +126,11 @@ struct HomeView: View {
                                     Image(systemName: "trophy.fill").font(.system(size: 14)).foregroundStyle(Color(hex: 0xFFD45E))
                                         .frame(width: 34, height: 34).background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color(hex: 0xFFD45E).opacity(0.14)))
                                     VStack(alignment: .leading, spacing: 1) {
-                                        Text(pair.0.name).font(Theme.rounded(15, .bold)).lineLimit(1)
-                                        Text(Fmt.relativeDay(pair.1.date)).font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
+                                        Text(pair.exercise.name).font(Theme.rounded(15, .bold)).lineLimit(1)
+                                        Text(Fmt.relativeDay(pair.record.date)).font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
                                     }
                                     Spacer()
-                                    Text(Fmt.setLine(weight: pair.1.weight, reps: pair.1.reps, unit: settings.unit)).font(Theme.rounded(14, .bold))
+                                    Text(Fmt.setLine(weight: pair.record.weight, reps: pair.record.reps, unit: settings.unit)).font(Theme.rounded(14, .bold))
                                 }
                                 .padding(.horizontal, 8).padding(.vertical, 8)
                                 if i < latest.count - 1 { Divider().overlay(Theme.stroke) }

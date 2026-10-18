@@ -40,19 +40,21 @@ struct WorkoutSessionView: View {
     }
 
     /// La lista di oggi: il piano (scheda o esercizi aggiunti) e, in coda, gli esercizi con serie che nel piano non ci sono.
-    private var items: [TemplateItem] {
-        let known = exerciseByUUID
-        return workout.items(exists: { known[$0] != nil })
+    private func items(_ known: [UUID: Exercise]) -> [TemplateItem] {
+        workout.items(exists: { known[$0] != nil })
     }
 
     /// Scrive la lista di oggi nel piano (anche gli esercizi fuori piano diventano righe).
     private func editPlan(_ change: ([TemplateItem]) -> [TemplateItem]) {
-        withAnimation(.snappy) { workout.plan = change(items) }
+        withAnimation(.snappy) { workout.plan = change(items(exerciseByUUID)) }
         try? context.save()
         WorkoutActivity.update(for: workout, unit: settings.unit)
     }
 
     var body: some View {
+        // Una volta sola per ridisegno: il dizionario degli esercizi e la lista di oggi (decodifica il piano e ordina le serie).
+        let known = exerciseByUUID
+        let list = items(known)
         ScrollView {
             VStack(spacing: 14) {
                 header
@@ -61,10 +63,10 @@ struct WorkoutSessionView: View {
                     restCard(until: restEnd)
                 }
 
-                ForEach(items) { item in
-                    if let exercise = exerciseByUUID[item.exercise] {
+                ForEach(list) { item in
+                    if let exercise = known[item.exercise] {
                     let sets = workout.sets(for: exercise)
-                    let last = exercise.setList.sorted { $0.createdAt > $1.createdAt }.first
+                    let last = exercise.setList.max { $0.createdAt < $1.createdAt }
                     ExerciseSessionCard(
                         exercise: exercise,
                         goal: Plan.targetLine(
@@ -95,7 +97,7 @@ struct WorkoutSessionView: View {
                 }
                 .buttonStyle(SecondaryButtonStyle())
 
-                if !items.isEmpty {
+                if !list.isEmpty {
                     Button {
                         showingSaveTemplate = true
                     } label: {
@@ -153,7 +155,7 @@ struct WorkoutSessionView: View {
         }
         .sheet(item: $replacing) { old in
             ExercisePickerSheet(focus: workout.focus) { new in
-                if items.contains(where: { $0.exercise == new.uuid }) {
+                if list.contains(where: { $0.exercise == new.uuid }) {
                     Haptics.warning()
                 } else {
                     editPlan { Plan.replacing($0, from: old.uuid, to: new.uuid) }
@@ -162,7 +164,7 @@ struct WorkoutSessionView: View {
             }
         }
         .sheet(isPresented: $showingSaveTemplate) {
-            TemplateEditorView(initialName: workout.name, initialItems: workout.items(.done, exists: { exerciseByUUID[$0] != nil }))
+            TemplateEditorView(initialName: workout.name, initialItems: workout.items(.done, exists: { known[$0] != nil }))
         }
         .sheet(item: $addSetTarget) { exercise in
             AddSetSheet(
@@ -301,7 +303,10 @@ struct WorkoutSessionView: View {
                 )
                 .font(Theme.rounded(14, .regular))
                 .lineLimit(2...6)
-                .onChange(of: workout.note) { _, _ in
+                // Si salva a fine digitazione, non a ogni tasto: ogni salvataggio fa rileggere tutte le schede e parte la sincronizzazione.
+                .task(id: workout.note) {
+                    try? await Task.sleep(for: .seconds(1))
+                    guard !Task.isCancelled else { return }
                     try? context.save()
                 }
             }
@@ -312,7 +317,7 @@ struct WorkoutSessionView: View {
 
     private func lastSet(for exercise: Exercise) -> WorkoutSet? {
         workout.sets(for: exercise).last
-            ?? exercise.setList.sorted { $0.createdAt > $1.createdAt }.first
+            ?? exercise.setList.max { $0.createdAt < $1.createdAt }
     }
 
     private func addSet(to exercise: Exercise, weight: Double, reps: Int, isWarmup: Bool) {

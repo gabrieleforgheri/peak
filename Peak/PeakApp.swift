@@ -14,6 +14,7 @@ struct PeakApp: App {
                 .preferredColorScheme(.dark)
                 .task {
                     SyncService.shared.configure(container: container, settings: settings)
+                    Insights.shared.configure(container: container, settings: settings)
                     WatchBridge.shared.activate(container: container, settings: settings)
                 }
         }
