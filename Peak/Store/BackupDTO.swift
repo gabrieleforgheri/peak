@@ -36,6 +36,9 @@ struct ExerciseDTO: Codable {
     /// Opzionali: i backup scritti prima del catalogo non li hanno.
     var catalogID: String?
     var isHidden: Bool?
+    /// Opzionali: i backup scritti prima della figura dei muscoli non li hanno.
+    var muscles: [String]?
+    var view: String?
     var records: [MaxRecordDTO]
 }
 

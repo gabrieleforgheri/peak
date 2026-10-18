@@ -39,13 +39,19 @@ struct TourOverlay: View {
         let text: String
         var done: ((TourOverlay) -> Bool)? = nil
         var optional = false
+        /// Dal giro numero N in poi: chi ha già finito il tutorial vede solo i passi più nuovi di quello che ha visto.
+        var since = 1
     }
 
-    private let steps: [Step] = [
+    private var steps: [Step] { settings.tutorialDone ? allSteps.filter { $0.since > settings.tourSeen } : allSteps }
+
+    private let allSteps: [Step] = [
         Step(id: "welcome", tab: .home, target: nil, tabIndex: nil, title: "Benvenuto in Peak",
              text: "Un minuto per fare il giro: ti mostro dove sta ogni cosa e ti faccio creare il primo macchinario e la prima scheda."),
         Step(id: "home", tab: .home, target: nil, tabIndex: 0, title: "La tua Home",
              text: "Qui trovi la tua settimana, i grafici, le medaglie e le novità dei tuoi amici. La barra sotto la frase è il tuo obiettivo."),
+        Step(id: "medals", tab: .home, target: nil, tabIndex: 0, title: "Medaglie e obiettivo",
+             text: "Le medaglie hanno tre livelli e ti dicono cosa manca per il prossimo. L'obiettivo è quanti allenamenti ti dai a settimana.", since: 2),
         Step(id: "settings", tab: .home, target: "avatar", tabIndex: nil, title: "Impostazioni",
              text: "Toccando la tua iniziale in alto a destra apri le impostazioni: unità, colore, timer di recupero, backup e il tuo account yG. Il tutorial lo rivedi da Generale."),
         Step(id: "workout", tab: .workouts, target: nil, tabIndex: 1, title: "Allenamento",
@@ -58,6 +64,8 @@ struct TourOverlay: View {
              text: "Qui tieni i tuoi macchinari e i loro massimali. Si aggiungono cercando in un catalogo: così il tuo «Chest Press» è lo stesso dei tuoi amici e potete fare la classifica."),
         Step(id: "add-machine", tab: .machines, target: "add-machine", tabIndex: nil, title: "Aggiungi il primo macchinario",
              text: "Tocca + e cerca nel catalogo. Poi gli puoi dare un nome tuo.", done: { $0.hasMachine }),
+        Step(id: "figures", tab: .machines, target: nil, tabIndex: 3, title: "Figure dei muscoli",
+             text: "Ogni macchinario mostra i muscoli che lavorano: la figura si ritaglia sulla zona. Nel riepilogo di una seduta vedi tutti i muscoli lavorati.", since: 2),
         Step(id: "friends", tab: .friends, target: nil, tabIndex: 4, title: "Amici",
              text: "Invita gli amici con un link o un QR: vedete i massimali e le schede l'uno dell'altro e fate la classifica."),
         Step(id: "invite", tab: .friends, target: "invite", tabIndex: nil, title: "Invita un amico",
@@ -197,6 +205,7 @@ struct TourOverlay: View {
 
     private func finish() {
         settings.tutorialDone = true
+        settings.tourSeen = 2
         Haptics.success()
     }
 }

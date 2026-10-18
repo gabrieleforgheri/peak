@@ -3,6 +3,21 @@ import SwiftData
 
 /// Riepilogo di fine sessione, con i record ottenuti.
 struct WorkoutSummaryView: View {
+    /// Una vista per volta della figura dei muscoli della seduta.
+    @State private var figureSide: AnatomyView = .front
+
+    /// I muscoli di tutti gli esercizi della seduta, senza doppioni.
+    private var workoutMuscles: [MuscleId] {
+        var seen = Set<MuscleId>()
+        var out: [MuscleId] = []
+        for exercise in workout.exercisesInOrder {
+            for muscle in exercise.figureMuscles where !seen.contains(muscle) {
+                seen.insert(muscle)
+                out.append(muscle)
+            }
+        }
+        return out
+    }
     @Environment(AppSettings.self) private var settings
     @Environment(\.dismiss) private var dismiss
 
@@ -60,6 +75,21 @@ struct WorkoutSummaryView: View {
                             value: "\(workout.exercisesInOrder.count)",
                             tint: settings.accentColor
                         )
+                    }
+
+                    if !workoutMuscles.isEmpty {
+                        GlassCard {
+                            VStack(spacing: 12) {
+                                SectionHeader(title: "Muscoli lavorati")
+                                MuscleFigureView(muscles: workoutMuscles, view: figureSide, zoom: false)
+                                    .frame(maxWidth: 220)
+                                Button(figureSide == .front ? "Vedi di schiena" : "Vedi di fronte") {
+                                    figureSide = figureSide == .front ? .back : .front
+                                }
+                                .buttonStyle(.bordered)
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
                     }
 
                     if !records.isEmpty {

@@ -12,6 +12,25 @@ struct CatalogEntry: Codable, Identifiable, Hashable {
     let step: Double
     let glyph: String
     let notes: String
+    /// I muscoli principali (id di `MuscleId`) e la vista forzata, "" = automatica. Assenti nelle copie vecchie del catalogo.
+    let muscles: [String]
+    let view: String
+
+    var muscleIDs: [MuscleId] { muscles.compactMap { MuscleId(rawValue: $0) } }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        it = try c.decode(String.self, forKey: .it)
+        en = try c.decode(String.self, forKey: .en)
+        alias = try c.decode([String].self, forKey: .alias)
+        group = try c.decode(String.self, forKey: .group)
+        step = try c.decode(Double.self, forKey: .step)
+        glyph = try c.decode(String.self, forKey: .glyph)
+        notes = try c.decode(String.self, forKey: .notes)
+        muscles = try c.decodeIfPresent([String].self, forKey: .muscles) ?? []
+        view = try c.decodeIfPresent(String.self, forKey: .view) ?? ""
+    }
 
     var muscleGroup: MuscleGroup { MuscleGroup(rawValue: group) ?? .petto }
     var machineGlyph: MachineGlyph { MachineGlyph(rawValue: glyph) ?? MachineGlyph.suggested(for: it, group: muscleGroup) }

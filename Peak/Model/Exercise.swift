@@ -31,6 +31,10 @@ final class Exercise {
     var catalogID: String = ""
     /// Nascosto agli amici.
     var isHidden: Bool = false
+    /// I muscoli di un macchinario personalizzato (id di `MuscleId`, separati da virgola). Vuoto = quelli del catalogo.
+    var musclesRaw: String = ""
+    /// Vista forzata della figura: "" = automatica, "front" o "back".
+    var viewRaw: String = ""
 
     @Relationship(deleteRule: .cascade, inverse: \MaxRecord.exercise)
     var records: [MaxRecord]? = []
@@ -65,6 +69,14 @@ final class Exercise {
     var glyph: MachineGlyph? {
         Catalog.entry(id: catalogID)?.machineGlyph ?? MachineGlyph(rawValue: glyphRaw)
     }
+
+    /// I muscoli di questo macchinario: di quello del catalogo se è collegato, altrimenti quelli che hai toccato.
+    var muscleIDs: [MuscleId] { musclesRaw.split(separator: ",").compactMap { MuscleId(rawValue: String($0)) } }
+
+    var figureMuscles: [MuscleId] { Catalog.entry(id: catalogID)?.muscleIDs ?? muscleIDs }
+
+    /// La vista forzata della figura, "" = automatica.
+    var figureView: String { Catalog.entry(id: catalogID)?.view ?? viewRaw }
 
     /// Braccia o gambe, dedotto dal gruppo muscolare: serve al Watch per sapere
     /// se il polso si muove con l'esercizio.

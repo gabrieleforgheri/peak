@@ -1,3 +1,34 @@
+# Figure dei muscoli e Home (18 ottobre 2026, ramo feature/figure-muscoli)
+
+Stato da leggere per primo. Non è ancora su main né pubblicato.
+
+| Pezzo | Dove |
+|---|---|
+| Disegno del corpo (fronte e schiena) con 16 muscoli, dai contorni MIT di react-muscle-highlighter | `scripts/anatomy-src/` (sorgente e LICENSE.txt, © My Muscle Contributors), generato in `common/anatomy.ts` e `Peak/Design/MuscleFigureShapes.swift` da `node scripts/gen-anatomy.ts` |
+| Muscoli e gruppi, nomi IT/EN | `common/muscle-info.ts` (id mai rinominati) |
+| Zoom sulla zona che lavora e scelta della vista (regola identica web e iPhone) | `common/muscles.ts` (`zoomFor`, `viewFor`), `AnatomyZoom` e `anatomyView` nel Swift |
+| Muscoli principali delle 291 voci del catalogo + vista forzata | `scripts/catalog-muscles.txt` → `common/catalog.json` (campi `muscles`, `view`) con `node scripts/gen-catalog-muscles.ts` |
+| Macchinari personalizzati: muscoli toccati sulla figura | documento `exercise` (`muscles`, `view`) in `common/docs.ts`, `KEEP_IF_ABSENT`, backup del server, `SyncDocs`/`BackupDTO` su iPhone |
+| Figura nel web | `web/src/components/MuscleFigure.svelte`, `FigThumb.svelte`; posti: sessione, scheda, lista macchinari, dettaglio, riepilogo, editor |
+| Figura nel iPhone | `Peak/Design/MuscleFigureView.swift` (`MuscleFigureView`, `ExerciseFigure`); posti: sessione, scheda, lista, dettaglio, riepilogo, editor |
+| Home: medaglie come elenco con livelli e cosa manca; obiettivo e sezioni spiegati | `web/src/pages/Home.svelte`, `Peak/Features/Home/` |
+| Tutorial: due passi nuovi (medaglie e obiettivo, figure) per chi l'ha già finito | setting `tourSeen` (default 1, sincronizzato); `Tour.svelte`, `TourOverlay.swift` |
+
+Da sapere prima di toccare:
+- **Ordine di rilascio**: prima il server (`web/dist` e `common/`), poi i client. Il server vecchio scarta `muscles`/`view`
+  e il setting `tourSeen`; l'iPhone con AltStore 2.1 non li manda e `KEEP_IF_ABSENT` tiene quelli che ci sono.
+- Il catalogo sul iPhone è una copia nell'app: `Catalog.swift` decodifica `muscles` e `view` con un default, così una copia vecchia non rompe il decode.
+- Le figure non sono le foto dei macchinari (quei disegni sono del costruttore): sono i contorni MIT colorati per gruppo.
+
+Verifica fatta (18 ottobre): `npm test` 101 verdi; `svelte-check` 0 errori e 0 avvisi; `check-i18n` ok; `vite build` ok;
+`swiftc -typecheck` dell'app ok (i test XCTest non si caricano senza Xcode). Nel browser, con dati di prova: Home, lista
+macchinari, dettaglio, riepilogo con fronte e retro.
+
+Non fatto: `xcodebuild test` sul telefono (telefono offline, era stato approvato); l'editor del macchinario personalizzato
+in modalità «tocco» non è stato provato nel browser; l'app Watch non è toccata.
+
+---
+
 # Peak 3.0 — stato al 15 ottobre 2026 (leggere per primo)
 
 Il piano è `~/.claude/plans/semplifica-l-app-implementiamo-una-goofy-coral.md`. **Tutto è su `main`, niente è pubblicato**: web, server e iPhone

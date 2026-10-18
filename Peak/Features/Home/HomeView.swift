@@ -52,9 +52,9 @@ struct HomeView: View {
                         nextBar
                         StatStrip(stats: s)
 
-                        section("Attività") { HeatmapCard(perDay: s.perDay, count: s.last98Days) }
-                        section("Volume settimanale") { WeeklyBarsCard(weeks: s.weeks) }
-                        if !s.groups.isEmpty { section("Dove va il lavoro") { WorkDonutCard(groups: s.groups) } }
+                        section("Attività", hint: "Un quadratino per giorno: più è verde, più serie hai fatto.") { HeatmapCard(perDay: s.perDay, count: s.last98Days) }
+                        section("Volume settimanale", hint: "Kg sollevati ogni settimana, le ultime dodici. La barra accesa è questa settimana.") { WeeklyBarsCard(weeks: s.weeks) }
+                        if !s.groups.isEmpty { section("Dove va il lavoro", hint: "Quanto volume è andato a ogni gruppo muscolare negli ultimi 30 giorni.") { WorkDonutCard(groups: s.groups) } }
                         if let lift = growingLift { section("Il tuo sollevamento in crescita") { LiftChartCard(exercise: lift) } }
                         medalsSection
                         recordsSection
@@ -104,9 +104,12 @@ struct HomeView: View {
         .tourTarget("start")
     }
 
-    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func section<Content: View>(_ title: String, hint: String? = nil, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             SectionHeader(title: title).padding(.top, 6)
+            if let hint {
+                Text(hint).font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textTertiary)
+            }
             content()
         }
     }
@@ -115,11 +118,11 @@ struct HomeView: View {
         let totals = Medals.totals(medalList)
         return VStack(alignment: .leading, spacing: 8) {
             SectionHeader(title: "Medaglie", trailing: "\(totals.earned) / \(totals.total)").padding(.top, 6)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 8) {
-                    ForEach(medalList) { MedalBadge(medal: $0) }
-                }
-                .padding(.vertical, 4)
+            Text("Ogni medaglia ha tre livelli, bronzo, argento e oro. Si sbloccano a soglie crescenti, con quello che fai.")
+                .font(Theme.rounded(12, .medium))
+                .foregroundStyle(Theme.textTertiary)
+            VStack(spacing: 10) {
+                ForEach(medalList) { MedalRow(medal: $0) }
             }
         }
     }

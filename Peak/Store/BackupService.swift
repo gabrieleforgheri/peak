@@ -98,6 +98,8 @@ enum BackupService {
                     restSeconds: exercise.restSeconds == 0 ? nil : exercise.restSeconds,
                     catalogID: exercise.catalogID.isEmpty ? nil : exercise.catalogID,
                     isHidden: exercise.isHidden ? true : nil,
+                    muscles: exercise.muscleIDs.isEmpty ? nil : exercise.muscleIDs.map(\.rawValue),
+                    view: exercise.viewRaw.isEmpty ? nil : exercise.viewRaw,
                     records: exercise.recordList.map { record in
                         MaxRecordDTO(
                             uuid: record.uuid,
@@ -249,6 +251,8 @@ enum BackupService {
                 exercise.glyphRaw = MachineGlyph.suggested(for: exercise.name, group: exercise.muscleGroup).rawValue
             }
             exercise.isHidden = dto.isHidden ?? false
+            exercise.musclesRaw = (dto.muscles ?? []).joined(separator: ",")
+            exercise.viewRaw = dto.view ?? ""
             context.insert(exercise)
             exercisesByUUID[dto.uuid] = exercise
             addMissingRecords(from: dto, to: exercise, context: context)

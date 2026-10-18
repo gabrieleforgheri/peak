@@ -91,6 +91,7 @@ final class AppSettings {
         static let didLinkCatalog = "settings.didLinkCatalog"
         static let didFreezeGlyphs = "settings.didFreezeGlyphs"
         static let tutorialDone = "settings.tutorialDone"
+        static let tourSeen = "settings.tourSeen"
         static let weeklyGoal = "settings.weeklyGoal"
     }
 
@@ -179,6 +180,11 @@ final class AppSettings {
         didSet { defaults.set(tutorialDone, forKey: Key.tutorialDone) }
     }
 
+    /// L'ultimo giro del tutorial visto: 1 = quello di prima, 2 = con figure e medaglie. Segue l'account.
+    var tourSeen: Int {
+        didSet { defaults.set(tourSeen, forKey: Key.tourSeen) }
+    }
+
     /// Allenamenti a settimana che ti sei dato come obiettivo; 0 = non l'hai ancora scelto. Segue l'account.
     var weeklyGoal: Int {
         didSet { defaults.set(weeklyGoal, forKey: Key.weeklyGoal) }
@@ -207,6 +213,7 @@ final class AppSettings {
         self.didLinkCatalog = defaults.bool(forKey: Key.didLinkCatalog)
         self.didFreezeGlyphs = defaults.bool(forKey: Key.didFreezeGlyphs)
         self.tutorialDone = defaults.bool(forKey: Key.tutorialDone)
+        self.tourSeen = defaults.object(forKey: Key.tourSeen) == nil ? 1 : defaults.integer(forKey: Key.tourSeen)
         self.weeklyGoal = defaults.integer(forKey: Key.weeklyGoal)
     }
 

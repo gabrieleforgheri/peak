@@ -150,6 +150,7 @@ struct ExerciseDetailView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 10) {
                     ExerciseThumbnail(exercise: exercise, size: 52, zoomable: true)
+                    ExerciseFigure(exercise: exercise, size: 52)
                     MuscleGroupChip(group: exercise.muscleGroup)
                     if exercise.isUnilateral {
                         Text(exercise.worksLegs ? "Una gamba" : "Un braccio")

@@ -37,6 +37,9 @@ struct ExerciseEditorView: View {
     @State private var dragStart: Double = 0
     /// L'id della voce del catalogo; vuoto = personalizzato.
     @State private var catalogID = ""
+    /// I muscoli di un macchinario personalizzato, toccati sulla figura. Collegato, valgono quelli della voce.
+    @State private var muscles: [MuscleId] = []
+    @State private var figureSide: AnatomyView = .front
     @State private var picking: CatalogPicking?
 
     private enum CatalogPicking: String, Identifiable {
@@ -344,6 +347,25 @@ struct ExerciseEditorView: View {
 
                 Divider().overlay(Theme.stroke)
 
+                SectionHeader(title: "Muscoli")
+                if let entry = linkedEntry {
+                    Text("Sono quelli dell'attrezzo del catalogo.")
+                        .font(Theme.rounded(13, .medium))
+                        .foregroundStyle(Theme.textTertiary)
+                    MuscleFigureView(muscles: entry.muscleIDs, view: AnatomyView(rawValue: entry.view), zoom: false)
+                        .frame(maxWidth: 220)
+                } else {
+                    Text("Tocca i muscoli che lavorano sulla figura.")
+                        .font(Theme.rounded(13, .medium))
+                        .foregroundStyle(Theme.textTertiary)
+                    MuscleFigureView(muscles: muscles, view: figureSide, zoom: false, onTap: toggleMuscle)
+                        .frame(maxWidth: 220)
+                    Button(figureSide == .front ? "Vedi di schiena" : "Vedi di fronte") {
+                        figureSide = figureSide == .front ? .back : .front
+                    }
+                    .buttonStyle(.bordered)
+                }
+
                 SectionHeader(title: "Pittogramma", trailing: glyph?.title ?? "Nessuno")
 
                 if catalogID.isEmpty {
@@ -506,6 +528,10 @@ struct ExerciseEditorView: View {
         .overlay(shape.strokeBorder(Theme.stroke, lineWidth: 1))
     }
 
+    private func toggleMuscle(_ muscle: MuscleId) {
+        if let i = muscles.firstIndex(of: muscle) { muscles.remove(at: i) } else { muscles.append(muscle) }
+    }
+
     private func stepChip(_ title: String, isOn: Bool, action: @escaping () -> Void) -> some View {
         Button {
             action()
@@ -531,6 +557,8 @@ struct ExerciseEditorView: View {
         didLoad = true
         guard let exercise else { picking = .new; return }
         catalogID = exercise.catalogID
+        muscles = exercise.muscleIDs
+        figureSide = AnatomyView(rawValue: exercise.viewRaw) ?? anatomyView(for: exercise.muscleIDs)
         name = exercise.name
         group = exercise.muscleGroup
         step = exercise.incrementStep
@@ -561,6 +589,8 @@ struct ExerciseEditorView: View {
             exercise.photoOffset = photoOffset
             exercise.glyphRaw = pickedGlyph?.rawValue ?? ""
             exercise.catalogID = catalogID
+            exercise.musclesRaw = muscles.map(\.rawValue).joined(separator: ",")
+            exercise.viewRaw = figureSide.rawValue
         } else {
             let nextIndex = (allExercises.map(\.sortIndex).max() ?? 0) + 1
             let new = Exercise(
@@ -577,6 +607,8 @@ struct ExerciseEditorView: View {
             new.isUnilateral = isUnilateral
             new.restSeconds = restSeconds
             new.catalogID = catalogID
+            new.musclesRaw = muscles.map(\.rawValue).joined(separator: ",")
+            new.viewRaw = figureSide.rawValue
             new.isHidden = isHidden
         }
         try? context.save()

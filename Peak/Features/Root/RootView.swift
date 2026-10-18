@@ -71,7 +71,7 @@ struct RootView: View {
         .tint(settings.accentColor)
         .overlayPreferenceValue(TourTargetKey.self) { anchors in
             GeometryReader { geo in
-                if settings.didSeeWelcome, settings.weeklyGoal > 0, !settings.tutorialDone, !AppStore.isFallback {
+                if settings.didSeeWelcome, settings.weeklyGoal > 0, !settings.tutorialDone || settings.tourSeen < 2, !AppStore.isFallback {
                     TourOverlay(rects: anchors.mapValues { geo[$0] }, size: geo.size)
                 }
             }

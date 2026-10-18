@@ -139,6 +139,7 @@ struct TemplateEditorView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 10) {
                     ExerciseThumbnail(exercise: exercise, size: 34)
+                    ExerciseFigure(exercise: exercise, size: 34)
                     Text(exercise.name)
                         .font(Theme.rounded(16, .semibold))
                         .foregroundStyle(Theme.textPrimary)

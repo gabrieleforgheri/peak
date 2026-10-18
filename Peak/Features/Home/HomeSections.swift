@@ -155,6 +155,8 @@ struct HomeHero: View {
                         .shadow(color: k == weekSessions - 1 ? settings.accentColor.opacity(0.7) : .clear, radius: 7)
                 }
             }
+            Text("L'obiettivo è quanti allenamenti ti dai a settimana: tocca la barra per cambiarlo.")
+                .font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textTertiary)
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: onChangeGoal)
@@ -163,6 +165,7 @@ struct HomeHero: View {
         .accessibilityValue("\(min(weekSessions, goal)) su \(goal)")
         .accessibilityAddTraits(.isButton)
     }
+
 
     private func pill(_ number: String?, _ text: String) -> some View {
         HStack(spacing: 4) {
@@ -434,18 +437,12 @@ struct LiftChartCard: View {
 
 // MARK: - Medaglie
 
-struct MedalBadge: View {
+/// Una medaglia in elenco: cosa misura, a che livello sei, cosa manca per il prossimo. Come nel web.
+struct MedalRow: View {
     @Environment(AppSettings.self) private var settings
     let medal: Medal
 
-    private var colors: (hi: Color, lo: Color, tint: Color, ink: Color) {
-        switch medal.tier {
-        case 1: return (Color(hex: 0xF1B27A), Color(hex: 0xA35F2A), Color(hex: 0xE0955A), Color(hex: 0x3A1D08))
-        case 2: return (Color(hex: 0xF4F6FA), Color(hex: 0x98A1B1), Color(hex: 0xDFE4EC), Color(hex: 0x232A36))
-        case 3: return (Color(hex: 0xFFE69A), Color(hex: 0xD39A14), Color(hex: 0xFFD45E), Color(hex: 0x3D2A00))
-        default: return (Color.white.opacity(0.08), Color.white.opacity(0.03), settings.accentColor, Theme.textTertiary)
-        }
-    }
+    private var tierName: String { ["da conquistare", "Bronzo", "Argento", "Oro"][medal.tier] }
 
     private func format(_ v: Double) -> String {
         switch medal.kind {
@@ -455,27 +452,44 @@ struct MedalBadge: View {
         }
     }
 
-    private var caption: String {
-        let names = ["", "Bronzo", "Argento", "Oro"]
-        guard let next = medal.next else { return "Oro" }
-        let progress = "\(format(medal.value))/\(format(next))"
-        return medal.tier == 0 ? progress : "\(names[medal.tier]) · \(progress)"
+    private var nextLine: String {
+        guard let next = medal.next else { return "Oro conquistato." }
+        let names = ["Bronzo", "Argento", "Oro"]
+        return "Mancano \(format(next - medal.value)) per \(names[medal.tier])."
+    }
+
+    private var tiersLine: String {
+        let t = medal.kind.tiers
+        return "Bronzo \(format(t[0])) · Argento \(format(t[1])) · Oro \(format(t[2]))"
     }
 
     var body: some View {
-        let c = colors
-        VStack(spacing: 6) {
-            ZStack {
-                Circle().stroke(Color.white.opacity(0.1), lineWidth: 4)
-                Circle().trim(from: 0, to: medal.progress).stroke(c.tint, style: StrokeStyle(lineWidth: 4, lineCap: .round)).rotationEffect(.degrees(-90))
-                Circle().fill(RadialGradient(colors: [c.hi, c.lo], center: .init(x: 0.32, y: 0.26), startRadius: 0, endRadius: 40)).padding(7)
-                    .shadow(color: medal.tier == 0 ? .clear : c.tint.opacity(0.35), radius: 8, y: 4)
-                Image(systemName: medal.kind.symbol).font(.system(size: 22, weight: .bold)).foregroundStyle(c.ink)
+        GlassCard(padding: 14) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Image(systemName: medal.kind.symbol)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(settings.accentColor)
+                    Text(medal.kind.title)
+                        .font(Theme.rounded(15, .bold))
+                        .foregroundStyle(Theme.textPrimary)
+                    Spacer()
+                    Text(tierName)
+                        .font(Theme.rounded(12, .bold))
+                        .foregroundStyle(settings.accentColor)
+                }
+                Text(medal.kind.info)
+                    .font(Theme.rounded(12, .medium))
+                    .foregroundStyle(Theme.textSecondary)
+                Text(tiersLine)
+                    .font(Theme.rounded(11, .medium))
+                    .foregroundStyle(Theme.textTertiary)
+                ProgressView(value: medal.progress)
+                    .tint(settings.accentColor)
+                Text(nextLine)
+                    .font(Theme.rounded(12, .medium))
+                    .foregroundStyle(Theme.textSecondary)
             }
-            .frame(width: 76, height: 76)
-            Text(medal.kind.title).font(Theme.rounded(12, .bold)).multilineTextAlignment(.center).lineLimit(2)
-            Text(caption).font(Theme.rounded(10, .medium)).foregroundStyle(Theme.textTertiary).multilineTextAlignment(.center).lineLimit(2)
         }
-        .frame(width: 100)
     }
 }

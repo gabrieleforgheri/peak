@@ -498,6 +498,7 @@ private struct ExerciseSessionCard: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 10) {
                     ExerciseThumbnail(exercise: exercise, size: 34, zoomable: true)
+                    ExerciseFigure(exercise: exercise, size: 34)
 
                     VStack(alignment: .leading, spacing: 1) {
                         Text(exercise.name)

@@ -45,6 +45,21 @@ enum MedalID: String, CaseIterable, Identifiable {
     }
 }
 
+extension MedalID {
+    /// Cosa misura, in una riga (la stessa del web).
+    var info: String {
+        switch self {
+        case .sessions: return "Ogni allenamento concluso conta."
+        case .records: return "Ogni massimale battuto conta."
+        case .streak: return "Settimane di seguito con almeno un allenamento."
+        case .volume: return "Tutto il peso sollevato, sommato."
+        case .strength: return "Il tuo miglior 1RM stimato, su un macchinario."
+        case .variety: return "Quanti macchinari diversi hai usato."
+        case .friends: return "Quanti amici hai collegato."
+        }
+    }
+}
+
 struct MedalInput {
     var sessions = 0
     var records = 0

@@ -23,7 +23,7 @@ enum SyncDocs {
     /// Le impostazioni che seguono l'account. Quelle del Watch, di Salute e dei dati interni restano del dispositivo.
     static let settingKeys = [
         "unit", "accent", "restTimerEnabled", "restSeconds", "progressionEnabled", "repRangeMin",
-        "repRangeMax", "plateCalculatorEnabled", "barWeight", "availablePlates", "tutorialDone", "weeklyGoal"
+        "repRangeMax", "plateCalculatorEnabled", "barWeight", "availablePlates", "tutorialDone", "tourSeen", "weeklyGoal"
     ]
 
     private static func settingValue(_ name: String, _ settings: AppSettings) -> Any {
@@ -39,6 +39,7 @@ enum SyncDocs {
         case "barWeight": return settings.barWeight
         case "availablePlates": return settings.availablePlates
         case "tutorialDone": return settings.tutorialDone
+        case "tourSeen": return settings.tourSeen
         case "weeklyGoal": return settings.weeklyGoal
         default: return NSNull()
         }
@@ -59,6 +60,7 @@ enum SyncDocs {
         case "plateCalculatorEnabled": guard let v = value as? Bool else { return false }; settings.plateCalculatorEnabled = v
         case "barWeight": guard let v = number(0, 100) else { return false }; settings.barWeight = v
         case "tutorialDone": guard let v = value as? Bool else { return false }; settings.tutorialDone = v
+        case "tourSeen": guard let v = number(1, 10) else { return false }; settings.tourSeen = Int(v)
         case "weeklyGoal": guard let v = number(0, 7) else { return false }; settings.weeklyGoal = Int(v)
         case "availablePlates":
             guard let list = value as? [NSNumber] else { return false }
@@ -92,7 +94,9 @@ enum SyncDocs {
                 "isUnilateral": exercise.isUnilateral,
                 "restSeconds": exercise.restSeconds,
                 "catalog": exercise.catalogID,
-                "hidden": exercise.isHidden
+                "hidden": exercise.isHidden,
+                "muscles": exercise.muscleIDs.map(\.rawValue),
+                "view": exercise.viewRaw
             ]
             // solo i massimali inseriti a mano: gli altri si ricalcolano dalle serie
             for record in exercise.recordList where !record.isEstimated {
@@ -235,6 +239,9 @@ enum SyncDocs {
                 exercise.restSeconds = integer(d, "restSeconds") ?? 0
                 exercise.catalogID = text(d, "catalog") ?? ""
                 exercise.isHidden = flag(d, "hidden")
+                // i campi dei muscoli: un server vecchio non li manda, e allora restano quelli che ci sono
+                if let muscles = d["muscles"] as? [String] { exercise.musclesRaw = muscles.joined(separator: ",") }
+                if let view = text(d, "view") { exercise.viewRaw = view }
                 let sha = text(d, "photo") ?? ""
                 if sha.isEmpty { exercise.photo = nil }
                 else if let bytes = photos[sha] { exercise.photo = bytes }

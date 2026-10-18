@@ -223,6 +223,7 @@ private struct ExerciseRow: View {
         GlassCard(padding: 14) {
             HStack(spacing: 14) {
                 ExerciseThumbnail(exercise: exercise, size: 42, zoomable: true)
+                ExerciseFigure(exercise: exercise, size: 42)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(exercise.name)
