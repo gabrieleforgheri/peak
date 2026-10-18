@@ -1,3 +1,17 @@
+# Frasi motivazionali ampliate e rotazione a 7s (18 ottobre 2026, sera — su ramo `feature/frasi-motivazionali`, NON unito a `main`, NON pushato né in produzione)
+
+Ramo isolato `feature/frasi-motivazionali`. Aggiunte 16 nuove frasi motivazionali (32 totali) con traduzioni complete in italiano e inglese e virgola singola per l'a capo armonioso sia su web che su iOS. Intervallo di rotazione accelerato a 7 secondi (prima 10s). Ambiente locale verificato con Google Chrome su account `dev` con dati di test realistici (8 settimane di allenamenti, medaglie e record).
+
+| Fatto | Dove |
+|---|---|
+| 16 nuove frasi motivazionali (32 totali) con rotazione a 7 secondi (era 10s) | `web/src/components/SummitHero.svelte`, `web/src/lib/en.json` |
+| Parità iOS: 16 nuove frasi nell'enum `Motivation`, rotazione a 7s nel task della Home e traduzioni inglesi | `Peak/Model/Medals.swift`, `Peak/Features/Home/HomeSections.swift`, `Peak/en.lproj/Localizable.strings` |
+| Login rapido locale `/auth/dev` (attivo solo se OIDC non è configurato) che rilascia il cookie di sessione per l'utente dev | `server/auth.ts` |
+| Script per popolare l'account dev locale con 8 settimane di allenamenti, macchinari dal catalogo, schede e amici | `scripts/seed-dev.ts` |
+| Verifiche: `npm test` (102/102 verdi), `svelte-check` (0 errori/avvisi), `check-i18n` (0 mancanti), `vite build` | Eseguite in locale |
+
+---
+
 # Lag, web a tutto schermo, animazioni e suoni (18 ottobre 2026, sera — su `main`, NON pushato né pubblicato)
 
 **iPhone installato sul telefono e sul Watch** (`scripts/install_device.sh`) con tutto quello qui sotto. Il web è unito ma `web/dist` NON è ricostruito e niente è online: per pubblicare servono build (`cd web && npx svelte-check && node scripts/check-i18n.mjs && npx vite build`), commit di `web/dist`, push e deploy, **ognuno con l'OK dell'utente**. Dopo il deploy: purge Cloudflare di `/sw.js` (con OK).

@@ -130,7 +130,23 @@ enum Motivation {
         "Ogni ripetizione conta.",
         "Chi si allena oggi ringrazia domani.",
         "Riposa se serve, ma non mollare.",
-        "Un allenamento alla volta."
+        "Un allenamento alla volta.",
+        "Costruisci oggi, quello che sarai domani.",
+        "La disciplina è la via, per ogni vetta.",
+        "Non contare i giorni, fai contare i giorni.",
+        "La forza cresce, quando pensi di non farcela.",
+        "Focalizzati sull'obiettivo, dimentica il rumore.",
+        "Ogni goccia di sudore, è un passo avanti.",
+        "Vinci la mente, e il corpo seguirà.",
+        "Il ferro non mente mai, ti dice sempre chi sei.",
+        "Supera i tuoi limiti, un chilo alla volta.",
+        "La determinazione, trasforma la fatica in forza.",
+        "Non fermarti quando sei stanco, fermati quando hai finito.",
+        "Non cercare scorciatoie, la salita fa parte del viaggio.",
+        "La motivazione ti fa partire, l'abitudine ti fa andare avanti.",
+        "Una serie in più oggi, un record in più domani.",
+        "Fidati del processo, i risultati arriveranno.",
+        "Non serve essere perfetti, basta essere costanti."
     ]
 
     /// Già tradotte e spezzate dopo la virgola. Si traduce PRIMA di andare a capo: la chiave di `.tr`
