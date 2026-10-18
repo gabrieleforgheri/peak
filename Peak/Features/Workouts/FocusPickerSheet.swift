@@ -7,7 +7,10 @@ struct FocusPickerSheet: View {
     @Environment(AppSettings.self) private var settings
     @Environment(\.dismiss) private var dismiss
 
-    @Query(sort: \WorkoutTemplate.sortIndex) private var templates: [WorkoutTemplate]
+    @Query(sort: \WorkoutTemplate.sortIndex) private var allTemplates: [WorkoutTemplate]
+    @Query(sort: \WorkoutProgram.sortIndex) private var programs: [WorkoutProgram]
+
+    private var templates: [WorkoutTemplate] { Programs.days(of: Programs.active(programs, settings: settings), in: allTemplates) }
 
     let confirmTitle: String
     let onConfirm: (String, Set<MuscleGroup>) -> Void
@@ -38,13 +41,14 @@ struct FocusPickerSheet: View {
                     if let onStartTemplate, !templates.isEmpty {
                         GlassCard {
                             VStack(alignment: .leading, spacing: 4) {
-                                SectionHeader(title: "Le tue schede")
+                                SectionHeader(title: "I tuoi giorni")
                                 ForEach(templates) { template in
                                     Button {
                                         onStartTemplate(template)
                                         dismiss()
                                     } label: {
-                                        HStack {
+                                        HStack(spacing: 12) {
+                                            TemplateIconView(icon: template.iconRaw, name: template.name, size: 18).frame(width: 26)
                                             VStack(alignment: .leading, spacing: 1) {
                                                 Text(template.name)
                                                     .font(Theme.rounded(16, .semibold))

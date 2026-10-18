@@ -7,12 +7,18 @@ struct WorkoutsListView: View {
 
     @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
     @Query(sort: \WorkoutTemplate.sortIndex) private var templates: [WorkoutTemplate]
+    @Query(sort: \WorkoutProgram.sortIndex) private var programs: [WorkoutProgram]
     @Query private var exercises: [Exercise]
 
     @State private var path: [Workout] = []
     @State private var showingFocusPicker = false
     @State private var editingTemplate: WorkoutTemplate?
     @State private var showingNewTemplate = false
+    @State private var editingProgram: WorkoutProgram?
+    @State private var showingNewProgram = false
+
+    private var program: WorkoutProgram? { Programs.active(programs, settings: settings) }
+    private var days: [WorkoutTemplate] { Programs.days(of: program, in: templates) }
 
     private var activeWorkout: Workout? { workouts.first(where: \.isActive) }
     private var finishedWorkouts: [Workout] { workouts.filter { !$0.isActive } }
@@ -27,18 +33,45 @@ struct WorkoutsListView: View {
                 }
 
                 Section {
-                    if templates.isEmpty {
-                        Text("Una scheda è una lista di esercizi con serie e ripetizioni: la scegli quando inizi e li trovi già pronti.")
+                    if programs.count > 1 {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(programs) { p in
+                                    Button { settings.activeProgram = p.uuid.uuidString; Haptics.tap() } label: {
+                                        Text(p.name).font(Theme.rounded(13, .semibold))
+                                            .padding(.horizontal, 12).padding(.vertical, 8)
+                                            .background(p.uuid == program?.uuid ? settings.accentColor.opacity(0.22) : Theme.card, in: Capsule())
+                                            .foregroundStyle(p.uuid == program?.uuid ? settings.accentColor : Theme.textSecondary)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                        .plainListRow()
+                    }
+                    if let program {
+                        HStack {
+                            Text(program.name).font(Theme.rounded(15, .bold)).lineLimit(1)
+                            Spacer()
+                            Button("Modifica scheda") { editingProgram = program }
+                                .font(Theme.rounded(13, .bold)).foregroundStyle(settings.accentColor).buttonStyle(.plain)
+                        }
+                        .plainListRow()
+                    }
+                    if days.isEmpty {
+                        Text("Un giorno è una lista di esercizi con serie e ripetizioni: lo scegli quando inizi e li trovi già pronti.")
                             .font(Theme.rounded(13, .medium))
                             .foregroundStyle(Theme.textTertiary)
                             .plainListRow()
                     } else {
-                        ForEach(templates) { template in
+                        ForEach(days) { template in
                             Button {
                                 editingTemplate = template
                             } label: {
                                 GlassCard(padding: 14) {
-                                    HStack {
+                                    HStack(spacing: 12) {
+                                        TemplateIconView(icon: template.iconRaw, name: template.name, size: 20)
+                                            .frame(width: 30)
                                         VStack(alignment: .leading, spacing: 1) {
                                             Text(template.name)
                                                 .font(Theme.rounded(15, .bold))
@@ -48,6 +81,11 @@ struct WorkoutsListView: View {
                                                 .foregroundStyle(Theme.textTertiary)
                                         }
                                         Spacer()
+                                        if program?.useDays == true {
+                                            Text(template.weekday >= 0 ? Programs.weekdays[template.weekday] : "Nessuno")
+                                                .font(Theme.rounded(11, .bold))
+                                                .foregroundStyle(template.weekday >= 0 ? settings.accentColor : Theme.textTertiary)
+                                        }
                                         Image(systemName: "chevron.right")
                                             .font(.system(size: 12, weight: .semibold))
                                             .foregroundStyle(Theme.textTertiary)
@@ -58,14 +96,17 @@ struct WorkoutsListView: View {
                             .plainListRow()
                         }
                     }
+                    Button { showingNewTemplate = true } label: { Label("Nuovo giorno", systemImage: "plus") }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .tourTarget("new-template")
+                        .plainListRow()
                 } header: {
                     HStack {
-                        SectionHeader(title: "Schede")
-                        Button("Nuova scheda") { showingNewTemplate = true }
+                        SectionHeader(title: "Scheda")
+                        Button("Nuova scheda") { showingNewProgram = true }
                             .font(Theme.rounded(13, .bold))
                             .foregroundStyle(settings.accentColor)
                             .buttonStyle(.plain)
-                            .tourTarget("new-template")
                     }
                     .textCase(nil)
                     .padding(.horizontal, 2)
@@ -124,6 +165,8 @@ struct WorkoutsListView: View {
             .sheet(isPresented: $showingNewTemplate) {
                 TemplateEditorView()
             }
+            .sheet(item: $editingProgram) { ProgramEditorView(program: $0) }
+            .sheet(isPresented: $showingNewProgram) { ProgramEditorView() }
         }
     }
 

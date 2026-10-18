@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Crea o modifica una scheda: nome e righe (esercizio, serie, ripetizioni min–max, peso).
+/// Crea o modifica un giorno della scheda: nome, icona, scheda, giorno fisso e righe (esercizio, serie, ripetizioni min–max, peso).
 /// Con `template == nil` la scheda è nuova; `initialItems` la riempie (salva come scheda).
 struct TemplateEditorView: View {
     @Environment(\.modelContext) private var context
@@ -10,6 +10,7 @@ struct TemplateEditorView: View {
 
     @Query(sort: \Exercise.sortIndex) private var exercises: [Exercise]
     @Query(sort: \WorkoutTemplate.sortIndex) private var templates: [WorkoutTemplate]
+    @Query(sort: \WorkoutProgram.sortIndex) private var programs: [WorkoutProgram]
 
     let template: WorkoutTemplate?
     var onSaved: (() -> Void)?
@@ -29,12 +30,18 @@ struct TemplateEditorView: View {
     @State private var showingPicker = false
     @State private var confirmingDelete = false
     @State private var isHidden = false
+    @State private var icon: String
+    @State private var programRaw: String
+    @State private var weekday: Int
 
     init(template: WorkoutTemplate? = nil, initialName: String = "", initialItems: [TemplateItem] = [], onSaved: (() -> Void)? = nil) {
         self.template = template
         self.onSaved = onSaved
         _name = State(initialValue: template?.name ?? initialName)
         _isHidden = State(initialValue: template?.isHidden ?? false)
+        _icon = State(initialValue: template?.iconRaw ?? "")
+        _programRaw = State(initialValue: template?.programRaw ?? "")
+        _weekday = State(initialValue: template?.weekday ?? -1)
         // i pesi si scrivono nell'unità scelta: la conversione in `rowsFor` serve ai kg salvati
         _rows = State(initialValue: (template?.items ?? initialItems).map { Row(exercise: $0.exercise) })
         pendingItems = template?.items ?? initialItems
@@ -54,12 +61,15 @@ struct TemplateEditorView: View {
                     GlassCard {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "Nome")
-                            TextField("Es. Push 1, Pull 2, Gambe", text: $name)
+                            TextField("Es. Push, Pull 1, Gambe", text: $name)
                                 .font(Theme.rounded(17, .semibold))
                                 .textInputAutocapitalization(.words)
                                 .submitLabel(.done)
                         }
                     }
+
+                    iconCard
+                    placeCard
 
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                         if let exercise = byUUID[row.exercise] {
@@ -90,7 +100,7 @@ struct TemplateEditorView: View {
                         Button(role: .destructive) {
                             confirmingDelete = true
                         } label: {
-                            Label("Elimina scheda", systemImage: "trash")
+                            Label("Elimina giorno", systemImage: "trash")
                         }
                         .buttonStyle(SecondaryButtonStyle())
                     }
@@ -101,7 +111,7 @@ struct TemplateEditorView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .screenBackground(settings.accentColor)
-            .navigationTitle(template == nil ? "Nuova scheda" : "Scheda")
+            .navigationTitle(template == nil ? "Nuovo giorno" : "Giorno")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -120,8 +130,8 @@ struct TemplateEditorView: View {
                     }
                 }
             }
-            .confirmationDialog("Eliminare questa scheda? Gli allenamenti già fatti restano.", isPresented: $confirmingDelete, titleVisibility: .visible) {
-                Button("Elimina scheda", role: .destructive) {
+            .confirmationDialog("Eliminare questo giorno? Gli allenamenti già fatti restano.", isPresented: $confirmingDelete, titleVisibility: .visible) {
+                Button("Elimina giorno", role: .destructive) {
                     if let template { context.delete(template) }
                     try? context.save()
                     dismiss()
@@ -130,6 +140,76 @@ struct TemplateEditorView: View {
             .onAppear(perform: fillRows)
         }
         .presentationDetents([.large])
+    }
+
+    // MARK: - Icona, scheda e giorno
+
+    private var iconCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 10) {
+                SectionHeader(title: "Icona")
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        chip(selected: icon.isEmpty, action: { icon = "" }) { Text("Automatica").font(Theme.rounded(13, .semibold)) }
+                        ForEach(MuscleGroup.allCases) { g in
+                            chip(selected: icon == "muscle:\(g.rawValue)", action: { icon = "muscle:\(g.rawValue)" }) {
+                                Image(systemName: g.symbol).foregroundStyle(g.tint)
+                            }
+                        }
+                        ForEach(TemplateIcon.named, id: \.name) { item in
+                            chip(selected: icon == item.name, action: { icon = item.name }) { Image(systemName: item.symbol) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var chosenProgram: WorkoutProgram? {
+        programs.first { $0.uuid.uuidString == programRaw } ?? Programs.active(programs, settings: settings)
+    }
+
+    @ViewBuilder private var placeCard: some View {
+        if programs.count > 1 || chosenProgram?.useDays == true {
+            GlassCard {
+                VStack(alignment: .leading, spacing: 10) {
+                    if programs.count > 1 {
+                        SectionHeader(title: "Scheda")
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(programs) { p in
+                                    chip(selected: chosenProgram?.uuid == p.uuid, action: { programRaw = p.uuid.uuidString }) {
+                                        Text(p.name).font(Theme.rounded(13, .semibold))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if chosenProgram?.useDays == true {
+                        SectionHeader(title: "Giorno fisso")
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                chip(selected: weekday < 0, action: { weekday = -1 }) { Text("Nessuno").font(Theme.rounded(13, .semibold)) }
+                                ForEach(0..<7, id: \.self) { i in
+                                    chip(selected: weekday == i, action: { weekday = i }) { Text(Programs.weekdays[i]).font(Theme.rounded(13, .semibold)) }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func chip<Content: View>(selected: Bool, action: @escaping () -> Void, @ViewBuilder _ label: () -> Content) -> some View {
+        Button(action: { action(); Haptics.tap() }) {
+            label()
+                .padding(.horizontal, 12).padding(.vertical, 9)
+                .background(selected ? settings.accentColor.opacity(0.22) : Theme.card, in: Capsule())
+                .overlay(Capsule().strokeBorder(selected ? settings.accentColor.opacity(0.7) : Theme.stroke, lineWidth: 1))
+                .foregroundStyle(selected ? settings.accentColor : Theme.textSecondary)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Riga
@@ -233,14 +313,22 @@ struct TemplateEditorView: View {
     private func save() {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
+        let program = programs.first { $0.uuid.uuidString == programRaw } ?? Programs.current(context: context, settings: settings)
+        let day = program.useDays ? weekday : -1
         if let template {
             template.name = trimmed
             template.items = items()
             template.isHidden = isHidden
+            template.iconRaw = icon
+            template.programRaw = program.uuid.uuidString
+            template.weekday = day
         } else {
             let top = templates.map(\.sortIndex).max() ?? -1
             let created = WorkoutTemplate(name: trimmed, items: items(), sortIndex: top + 1)
             created.isHidden = isHidden
+            created.iconRaw = icon
+            created.programRaw = program.uuid.uuidString
+            created.weekday = day
             context.insert(created)
         }
         try? context.save()

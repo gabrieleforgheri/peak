@@ -26,6 +26,7 @@ struct RootView: View {
         .task {
             runAutoBackup()
             linkCatalogOnce()
+            Programs.adoptLoose(context: context, name: "La mia scheda")
             freezeGlyphsOnce()
             await SyncService.shared.syncNow()
             await Catalog.refresh()

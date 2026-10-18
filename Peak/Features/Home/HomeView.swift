@@ -7,6 +7,7 @@ struct HomeView: View {
     @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
     @Query(sort: \Exercise.sortIndex) private var exercises: [Exercise]
     @Query(sort: \WorkoutTemplate.sortIndex) private var templates: [WorkoutTemplate]
+    @Query(sort: \WorkoutProgram.sortIndex) private var programs: [WorkoutProgram]
 
     private let nav = AppNav.shared
     private let social = SocialStore.shared
@@ -17,12 +18,9 @@ struct HomeView: View {
     @State private var showSettings = false
 
     private var active: Workout? { workouts.first(where: \.isActive) }
-    /// La scheda che tocca: quella dopo l'ultima usata, a rotazione.
+    /// Il giorno che tocca, nella scheda in uso.
     private var nextTemplate: WorkoutTemplate? {
-        guard !templates.isEmpty else { return nil }
-        let last = workouts.first { w in templates.contains { $0.uuid.uuidString == w.templateRaw } }
-        let i = last.flatMap { l in templates.firstIndex { $0.uuid.uuidString == l.templateRaw } } ?? -1
-        return templates[(i + 1) % templates.count]
+        Programs.next(program: Programs.active(programs, settings: settings), templates: templates, workouts: workouts)
     }
 
     private var displayName: String {
@@ -91,10 +89,10 @@ struct HomeView: View {
         } else if let next = nextTemplate {
             title = "Avvia \(next.name)"
             subtitle = next.items.count == 1 ? "1 esercizio" : "\(next.items.count) esercizi"
-            symbol = "dumbbell.fill"
+            symbol = TemplateIcon.symbol(TemplateIcon.resolved(next.iconRaw, name: next.name))
         } else {
             title = "Inizia un allenamento"
-            subtitle = "Crea una scheda con i tuoi esercizi, oppure allenati a mano."
+            subtitle = "Crea un giorno con i tuoi esercizi, oppure allenati a mano."
             symbol = "dumbbell.fill"
         }
         return NextWorkoutBar(title: title, subtitle: subtitle, symbol: symbol) {
