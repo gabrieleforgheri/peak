@@ -99,6 +99,8 @@ test('schede e piano dell\'allenamento: round-trip, unione per nome, backup vecc
       { exerciseUUID: U(2), sets: 3, repsMin: 10, repsMax: 12 },
       { exerciseUUID: U(999), sets: 3, repsMin: 10, repsMax: 12 }, // macchinario che non c'è: la riga sparisce
     ] }]
+    f.programs = [{ uuid: U(500), name: 'Push Pull Legs', sortIndex: 0, createdAt: '2026-09-20T08:00:00Z', useDays: true }]
+    f.templates[0].programID = U(500); f.templates[0].weekday = 2
     f.workouts[0].template = U(400)
     f.workouts[0].plan = [{ exerciseUUID: U(1), sets: 4, repsMin: 8, repsMax: 10, weight: 60 }]
     const plan = planImport(parse(f), [], 'sostituisci')
@@ -109,6 +111,7 @@ test('schede e piano dell\'allenamento: round-trip, unione per nome, backup vecc
       { exerciseUUID: U(1), sets: 4, repsMin: 8, repsMax: 10, weight: 60 },
       { exerciseUUID: U(2), sets: 3, repsMin: 10, repsMax: 12 },
     ])
+    assert.deepEqual([out.programs?.[0].name, out.programs?.[0].useDays, out.templates?.[0].programID, out.templates?.[0].weekday], ['Push Pull Legs', true, U(500), 2])
     assert.equal(out.workouts[0].template, U(400))
     assert.equal(out.workouts[0].plan?.length, 1)
     const text = serializeBackup(out)

@@ -35,14 +35,14 @@
 </script>
 
 <section class="peak" data-tour="hero">
-	<svg class="mount" viewBox="0 0 360 220" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">
+	<svg class="mount" viewBox="0 0 360 220" overflow="visible" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
 		<defs>
 			<linearGradient id="ridge" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgb(var(--accent-rgb))" stop-opacity=".38" /><stop offset="1" stop-color="rgb(var(--accent-rgb))" stop-opacity=".04" /></linearGradient>
 		</defs>
-		<path d="M0 150 L40 122 L84 140 L132 92 L182 128 L232 72 L292 122 L332 96 L360 114 V220 H0Z" fill="rgba(255,255,255,.05)" />
-		<path d="M0 182 L58 146 L112 164 L168 110 L214 142 L262 48 L304 104 L338 84 L360 96 V220 H0Z" fill="url(#ridge)" />
+		<path d="M-900 150 H0 L40 122 L84 140 L132 92 L182 128 L232 72 L292 122 L332 96 L360 114 V220 H-900Z" fill="rgba(255,255,255,.05)" />
+		<path d="M-900 182 H0 L58 146 L112 164 L168 110 L214 142 L262 48 L304 104 L338 84 L360 96 V220 H-900Z" fill="url(#ridge)" />
 		<path d="M262 48 L246 78 L256 72 L262 82 L270 72 L282 80 Z" fill="rgba(255,255,255,.85)" />
-		<path d="M0 220 V184 L70 170 L132 188 L202 160 L262 180 L330 164 L360 176 V220Z" fill="rgba(0,0,0,.38)" />
+		<path d="M-900 220 V184 H0 L70 170 L132 188 L202 160 L262 180 L330 164 L360 176 V220 H-900Z" fill="rgba(0,0,0,.38)" />
 		<path d="M262 48 V26 L282 33 L262 40" fill="rgb(var(--accent-rgb))" stroke="rgb(var(--accent-rgb))" stroke-width="1.5" stroke-linejoin="round" />
 	</svg>
 

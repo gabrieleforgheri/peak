@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { activeProgram, daysOf } from '../lib/derive.ts'
 	import { MUSCLE_GROUPS, type MuscleGroup } from '@common/docs.ts'
 	import { focusRaw, patchWorkout, startWorkout } from '../lib/actions.ts'
 	import { GROUP_NAMES } from '../lib/fmt.ts'
@@ -27,14 +28,15 @@
 		else onstart?.(startWorkout(name, focus))
 		onclose()
 	}
+	const days = $derived(daysOf(m, activeProgram(m)))
 </script>
 
 <Sheet title={t('Cosa alleni oggi?')} {onclose}>
 	<div class="stack">
-		{#if !workout && m.templates.length}
+		{#if !workout && days.length}
 			<div class="sec-title" style="margin:0 4px">{t('Le tue schede')}</div>
 			<div class="card list">
-				{#each m.templates as tpl (tpl.uuid)}
+				{#each days as tpl (tpl.uuid)}
 					<button class="item" onclick={() => fromTemplate(tpl)}>
 						<div class="grow"><b class="ellipsis" style="display:block">{tpl.name}</b><span class="small muted">{tn(tpl.items.length, '1 esercizio', '{0} esercizi')}</span></div>
 						<Icon name="right" size={20} />
@@ -44,7 +46,7 @@
 			<div class="sec-title" style="margin:4px 4px 0">{t('Oppure scegli i gruppi')}</div>
 		{/if}
 		<label class="field"><span>{t('Nome (facoltativo)')}</span><input class="input" bind:value={name} placeholder={t('es. Push 1')} maxlength="80" /></label>
-XX		<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+		<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
 			{#each MUSCLE_GROUPS as g}
 				<button class="chip" class:on={focus.has(g)} onclick={() => toggle(g)} style="min-height:52px;border-radius:14px">{GROUP_NAMES[g]}</button>
 			{/each}

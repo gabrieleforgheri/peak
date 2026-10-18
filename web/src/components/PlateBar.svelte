@@ -24,18 +24,32 @@
 	const h = (p: number) => 34 + (p / maxP) * 46
 </script>
 
+{#snippet disc(p: number)}
+	<div in:fly={{ x: 24, duration: 320 }} class="disc" style="width:{p >= 10 ? 15 : 10}px;height:{h(p)}px;background:{color(p)}"></div>
+{/snippet}
+
 <div class="card">
 	<div class="sec-title" style="margin:0 0 8px">{t('Dischi per lato')}</div>
-	<div style="display:flex;align-items:center;height:92px">
-		<div style="width:26px;height:14px;background:linear-gradient(#cfd2d8,#8d9099);border-radius:3px 0 0 3px;flex:none"></div>
-		<div style="width:8px;height:44px;background:#8d9099;border-radius:2px;flex:none"></div>
-		{#each load.perSide as p, i (i + ':' + p)}
-			<div in:fly={{ x: 24, duration: 320 }} style="width:{p >= 10 ? 15 : 10}px;height:{h(p)}px;background:{color(p)};border-radius:4px;margin-left:2px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)"></div>
-		{/each}
-		<div style="height:14px;flex:1;background:linear-gradient(#cfd2d8,#8d9099);border-radius:0 3px 3px 0;margin-left:2px;min-width:20px"></div>
+	<div class="bar">
+		<div class="end"></div>
+		<div class="side">{#each [...load.perSide].reverse() as p, i (i + ':' + p)}{@render disc(p)}{/each}</div>
+		<div class="collar"></div>
+		<div class="shaft"></div>
+		<div class="collar"></div>
+		<div class="side">{#each load.perSide as p, i (i + ':' + p)}{@render disc(p)}{/each}</div>
+		<div class="end"></div>
 	</div>
 	<div class="num" style="margin-top:6px;font-weight:700">
 		{#if load.perSide.length}{load.perSide.map(nf).join(' + ')} {unit}{:else}<span class="muted">{bar > 0 ? t('Solo il bilanciere') : t('Nessun disco')}</span>{/if}
 	</div>
 	{#if load.leftover > 0}<div class="small neg">{t('Mancano {0} {1} per lato con i dischi disponibili.', nf(load.leftover), unit)}</div>{/if}
 </div>
+
+<style>
+	.bar { display: flex; align-items: center; justify-content: center; height: 92px; gap: 2px; }
+	.end { width: 14px; height: 14px; background: linear-gradient(#cfd2d8, #8d9099); flex: none; border-radius: 3px; }
+	.side { display: flex; align-items: center; gap: 2px; }
+	.collar { width: 8px; height: 44px; background: #8d9099; border-radius: 2px; flex: none; }
+	.shaft { height: 14px; flex: 1; min-width: 24px; background: linear-gradient(#cfd2d8, #8d9099); }
+	.disc { border-radius: 4px; flex: none; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); }
+</style>

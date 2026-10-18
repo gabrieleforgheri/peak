@@ -4,7 +4,7 @@
 	import { PLATES_KG_ALL, PLATES_LB_ALL, round2, toDisplay } from '@common/domain.ts'
 	import { changeUnit, eraseAll, setSetting } from '../lib/actions.ts'
 	import { fromUnit, toUnit, unit } from '../lib/fmt.ts'
-	import { t, tn } from '../lib/i18n.ts'
+	import { applyLang, lang, t, tn } from '../lib/i18n.ts'
 	import { go, route } from '../lib/router.svelte.ts'
 	import { S, getModel } from '../lib/store.svelte.ts'
 	import { disablePush, enablePush, pushState, type PushState } from '../lib/push.ts'
@@ -109,7 +109,7 @@
 <main class="screen no-tabs">
 {#if !cat}
 	<div class="bar">
-		<button class="icon-btn" onclick={() => go('home')} aria-label={t('Indietro')}><Icon name="left" /></button>
+		<button class="icon-btn" onclick={() => go('me')} aria-label={t('Indietro')}><Icon name="left" /></button>
 		<h1 class="small">{t('Impostazioni')}</h1>
 		<span style="width:40px"></span>
 	</div>
@@ -121,6 +121,7 @@
 	</div>
 
 	<p class="faint small" style="text-align:center;margin-top:24px">Peak {__APP_VERSION__}</p>
+	<p class="faint tiny" style="text-align:center;margin-top:4px">{t('Icone: Lucide (ISC) e game-icons.net (CC BY 3.0).')}</p>
 {:else}
 	<div class="bar">
 		<button class="icon-btn" onclick={() => go('impostazioni')} aria-label={t('Indietro')}><Icon name="left" /></button>
@@ -131,6 +132,8 @@
 	{#if cat.id === 'generale'}
 	<div class="card stack">
 		<div class="seg"><button class:on={s.unit === 'kg'} onclick={() => changeUnit('kg')}>kg</button><button class:on={s.unit === 'lb'} onclick={() => changeUnit('lb')}>lb</button></div>
+		<div class="field"><span class="sec-title" style="margin:0 4px 6px">{t('Lingua')}</span>
+			<div class="seg"><button class:on={lang === 'it'} onclick={() => { setSetting('language', 'it'); if (lang !== 'it') setTimeout(() => applyLang('it'), 250) }}>Italiano</button><button class:on={lang === 'en'} onclick={() => { setSetting('language', 'en'); if (lang !== 'en') setTimeout(() => applyLang('en'), 250) }}>English</button></div></div>
 		<div class="field"><span class="sec-title" style="margin:0 4px 6px">{t('Colore')}</span>
 			<div class="row" style="gap:14px">
 				{#each ACCENTS as a}

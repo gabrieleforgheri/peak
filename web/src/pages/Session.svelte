@@ -63,7 +63,7 @@
 		const tpl = templateChanged(wk)
 		endWorkout(wk.uuid)
 		stopRest()
-		if (tpl && confirm(t('Aggiornare la scheda «{0}» con le modifiche di oggi?', tpl.name))) updateTemplateFromWorkout(tpl, wk)
+		if (tpl && confirm(t('Aggiornare il giorno «{0}» con le modifiche di oggi?', tpl.name))) updateTemplateFromWorkout(tpl, wk)
 		go(`allenamento/${wk.uuid}/riepilogo`, true)
 	}
 	function remove() {
@@ -157,7 +157,7 @@
 
 		<button class="btn block" style="margin-top:12px" onclick={() => (pickingEx = true)}><Icon name="plus" size={20} />{t('Aggiungi esercizio')}</button>
 
-		{#if items.length}<button class="btn block" style="margin-top:12px" onclick={() => (savingTemplate = true)}><Icon name="list" size={20} />{t('Salva come scheda')}</button>{/if}
+		{#if items.length}<button class="btn block" style="margin-top:12px" onclick={() => (savingTemplate = true)}><Icon name="list" size={20} />{t('Salva come giorno')}</button>{/if}
 
 		<label class="field" style="margin-top:16px"><span>{t('Note')}</span><textarea class="textarea" bind:value={note} onchange={() => patchWorkout(wk.uuid, { note })} maxlength="2000" placeholder={t('Com\'è andata?')}></textarea></label>
 
@@ -185,6 +185,6 @@
 		</div>
 	</Sheet>
 {/if}
-{#if savingTemplate && wk}<TemplateEditor initial={{ name: wk.name, items: itemsFromWorkout(wk) }} onclose={() => (savingTemplate = false)} onsaved={() => toast(t('Scheda salvata.'))} />{/if}
+{#if savingTemplate && wk}<TemplateEditor initial={{ name: wk.name, items: itemsFromWorkout(wk) }} onclose={() => (savingTemplate = false)} onsaved={() => toast(t('Giorno salvato.'))} />{/if}
 {#if editFocus && wk}<FocusPicker workout={wk} onclose={() => (editFocus = false)} />{/if}
 {#if adding && wk}<AddSetSheet workout={wk} ex={adding.ex} set={adding.set} onclose={() => (adding = null)} onadded={(r) => added(adding!.ex, r)} />{/if}

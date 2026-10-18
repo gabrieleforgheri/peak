@@ -1,0 +1,4 @@
+I disegni in solid-icons.ts (torso, abs, leg, forearm, shoulders, ribcage, flex, flex2, balance, biceps) vengono da game-icons.net
+(https://game-icons.net, https://github.com/game-icons/icons), licenza Creative Commons Attribution 3.0 (CC BY 3.0):
+https://creativecommons.org/licenses/by/3.0/
+Autori: Lorc, Delapouite e altri collaboratori di game-icons.net. Le forme sono usate così come sono, in un solo colore.

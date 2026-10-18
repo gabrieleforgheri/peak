@@ -2,7 +2,7 @@
 // Il calcolo sta in common/domain.ts; qui si portano i kg sulla griglia dell'unità e si ripassa ai kg alla fine.
 
 import { displayStep, nextLoad, progressionFor, toDisplay, warmupPlan, round2, type Suggestion, type WarmupStep } from '@common/domain.ts'
-import type { Ex, Model } from './types.ts'
+import type { Ex, Model, Prg, Tpl } from './types.ts'
 
 /** Il passo del macchinario nell'unità scelta. */
 export const stepOf = (ex: { incrementStep: number }, m: Model): number => displayStep(ex.incrementStep, m.settings.unit)
@@ -36,4 +36,28 @@ export function deltaOf(ex: Ex): number | null {
 	if (!ex.best) return null
 	const prev = bestWeightBefore(ex, ex.best.date)
 	return prev && ex.best.weight > prev ? ((ex.best.weight - prev) / prev) * 100 : null
+}
+
+/** La scheda in uso: quella scelta, altrimenti la prima. */
+export const activeProgram = (m: Model): Prg | null => m.programs.find((p) => p.uuid === m.settings.activeProgram) ?? m.programs[0] ?? null
+
+/** I giorni di una scheda, nell'ordine in cui li hai messi. */
+export const daysOf = (m: Model, prog: Prg | null): Tpl[] => (prog ? m.templates.filter((t) => t.program === prog.uuid) : m.templates.filter((t) => !t.program))
+
+/**
+ * Il giorno che tocca: con giorni fissi, quello di oggi o il prossimo in calendario; senza, quello dopo l'ultimo
+ * fatto in questa scheda, a rotazione.
+ */
+export function nextDay(m: Model, now = new Date()): Tpl | null {
+	const prog = activeProgram(m)
+	const days = daysOf(m, prog)
+	if (!days.length) return null
+	if (prog?.useDays) {
+		const today = (now.getDay() + 6) % 7
+		const fixed = days.filter((d) => d.weekday >= 0)
+		if (fixed.length) return [...fixed].sort((a, b) => ((a.weekday - today + 7) % 7) - ((b.weekday - today + 7) % 7))[0]!
+	}
+	const last = m.workouts.find((w) => days.some((d) => d.uuid === w.template))
+	const i = last ? days.findIndex((d) => d.uuid === last.template) : -1
+	return days[(i + 1) % days.length]!
 }

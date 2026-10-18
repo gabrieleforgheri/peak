@@ -18,7 +18,7 @@ export const GLYPHS = [
 ] as const
 export type GlyphName = (typeof GLYPHS)[number]
 
-export const KINDS = ['setting', 'exercise', 'record', 'workout', 'set', 'bodyweight', 'template'] as const
+export const KINDS = ['setting', 'exercise', 'record', 'workout', 'set', 'bodyweight', 'template', 'program'] as const
 export type Kind = (typeof KINDS)[number]
 
 // ---- date e uuid -------------------------------------------------------------------------
@@ -65,11 +65,29 @@ export interface ExerciseDoc {
   view: '' | View
   /** Nascosto agli amici. */
   hidden: boolean
+  /** Creato a mano di proposito, fuori dal catalogo: non serve ricordargli di collegarlo. */
+  custom: boolean
 }
 export interface RecordDoc { exercise: string; date: string; weight: number; reps: number; note: string }
 /** Una riga di scheda: sets/reps 0 = non indicato; weight in kg, null = si mostra l'ultimo usato. */
 export interface TemplateItem { exercise: string; sets: number; repsMin: number; repsMax: number; weight: number | null }
-export interface TemplateDoc { name: string; items: TemplateItem[]; sortIndex: number; createdAt: string; hidden: boolean }
+/** Le icone fra cui scegliere per una scheda ('' = manubrio); i disegni stanno in `Icon.svelte` (web) e come SF Symbols (iPhone). */
+export const TEMPLATE_ICONS = ['dumbbell', 'flame', 'bolt', 'mountain', 'trophy', 'star', 'timer', 'repeat', 'compass', 'scale', 'target', 'heart', 'weight', 'medal', 'bike', 'fist', 'pulse', 'rocket', 'crown', 'person'] as const
+/** Parti del corpo e pose, disegni di game-icons.net (CC BY 3.0). */
+export const BODY_ICONS = ['torso', 'abs', 'shoulders', 'biceps', 'forearm', 'leg', 'ribcage', 'flex', 'flex2', 'balance'] as const
+/** Un'icona di scheda: una delle generali, `muscle:<gruppo>` (la figura di quel gruppo) o `glyph:<attrezzo>` (un pittogramma dei macchinari). */
+export type TemplateIcon = (typeof TEMPLATE_ICONS)[number] | `muscle:${MuscleGroup}` | `body:${(typeof BODY_ICONS)[number]}` | `glyph:${GlyphName}`
+export function isTemplateIcon(v: unknown): v is TemplateIcon {
+  if (typeof v !== 'string') return false
+  if ((TEMPLATE_ICONS as readonly string[]).includes(v)) return true
+  if (v.startsWith('muscle:')) return (MUSCLE_GROUPS as readonly string[]).includes(v.slice(7))
+  if (v.startsWith('body:')) return (BODY_ICONS as readonly string[]).includes(v.slice(5))
+  return v.startsWith('glyph:') && (GLYPHS as readonly string[]).includes(v.slice(6))
+}
+/** Un giorno (piano) di una scheda: `program` = la scheda che lo contiene ('' = nessuna), `weekday` = 0 lunedì … 6 domenica, -1 = nessun giorno fisso. */
+export interface TemplateDoc { name: string; items: TemplateItem[]; sortIndex: number; createdAt: string; hidden: boolean; icon: '' | TemplateIcon; program: string; weekday: number }
+/** La scheda generale, come quella che ti fa una palestra: contiene i giorni. `useDays`: i giorni hanno un giorno fisso della settimana; altrimenti è solo un raccoglitore. */
+export interface ProgramDoc { name: string; sortIndex: number; createdAt: string; useDays: boolean }
 /** `template`: la scheda da cui è partito (uuid o ''); `plan`: copia delle sue righe, poi modificata in sessione. */
 export interface WorkoutDoc {
   date: string; endedAt: string | null; note: string; name: string; focus: string; template: string; plan: TemplateItem[]
@@ -83,7 +101,7 @@ export interface SettingDoc { value: unknown }
 
 export interface DocDataMap {
   exercise: ExerciseDoc; record: RecordDoc; workout: WorkoutDoc; set: SetDoc
-  bodyweight: BodyWeightDoc; setting: SettingDoc; template: TemplateDoc
+  bodyweight: BodyWeightDoc; setting: SettingDoc; template: TemplateDoc; program: ProgramDoc
 }
 
 // ---- impostazioni condivise ----------------------------------------------------------------
@@ -100,6 +118,10 @@ export const SETTING_DEFAULTS = {
   tourSeen: 1,
   /** Allenamenti a settimana che ti sei dato come obiettivo; 0 = non l'hai ancora scelto. */
   weeklyGoal: 0,
+  /** Lingua dell'interfaccia: '' = quella del dispositivo. */
+  language: '',
+  /** La scheda in uso ('' = la prima). */
+  activeProgram: '',
 } as const
 export type SettingKey = keyof typeof SETTING_DEFAULTS
 /** Impostazioni tolte nella 3.0: i client vecchi le mandano ancora; il server le ignora senza segnalarle come errori. */
@@ -123,6 +145,8 @@ function cleanSetting(key: string, v: unknown): unknown {
     case 'restTimerEnabled': case 'progressionEnabled': case 'plateCalculatorEnabled': case 'tutorialDone':
       return typeof v === 'boolean' ? v : undefined
     case 'restSeconds': return int(v, 15, 600) ?? undefined
+    case 'activeProgram': return v === '' || (typeof v === 'string' && normUuid(v) !== null) ? v : undefined
+    case 'language': return v === '' || v === 'it' || v === 'en' ? v : undefined
     case 'weeklyGoal': return int(v, 0, 7) ?? undefined
     case 'tourSeen': return int(v, 1, 10) ?? undefined
     case 'repRangeMin': case 'repRangeMax': return int(v, 1, 30) ?? undefined
@@ -219,7 +243,7 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
           name, muscleGroup: o.muscleGroup as MuscleGroup, notes, incrementStep, sortIndex,
           isArchived: o.isArchived === true, createdAt: isoSec(createdAt), glyph: glyph as ExerciseDoc['glyph'],
           photo: photo as string, photoOffset, isUnilateral: o.isUnilateral === true, restSeconds,
-          catalog: catalog as string, hidden: o.hidden === true,
+          catalog: catalog as string, hidden: o.hidden === true, custom: o.custom === true,
           muscles, view: view as ExerciseDoc['view'],
         },
       }
@@ -285,7 +309,22 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
       if (items === null) return fail('items')
       if (sortIndex === null) return fail('sortIndex')
       if (createdAt === null) return fail('createdAt')
-      return { data: { name, items, sortIndex, createdAt: isoSec(createdAt), hidden: o.hidden === true } }
+      const icon = o.icon ?? ''
+      if (icon !== '' && !isTemplateIcon(icon)) return fail('icon')
+      const program = o.program == null || o.program === '' ? '' : normUuid(o.program)
+      if (program === null) return fail('program')
+      const weekday = int(o.weekday ?? -1, -1, 6)
+      if (weekday === null) return fail('weekday')
+      return { data: { name, items, sortIndex, createdAt: isoSec(createdAt), hidden: o.hidden === true, icon: icon as TemplateDoc['icon'], program, weekday } }
+    }
+    case 'program': {
+      const name = str(o.name, 80, 1)?.trim()
+      const sortIndex = int(o.sortIndex ?? 0, -1e6, 1e6)
+      const createdAt = parseIso(o.createdAt)
+      if (!name) return fail('name')
+      if (sortIndex === null) return fail('sortIndex')
+      if (createdAt === null) return fail('createdAt')
+      return { data: { name, sortIndex, createdAt: isoSec(createdAt), useDays: o.useDays === true } }
     }
     case 'bodyweight': {
       const date = parseIso(o.date)
@@ -301,13 +340,13 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
 export function upgradeDoc<T>(kind: Kind, data: T): T {
   if (!data) return data
   if (kind === 'workout') return { template: '', plan: [], ...data } as T
-  if (kind === 'exercise') return { catalog: '', hidden: false, muscles: [], view: '', ...data } as T
-  if (kind === 'template') return { hidden: false, ...data } as T
+  if (kind === 'exercise') return { catalog: '', hidden: false, custom: false, muscles: [], view: '', ...data } as T
+  if (kind === 'template') return { hidden: false, icon: '', program: '', weekday: -1, ...data } as T
   return data
 }
 
 /** Campi aggiunti dopo la 2.1: un client vecchio non li manda, e il server non deve cancellarli. */
-export const KEEP_IF_ABSENT: Partial<Record<Kind, readonly string[]>> = { exercise: ['catalog', 'hidden', 'muscles', 'view'], template: ['hidden'] }
+export const KEEP_IF_ABSENT: Partial<Record<Kind, readonly string[]>> = { exercise: ['catalog', 'hidden', 'custom', 'muscles', 'view'], template: ['hidden', 'icon', 'program', 'weekday'] }
 
 /** Chiave unica di un documento, per mappe in memoria. */
 export const docKey = (kind: Kind, uuid: string): string => `${kind}:${uuid}`
@@ -320,7 +359,7 @@ export function split(docs: Iterable<LiveDoc>) {
   const out = {
     exercises: [] as LiveDoc<'exercise'>[], records: [] as LiveDoc<'record'>[], workouts: [] as LiveDoc<'workout'>[],
     sets: [] as LiveDoc<'set'>[], bodyweights: [] as LiveDoc<'bodyweight'>[], settings: [] as LiveDoc<'setting'>[],
-    templates: [] as LiveDoc<'template'>[],
+    templates: [] as LiveDoc<'template'>[], programs: [] as LiveDoc<'program'>[],
   }
   for (const d of docs) {
     if (d.kind === 'exercise') out.exercises.push(d as LiveDoc<'exercise'>)
@@ -329,6 +368,7 @@ export function split(docs: Iterable<LiveDoc>) {
     else if (d.kind === 'set') out.sets.push(d as LiveDoc<'set'>)
     else if (d.kind === 'bodyweight') out.bodyweights.push(d as LiveDoc<'bodyweight'>)
     else if (d.kind === 'template') out.templates.push(d as LiveDoc<'template'>)
+    else if (d.kind === 'program') out.programs.push(d as LiveDoc<'program'>)
     else out.settings.push(d as LiveDoc<'setting'>)
   }
   return out

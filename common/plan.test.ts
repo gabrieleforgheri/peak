@@ -45,3 +45,13 @@ test('differsFromTemplate: conta esercizi e ordine, non gli obiettivi', () => {
   assert.equal(differsFromTemplate([item('a')], tpl, ex), true)
   assert.equal(differsFromTemplate([item('a'), item('b'), item('c')], tpl, all), true)
 })
+
+import { suggestTemplateIcon } from './template-icon.ts'
+test('icona suggerita dal nome della scheda', () => {
+  assert.equal(suggestTemplateIcon('Push 1'), 'muscle:petto')
+  assert.equal(suggestTemplateIcon('Pull 2'), 'muscle:schiena')
+  assert.equal(suggestTemplateIcon('Legs'), 'muscle:gambe')
+  assert.equal(suggestTemplateIcon('Giorno B – Gambe'), 'muscle:gambe')
+  assert.equal(suggestTemplateIcon('Spalle e braccia'), 'muscle:spalle')
+  assert.equal(suggestTemplateIcon('Mattina'), '')
+})

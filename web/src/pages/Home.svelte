@@ -1,21 +1,22 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import { oneRepMax } from '@common/domain.ts'
-	import { medals, medalTotals, type MedalId } from '@common/medals.ts'
-	import { volumeByGroup, weekStart, weeklyGoal, weeklyStreak, workoutVolume, type StatWorkout } from '@common/stats.ts'
+	import { medals, medalTotals } from '@common/medals.ts'
+	import { weekStart, weeklyGoal, weeklyStreak, workoutVolume, type StatWorkout } from '@common/stats.ts'
 	import { startWorkout } from '../lib/actions.ts'
+	import { nextDay } from '../lib/derive.ts'
 	import { entryName, loadCatalog } from '../lib/catalog.ts'
-	import { GROUP_NAMES, V, W, dateShort, relDay } from '../lib/fmt.ts'
+	import { V, W, relDay } from '../lib/fmt.ts'
+	import { MEDAL, medalSub } from '../lib/medalinfo.ts'
 	import { t, tn } from '../lib/i18n.ts'
 	import { go } from '../lib/router.svelte.ts'
 	import { F, loadFriends, loadNews } from '../lib/social.svelte.ts'
 	import { S, getModel } from '../lib/store.svelte.ts'
-	import Donut from '../components/Donut.svelte'
 	import GoalPicker from '../components/GoalPicker.svelte'
-	import Heatmap from '../components/Heatmap.svelte'
 	import SummitHero from '../components/SummitHero.svelte'
 	import Icon from '../components/Icon.svelte'
-	import LineChart from '../components/LineChart.svelte'
+	import TemplateIconView from '../components/TemplateIcon.svelte'
+	import Medal from '../components/Medal.svelte'
 
 	const m = $derived(getModel())
 	let names = $state(new Map<string, string>())
@@ -28,13 +29,8 @@
 	let choosing = $state(false)
 	const active = $derived(m.workouts.find((w) => w.isActive))
 	const finished = $derived(m.workouts.filter((w) => !w.isActive))
-	// la scheda che tocca: quella dopo l'ultima usata, a rotazione
-	const next = $derived.by(() => {
-		if (!m.templates.length) return null
-		const last = m.workouts.find((w) => w.template && m.tplById.has(w.template))
-		const i = last ? m.templates.findIndex((x) => x.uuid === last.template) : -1
-		return m.templates[(i + 1) % m.templates.length]
-	})
+	// il giorno che tocca, nella scheda in uso
+	const next = $derived(nextDay(m))
 	function begin() {
 		if (active) return go(`allenamento/${active.uuid}`)
 		if (next) return go(`allenamento/${startWorkout('', [], next)}`)
@@ -50,64 +46,10 @@
 	const oneRms = $derived(used.flatMap((e) => [...e.records.map((r) => oneRepMax(r.weight, r.reps)), ...e.sets.filter((s) => !s.isWarmup).map((s) => oneRepMax(s.weight, s.reps))]))
 	const bestOneRm = $derived(oneRms.reduce((a, b) => Math.max(a, b), 0))
 
-	// ---- attività: le serie di ogni giorno ----
-	const perDay = $derived.by(() => {
-		const out = new Map<string, number>()
-		for (const w of finished) {
-			const d = new Date(w.dateMs)
-			const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
-			out.set(k, (out.get(k) ?? 0) + w.workingSets)
-		}
-		return out
-	})
-	const DAY = 86_400_000
-	const last90 = $derived(finished.filter((w) => w.dateMs >= Date.now() - 98 * DAY).length)
-
-	// ---- volume per settimana: tutte le ultime 12, anche vuote ----
-	const weeks = $derived.by(() => {
-		const start = new Date(weekStart(Date.now()))
-		return Array.from({ length: 12 }, (_, i) => {
-			const d = new Date(start); d.setDate(start.getDate() - 7 * (11 - i))
-			const ws = d.getTime()
-			const volume = stat.filter((w) => weekStart(w.date) === ws).reduce((v, w) => v + workoutVolume(w), 0)
-			return { ws, volume }
-		})
-	})
-	const maxWeek = $derived(Math.max(1, ...weeks.map((w) => w.volume)))
-
-	// ---- dove va il lavoro ----
-	const groups = $derived(volumeByGroup(stat, (id) => m.exById.get(id)?.muscleGroup, 30))
-
-	// ---- il sollevamento che cresce di più: il tuo miglior macchinario con almeno tre massimali ----
-	const lift = $derived.by(() => {
-		const cands = m.exercises.filter((e) => e.records.length >= 3).map((e) => ({ e, top: Math.max(...e.records.map((r) => oneRepMax(r.weight, r.reps))) }))
-		const pick = cands.sort((a, b) => b.top - a.top)[0]
-		if (!pick) return null
-		const pts = [...pick.e.records].sort((a, b) => a.date - b.date).slice(-12).map((r) => ({ y: oneRepMax(r.weight, r.reps), label: dateShort(r.date) }))
-		const ys = pts.map((p) => p.y)
-		return { name: pick.e.name, points: pts, domain: [Math.min(...ys) * 0.97, Math.max(...ys) * 1.03] as [number, number], from: ys[0], to: ys.at(-1)! }
-	})
-
 	// ---- medaglie ----
 	const friendCount = $derived(F.friends?.amici.length ?? 0)
 	const medalList = $derived(medals({ sessions: finished.length, records: recordCount, streak, volumeKg: totalVolume, bestOneRm, machines: used.length, friends: friendCount }))
 	const totals = $derived(medalTotals(medalList))
-	const MEDAL: Record<MedalId, { icon: string; title: string }> = {
-		sessions: { icon: 'dumbbell', title: t('Costanza') }, records: { icon: 'trophy', title: t('Cacciatore di record') },
-		streak: { icon: 'flame', title: t('In serie') }, volume: { icon: 'scale', title: t('Tonnellate') },
-		strength: { icon: 'bolt', title: t('Forza') }, variety: { icon: 'compass', title: t('Esploratore') }, friends: { icon: 'users', title: t('Squadra') },
-	}
-	const TIERS = [t('da conquistare'), t('Bronzo'), t('Argento'), t('Oro')]
-	const medalSub = (md: (typeof medalList)[number]) => md.next === null ? TIERS[3] : md.tier === 0 ? `${fmtMedal(md.id, md.value)} / ${fmtMedal(md.id, md.next)}` : `${TIERS[md.tier]} · ${fmtMedal(md.id, md.value)}/${fmtMedal(md.id, md.next)}`
-	const fmtMedal = (id: MedalId, v: number) => id === 'volume' ? V(v) : id === 'strength' ? W(v) : String(Math.round(v))
-	// cosa misura ogni medaglia, in una riga
-	const MEDAL_INFO: Record<MedalId, string> = {
-		sessions: t('Ogni allenamento concluso conta.'), records: t('Ogni massimale battuto conta.'),
-		streak: t('Settimane di seguito con almeno un allenamento.'), volume: t('Tutto il peso sollevato, sommato.'),
-		strength: t('Il tuo miglior 1RM stimato, su un macchinario.'), variety: t('Quanti macchinari diversi hai usato.'),
-		friends: t('Quanti amici hai collegato.'),
-	}
-	const nextLine = (md: (typeof medalList)[number]) => md.next === null ? t('Oro conquistato.') : t('Mancano {0} per {1}.', fmtMedal(md.id, md.next - md.value), TIERS[md.tier + 1])
 
 	// ---- in breve ----
 	const latest = $derived(m.exercises.filter((e) => e.records.length).map((e) => ({ ...e.records[0]!, name: e.name })).sort((a, b) => b.date - a.date).slice(0, 4))
@@ -115,17 +57,16 @@
 </script>
 
 <main class="screen">
-	<SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={finished.filter((w) => w.dateMs >= weekStart(Date.now())).length} goal={m.settings.weeklyGoal || weeklyGoal(stat)} onchangegoal={() => (choosing = true)} onavatar={() => go('impostazioni')} />
-	<p class="small muted" style="margin:4px 20px 12px">{t('L\'obiettivo è quanti allenamenti ti dai a settimana: tocca la barra per cambiarlo.')}</p>
+	<SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={finished.filter((w) => w.dateMs >= weekStart(Date.now())).length} goal={m.settings.weeklyGoal || weeklyGoal(stat)} onchangegoal={() => (choosing = true)} onavatar={() => go('me')} />
 
 	{#if choosing}<GoalPicker current={m.settings.weeklyGoal} suggested={weeklyGoal(stat)} onclose={() => (choosing = false)} />{/if}
 
 	<!-- subito sotto: cosa fare adesso, in piccolo -->
 	<button class="next" onclick={begin} data-tour="start">
-		<span class="ni"><Icon name={active ? 'repeat' : 'dumbbell'} size={22} /></span>
+		<span class="ni">{#if active || !next}<Icon name={active ? 'repeat' : 'dumbbell'} size={22} />{:else}<TemplateIconView icon={next.icon} name={next.name} size={26} />{/if}</span>
 		<span class="nt">
 			<b>{active ? t('Riprendi allenamento') : next ? t('Avvia {0}', next.name) : t('Inizia un allenamento')}</b>
-			<span class="small muted">{active ? `${tn(active.workingSets, '1 serie', '{0} serie')} · ${V(active.volume)}` : next ? tn(next.items.length, '1 esercizio', '{0} esercizi') : t('Crea una scheda con i tuoi esercizi, oppure allenati a mano.')}</span>
+			<span class="small muted">{active ? `${tn(active.workingSets, '1 serie', '{0} serie')} · ${V(active.volume)}` : next ? tn(next.items.length, '1 esercizio', '{0} esercizi') : t('Crea un giorno con i tuoi esercizi, oppure allenati a mano.')}</span>
 		</span>
 		<Icon name="right" size={20} />
 	</button>
@@ -138,56 +79,9 @@
 		<div class="stat flame"><div class="n"><Icon name="flame" size={22} />{streak}</div><div class="l">{t('Settimane di fila')}</div></div>
 	</div>
 
-	<p class="small muted" style="margin:12px 4px 14px">{t('Settimane di fila: quante settimane di seguito hai fatto almeno un allenamento.')}</p>
-	<div class="sec-title">{t('Attività')}</div>
-	<p class="small muted" style="margin:-4px 4px 10px">{t('Un quadratino per giorno: più è verde, più serie hai fatto.')}</p>
-	<div class="card">
-		<Heatmap sets={perDay} />
-		<div class="row between small muted" style="margin-top:10px"><span>{tn(last90, '1 allenamento in 14 settimane', '{0} allenamenti in 14 settimane')}</span><span class="legend"><i data-l="0"></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i></span></div>
-	</div>
-
-	<div class="sec-title">{t('Volume settimanale')}</div>
-	<p class="small muted" style="margin:-4px 4px 10px">{t('Kg sollevati ogni settimana, le ultime dodici. La barra accesa è questa settimana.')}</p>
-	<div class="card">
-		<div class="bars">
-			{#each weeks as w, i}<div class:now={i === 11} class:zero={w.volume === 0} style="height:{Math.max(4, (w.volume / maxWeek) * 100)}%" title="{dateShort(w.ws)}: {V(w.volume)}"></div>{/each}
-		</div>
-		<div class="row between tiny faint" style="margin-top:6px"><span>{dateShort(weeks[0].ws)}</span><span>{t('questa settimana')}: <b style="color:var(--text)">{V(weeks[11].volume)}</b></span></div>
-	</div>
-
-	{#if groups.length}
-		<div class="sec-title">{t('Dove va il lavoro')}</div>
-		<p class="small muted" style="margin:-4px 4px 10px">{t('Quanto volume è andato a ogni gruppo muscolare negli ultimi 30 giorni.')}</p>
-		<div class="card split">
-			<div class="donut"><Donut parts={groups.map((g) => ({ color: `var(--${g.group})`, value: g.volume }))} center={V(groups.reduce((s, g) => s + g.volume, 0))} label={t('Dove va il lavoro')} /></div>
-			<div class="stack" style="gap:8px;flex:1">
-				{#each groups as g}<div class="row between small"><span class="row" style="gap:8px"><i class="dot" style="background:var(--{g.group})"></i>{GROUP_NAMES[g.group]}</span><b class="num">{Math.round((g.volume / groups.reduce((s, x) => s + x.volume, 0)) * 100)}%</b></div>{/each}
-				<div class="tiny faint">{t('Ultimi 30 giorni')}</div>
-			</div>
-		</div>
-	{/if}
-
-	{#if lift}
-		<div class="sec-title">{t('Il tuo sollevamento in crescita')}</div>
-		<div class="card">
-			<div class="row between"><b>{lift.name}</b><span class="badge pos">{W(lift.from)} → {W(lift.to)}</span></div>
-			<div class="small muted" style="margin-bottom:6px">{t('1RM stimato')}</div>
-			<LineChart points={lift.points} domain={lift.domain} />
-		</div>
-	{/if}
-
-	<div class="row between"><div class="sec-title">{t('Medaglie')}</div><span class="small muted" style="margin:20px 4px 8px">{totals.earned} / {totals.total}</span></div>
-	<p class="small muted" style="margin:-4px 4px 10px">{t('Ogni medaglia ha tre livelli, bronzo, argento e oro. Si sbloccano a soglie crescenti, con quello che fai.')}</p>
-	<div class="card list" data-tour="medals">
-		{#each medalList as md (md.id)}
-			<div class="item" style="flex-direction:column;align-items:stretch;gap:6px">
-				<div class="row between"><span class="row" style="gap:10px"><Icon name={MEDAL[md.id].icon} size={20} /><b>{MEDAL[md.id].title}</b></span><span class="small" style="color:var(--accent);font-weight:700">{md.tier ? TIERS[md.tier] : TIERS[0]}</span></div>
-				<div class="small muted">{MEDAL_INFO[md.id]}</div>
-				<div class="tiny muted num">{TIERS[1]} {fmtMedal(md.id, md.tiers[0])} · {TIERS[2]} {fmtMedal(md.id, md.tiers[1])} · {TIERS[3]} {fmtMedal(md.id, md.tiers[2])}</div>
-				<div style="height:6px;border-radius:3px;background:var(--stroke);overflow:hidden"><div style="height:100%;width:{Math.round(md.progress * 100)}%;background:var(--accent)"></div></div>
-				<div class="small">{nextLine(md)}</div>
-			</div>
-		{/each}
+	<div class="row between"><div class="sec-title">{t('Medaglie')}</div><button class="link small" style="margin:20px 4px 8px" onclick={() => go('me')}>{totals.earned} / {totals.total} · {t('Vedi tutto')}</button></div>
+	<div class="medals" data-tour="medals">
+		{#each medalList as md (md.id)}<Medal medal={md} icon={MEDAL[md.id].icon} title={MEDAL[md.id].title} sub={medalSub(md)} />{/each}
 	</div>
 
 	{#if latest.length}
@@ -225,16 +119,7 @@
 	.stat .n { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; display: flex; align-items: center; justify-content: center; gap: 2px; }
 	.stat .l { font-size: 10px; color: var(--text-3); margin-top: 2px; line-height: 1.2; }
 	.stat.flame .n { color: var(--accent); }
-	.legend { display: inline-flex; gap: 3px; align-items: center; }
-	.legend i { width: 11px; height: 11px; border-radius: 3px; background: rgba(255,255,255,.06); }
-	.legend i[data-l='1'] { background: rgba(var(--accent-rgb), .3); } .legend i[data-l='2'] { background: rgba(var(--accent-rgb), .55); }
-	.legend i[data-l='3'] { background: rgba(var(--accent-rgb), .8); } .legend i[data-l='4'] { background: rgb(var(--accent-rgb)); }
-	.bars { display: flex; align-items: flex-end; gap: 6px; height: 110px; }
-	.bars div { flex: 1; border-radius: 6px 6px 3px 3px; background: linear-gradient(to top, rgba(var(--accent-rgb), .25), rgba(var(--accent-rgb), .7)); }
-	.bars div.zero { background: rgba(255,255,255,.07); }
-	.bars div.now { background: linear-gradient(to top, rgba(var(--accent-rgb), .5), rgb(var(--accent-rgb))); box-shadow: 0 0 14px rgba(var(--accent-rgb), .45); }
-	.split { display: flex; gap: 18px; align-items: center; }
-	.donut { width: 132px; flex: none; color: var(--text); }
-	.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+	.medals { display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x proximity; padding: 4px 2px 10px; margin: 0 -4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+	.medals::-webkit-scrollbar { display: none; }
 	.trophy { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,212,94,.14); color: #ffd45e; flex: none; }
 </style>

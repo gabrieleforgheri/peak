@@ -71,13 +71,7 @@
 			</div>
 		</div>
 
-		<label class="row between card"><span><b>{t('Serie di riscaldamento')}</b><br /><span class="small muted">{t('Esclusa dal volume e dai record')}</span></span><input class="toggle" type="checkbox" bind:checked={warm} /></label>
-		{#if warm && warmSteps.length}
-			<div class="chips">
-				{#each warmSteps as s}<button class="chip" onclick={() => { weight = s.weight; reps = s.reps }}>{Math.round(s.percent * 100)}% · {nf(s.weight)} × {s.reps}</button>{/each}
-			</div>
-		{/if}
-
+		{#if mode && weight > 0}<PlateBar total={weight} bar={mode.bar ? toUnit(m.settings.barWeight) : 0} {plates} unit={unit()} />{/if}
 		{#if !warm}
 			<div class="card" style={isRecord ? 'border-color:rgba(var(--accent-rgb),.5)' : ''}>
 				<div class="row between">
@@ -96,7 +90,13 @@
 			</div>
 		{/if}
 
-		{#if mode && weight > 0}<PlateBar total={weight} bar={mode.bar ? toUnit(m.settings.barWeight) : 0} {plates} unit={unit()} />{/if}
+		<label class="row between card"><span><b>{t('Serie di riscaldamento')}</b><br /><span class="small muted">{t('Esclusa dal volume e dai record')}</span></span><input class="toggle" type="checkbox" bind:checked={warm} /></label>
+		{#if warm && warmSteps.length}
+			<div class="chips">
+				{#each warmSteps as s}<button class="chip" onclick={() => { weight = s.weight; reps = s.reps }}>{Math.round(s.percent * 100)}% · {nf(s.weight)} × {s.reps}</button>{/each}
+			</div>
+		{/if}
+
 
 		{#if set}<button class="btn danger block" onclick={remove}>{t('Elimina serie')}</button>{/if}
 	</div>

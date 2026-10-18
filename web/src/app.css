@@ -155,6 +155,10 @@ label.field > span { display: block; font-size: 12px; font-weight: 700; letter-s
 .stepper { display: flex; align-items: center; gap: 10px; }
 .stepper button { width: 52px; height: 52px; border-radius: 16px; border: 0; background: var(--card-strong); font-size: 26px; font-weight: 600; flex: none; }
 .stepper button:active { transform: scale(0.94); }
+.stepper.compact { gap: 6px; justify-content: flex-start; }
+.stepper.compact button { width: 36px; height: 36px; border-radius: 12px; font-size: 20px; }
+.stepper.compact .val { font-size: 20px; }
+.stepper.compact > div { flex: none !important; width: 84px; }
 .stepper .val { flex: 1; text-align: center; font-size: 36px; font-weight: 800; background: none; border: 0; width: 100%; min-width: 0; outline: none; }
 .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .tiles > .card { margin-top: 0; }

@@ -5,7 +5,7 @@
 import { createHash } from 'node:crypto'
 import {
   CATALOG_ID_RE, isoSec, normUuid, parseDoc, parseIso, split, MUSCLE_GROUPS,
-  type DocDataMap, type ExerciseDoc, type Kind, type LiveDoc, type MuscleGroup, type TemplateItem, cleanMuscles } from '../common/docs.ts'
+  type DocDataMap, type ExerciseDoc, type Kind, type LiveDoc, type MuscleGroup, type TemplateItem, isTemplateIcon, cleanMuscles } from '../common/docs.ts'
 import { deriveRecords, type RecManual, type RecSet } from '../common/records.ts'
 import { EPSILON } from '../common/domain.ts'
 import { matchByName } from '../common/catalog.ts'
@@ -23,13 +23,14 @@ export interface SetDTO {
 export interface ExerciseDTO {
   uuid: string; name: string; muscleGroup: string; notes: string; incrementStep: number; sortIndex: number
   isArchived: boolean; createdAt: string; glyph?: string; photo?: string; photoOffset?: number
-  isUnilateral?: boolean; restSeconds?: number; catalogID?: string; isHidden?: boolean
+  isUnilateral?: boolean; restSeconds?: number; catalogID?: string; isHidden?: boolean; isCustom?: boolean
   /** La figura dei muscoli: solo per i macchinari personalizzati; assenti nei backup vecchi. */
   muscles?: string[]; view?: string; records: RecordDTO[]
 }
 /** Riga di scheda; `weight` assente = si mostra l'ultimo usato. */
 export interface ItemDTO { exerciseUUID: string; sets: number; repsMin: number; repsMax: number; weight?: number }
-export interface TemplateDTO { uuid: string; name: string; sortIndex: number; createdAt: string; isHidden?: boolean; items: ItemDTO[] }
+export interface TemplateDTO { uuid: string; name: string; sortIndex: number; createdAt: string; isHidden?: boolean; icon?: string; programID?: string; weekday?: number; items: ItemDTO[] }
+export interface ProgramDTO { uuid: string; name: string; sortIndex: number; createdAt: string; useDays?: boolean }
 export interface WorkoutDTO {
   uuid: string; date: string; endedAt?: string; note: string; focus: string; name: string; sets: SetDTO[]
   template?: string; plan?: ItemDTO[]
@@ -37,7 +38,7 @@ export interface WorkoutDTO {
 export interface BodyWeightDTO { uuid: string; date: string; weight: number; fromHealth: boolean }
 export interface BackupFile {
   version: number; exportedAt: string; exercises: ExerciseDTO[]; workouts: WorkoutDTO[]; bodyWeights?: BodyWeightDTO[]
-  templates?: TemplateDTO[]
+  templates?: TemplateDTO[]; programs?: ProgramDTO[]
 }
 
 // ---- esportazione ---------------------------------------------------------------------------------------
@@ -89,6 +90,7 @@ export function exportBackup(docs: Iterable<LiveDoc>, photo: (sha: string) => Ui
       if (e.restSeconds) dto.restSeconds = e.restSeconds
       if (e.catalog) dto.catalogID = e.catalog
       if (e.hidden) dto.isHidden = true
+      if (e.custom) dto.isCustom = true
       if (e.muscles.length) dto.muscles = e.muscles
       if (e.view) dto.view = e.view
       return dto
@@ -124,9 +126,13 @@ export function exportBackup(docs: Iterable<LiveDoc>, photo: (sha: string) => Ui
 
   const templates: TemplateDTO[] = [...d.templates]
     .sort((a, b) => a.data.sortIndex - b.data.sortIndex || cmp(a.data.createdAt, b.data.createdAt) || cmp(a.uuid, b.uuid))
-    .map(({ uuid, data: t }) => ({ uuid, name: t.name, sortIndex: t.sortIndex, createdAt: t.createdAt, ...(t.hidden ? { isHidden: true } : {}), items: toItemDTOs(t.items, liveEx) }))
+    .map(({ uuid, data: t }) => ({ uuid, name: t.name, sortIndex: t.sortIndex, createdAt: t.createdAt, ...(t.hidden ? { isHidden: true } : {}), ...(t.icon ? { icon: t.icon } : {}), ...(t.program ? { programID: t.program } : {}), ...(t.weekday >= 0 ? { weekday: t.weekday } : {}), items: toItemDTOs(t.items, liveEx) }))
 
-  return { version: BACKUP_VERSION, exportedAt: isoSec(now), exercises, workouts, bodyWeights, templates }
+  const programs: ProgramDTO[] = [...d.programs]
+    .sort((a, b) => a.data.sortIndex - b.data.sortIndex || cmp(a.data.createdAt, b.data.createdAt) || cmp(a.uuid, b.uuid))
+    .map(({ uuid, data: p }) => ({ uuid, name: p.name, sortIndex: p.sortIndex, createdAt: p.createdAt, ...(p.useDays ? { useDays: true } : {}) }))
+
+  return { version: BACKUP_VERSION, exportedAt: isoSec(now), exercises, workouts, bodyWeights, templates, ...(programs.length ? { programs } : {}) }
 }
 
 /** JSON a chiavi ordinate e indentato, come lo scrive l'app. */
@@ -173,7 +179,7 @@ export function parseBackup(raw: unknown): ParseResult {
       glyph: typeof e.glyph === 'string' ? e.glyph : undefined, photo: typeof e.photo === 'string' ? e.photo : undefined,
       photoOffset: typeof e.photoOffset === 'number' ? e.photoOffset : undefined, isUnilateral: e.isUnilateral === true ? true : undefined,
       restSeconds: typeof e.restSeconds === 'number' ? e.restSeconds : undefined, records,
-      catalogID: typeof e.catalogID === 'string' && CATALOG_ID_RE.test(e.catalogID) ? e.catalogID : undefined, isHidden: e.isHidden === true ? true : undefined,
+      catalogID: typeof e.catalogID === 'string' && CATALOG_ID_RE.test(e.catalogID) ? e.catalogID : undefined, isHidden: e.isHidden === true ? true : undefined, isCustom: e.isCustom === true ? true : undefined,
       muscles: Array.isArray(e.muscles) ? e.muscles.map(String) : undefined, view: typeof e.view === 'string' ? e.view : undefined,
     })
   }
@@ -235,10 +241,18 @@ export function parseBackup(raw: unknown): ParseResult {
     const createdAt = parseIso(t.createdAt)
     const items = readItems(t.items)
     if (!uuid || typeof t.name !== 'string' || createdAt === null || items === null) return bad
-    templates.push({ uuid, name: t.name, sortIndex: typeof t.sortIndex === 'number' ? t.sortIndex : 0, createdAt: isoSec(createdAt), isHidden: t.isHidden === true ? true : undefined, items })
+    templates.push({ uuid, name: t.name, sortIndex: typeof t.sortIndex === 'number' ? t.sortIndex : 0, createdAt: isoSec(createdAt), isHidden: t.isHidden === true ? true : undefined, icon: typeof t.icon === 'string' ? t.icon : undefined, programID: typeof t.programID === 'string' ? t.programID : undefined, weekday: typeof t.weekday === 'number' ? t.weekday : undefined, items })
+  }
+  const programs: ProgramDTO[] = []
+  for (const p of (raw.programs as unknown[] | undefined) ?? []) {
+    if (!isObj(p)) return bad
+    const uuid = normUuid(p.uuid)
+    const createdAt = parseIso(p.createdAt)
+    if (!uuid || typeof p.name !== 'string' || createdAt === null) return bad
+    programs.push({ uuid, name: p.name, sortIndex: typeof p.sortIndex === 'number' ? p.sortIndex : 0, createdAt: isoSec(createdAt), useDays: p.useDays === true ? true : undefined })
   }
   const exportedAt = parseIso(raw.exportedAt)
-  return { file: { version: raw.version, exportedAt: isoSec(exportedAt ?? 0), exercises, workouts, bodyWeights, templates } }
+  return { file: { version: raw.version, exportedAt: isoSec(exportedAt ?? 0), exercises, workouts, bodyWeights, templates, programs } }
 }
 
 // ---- importazione -------------------------------------------------------------------------------------------
@@ -298,6 +312,8 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
   const liveWk = new Set(l.workouts.map((w) => w.uuid))
   const liveBw = new Set(l.bodyweights.map((b) => b.uuid))
   const liveTpl = new Set(l.templates.map((t) => t.uuid))
+  const liveProg = new Set(l.programs.map((p) => p.uuid))
+  const fileProg = new Set((file.programs ?? []).map((p) => p.uuid))
 
   // file → esistente (o sé stesso)
   const exMap = new Map<string, string>()
@@ -315,7 +331,7 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
       glyph: isGlyph(ex.glyph) ? ex.glyph : ex.catalogID === undefined && !catalog ? suggestedGlyph(ex.name, group) : '',
       photo: photo?.sha ?? '', photoOffset: Math.min(1, Math.max(-1, ex.photoOffset ?? 0)),
       isUnilateral: ex.isUnilateral === true, restSeconds: ex.restSeconds ?? 0,
-      catalog, hidden: ex.isHidden === true,
+      catalog, hidden: ex.isHidden === true, custom: ex.isCustom === true,
       muscles: cleanMuscles(ex.muscles ?? []) ?? [], view: ex.view === 'front' || ex.view === 'back' ? ex.view : '',
     })
     let target = ex.uuid
@@ -378,13 +394,20 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
     add('bodyweight', b.uuid, { date: b.date, weight: b.weight, fromHealth: b.fromHealth }, 'pesate')
   }
 
+  for (const p of file.programs ?? []) {
+    if (merge && liveProg.has(p.uuid)) continue
+    add('program', p.uuid, { name: p.name.trim() || 'Senza nome', sortIndex: p.sortIndex, createdAt: p.createdAt, useDays: p.useDays === true })
+  }
   for (const t of file.templates ?? []) {
     if (merge && liveTpl.has(t.uuid)) continue
-    add('template', t.uuid, { name: t.name.trim() || 'Senza nome', items: mapItems(t.items), sortIndex: t.sortIndex, createdAt: t.createdAt, hidden: t.isHidden === true }, 'schede')
+    // la scheda generale deve esistere (nel file o già qui), altrimenti il giorno resta senza
+    const program = t.programID && (fileProg.has(t.programID) || liveProg.has(t.programID)) ? t.programID : ''
+    const weekday = Number.isInteger(t.weekday) && t.weekday! >= 0 && t.weekday! <= 6 ? t.weekday! : -1
+    add('template', t.uuid, { name: t.name.trim() || 'Senza nome', items: mapItems(t.items), sortIndex: t.sortIndex, createdAt: t.createdAt, hidden: t.isHidden === true, icon: isTemplateIcon(t.icon) ? t.icon : '', program, weekday }, 'schede')
   }
 
   if (!merge) {
-    for (const d of [...l.exercises, ...l.records, ...l.workouts, ...l.sets, ...l.bodyweights, ...l.templates]) {
+    for (const d of [...l.exercises, ...l.records, ...l.workouts, ...l.sets, ...l.bodyweights, ...l.templates, ...l.programs]) {
       if (!putKeys.has(`${d.kind}:${d.uuid}`)) plan.del.push({ kind: d.kind, uuid: d.uuid })
     }
   }

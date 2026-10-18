@@ -1,5 +1,5 @@
 import type { AnyRecord } from '@common/records.ts'
-import type { ExerciseDoc, GlyphName, TemplateDoc, WorkoutDoc } from '@common/docs.ts'
+import type { ExerciseDoc, GlyphName, ProgramDoc, TemplateDoc, WorkoutDoc } from '@common/docs.ts'
 import type { ACCENTS } from '@common/docs.ts'
 import type { Muscle, View } from '@common/muscle-info.ts'
 
@@ -30,11 +30,12 @@ export interface Wk extends WorkoutDoc {
 	prCount: number
 }
 export interface Tpl extends TemplateDoc { uuid: string }
+export interface Prg extends ProgramDoc { uuid: string }
 export interface Bw { uuid: string; dateMs: number; weight: number; fromHealth: boolean }
 export interface Settings {
 	unit: 'kg' | 'lb'; accent: (typeof ACCENTS)[number]
 	restTimerEnabled: boolean; restSeconds: number; progressionEnabled: boolean; repRangeMin: number; repRangeMax: number
-	plateCalculatorEnabled: boolean; barWeight: number; availablePlates: number[]; tutorialDone: boolean; tourSeen: number; weeklyGoal: number
+	plateCalculatorEnabled: boolean; barWeight: number; availablePlates: number[]; tutorialDone: boolean; tourSeen: number; weeklyGoal: number; language: '' | 'it' | 'en'; activeProgram: string
 }
 export interface Model {
 	exercises: Ex[]
@@ -43,6 +44,7 @@ export interface Model {
 	wkById: Map<string, Wk>
 	templates: Tpl[]
 	tplById: Map<string, Tpl>
+	programs: Prg[]
 	bodyweights: Bw[]
 	settings: Settings
 	hasData: boolean

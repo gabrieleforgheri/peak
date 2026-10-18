@@ -37,7 +37,8 @@
 	let muscles = $state<Muscle[]>(existing?.muscles ?? [])
 	let view = $state<'' | View>(existing?.view ?? '')
 	let hidden = $state(existing?.hidden ?? false)
-	let custom = $state(![1, 1.25, 2, 2.5, 5, 10].includes(existing?.incrementStep ?? 2.5))
+	// creato a mano di proposito: non gli si ricorda di collegarlo al catalogo
+	let own = $state(existing?.custom ?? false)
 
 	// il catalogo: un macchinario nuovo parte dalla ricerca; uno esistente può essere (ri)collegato
 	let catalog = $state(existing?.catalog ?? '')
@@ -45,15 +46,14 @@
 	let linked = $state<CatalogEntry | null>(null)
 	$effect(() => { const c = catalog; if (!c) { linked = null; return } void loadCatalog().then((l) => { if (catalog === c) linked = l.find((e) => e.id === c) ?? null }) })
 
-	function chosen(e: CatalogEntry | null) {
+	function chosen(e: CatalogEntry | null, g: MuscleGroup) {
 		const wasNew = picking === 'new'
 		picking = null
 		catalog = e?.id ?? ''
-		if (!e) return
+		if (!e) { if (wasNew) { group = g; own = true } return }
 		if (wasNew) {
 			// precompila: il nome si può cambiare subito con uno familiare
 			name = startName.trim() || entryName(e); group = e.group; step = e.step; notes = e.notes
-			custom = ![1, 1.25, 2, 2.5, 5, 10].includes(e.step)
 		}
 	}
 
@@ -93,7 +93,7 @@
 		const uuid = saveExercise(id, {
 			name: name.trim(), muscleGroup: group, notes, incrementStep: step, isArchived: archived, glyph, photo,
 			photoOffset: Math.round(offset * 1000) / 1000, isUnilateral: unilateral, restSeconds: rest,
-			catalog, hidden, muscles, view,
+			catalog, hidden, custom: !catalog && own, muscles, view,
 		})
 		onsaved?.(uuid)
 		onclose()
@@ -107,7 +107,7 @@
 </script>
 
 {#if picking}
-	<CatalogPicker title={picking === 'new' ? t('Nuovo macchinario') : t('Collega al catalogo')} custom={picking === 'new'} onpick={chosen} onclose={() => { if (picking === 'new') onclose(); picking = null }} />
+	<CatalogPicker title={picking === 'new' ? t('Nuovo macchinario') : t('Collega al catalogo')} custom={picking === 'new'} group={picking === 'link' ? group : null} onpick={chosen} onclose={() => { if (picking === 'new') onclose(); picking = null }} />
 {:else}
 <Sheet title={id ? t('Modifica macchinario') : t('Nuovo macchinario')} {onclose}>
 	{#snippet action()}<button class="btn primary small" onclick={save} disabled={!valid}>{t('Salva')}</button>{/snippet}
@@ -185,13 +185,7 @@
 
 		<div class="field">
 			<span class="sec-title" style="margin:0 4px 6px">{t('Incremento del carico')}</span>
-			<div class="chips">
-				{#each [1, 1.25, 2, 2.5, 5, 10] as s}
-					<button class="chip" class:on={!custom && step === s} onclick={() => { step = s; custom = false }}>{s} kg</button>
-				{/each}
-				<button class="chip" class:on={custom} onclick={() => (custom = true)}>{t('Altro')}</button>
-			</div>
-			{#if custom}<div style="margin-top:8px"><Stepper bind:value={step} step={0.25} min={0.25} max={50} unit="kg" /></div>{/if}
+			<Stepper compact bind:value={step} step={0.25} min={0.25} max={50} unit="kg" />
 		</div>
 
 		<div class="field">
@@ -208,6 +202,7 @@
 
 		<label class="field"><span>{t('Note')}</span><textarea class="textarea" bind:value={notes} maxlength="2000"></textarea></label>
 
+		{#if !catalog}<label class="row between card"><span>{t('Macchinario mio, non è nel catalogo')}</span><input class="toggle" type="checkbox" bind:checked={own} /></label>{/if}
 		<label class="row between card"><span>{t('Nascondi agli amici')}</span><input class="toggle" type="checkbox" bind:checked={hidden} /></label>
 
 		{#if id}

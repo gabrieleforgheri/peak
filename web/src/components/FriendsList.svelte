@@ -40,7 +40,6 @@
 
 <div class="stack">
 	<button class="btn primary block" onclick={makeInvite} data-tour="invite"><Icon name="upload" size={20} />{t('Invita un amico')}</button>
-	<p class="small faint" style="margin:-4px 4px 0">{t('Il link vale una volta sola: chi lo apre diventa tuo amico subito.')}</p>
 
 	<div style="position:relative">
 		<input class="input" style="padding-left:40px" type="search" placeholder={t('Cerca un username')} bind:value={query} oninput={typing} autocapitalize="none" autocomplete="off" />

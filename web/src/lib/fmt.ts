@@ -60,3 +60,6 @@ export const fromDateInput = (v: string): number => {
 	const same = y === now.getFullYear() && m === now.getMonth() + 1 && d === now.getDate()
 	return same ? now.getTime() : new Date(y, m - 1, d, 12).getTime()
 }
+
+/** Nome breve del giorno della settimana, 0 = lunedì. */
+export const weekdayName = (i: number): string => intl({ weekday: 'short' }).format(new Date(2024, 0, 1 + i))

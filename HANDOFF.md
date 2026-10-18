@@ -1,3 +1,28 @@
+# Web: ME, scheda generale, icone (18 ottobre 2026, ramo feature/figure-muscoli, non committato)
+
+Solo web e server: **l'iPhone non è toccato** (da fare dopo il verde dell'utente).
+
+| Pezzo | Dove |
+|---|---|
+| Tab **Me** (dopo Macchinari): profilo, panoramica, medaglie, tutti i grafici; la Home resta veloce (medaglie a carosello `Medal.svelte`) | `web/src/pages/Me.svelte`, `Home.svelte`, `lib/medalinfo.ts` (medaglie a una data: «cosa hai guadagnato oggi») |
+| Riepilogo: la tua settimana (giorni, obiettivo, settimane di fila) e medaglie salite | `Summary.svelte` |
+| Assi veri su attività e volume settimanale | `Heatmap.svelte`, `WeekBars.svelte` |
+| **Scheda generale** (kind `program`) che contiene i **giorni** (i vecchi `template`): `program` e `weekday` sul giorno, `useDays` sulla scheda, impostazione `activeProgram`; i giorni di prima finiscono in «La mia scheda» (id fisso `DEFAULT_PROGRAM`, una volta sola dopo la sync) | `common/docs.ts`, `server/backup.ts` (`programs`, `programID`, `weekday`), `lib/actions.ts`, `lib/derive.ts` (`nextDay`), `Workouts.svelte`, `ProgramEditor.svelte`, `TemplateEditor.svelte` |
+| Icona del giorno: automatica dal nome (`common/template-icon.ts`) o scelta (muscoli, corpo, attrezzi, generali) | `TemplateIcon.svelte`, `IconPicker.svelte`, `solid-icons.ts` |
+| Macchinario creato a mano di proposito (`custom`) non entra nel banner «fuori catalogo» | `Maxes.svelte`, `ExerciseEditor.svelte` |
+| Lingua in Impostazioni (impostazione `language`, sincronizzata) | `i18n.ts`, `Settings.svelte`, `App.svelte` |
+| Nuovo macchinario: prima il gruppo, poi la ricerca, poi a mano | `CatalogPicker.svelte` |
+| Incremento del carico: − / + da 0,25 | `Stepper.svelte` (`compact`) |
+
+Da sapere:
+- **Licenze icone**: Lucide (ISC) in `Icon.svelte`, game-icons.net (**CC BY 3.0, serve citare**) in `solid-icons.ts`; i testi in `web/src/components/*LICENSE.txt` e riga nelle Impostazioni.
+- **Ordine di rilascio**: prima il server (nuovo kind `program`, nuovi campi). Un iPhone vecchio riceve un kind che non conosce: da provare prima di pubblicare. `KEEP_IF_ABSENT` protegge `program`, `weekday`, `icon`, `custom`.
+- Nei testi italiani «scheda» = la generale, «giorno» = il vecchio piano; in inglese Program / Plan.
+- Corretto un `XX` che compariva nel selettore dei gruppi (`FocusPicker.svelte`).
+- Verifica: `npm test` 102; `svelte-check` 0; `check-i18n` ok; `vite build`; prova nel browser con dati finti.
+
+---
+
 # Figure dei muscoli e Home (18 ottobre 2026, ramo feature/figure-muscoli)
 
 Stato da leggere per primo. Non è ancora su main né pubblicato.

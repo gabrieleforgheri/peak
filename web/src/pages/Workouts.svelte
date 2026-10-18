@@ -1,18 +1,25 @@
 <script lang="ts">
 	import type { MuscleGroup } from '@common/docs.ts'
-	import { deleteWorkout } from '../lib/actions.ts'
-	import { GROUP_NAMES, V, duration, relDay } from '../lib/fmt.ts'
+	import { deleteWorkout, setActiveProgram } from '../lib/actions.ts'
+	import { activeProgram, daysOf } from '../lib/derive.ts'
+	import { GROUP_NAMES, V, duration, relDay, weekdayName } from '../lib/fmt.ts'
 	import { t, tn } from '../lib/i18n.ts'
 	import { go } from '../lib/router.svelte.ts'
 	import { getModel } from '../lib/store.svelte.ts'
-	import type { Tpl, Wk } from '../lib/types.ts'
+	import type { Prg, Tpl, Wk } from '../lib/types.ts'
 	import FocusPicker from '../components/FocusPicker.svelte'
 	import Icon from '../components/Icon.svelte'
+	import TemplateIconView from '../components/TemplateIcon.svelte'
 	import Sheet from '../components/Sheet.svelte'
+	import ProgramEditor from '../components/ProgramEditor.svelte'
 	import TemplateEditor from '../components/TemplateEditor.svelte'
 
 	const m = $derived(getModel())
 	const active = $derived(m.workouts.find((w) => w.isActive))
+	const prog = $derived(activeProgram(m))
+	// con giorni fissi si elencano in ordine di settimana
+	const days = $derived.by(() => { const d = daysOf(m, prog); return prog?.useDays ? [...d].sort((a, b) => (a.weekday < 0 ? 9 : a.weekday) - (b.weekday < 0 ? 9 : b.weekday)) : d })
+	let editingProg = $state<Prg | 'new' | null>(null)
 	const history = $derived(m.workouts.filter((w) => !w.isActive))
 	let starting = $state(false)
 	let menu = $state<Wk | null>(null)
@@ -51,19 +58,28 @@
 		</div>
 	{/if}
 
-	<div class="row between"><div class="sec-title">{t('Schede')}</div><button class="link small" style="margin:20px 4px 8px" onclick={() => (editing = 'new')} data-tour="new-template">{t('Nuova scheda')}</button></div>
-	{#if m.templates.length === 0}
-		<div class="empty">{t('Una scheda è una lista di esercizi con serie e ripetizioni: la scegli quando inizi e li trovi già pronti.')}</div>
+	<div class="row between"><div class="sec-title">{t('Scheda')}</div><button class="link small" style="margin:20px 4px 8px" onclick={() => (editingProg = 'new')}>{t('Nuova scheda')}</button></div>
+	{#if m.programs.length > 1}
+		<div class="chips" style="margin-bottom:10px">
+			{#each m.programs as p (p.uuid)}<button class="chip" class:on={p.uuid === prog?.uuid} onclick={() => setActiveProgram(p.uuid)}>{p.name}</button>{/each}
+		</div>
+	{/if}
+	{#if prog}<div class="row between" style="margin:0 4px 8px"><b class="ellipsis">{prog.name}</b><button class="link small" onclick={() => (editingProg = prog)}>{t('Modifica scheda')}</button></div>{/if}
+	{#if days.length === 0}
+		<div class="empty">{t('Un giorno è una lista di esercizi con serie e ripetizioni: lo scegli quando inizi e li trovi già pronti.')}</div>
 	{:else}
 		<div class="card list">
-			{#each m.templates as tpl (tpl.uuid)}
+			{#each days as tpl (tpl.uuid)}
 				<button class="item" onclick={() => (editing = tpl)}>
+					<span class="ti"><TemplateIconView icon={tpl.icon} name={tpl.name} size={22} /></span>
 					<div class="grow"><b class="ellipsis" style="display:block">{tpl.name}</b><span class="small muted">{tn(tpl.items.length, '1 esercizio', '{0} esercizi')}</span></div>
+					{#if prog?.useDays}{#if tpl.weekday >= 0}<span class="badge accent">{weekdayName(tpl.weekday)}</span>{:else}<span class="small faint">{t('Nessuno')}</span>{/if}{/if}
 					<Icon name="right" size={20} />
 				</button>
 			{/each}
 		</div>
 	{/if}
+	<button class="btn block" style="margin-top:10px" onclick={() => (editing = 'new')} data-tour="new-template"><Icon name="plus" size={20} />{t('Nuovo giorno')}</button>
 
 	<div class="sec-title">{t('Storico')}</div>
 	{#if history.length === 0}
@@ -89,6 +105,7 @@
 	{/if}
 </main>
 
+{#if editingProg}<ProgramEditor prog={editingProg === 'new' ? null : editingProg} onclose={() => (editingProg = null)} onsaved={(id) => setActiveProgram(id)} />{/if}
 {#if editing}<TemplateEditor tpl={editing === 'new' ? null : editing} onclose={() => (editing = null)} />{/if}
 {#if starting}<FocusPicker onclose={() => (starting = false)} onstart={(id) => go(`allenamento/${id}`)} />{/if}
 {#if menu}
@@ -99,3 +116,7 @@
 		</div>
 	</Sheet>
 {/if}
+
+<style>
+	.ti { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: rgba(var(--accent-rgb), .16); color: var(--accent); flex: none; }
+</style>

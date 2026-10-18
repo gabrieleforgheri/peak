@@ -7,7 +7,7 @@ const item = { exercise: U(1), sets: 4, repsMin: 8, repsMax: 10, weight: 60 }
 
 test('scheda: nome obbligatorio, righe ripulite, uuid in maiuscolo', () => {
   const ok = parseDoc('template', U(5), { name: ' Push 1 ', items: [{ ...item, exercise: U(1).toLowerCase(), weight: undefined }], sortIndex: 2, createdAt: '2026-10-01T08:00:00Z' })
-  assert.deepEqual(ok, { data: { name: 'Push 1', items: [{ ...item, weight: null }], sortIndex: 2, createdAt: '2026-10-01T08:00:00Z', hidden: false } })
+  assert.deepEqual(ok, { data: { name: 'Push 1', items: [{ ...item, weight: null }], sortIndex: 2, createdAt: '2026-10-01T08:00:00Z', hidden: false, icon: '', program: '', weekday: -1 } })
   assert.deepEqual(parseDoc('template', U(5), { name: '  ', items: [], createdAt: '2026-10-01T08:00:00Z' }), { error: 'name' })
   assert.deepEqual(parseDoc('template', U(5), { name: 'x', items: 'no', createdAt: '2026-10-01T08:00:00Z' }), { error: 'items' })
 })
@@ -37,8 +37,8 @@ test('impostazioni tolte: restano in LEGACY_SETTINGS e non fra quelle vere', () 
 test('upgradeDoc: un allenamento salvato prima delle schede prende scheda vuota e piano vuoto', () => {
   const old = { date: '2026-10-01T08:00:00Z', endedAt: null, note: '', name: '', focus: '' }
   assert.deepEqual(upgradeDoc('workout', old), { ...old, template: '', plan: [] })
-  assert.deepEqual(upgradeDoc('exercise', old), { ...old, catalog: '', hidden: false, muscles: [], view: '' })
-  assert.deepEqual(upgradeDoc('template', old), { ...old, hidden: false })
+  assert.deepEqual(upgradeDoc('exercise', old), { ...old, catalog: '', hidden: false, custom: false, muscles: [], view: '' })
+  assert.deepEqual(upgradeDoc('template', old), { ...old, hidden: false, icon: '', program: '', weekday: -1 })
   assert.deepEqual(upgradeDoc('bodyweight', old), old)
 })
 

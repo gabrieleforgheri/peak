@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { weekStart } from '@common/stats.ts'
 	import { dateShort } from '../lib/fmt.ts'
-	import { t } from '../lib/i18n.ts'
+	import { locale, t } from '../lib/i18n.ts'
 
 	/** Una cella per giorno, le ultime `weeks` settimane (colonne) da lunedì a domenica (righe): più serie, più colore. */
 	let { sets, weeks = 14 }: { sets: Map<string, number>; weeks?: number } = $props()
@@ -15,20 +15,36 @@
 			return { d, n: d > today ? -1 : (sets.get(key(d)) ?? 0) }
 		}))
 	})
+	// le righe sono i giorni (lunedì in alto), le colonne le settimane: lettera del giorno a sinistra, mese sopra
+	const dayNames = Array.from({ length: 7 }, (_, i) => new Intl.DateTimeFormat(locale, { weekday: 'narrow' }).format(new Date(2024, 0, 1 + i)))
+	const monthOf = new Intl.DateTimeFormat(locale, { month: 'short' })
+	const months = $derived(cells.map((col, c) => (c === 0 || col[0]!.d.getMonth() !== cells[c - 1]![0]!.d.getMonth() ? monthOf.format(col[0]!.d) : '')))
 	const level = (n: number) => (n <= 0 ? 0 : n < 8 ? 1 : n < 16 ? 2 : n < 24 ? 3 : 4)
 </script>
 
-<div class="grid" style="--cols:{weeks}" role="img" aria-label={t('Giorni in cui ti sei allenato')}>
-	{#each cells as col}
-		<div class="col">
-			{#each col as c}
-				<div class="cell" class:future={c.n < 0} data-l={level(c.n)} title="{dateShort(c.d.getTime())}{c.n > 0 ? ' · ' + c.n : ''}"></div>
+<div class="map" role="img" aria-label={t('Giorni in cui ti sei allenato')}>
+	<div class="days">{#each dayNames as d}<span>{d}</span>{/each}</div>
+	<div class="main">
+		<div class="mo" style="--cols:{weeks}">{#each months as m}<span>{m}</span>{/each}</div>
+		<div class="grid" style="--cols:{weeks}">
+			{#each cells as col}
+				<div class="col">
+					{#each col as c}
+						<div class="cell" class:future={c.n < 0} data-l={level(c.n)} title="{dateShort(c.d.getTime())}{c.n > 0 ? ' · ' + c.n : ''}"></div>
+					{/each}
+				</div>
 			{/each}
 		</div>
-	{/each}
+	</div>
 </div>
 
 <style>
+	.map { display: flex; gap: 6px; }
+	.main { flex: 1; min-width: 0; }
+	.days { display: grid; grid-template-rows: repeat(7, 1fr); gap: 4px; margin-top: 16px; font-size: 10px; color: var(--text-3); width: 10px; }
+	.days span { display: flex; align-items: center; justify-content: center; }
+	.mo { display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: 4px; height: 12px; margin-bottom: 4px; font-size: 10px; color: var(--text-3); text-transform: capitalize; }
+	.mo span { white-space: nowrap; overflow: visible; }
 	.grid { display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: 4px; }
 	.col { display: grid; grid-template-rows: repeat(7, 1fr); gap: 4px; }
 	.cell { aspect-ratio: 1; border-radius: 4px; background: rgba(255,255,255,.06); }

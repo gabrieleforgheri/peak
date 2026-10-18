@@ -1,12 +1,16 @@
 <script lang="ts">
-	import type { TemplateItem } from '@common/docs.ts'
+	import { MUSCLE_GROUPS, type TemplateIcon, type TemplateItem } from '@common/docs.ts'
+	import { suggestTemplateIcon } from '@common/template-icon.ts'
 	import { deleteTemplate, saveTemplate } from '../lib/actions.ts'
-	import { fromUnit, toUnit, unit } from '../lib/fmt.ts'
+	import { activeProgram } from '../lib/derive.ts'
+	import { fromUnit, toUnit, unit, weekdayName } from '../lib/fmt.ts'
 	import { t } from '../lib/i18n.ts'
 	import { getModel } from '../lib/store.svelte.ts'
 	import type { Tpl } from '../lib/types.ts'
 	import ExercisePicker from './ExercisePicker.svelte'
 	import Icon from './Icon.svelte'
+	import IconPicker from './IconPicker.svelte'
+	import TemplateIconView from './TemplateIcon.svelte'
 	import Sheet from './Sheet.svelte'
 	import Thumb from './Thumb.svelte'
 	import FigThumb from './FigThumb.svelte'
@@ -24,6 +28,14 @@
 	let rows = $state<Row[]>((source?.items ?? []).filter((i) => m.exById.has(i.exercise)).map(toRow))
 	let picking = $state(false)
 	let hidden = $state(tpl?.hidden ?? false)
+	let icon = $state<'' | TemplateIcon>(tpl?.icon ?? '')
+	let allIcons = $state(false)
+	let program = $state(tpl?.program ?? activeProgram(m)?.uuid ?? '')
+	let weekday = $state(tpl?.weekday ?? -1)
+	const prog = $derived(m.programs.find((p) => p.uuid === program))
+	// la prima casella è l'icona che dice il nome (finché non ne scegli un'altra); poi i muscoli e qualche icona da palestra
+	const auto = $derived(suggestTemplateIcon(name) || 'dumbbell')
+	const QUICK: TemplateIcon[] = ['flame', 'bolt', 'trophy', 'timer', 'heart']
 
 	const int = (v: number | null, max: number) => Math.min(max, Math.max(0, Math.round(v ?? 0)))
 
@@ -43,23 +55,53 @@
 		})
 	}
 
+	// serie, ripetizioni e peso tornano vuoti: restano gli esercizi (utile quando la scheda nasce da un allenamento)
+	const reset = () => { rows = rows.map((r) => ({ ...r, sets: null, repsMin: null, repsMax: null, weight: null })) }
+
 	function save() {
 		if (!name.trim()) return
-		const id = saveTemplate(tpl?.uuid ?? null, name, items(), hidden)
+		const id = saveTemplate(tpl?.uuid ?? null, name, items(), hidden, icon, { program, weekday: prog?.useDays ? weekday : -1 })
 		onsaved?.(id)
 		onclose()
 	}
 	function remove() {
-		if (!tpl || !confirm(t('Eliminare questa scheda? Gli allenamenti già fatti restano.'))) return
+		if (!tpl || !confirm(t('Eliminare questo giorno? Gli allenamenti già fatti restano.'))) return
 		deleteTemplate(tpl.uuid)
 		onclose()
 	}
 </script>
 
-<Sheet title={tpl ? t('Scheda') : t('Nuova scheda')} {onclose}>
+<Sheet title={tpl ? t('Giorno') : t('Nuovo giorno')} {onclose}>
 	{#snippet action()}<button class="btn primary small" onclick={save} disabled={!name.trim()}>{t('Salva')}</button>{/snippet}
 	<div class="stack">
 		<label class="field"><span>{t('Nome')}</span><input class="input" bind:value={name} placeholder={t('es. Push 1')} maxlength="80" /></label>
+
+		{#if m.programs.length > 1}
+			<div class="field"><span class="sec-title" style="margin:0 4px 6px">{t('Scheda')}</span>
+				<div class="chips">{#each m.programs as p (p.uuid)}<button class="chip" class:on={program === p.uuid} onclick={() => (program = p.uuid)}>{p.name}</button>{/each}</div></div>
+		{/if}
+		{#if prog?.useDays}
+			<div class="field"><span class="sec-title" style="margin:0 4px 6px">{t('Giorno della settimana')}</span>
+				<div class="chips">
+					<button class="chip" class:on={weekday === -1} onclick={() => (weekday = -1)}>{t('Nessuno')}</button>
+					{#each [0, 1, 2, 3, 4, 5, 6] as d}<button class="chip" class:on={weekday === d} onclick={() => (weekday = d)}>{weekdayName(d)}</button>{/each}
+				</div></div>
+		{/if}
+		<div class="field">
+			<span class="sec-title" style="margin:0 4px 6px">{t('Icona')}</span>
+			<div class="chips">
+				<button class="chip" class:on={icon === ''} onclick={() => (icon = '')} style="padding:0 12px;gap:6px;display:inline-flex;align-items:center"><TemplateIconView icon="" {name} size={22} />{t('Automatica')}</button>
+				{#each MUSCLE_GROUPS as g}
+					<button class="chip" class:on={icon === `muscle:${g}`} onclick={() => (icon = `muscle:${g}`)} aria-label={g} style="padding:0 8px"><TemplateIconView icon={`muscle:${g}`} size={24} /></button>
+				{/each}
+				{#each QUICK as ic}
+					<button class="chip" class:on={icon === ic} onclick={() => (icon = ic)} aria-label={ic} style="padding:0 10px"><Icon name={ic} size={20} /></button>
+				{/each}
+				<button class="chip" onclick={() => (allIcons = true)}>{t('Tutte')}</button>
+			</div>
+		</div>
+
+		{#if rows.length}<button class="btn small" style="align-self:flex-start" onclick={reset}>{t('Azzera i campi')}</button>{/if}
 
 		{#each rows as r, i (r.exercise)}
 			{@const ex = m.exById.get(r.exercise)}
@@ -84,8 +126,9 @@
 
 		<button class="btn block" onclick={() => (picking = true)}><Icon name="plus" size={20} />{t('Aggiungi esercizio')}</button>
 		<label class="row between card"><span>{t('Nascondi agli amici')}</span><input class="toggle" type="checkbox" bind:checked={hidden} /></label>
-		{#if tpl}<button class="btn danger block" onclick={remove}><Icon name="trash" size={18} />{t('Elimina scheda')}</button>{/if}
+		{#if tpl}<button class="btn danger block" onclick={remove}><Icon name="trash" size={18} />{t('Elimina giorno')}</button>{/if}
 	</div>
 </Sheet>
 
+{#if allIcons}<IconPicker current={icon} onpick={(i) => (icon = i)} onclose={() => (allIcons = false)} />{/if}
 {#if picking}<ExercisePicker focus={new Set()} onclose={() => (picking = false)} onpick={(ex) => { if (!rows.some((x) => x.exercise === ex.uuid)) rows = [...rows, { exercise: ex.uuid, sets: null, repsMin: null, repsMax: null, weight: null }] }} />{/if}

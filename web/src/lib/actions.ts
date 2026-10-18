@@ -1,10 +1,11 @@
 // Le operazioni dell'utente sui documenti. Niente logica di record qui: i massimali automatici e i PR si
 // derivano dalle serie (common/records.ts), quindi cancellare o modificare una serie basta a tenerli giusti.
 
-import { isoSec, newUuid, MUSCLE_GROUPS, type DocDataMap, type ExerciseDoc, type Kind, type MuscleGroup, type SetDoc, type TemplateItem, type WorkoutDoc } from '@common/docs.ts'
+import { isoSec, newUuid, MUSCLE_GROUPS, type DocDataMap, type ExerciseDoc, type Kind, type MuscleGroup, type SetDoc, type TemplateDoc, type TemplateItem, type WorkoutDoc } from '@common/docs.ts'
 import { settingsForUnitChange, type Unit } from '@common/domain.ts'
 import { addItem, differsFromTemplate, moveItem, removeItem, replaceItem, sessionItems, type PlanSet } from '@common/plan.ts'
 import type { AnyRecord } from '@common/records.ts'
+import { activeProgram } from './derive.ts'
 import { batch, getModel, put, remove, rows } from './store.svelte.ts'
 import { norm } from '@common/catalog.ts'
 import { entryName, loadCatalog } from './catalog.ts'
@@ -100,15 +101,50 @@ export function updateTemplateFromWorkout(tpl: Tpl, wk: Wk) {
 	saveTemplate(tpl.uuid, tpl.name, sessionItems(wk.plan, planSets(wk), exists, 'targets'))
 }
 
-export function saveTemplate(id: string | null, name: string, items: TemplateItem[], hidden?: boolean): string {
+export function saveTemplate(id: string | null, name: string, items: TemplateItem[], hidden?: boolean, icon?: TemplateDoc['icon'], where?: { program: string; weekday: number }): string {
 	const uuid = id ?? newUuid()
 	const prev = getModel().tplById.get(uuid)
 	const top = getModel().templates.reduce((m, x) => Math.max(m, x.sortIndex), -1)
-	put('template', uuid, { name: name.trim(), items, sortIndex: prev?.sortIndex ?? top + 1, createdAt: prev?.createdAt ?? now(), hidden: hidden ?? prev?.hidden ?? false })
+	put('template', uuid, { name: name.trim(), items, sortIndex: prev?.sortIndex ?? top + 1, createdAt: prev?.createdAt ?? now(), hidden: hidden ?? prev?.hidden ?? false, icon: icon ?? prev?.icon ?? '',
+		// un giorno nuovo finisce nella scheda in uso
+		program: where?.program ?? prev?.program ?? activeProgram(getModel())?.uuid ?? '', weekday: where?.weekday ?? prev?.weekday ?? -1 })
 	return uuid
 }
 
 export const deleteTemplate = (id: string) => remove('template', id)
+
+// ---- schede generali (raccolgono i giorni) ---------------------------------------------------------------------------
+
+/** Lo stesso id su ogni dispositivo: due telefoni che creano «La mia scheda» insieme non ne fanno due. */
+export const DEFAULT_PROGRAM = '00000000-0000-4000-8000-5045414B0001'
+
+export function saveProgram(id: string | null, name: string, useDays: boolean): string {
+	const uuid = id ?? newUuid()
+	const prev = getModel().programs.find((p) => p.uuid === uuid)
+	const top = getModel().programs.reduce((m, p) => Math.max(m, p.sortIndex), -1)
+	put('program', uuid, { name: name.trim(), sortIndex: prev?.sortIndex ?? top + 1, createdAt: prev?.createdAt ?? now(), useDays })
+	return uuid
+}
+
+/** Elimina la scheda e i suoi giorni. */
+export function deleteProgram(id: string) {
+	batch(() => {
+		for (const t of getModel().templates) if (t.program === id) remove('template', t.uuid)
+		remove('program', id)
+	})
+}
+
+export const setActiveProgram = (id: string) => setSetting('activeProgram', id)
+
+/** I giorni di prima delle schede generali finiscono in «La mia scheda». Una volta sola, e solo se ce ne sono. */
+export function adoptLooseTemplates(name: string) {
+	const loose = getModel().templates.filter((t) => !t.program)
+	if (!loose.length) return
+	batch(() => {
+		if (!getModel().programs.some((p) => p.uuid === DEFAULT_PROGRAM)) put('program', DEFAULT_PROGRAM, { name, sortIndex: 0, createdAt: now(), useDays: false })
+		for (const t of loose) put('template', t.uuid, { name: t.name, items: t.items, sortIndex: t.sortIndex, createdAt: t.createdAt, hidden: t.hidden, icon: t.icon, program: DEFAULT_PROGRAM, weekday: -1 })
+	})
+}
 
 /**
  * La scheda di un amico, copiata fra le tue: ogni riga si abbina a un tuo esercizio con lo stesso id del catalogo (o, se
@@ -129,7 +165,7 @@ export async function copyTemplate(src: { name: string; rows: { catalog: string;
 				put('exercise', uuid, {
 					name: entry ? entryName(entry) : r.name, muscleGroup: entry?.group ?? 'petto', notes: entry?.notes ?? '', incrementStep: entry?.step ?? 2.5,
 					sortIndex: ++top, isArchived: false, createdAt: now(), glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0,
-					catalog: entry?.id ?? '', hidden: false, muscles: [], view: '',
+					catalog: entry?.id ?? '', hidden: false, custom: !entry, muscles: [], view: '',
 				})
 				ex = { uuid, catalog: entry?.id ?? '', name: r.name } as Ex
 				mine.push(ex)

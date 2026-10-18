@@ -11,7 +11,6 @@
 	import Icon from '../components/Icon.svelte'
 	import Sheet from '../components/Sheet.svelte'
 	import Thumb from '../components/Thumb.svelte'
-	import FigThumb from '../components/FigThumb.svelte'
 
 	const m = $derived(getModel())
 	let query = $state('')
@@ -23,7 +22,8 @@
 	const groups = $derived(MUSCLE_GROUPS.map((g) => ({ g, items: visible.filter((e) => e.muscleGroup === g) })).filter((x) => x.items.length))
 	const active = $derived(m.exercises.filter((e) => !e.isArchived))
 	const withMax = $derived(active.filter((e) => e.best).length)
-	const unlinked = $derived(active.filter((e) => !e.catalog).length)
+	// fuori catalogo e non creati a mano di proposito: da collegare
+	const unlinked = $derived(active.filter((e) => !e.catalog && !e.custom))
 
 	// tenere premuto (o tasto destro) apre le azioni, al posto dello swipe di iOS
 	let pressTimer: ReturnType<typeof setTimeout> | undefined
@@ -50,8 +50,9 @@
 		<button class="icon-btn" onclick={() => (creating = true)} aria-label={t('Nuovo macchinario')} data-tour="add-machine"><Icon name="plus" /></button>
 	</div>
 
-	{#if unlinked > 0}
-		<div class="banner"><Icon name="trophy" /><div class="grow"><b>{tn(unlinked, '1 macchinario fuori catalogo', '{0} macchinari fuori catalogo')}</b>{t('Aprine uno → Modifica → Collega: così entra nelle classifiche con gli amici.')}</div></div>
+	{#if unlinked.length > 0}
+		<div class="banner" style="align-items:flex-start"><Icon name="trophy" /><div class="grow"><b>{tn(unlinked.length, '1 macchinario fuori catalogo', '{0} macchinari fuori catalogo')}</b>{t('Aprine uno → Modifica → Collega: così entra nelle classifiche con gli amici.')}
+			<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">{#each unlinked as u (u.uuid)}<button class="chip" onclick={() => go(`macchinari/${u.uuid}`)}>{u.name}</button>{/each}</div></div></div>
 	{/if}
 	<div style="position:relative;margin-bottom:10px">
 		<input class="input" style="padding-left:40px" type="search" placeholder={t('Cerca macchinario')} bind:value={query} />
@@ -73,7 +74,7 @@
 				{#each items as ex (ex.uuid)}
 					<button class="item" onclick={() => open(ex)} onpointerdown={(e) => press(e, ex)} onpointerup={release} onpointerleave={release} onpointercancel={release}
 						oncontextmenu={(e) => { e.preventDefault(); menu = ex }}>
-						<Thumb {ex} />{#if ex.figure.muscles.length}<FigThumb muscles={ex.figure.muscles} view={ex.figure.view} group={ex.muscleGroup} />{/if}
+						<Thumb {ex} />
 						<div class="grow">
 							<div class="ellipsis" style="font-weight:600">{ex.name}</div>
 							<div class="small muted ellipsis">{sub(ex)}</div>
