@@ -31,6 +31,10 @@
 	--spalle: rgb(252, 191, 79);
 	--braccia: rgb(199, 138, 250);
 	--core: rgb(102, 222, 204);
+	/* curve del movimento: entrate e uscite, spostamenti sullo schermo, fogli che salgono */
+	--ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+	--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+	--ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 	color-scheme: dark;
 }
 html[data-accent='ember'] { --accent: rgb(255, 148, 61); --accent-rgb: 255, 148, 61; }
@@ -66,7 +70,7 @@ h1, h2, h3, p { margin: 0; }
 .bar { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-bottom: 8px; }
 .bar h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; flex: 1; min-width: 0; }
 .bar h1.small { font-size: 20px; text-align: center; font-weight: 700; }
-.icon-btn { width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--card-strong); color: var(--text); flex: none; }
+.icon-btn { width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--card-strong); color: var(--text); flex: none; transition: transform 120ms var(--ease-out); }
 .icon-btn:active { transform: scale(0.94); }
 .icon-btn svg { width: 20px; height: 20px; }
 
@@ -79,7 +83,8 @@ h1, h2, h3, p { margin: 0; }
 	backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4);
 }
 .tabbar-in { position: relative; display: flex; width: 100%; max-width: 640px; }
-.tab { flex: 1; min-width: 0; height: var(--tabbar); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-3); border: 0; background: none; touch-action: manipulation; }
+.tab { flex: 1; min-width: 0; height: var(--tabbar); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-3); border: 0; background: none; touch-action: manipulation; transition: transform 120ms var(--ease-out); }
+.tab:active { transform: scale(0.97); }
 .tab svg { width: 24px; height: 24px; flex: none; }
 .tab.on { color: var(--accent); }
 .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; border-radius: 14px; }
@@ -111,7 +116,7 @@ h1, h2, h3, p { margin: 0; }
 .ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* bottoni e campi */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px; border: 0; border-radius: var(--r-s); background: var(--card-strong); color: var(--text); font-weight: 700; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px; border: 0; border-radius: var(--r-s); background: var(--card-strong); color: var(--text); font-weight: 700; transition: transform 120ms var(--ease-out); }
 .btn:active { transform: scale(0.98); }
 .btn.primary { background: var(--accent); color: var(--on-accent); }
 .btn.danger { background: rgba(255, 107, 107, 0.16); color: var(--neg); }
@@ -131,7 +136,8 @@ label.field > span { display: block; font-size: 12px; font-weight: 700; letter-s
 
 .chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 0; margin: 0 calc(var(--pad) * -1); padding-inline: var(--pad); }
 .chips::-webkit-scrollbar { display: none; }
-.chip { flex: none; min-height: 34px; padding: 0 14px; border-radius: 17px; border: 1px solid var(--stroke); background: var(--card); color: var(--text-2); font-weight: 600; font-size: 14px; }
+.chip { flex: none; min-height: 34px; padding: 0 14px; border-radius: 17px; border: 1px solid var(--stroke); background: var(--card); color: var(--text-2); font-weight: 600; font-size: 14px; transition: transform 120ms var(--ease-out); }
+.chip:active { transform: scale(0.97); }
 .chip.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .seg { display: flex; padding: 3px; border-radius: 12px; background: var(--card); border: 1px solid var(--stroke); }
 .seg button { flex: 1; min-height: 34px; border: 0; border-radius: 9px; background: none; color: var(--text-2); font-weight: 600; font-size: 14px; }
@@ -157,16 +163,18 @@ label.field > span { display: block; font-size: 12px; font-weight: 700; letter-s
 .thumb.lg { width: 76px; height: 76px; border-radius: 18px; }
 
 /* fogli */
-.backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, 0.55); display: flex; align-items: flex-end; justify-content: center; animation: fade 0.2s; }
+.backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, 0.55); display: flex; align-items: flex-end; justify-content: center; animation: fade 0.2s var(--ease-out); }
 .sheet {
 	width: 100%; max-width: 640px; max-height: 92dvh; overflow-y: auto; background: #12151f; border: 1px solid var(--stroke-strong); border-bottom: 0;
-	border-radius: 28px 28px 0 0; padding: 8px var(--pad) calc(env(safe-area-inset-bottom) + 20px); animation: up 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+	border-radius: 28px 28px 0 0; padding: 8px var(--pad) calc(env(safe-area-inset-bottom) + 20px); animation: up 0.28s var(--ease-drawer);
 }
 .sheet-head { display: flex; align-items: center; gap: 10px; padding: 8px 0 12px; position: sticky; top: 0; background: #12151f; z-index: 1; }
 .sheet-head h2 { flex: 1; text-align: center; font-size: 18px; }
 .grab { width: 38px; height: 5px; border-radius: 3px; background: var(--stroke-strong); margin: 4px auto 0; }
 @keyframes up { from { transform: translateY(40px); opacity: 0; } }
 @keyframes fade { from { opacity: 0; } }
+/* festa: comparsa «pop» (usata da riga della serie nuova; in JS lo stesso movimento è fx.pop) */
+@keyframes pop { 0% { transform: scale(0.7); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
 
 /* avvisi */
 .banner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--r-s); background: rgba(var(--accent-rgb), 0.14); border: 1px solid rgba(var(--accent-rgb), 0.35); margin-bottom: 12px; font-size: 14px; }
@@ -175,7 +183,7 @@ label.field > span { display: block; font-size: 12px; font-weight: 700; letter-s
 
 /* contatori, grafici */
 .stepper { display: flex; align-items: center; gap: 10px; }
-.stepper button { width: 52px; height: 52px; border-radius: 16px; border: 0; background: var(--card-strong); font-size: 26px; font-weight: 600; flex: none; }
+.stepper button { width: 52px; height: 52px; border-radius: 16px; border: 0; background: var(--card-strong); font-size: 26px; font-weight: 600; flex: none; transition: transform 120ms var(--ease-out); }
 .stepper button:active { transform: scale(0.94); }
 .stepper.compact { gap: 6px; justify-content: flex-start; }
 .stepper.compact button { width: 36px; height: 36px; border-radius: 12px; font-size: 20px; }
@@ -198,7 +206,7 @@ svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
 .rest { position: sticky; top: calc(env(safe-area-inset-top) + 6px); z-index: 10; margin-bottom: 12px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
-.toast { position: fixed; left: calc(50% + var(--rail) / 2); translate: -50% 0; bottom: calc(var(--tabh) + 20px); z-index: 60; padding: 12px 20px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-weight: 700; box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: up .25s cubic-bezier(.22,1,.36,1); max-width: calc(100vw - 32px); }
+.toast { position: fixed; left: calc(50% + var(--rail) / 2); translate: -50% 0; bottom: calc(var(--tabh) + 20px); z-index: 60; padding: 12px 20px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-weight: 700; box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: up .25s var(--ease-out); max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 8px; }
 
 /* ---- schermi larghi: portatile, iPad in orizzontale (>= 900px). Sotto, il telefono resta com'è ---- */
 /* i contenitori di blocchi (titolo + contenuto che devono restare insieme) sul telefono non cambiano nulla */
