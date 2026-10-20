@@ -73,13 +73,12 @@ struct WorkoutSessionView: View {
                 ForEach(list) { item in
                     if let exercise = known[item.exercise] {
                     let sets = workout.sets(for: exercise)
-                    let last = exercise.setList.max { $0.createdAt < $1.createdAt }
                     ExerciseSessionCard(
                         exercise: exercise,
                         goal: Plan.targetLine(
                             item,
                             done: sets.filter { !$0.isWarmup }.count,
-                            lastKilograms: last?.weight,
+                            lastKilograms: nil,
                             settings: settings
                         ),
                         previousSets: previousWorkingSets(for: exercise),

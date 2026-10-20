@@ -140,7 +140,7 @@
 		{#each items as it (it.exercise)}
 			{@const ex = m.exById.get(it.exercise)!}
 			{@const sets = wk.sets.filter((s) => s.exercise === ex.uuid)}
-			{@const goal = targetLine(it, sets.filter((s) => !s.isWarmup).length, ex.sets[0]?.weight ?? null)}
+			{@const goal = targetLine(it, sets.filter((s) => !s.isWarmup).length, null)}
 			{@const prevSets = previousWorkingSets(ex, wk)}
 			<div class="card" style={current === ex.uuid && wk.isActive ? 'border-color:rgba(var(--accent-rgb),.45)' : ''}>
 				<!-- Titolo dell'esercizio sopra l'immagine del corpo e del macchinario -->
