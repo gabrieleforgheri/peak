@@ -15,6 +15,8 @@ struct BodyWeightCard: View {
     @State private var importing = false
     @State private var importMessage: String?
 
+    @State private var range: ChartRange = .all
+
     private var latest: BodyWeightEntry? { entries.first }
 
     /// Variazione rispetto alla pesata di circa un mese prima.
@@ -25,11 +27,22 @@ struct BodyWeightCard: View {
         return latest.weight - previous.weight
     }
 
+    private var availableRanges: [ChartRange] {
+        guard let earliest = entries.map(\.date).min() else { return [.all] }
+        let spanDays = max(0, Date().timeIntervalSince(earliest) / 86_400)
+        return ChartRange.available(forSpanDays: spanDays)
+    }
+
+    private var activeRange: ChartRange {
+        availableRanges.contains(range) ? range : (availableRanges.first ?? .all)
+    }
+
     /// Solo le pesate vere, una per passo: i giorni in cui non ti sei pesato non
     /// devono occupare spazio sull'asse.
     private var points: [(index: Int, entry: BodyWeightEntry)] {
-        entries
-            .filter { $0.date >= Date().addingTimeInterval(-180 * 86_400) }
+        let cutoff = activeRange.days.map { Date().addingTimeInterval(-$0 * 86_400) }
+        return entries
+            .filter { cutoff == nil || $0.date >= cutoff! }
             .reversed()
             .enumerated()
             .map { ($0.offset, $0.element) }
@@ -62,48 +75,63 @@ struct BodyWeightCard: View {
                         .foregroundStyle(Theme.textTertiary)
                 }
 
-                if points.count >= 2 {
-                    Chart(points, id: \.entry.persistentModelID) { point in
-                        LineMark(
-                            x: .value("Pesata", Double(point.index)),
-                            y: .value("Peso", settings.unit.fromKilograms(point.entry.weight))
-                        )
-                        .foregroundStyle(settings.accentColor)
-                        .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
-                        .interpolationMethod(.monotone)
+                if entries.count >= 2 {
+                    if availableRanges.count > 1 {
+                        Picker("Intervallo", selection: $range) {
+                            ForEach(availableRanges) { Text(LocalizedStringKey($0.title)).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                    }
 
-                        PointMark(
-                            x: .value("Pesata", Double(point.index)),
-                            y: .value("Peso", settings.unit.fromKilograms(point.entry.weight))
-                        )
-                        .foregroundStyle(point.entry.fromHealth ? settings.accentColor.opacity(0.5) : settings.accentColor)
-                        .symbolSize(30)
-                    }
-                    .chartXScale(domain: -0.5...(Double(Swift.max(points.count - 1, 1)) + 0.5))
-                    .chartYAxis {
-                        AxisMarks(position: .leading) { value in
-                            AxisGridLine().foregroundStyle(Theme.stroke)
-                            AxisValueLabel {
-                                if let number = value.as(Double.self) {
-                                    Text(number.formatted(.number.precision(.fractionLength(0))))
-                                        .font(Theme.rounded(10, .medium))
-                                        .foregroundStyle(Theme.textTertiary)
+                    if points.count >= 2 {
+                        Chart(points, id: \.entry.persistentModelID) { point in
+                            LineMark(
+                                x: .value("Pesata", Double(point.index)),
+                                y: .value("Peso", settings.unit.fromKilograms(point.entry.weight))
+                            )
+                            .foregroundStyle(settings.accentColor)
+                            .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                            .interpolationMethod(.monotone)
+
+                            PointMark(
+                                x: .value("Pesata", Double(point.index)),
+                                y: .value("Peso", settings.unit.fromKilograms(point.entry.weight))
+                            )
+                            .foregroundStyle(point.entry.fromHealth ? settings.accentColor.opacity(0.5) : settings.accentColor)
+                            .symbolSize(30)
+                        }
+                        .chartXScale(domain: -0.5...(Double(Swift.max(points.count - 1, 1)) + 0.5))
+                        .chartYAxis {
+                            AxisMarks(position: .leading) { value in
+                                AxisGridLine().foregroundStyle(Theme.stroke)
+                                AxisValueLabel {
+                                    if let number = value.as(Double.self) {
+                                        Text(number.formatted(.number.precision(.fractionLength(0))))
+                                            .font(Theme.rounded(10, .medium))
+                                            .foregroundStyle(Theme.textTertiary)
+                                    }
                                 }
                             }
                         }
-                    }
-                    .chartXAxis {
-                        AxisMarks(values: Stats.tickIndices(count: points.count, max: 3).map(Double.init)) { value in
-                            AxisValueLabel {
-                                if let index = value.as(Double.self).map({ Int($0.rounded()) }), points.indices.contains(index) {
-                                    Text(Fmt.shortDate(points[index].entry.date))
-                                        .font(Theme.rounded(10, .medium))
-                                        .foregroundStyle(Theme.textTertiary)
+                        .chartXAxis {
+                            AxisMarks(values: Stats.tickIndices(count: points.count, max: 3).map(Double.init)) { value in
+                                AxisValueLabel {
+                                    if let index = value.as(Double.self).map({ Int($0.rounded()) }), points.indices.contains(index) {
+                                        Text(Fmt.shortDate(points[index].entry.date))
+                                            .font(Theme.rounded(10, .medium))
+                                            .foregroundStyle(Theme.textTertiary)
+                                    }
                                 }
                             }
                         }
+                        .frame(height: 120)
+                    } else {
+                        Text("Dati non sufficienti per questo intervallo")
+                            .font(Theme.rounded(12, .medium))
+                            .foregroundStyle(Theme.textTertiary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .frame(height: 80)
                     }
-                    .frame(height: 120)
                 }
 
                 HStack(spacing: 8) {

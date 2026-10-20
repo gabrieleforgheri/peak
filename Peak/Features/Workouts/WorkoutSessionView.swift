@@ -23,6 +23,7 @@ struct WorkoutSessionView: View {
     @State private var showingFocusPicker = false
     @State private var addSetTarget: Exercise?
     @State private var editingSet: WorkoutSet?
+    @State private var viewingExercise: Exercise?
     @State private var showingSummary = false
     @State private var showingFinishConfirm = false
     @State private var healthMessage: String?
@@ -72,15 +73,15 @@ struct WorkoutSessionView: View {
                 ForEach(list) { item in
                     if let exercise = known[item.exercise] {
                     let sets = workout.sets(for: exercise)
-                    let last = exercise.setList.max { $0.createdAt < $1.createdAt }
                     ExerciseSessionCard(
                         exercise: exercise,
                         goal: Plan.targetLine(
                             item,
                             done: sets.filter { !$0.isWarmup }.count,
-                            lastKilograms: last?.weight,
+                            lastKilograms: nil,
                             settings: settings
                         ),
+                        previousSets: previousWorkingSets(for: exercise),
                         sets: sets,
                         recordSet: recordSet,
                         recordTick: recordTick,
@@ -93,7 +94,8 @@ struct WorkoutSessionView: View {
                         onStartOnWatch: canUseWatch ? { WatchBridge.shared.start(exercise, in: workout) } : nil,
                         onRepeatLast: { repeatLastSet(for: exercise) },
                         onEditSet: { editingSet = $0 },
-                        onDeleteSet: { delete($0) }
+                        onDeleteSet: { delete($0) },
+                        onDetail: { viewingExercise = exercise }
                     )
                     }
                 }
@@ -191,6 +193,16 @@ struct WorkoutSessionView: View {
                 AddSetSheet(exercise: exercise, mode: .edit(set)) { weight, reps, isWarmup in
                     update(set, weight: weight, reps: reps, isWarmup: isWarmup)
                 }
+            }
+        }
+        .sheet(item: $viewingExercise) { exercise in
+            NavigationStack {
+                ExerciseDetailView(exercise: exercise)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Chiudi") { viewingExercise = nil }
+                        }
+                    }
             }
         }
         .sheet(isPresented: $showingFocusPicker) {
@@ -331,6 +343,12 @@ struct WorkoutSessionView: View {
 
     // MARK: - Azioni
 
+    private func previousWorkingSets(for exercise: Exercise) -> [WorkoutSet] {
+        let otherSets = exercise.setList.filter { !$0.isWarmup && $0.workout?.uuid != workout.uuid }
+        guard let lastWk = otherSets.compactMap(\.workout).max(by: { $0.date < $1.date }) else { return [] }
+        return lastWk.setList.filter { $0.exercise?.uuid == exercise.uuid && !$0.isWarmup }.sorted { $0.order < $1.order }
+    }
+
     private func lastSet(for exercise: Exercise) -> WorkoutSet? {
         workout.sets(for: exercise).last
             ?? exercise.setList.max { $0.createdAt < $1.createdAt }
@@ -436,8 +454,7 @@ struct WorkoutSessionView: View {
         let isRecord = set.isPersonalRecord
         try? context.save()
         WorkoutActivity.update(for: workout, unit: settings.unit)
-        if isRecord { Haptics.personalRecord() } else { Haptics.commit() }
-        if isRecord, !wasRecord { celebrateRecord(set) } // una correzione che diventa massimale: stessa festa
+        if isRecord { celebrateRecord(set) } // una correzione che è massimale: festa
     }
 
     /// Manda la sessione a Salute. Le date si leggono **qui**, sul main actor,
@@ -520,6 +537,7 @@ private struct ExerciseSessionCard: View {
     let exercise: Exercise
     /// Obiettivo della scheda («2/4 serie · 8–10 rip · 60 kg»), vuoto se non c'è.
     let goal: String
+    let previousSets: [WorkoutSet]
     let sets: [WorkoutSet]
     /// La serie dell'ultimo record e il contatore delle feste: la sua riga si accende a ogni cambio.
     let recordSet: UUID?
@@ -538,37 +556,37 @@ private struct ExerciseSessionCard: View {
     let onRepeatLast: () -> Void
     let onEditSet: (WorkoutSet) -> Void
     let onDeleteSet: (WorkoutSet) -> Void
+    let onDetail: () -> Void
 
     var body: some View {
         GlassCard(padding: 16, tint: isCurrent ? exercise.muscleGroup.tint : nil) {
             VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 10) {
-                    ExerciseThumbnail(exercise: exercise, size: 34, zoomable: true)
-                    ExerciseFigure(exercise: exercise, size: 34)
-
-                    VStack(alignment: .leading, spacing: 1) {
+                // RIGA 1: Titolo esercizio sopra le immagini e pulsanti azione a destra
+                HStack(alignment: .center, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
                         Text(exercise.name)
                             .font(Theme.rounded(16, .semibold))
                             .foregroundStyle(Theme.textPrimary)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                         if isCurrent {
                             Text("IN CORSO")
                                 .font(Theme.rounded(10, .bold))
                                 .tracking(0.7)
                                 .foregroundStyle(exercise.muscleGroup.tint)
-                        } else if let best = exercise.bestRecord {
-                            Text("max \(Fmt.setLine(weight: best.weight, reps: best.reps, unit: settings.unit))")
-                                .font(Theme.rounded(11, .medium))
-                                .foregroundStyle(Theme.textTertiary)
-                        }
-                        if !goal.isEmpty {
-                            Text(goal)
-                                .font(Theme.rounded(11, .semibold))
-                                .foregroundStyle(Theme.textSecondary)
                         }
                     }
-                    Spacer(minLength: 0)
-                    if onMove != nil || onReplace != nil || onRemove != nil {
+
+                    Spacer(minLength: 4)
+
+                    HStack(spacing: 6) {
                         Menu {
+                            Button {
+                                onDetail()
+                            } label: {
+                                Label("Vedi macchinario", systemImage: "info.circle")
+                            }
+
                             if let onMove {
                                 Button { onMove(-1) } label: { Label("Su", systemImage: "chevron.up") }
                                 Button { onMove(1) } label: { Label("Giù", systemImage: "chevron.down") }
@@ -587,23 +605,54 @@ private struct ExerciseSessionCard: View {
                         }
                         .foregroundStyle(Theme.textSecondary)
                         .accessibilityLabel("Altro")
-                    }
-                    if let onStartOnWatch {
-                        Button {
-                            onStartOnWatch()
-                            Haptics.tap()
-                        } label: {
-                            Image(systemName: "applewatch.radiowaves.left.and.right")
-                                .font(.system(size: 16, weight: .semibold))
-                                .frame(width: 36, height: 36)
-                                .background(Theme.card, in: Circle())
+
+                        if let onStartOnWatch {
+                            Button {
+                                onStartOnWatch()
+                                Haptics.tap()
+                            } label: {
+                                Image(systemName: "applewatch.radiowaves.left.and.right")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .frame(width: 36, height: 36)
+                                    .background(Theme.card, in: Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(settings.accentColor)
+                            .accessibilityLabel("Avvia la serie sul Watch")
                         }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(settings.accentColor)
-                        .accessibilityLabel("Avvia la serie sul Watch")
                     }
                 }
-                // Tocco sull'intestazione = "sto facendo questo": lo manda al Watch.
+                .contentShape(Rectangle())
+                .onTapGesture(perform: onSelect)
+
+                // RIGA 2: Miniature (macchinario e corpo) + serie non di riscaldamento dello scorso allenamento
+                HStack(alignment: .top, spacing: 10) {
+                    HStack(spacing: 6) {
+                        ExerciseThumbnail(exercise: exercise, size: 34, zoomable: true)
+                        ExerciseFigure(exercise: exercise, size: 34)
+                    }
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        if !previousSets.isEmpty {
+                            let summary = previousSets.map { Fmt.setLine(weight: $0.weight, reps: $0.reps, unit: settings.unit) }.joined(separator: ", ")
+                            Text("Scorso: \(summary)")
+                                .font(Theme.rounded(12, .medium))
+                                .foregroundStyle(Theme.textSecondary)
+                                .lineLimit(2)
+                        } else {
+                            Text("Nessun allenamento precedente")
+                                .font(Theme.rounded(12, .medium))
+                                .foregroundStyle(Theme.textTertiary)
+                        }
+
+                        if !goal.isEmpty {
+                            Text(goal)
+                                .font(Theme.rounded(11, .semibold))
+                                .foregroundStyle(Theme.textTertiary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 .contentShape(Rectangle())
                 .onTapGesture(perform: onSelect)
 

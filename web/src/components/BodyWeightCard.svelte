@@ -10,6 +10,8 @@
 
 	const m = $derived(getModel())
 	let sheet = $state<Bw | 'new' | null>(null)
+	type Range = '1m' | '3m' | '1y' | 'all'
+	let range = $state<Range>('all')
 
 	const latest = $derived(m.bodyweights.at(-1))
 	// la variazione è rispetto alla prima pesata di almeno 30 giorni prima dell'ultima
@@ -20,8 +22,34 @@
 		const d = round2(toDisplay(latest.weight, m.settings.unit)) - round2(toDisplay(ref.weight, m.settings.unit))
 		return Math.abs(d) >= 0.05 ? d : null
 	})
-	const recent = $derived(m.bodyweights.filter((b) => b.dateMs >= Date.now() - 180 * 86_400_000))
-	const points = $derived(recent.map((b) => ({ y: round2(toDisplay(b.weight, m.settings.unit)), label: dateShort(b.dateMs), faded: b.fromHealth })))
+
+	const spanDays = $derived.by(() => {
+		if (!m.bodyweights.length) return 0
+		const earliest = Math.min(...m.bodyweights.map((b) => b.dateMs))
+		return Math.max(0, (Date.now() - earliest) / 86_400_000)
+	})
+
+	const availableRanges = $derived.by((): Range[] => {
+		const out: Range[] = []
+		if (spanDays >= 30 && spanDays < 365) out.push('1m')
+		if (spanDays >= 90) out.push('3m')
+		if (spanDays >= 365) out.push('1y')
+		out.push('all')
+		return out
+	})
+
+	$effect(() => {
+		if (!availableRanges.includes(range)) range = availableRanges[0] ?? 'all'
+	})
+
+	const filteredWeights = $derived.by(() => {
+		const days = range === '1m' ? 30 : range === '3m' ? 90 : range === '1y' ? 365 : null
+		if (!days) return m.bodyweights
+		const since = Date.now() - days * 86_400_000
+		return m.bodyweights.filter((b) => b.dateMs >= since)
+	})
+
+	const points = $derived(filteredWeights.map((b) => ({ y: round2(toDisplay(b.weight, m.settings.unit)), label: dateShort(b.dateMs), faded: b.fromHealth })))
 	const domain = $derived.by((): [number, number] => {
 		const ys = points.map((p) => p.y)
 		if (!ys.length) return [0, 1]
@@ -42,7 +70,26 @@
 			{#if change !== null}<span class="badge" class:pos={change < 0}>{nf.format(change)} {unit()}</span>{/if}
 		</div>
 		<div class="small muted">{dateLong(latest.dateMs)}</div>
-		{#if points.length >= 2}<div style="margin-top:8px"><LineChart {points} {domain} /></div>{/if}
+		{#if m.bodyweights.length >= 2}
+			<div style="margin-top:10px">
+				{#if availableRanges.length > 1}
+					<div class="row between" style="margin-bottom:8px">
+						<span class="small muted">{t('Andamento')}</span>
+						<div class="seg" style="width:auto">
+							{#if availableRanges.includes('1m')}<button class:on={range === '1m'} onclick={() => (range = '1m')}>{t('1 mese')}</button>{/if}
+							{#if availableRanges.includes('3m')}<button class:on={range === '3m'} onclick={() => (range = '3m')}>{t('3 mesi')}</button>{/if}
+							{#if availableRanges.includes('1y')}<button class:on={range === '1y'} onclick={() => (range = '1y')}>{t('1 anno')}</button>{/if}
+							<button class:on={range === 'all'} onclick={() => (range = 'all')}>{t('Tutto')}</button>
+						</div>
+					</div>
+				{/if}
+				{#if points.length >= 2}
+					<LineChart {points} {domain} />
+				{:else}
+					<div class="small muted center" style="padding:20px 0">{t('Dati non sufficienti per questo intervallo')}</div>
+				{/if}
+			</div>
+		{/if}
 		<div class="list" style="margin-top:10px">
 			{#each [...m.bodyweights].reverse().slice(0, 5) as b (b.uuid)}
 				<button class="item" onclick={() => (sheet = b)}><div class="grow small muted">{dateLong(b.dateMs)}</div><b class="num">{W(b.weight)}</b></button>

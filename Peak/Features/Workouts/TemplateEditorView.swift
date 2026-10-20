@@ -226,18 +226,23 @@ struct TemplateEditorView: View {
 
     private func rowCard(index: Int, exercise: Exercise) -> some View {
         GlassCard(padding: 14) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 10) {
-                    ExerciseThumbnail(exercise: exercise, size: 34)
-                    ExerciseFigure(exercise: exercise, size: 34)
+            VStack(alignment: .leading, spacing: 10) {
+                // RIGA 1: Titolo esercizio e pulsanti azione
+                HStack {
                     Text(exercise.name)
                         .font(Theme.rounded(16, .semibold))
                         .foregroundStyle(Theme.textPrimary)
                         .lineLimit(1)
-                    Spacer(minLength: 0)
+                    Spacer(minLength: 4)
                     roundButton("chevron.up", label: "Su", disabled: index == 0) { rows.swapAt(index, index - 1) }
                     roundButton("chevron.down", label: "Giù", disabled: index == rows.count - 1) { rows.swapAt(index, index + 1) }
                     roundButton("xmark", label: "Togli", disabled: false) { rows.remove(at: index) }
+                }
+
+                // RIGA 2: Miniature macchinario e corpo
+                HStack(spacing: 6) {
+                    ExerciseThumbnail(exercise: exercise, size: 34)
+                    ExerciseFigure(exercise: exercise, size: 34)
                 }
 
                 HStack(spacing: 8) {

@@ -552,8 +552,24 @@ struct LiftChartCard: View {
     @Environment(AppSettings.self) private var settings
     let exercise: Exercise
 
+    @State private var range: ChartRange = .all
+
+    private var availableRanges: [ChartRange] {
+        guard let earliest = exercise.recordsByDateDesc.map(\.date).min() else { return [.all] }
+        let spanDays = max(0, Date().timeIntervalSince(earliest) / 86_400)
+        return ChartRange.available(forSpanDays: spanDays)
+    }
+
+    private var activeRange: ChartRange {
+        availableRanges.contains(range) ? range : (availableRanges.first ?? .all)
+    }
+
     private var points: [(date: Date, oneRm: Double)] {
-        exercise.recordsByDateDesc.reversed().suffix(12).map { ($0.date, $0.estimatedOneRepMax) }
+        let cutoff = activeRange.days.map { Date().addingTimeInterval(-$0 * 86_400) }
+        return exercise.recordsByDateDesc
+            .filter { cutoff == nil || $0.date >= cutoff! }
+            .reversed()
+            .map { ($0.date, $0.estimatedOneRepMax) }
     }
 
     var body: some View {
@@ -572,15 +588,31 @@ struct LiftChartCard: View {
                     }
                 }
                 Text("1RM stimato").font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textSecondary)
-                Chart {
-                    ForEach(Array(pts.enumerated()), id: \.offset) { _, p in
-                        LineMark(x: .value("Data", p.date), y: .value("1RM", p.oneRm)).foregroundStyle(settings.accentColor).interpolationMethod(.monotone)
-                        PointMark(x: .value("Data", p.date), y: .value("1RM", p.oneRm)).foregroundStyle(settings.accentColor)
+
+                if availableRanges.count > 1 {
+                    Picker("Intervallo", selection: $range) {
+                        ForEach(availableRanges) { Text(LocalizedStringKey($0.title)).tag($0) }
                     }
+                    .pickerStyle(.segmented)
                 }
-                .chartYScale(domain: lo...hi)
-                .chartYAxis(.hidden)
-                .frame(height: 150)
+
+                if pts.count >= 2 {
+                    Chart {
+                        ForEach(Array(pts.enumerated()), id: \.offset) { _, p in
+                            LineMark(x: .value("Data", p.date), y: .value("1RM", p.oneRm)).foregroundStyle(settings.accentColor).interpolationMethod(.monotone)
+                            PointMark(x: .value("Data", p.date), y: .value("1RM", p.oneRm)).foregroundStyle(settings.accentColor)
+                        }
+                    }
+                    .chartYScale(domain: lo...hi)
+                    .chartYAxis(.hidden)
+                    .frame(height: 150)
+                } else {
+                    Text("Dati non sufficienti per questo intervallo")
+                        .font(Theme.rounded(12, .medium))
+                        .foregroundStyle(Theme.textTertiary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .frame(height: 80)
+                }
             }
         }
     }

@@ -26,6 +26,15 @@ struct AddSetSheet: View {
     @State private var reps: Int = 8
     @State private var isWarmup = false
     @State private var didPrefill = false
+    @State private var isRecentSetsExpanded = false
+
+    private var allPreviousSets: [WorkoutSet] {
+        let sets = exercise.setList
+        if case let .edit(currentSet) = mode {
+            return sets.filter { $0.uuid != currentSet.uuid }.sorted { $0.createdAt > $1.createdAt }
+        }
+        return sets.sorted { $0.createdAt > $1.createdAt }
+    }
 
     private var tint: Color { exercise.muscleGroup.tint }
 
@@ -48,19 +57,34 @@ struct AddSetSheet: View {
         return exercise.progression(range: settings.repRange, unit: settings.unit)
     }
 
+    private var referenceRecord: MaxRecord? {
+        if case let .edit(set) = mode {
+            let others = exercise.recordList.filter { $0.uuid != set.uuid }
+            return others.reduce(nil) { best, record in
+                guard let best else { return record }
+                if MaxRanking.beats(weight: record.weight, reps: record.reps, than: (best.weight, best.reps)) {
+                    return record
+                }
+                let samePerformance = abs(record.weight - best.weight) < MaxRanking.epsilon && record.reps == best.reps
+                return samePerformance && record.date > best.date ? record : best
+            }
+        }
+        return exercise.bestRecord
+    }
+
     /// Il carico da battere, oppure — se lo stai già battendo — quello che stai facendo.
     private var reference: String {
         if isRecord { return Fmt.setLine(weight: weight, reps: reps, unit: settings.unit) }
-        guard let best = exercise.bestRecord else { return "—" }
+        guard let best = referenceRecord else { return "—" }
         return Fmt.setLine(weight: best.weight, reps: best.reps, unit: settings.unit)
     }
 
     private var isRecord: Bool {
-        guard !isWarmup, !isEditing else { return false }
+        guard !isWarmup else { return false }
         return MaxRanking.beats(
             weight: weight,
             reps: reps,
-            than: exercise.bestRecord.map { (weight: $0.weight, reps: $0.reps) }
+            than: referenceRecord.map { (weight: $0.weight, reps: $0.reps) }
         )
     }
 
@@ -193,6 +217,8 @@ struct AddSetSheet: View {
                         .buttonStyle(.plain)
                     }
 
+                    recentSetsDropdown
+
                     Button {
                         onSave(weight, reps, isWarmup)
                         dismiss()
@@ -244,6 +270,85 @@ struct AddSetSheet: View {
         } else {
             weight = exercise.incrementStep * 4
             reps = 8
+        }
+    }
+
+    private var recentSetsDropdown: some View {
+        GlassCard(padding: 16) {
+            DisclosureGroup(isExpanded: $isRecentSetsExpanded) {
+                if allPreviousSets.isEmpty {
+                    Text("Nessuna serie precedente")
+                        .font(Theme.rounded(13, .medium))
+                        .foregroundStyle(Theme.textTertiary)
+                        .padding(.top, 8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    VStack(spacing: 8) {
+                        Text("Tocca una serie per usarla nel modulo.")
+                            .font(Theme.rounded(11, .medium))
+                            .foregroundStyle(Theme.textTertiary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, 4)
+
+                        ForEach(Array(allPreviousSets.prefix(15))) { prev in
+                            Button {
+                                weight = prev.weight
+                                reps = prev.reps
+                                isWarmup = prev.isWarmup
+                                Haptics.tap()
+                            } label: {
+                                HStack(spacing: 8) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        HStack(spacing: 6) {
+                                            Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit))
+                                                .font(Theme.rounded(14, .bold))
+                                                .foregroundStyle(prev.isWarmup ? Theme.textSecondary : Theme.textPrimary)
+                                            if prev.isPersonalRecord { PRBadge() }
+                                            if prev.isWarmup {
+                                                Text("risc.")
+                                                    .font(Theme.rounded(10, .semibold))
+                                                    .foregroundStyle(Theme.textTertiary)
+                                            }
+                                        }
+                                        Text(Fmt.relativeDay(prev.createdAt))
+                                            .font(Theme.rounded(11, .medium))
+                                            .foregroundStyle(Theme.textTertiary)
+                                    }
+                                    Spacer()
+                                    if prev.reps > 1, !prev.isWarmup {
+                                        Text("≈ \(Fmt.weight(prev.estimatedOneRepMax, unit: settings.unit))")
+                                            .font(Theme.rounded(12, .medium))
+                                            .foregroundStyle(Theme.textTertiary)
+                                    }
+                                }
+                                .padding(10)
+                                .background(Theme.card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.top, 8)
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(tint)
+                    Text("Ultime serie su questo macchinario")
+                        .font(Theme.rounded(14, .semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                    Spacer()
+                    if !allPreviousSets.isEmpty {
+                        Text("\(allPreviousSets.count)")
+                            .font(Theme.rounded(12, .bold))
+                            .foregroundStyle(Theme.textTertiary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Theme.card, in: Capsule())
+                    }
+                }
+            }
+            .tint(Theme.textSecondary)
         }
     }
 }

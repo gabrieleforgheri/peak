@@ -11,7 +11,7 @@
 	import { toast } from '../lib/toast.svelte.ts'
 	import { confetti, rowIn, rowOut } from '../lib/fx.ts'
 	import { play } from '../lib/sound.ts'
-	import type { Ex, SetItem } from '../lib/types.ts'
+	import type { Ex, SetItem, Wk } from '../lib/types.ts'
 	import AddSetSheet from '../components/AddSetSheet.svelte'
 	import ExercisePicker from '../components/ExercisePicker.svelte'
 	import FocusPicker from '../components/FocusPicker.svelte'
@@ -62,6 +62,15 @@
 			play('record')
 		} else play('set')
 		if (wk?.isActive && m.settings.restTimerEnabled) startRest(ex.restSeconds || m.settings.restSeconds)
+	}
+
+	function previousWorkingSets(exercise: Ex, currentWk: Wk): SetItem[] {
+		const otherWorking = exercise.sets.filter((s) => s.workout !== currentWk.uuid && !s.isWarmup)
+		if (!otherWorking.length) return []
+		const prevWkId = otherWorking[0].workout
+		return exercise.sets
+			.filter((s) => s.workout === prevWkId && !s.isWarmup)
+			.sort((a, b) => a.order - b.order || a.createdAt - b.createdAt)
 	}
 
 	function repeat(ex: Ex) {
@@ -131,16 +140,33 @@
 		{#each items as it (it.exercise)}
 			{@const ex = m.exById.get(it.exercise)!}
 			{@const sets = wk.sets.filter((s) => s.exercise === ex.uuid)}
-			{@const goal = targetLine(it, sets.filter((s) => !s.isWarmup).length, ex.sets[0]?.weight ?? null)}
+			{@const goal = targetLine(it, sets.filter((s) => !s.isWarmup).length, null)}
+			{@const prevSets = previousWorkingSets(ex, wk)}
 			<div class="card" style={current === ex.uuid && wk.isActive ? 'border-color:rgba(var(--accent-rgb),.45)' : ''}>
-				<div class="row"><button class="row grow" style="background:none;border:0;text-align:left;padding:0;min-width:0" onclick={() => (current = ex.uuid)}>
-					<Thumb {ex} />{#if ex.figure.muscles.length}<FigThumb muscles={ex.figure.muscles} view={ex.figure.view} group={ex.muscleGroup} />{/if}
-					<div class="grow"><b class="ellipsis" style="display:block">{ex.name}</b>
-						{#if current === ex.uuid && wk.isActive}<span class="tiny" style="color:var(--accent);font-weight:800;letter-spacing:.08em">{t('IN CORSO')}</span>
-						{:else if ex.best}<span class="small muted num">{t('max')} {setLine(ex.best.weight, ex.best.reps)}</span>{/if}
-						{#if goal}<span class="small muted num" style="display:block">{goal}</span>{/if}</div>
+				<!-- Titolo dell'esercizio sopra l'immagine del corpo e del macchinario -->
+				<div class="row between" style="align-items:flex-start;gap:8px">
+					<button class="row grow" style="background:none;border:0;text-align:left;padding:0;min-width:0;align-items:center;gap:6px" onclick={() => (current = ex.uuid)}>
+						<b class="ellipsis" style="display:block;font-size:16px">{ex.name}</b>
+						{#if current === ex.uuid && wk.isActive}<span class="tiny" style="color:var(--accent);font-weight:800;letter-spacing:.08em;flex-shrink:0">{t('IN CORSO')}</span>{/if}
+					</button>
+					{#if wk.isActive}<button class="icon-btn" onclick={() => (menuFor = ex)} aria-label={t('Altro')}><Icon name="more" /></button>{/if}
+				</div>
+
+				<button class="row" style="background:none;border:0;text-align:left;padding:0;width:100%;margin-top:8px;align-items:flex-start;gap:10px" onclick={() => (current = ex.uuid)}>
+					<div class="row" style="gap:6px;flex-shrink:0">
+						<Thumb {ex} />{#if ex.figure.muscles.length}<FigThumb muscles={ex.figure.muscles} view={ex.figure.view} group={ex.muscleGroup} />{/if}
+					</div>
+					<div class="grow" style="min-width:0">
+						{#if prevSets.length}
+							<div class="small muted num" style="line-height:1.35">
+								<span style="font-weight:600;color:var(--text-2)">{t('Scorso')}:</span> {prevSets.map((s) => setLine(s.weight, s.reps)).join(', ')}
+							</div>
+						{:else}
+							<div class="small muted">{t('Nessun allenamento precedente')}</div>
+						{/if}
+						{#if goal}<span class="small muted num" style="display:block;margin-top:2px">{goal}</span>{/if}
+					</div>
 				</button>
-				{#if wk.isActive}<button class="icon-btn" onclick={() => (menuFor = ex)} aria-label={t('Altro')}><Icon name="more" /></button>{/if}</div>
 				<!-- sempre presente (vuota non occupa nulla): così anche la prima serie di un esercizio entra con la sua transizione -->
 				<div class="list" style:margin-top={sets.length ? '10px' : '0'}>
 					{#each sets as s, i (s.uuid)}
@@ -186,6 +212,7 @@
 	{@const empty = !wk.sets.some((s) => s.exercise === ex.uuid)}
 	<Sheet title={ex.name} onclose={() => (menuFor = null)}>
 		<div class="stack">
+			<button class="btn block" onclick={() => { const id = menuFor!.uuid; menuFor = null; go('macchinari/' + id) }}><Icon name="machine" size={18} />{t('Vedi macchinario')}</button>
 			<div class="row">
 				<button class="btn grow" disabled={idx <= 0} onclick={() => moveInPlan(wk, ex.uuid, -1)}><Icon name="up" size={18} />{t('Su')}</button>
 				<button class="btn grow" disabled={idx < 0 || idx >= items.length - 1} onclick={() => moveInPlan(wk, ex.uuid, 1)}><Icon name="down" size={18} />{t('Giù')}</button>

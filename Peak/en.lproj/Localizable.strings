@@ -54,6 +54,7 @@
 "1 esercizio" = "1 exercise";
 "1 macchinario fuori catalogo" = "1 machine outside the catalog";
 "1 massimale automatico senza serie è stato scartato." = "1 automatic max without a set was discarded.";
+"1 mese" = "1 month";
 "1 modifica da sincronizzare" = "1 change to sync";
 "1 richiesta in attesa" = "1 pending request";
 "1 serie" = "1 set";
@@ -229,6 +230,7 @@
 "Dalla libreria" = "From library";
 "Data" = "Date";
 "Dati" = "Data";
+"Dati non sufficienti per questo intervallo" = "Not enough data for this range";
 "Deltoidi" = "Delts";
 "Dettagli" = "Details";
 "Dischi disponibili" = "Available plates";
@@ -437,6 +439,7 @@
 "NUOVO" = "NEW";
 "NUOVO RECORD" = "NEW RECORD";
 "Nascondi agli amici" = "Hide from friends";
+"Nessun allenamento precedente" = "No previous workout";
 "Nessun amico ha ancora questo esercizio." = "No friend has this exercise yet.";
 "Nessun disco" = "No plates";
 "Nessun gruppo scelto: vedrai tutti i macchinari." = "No group chosen: you will see every machine.";
@@ -452,6 +455,7 @@
 "Nessun utente con questo username." = "No user with this username.";
 "Nessuna pesata registrata" = "No weigh-in recorded";
 "Nessuna scheda condivisa." = "No shared plans.";
+"Nessuna serie precedente" = "No previous sets";
 "Nessuna serie registrata" = "No sets recorded";
 "Nessuno" = "None";
 "Niente scuse, solo serie." = "No excuses, just sets.";
@@ -613,6 +617,8 @@
 "Sbarra / parallele" = "Pull-up bar / dip bars";
 "Scarico i dati da Peak…" = "Downloading the data from Peak…";
 "Scarico i tuoi dati…" = "Downloading your data…";
+"Scorso" = "Last";
+"Scorso: %@" = "Last: %@";
 "Scatta" = "Take photo";
 "Scatta foto" = "Take photo";
 "Scegli cosa alleni e registra le serie una per una." = "Choose what you train and log the sets one by one.";
@@ -695,6 +701,7 @@
 "Tocca alla prossima serie." = "Time for your next set.";
 "Tocca i muscoli che lavorano sulla figura." = "Tap the muscles that work on the figure.";
 "Tocca per compilare peso e ripetizioni." = "Tap to fill in weight and reps.";
+"Tocca una serie per usarla nel modulo." = "Tap a set to use it in the form.";
 "Toccando la tua iniziale in alto a destra apri il tuo profilo: i tuoi numeri e le medaglie. Le impostazioni (unità, lingua, colore, timer di recupero, backup, account yG) sono lì, con l'ingranaggio. Il tutorial lo rivedi da Generale." = "Tap your initial at the top right to open your profile: your numbers and medals. Settings (units, language, color, rest timer, backup, yG account) are there too, under the gear. You can replay the tutorial from General.";
 "Togli" = "Remove";
 "Togli dagli amici" = "Remove from friends";
@@ -723,6 +730,7 @@
 "Ultima sincronizzazione %lld" = "Last sync %lld";
 "Ultime serie" = "Latest sets";
 "Ultime serie in allenamento" = "Latest sets in workouts";
+"Ultime serie su questo macchinario" = "Recent sets on this machine";
 "Ultimi 30 giorni" = "Last 30 days";
 "Ultimi record" = "Latest records";
 "Un allenamento alla volta." = "One workout at a time.";
@@ -745,6 +753,7 @@
 "Usa i dati del server" = "Use the server data";
 "Usati di recente" = "Recently used";
 "Vai agli amici" = "Go to friends";
+"Vedi macchinario" = "View machine";
 "Vedi di fronte" = "Show front";
 "Vedi di schiena" = "Show back";
 "Vedi il suo profilo" = "See their profile";

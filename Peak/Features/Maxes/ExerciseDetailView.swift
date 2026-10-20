@@ -9,27 +9,16 @@ struct ExerciseDetailView: View {
 
     let exercise: Exercise
 
+    typealias ChartRange = Massimali.ChartRange
+
     @State private var showingNewRecord = false
     @State private var showingEditor = false
     @State private var range: ChartRange = .all
 
-    enum ChartRange: String, CaseIterable, Identifiable {
-        case threeMonths, year, all
-        var id: String { rawValue }
-        var title: String {
-            switch self {
-            case .threeMonths: return "3 mesi"
-            case .year: return "1 anno"
-            case .all: return "Tutto"
-            }
-        }
-        var days: Double? {
-            switch self {
-            case .threeMonths: return 90
-            case .year: return 365
-            case .all: return nil
-            }
-        }
+    private var availableRanges: [ChartRange] {
+        guard let earliest = records.map(\.date).min() else { return [.all] }
+        let spanDays = max(0, Date().timeIntervalSince(earliest) / 86_400)
+        return ChartRange.available(forSpanDays: spanDays)
     }
 
     private var tint: Color { exercise.muscleGroup.tint }
@@ -37,7 +26,8 @@ struct ExerciseDetailView: View {
     private var records: [MaxRecord] { exercise.recordsByDateDesc }
 
     private var chartPoints: [ChartPoint] {
-        let cutoff = range.days.map { Date().addingTimeInterval(-$0 * 86_400) }
+        let activeRange = availableRanges.contains(range) ? range : (availableRanges.first ?? .all)
+        let cutoff = activeRange.days.map { Date().addingTimeInterval(-$0 * 86_400) }
         return records
             .filter { cutoff == nil || $0.date >= cutoff! }
             .sorted { $0.date < $1.date }
@@ -108,7 +98,7 @@ struct ExerciseDetailView: View {
                 }
                 leaderboardCard
                 if !warmupPlan.isEmpty { warmupCard }
-                if chartPoints.count >= 2 { chartCard }
+                if records.count >= 2 { chartCard }
                 if !records.isEmpty { recordsCard }
                 if !recentSets.isEmpty { setsCard }
                 if !exercise.notes.isEmpty { notesCard }
@@ -262,70 +252,80 @@ struct ExerciseDetailView: View {
                     Spacer()
                 }
 
-                Picker("Intervallo", selection: $range) {
-                    ForEach(ChartRange.allCases) { Text($0.title).tag($0) }
+                if availableRanges.count > 1 {
+                    Picker("Intervallo", selection: $range) {
+                        ForEach(availableRanges) { Text(LocalizedStringKey($0.title)).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
                 }
-                .pickerStyle(.segmented)
 
-                Chart(chartPoints) { point in
-                    AreaMark(
-                        x: .value("Misurazione", Double(point.index)),
-                        y: .value("Carico", point.value)
-                    )
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [tint.opacity(0.35), tint.opacity(0.02)],
-                            startPoint: .top,
-                            endPoint: .bottom
+                if chartPoints.count >= 2 {
+                    Chart(chartPoints) { point in
+                        AreaMark(
+                            x: .value("Misurazione", Double(point.index)),
+                            y: .value("Carico", point.value)
                         )
-                    )
-                    .interpolationMethod(.monotone)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [tint.opacity(0.35), tint.opacity(0.02)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .interpolationMethod(.monotone)
 
-                    LineMark(
-                        x: .value("Misurazione", Double(point.index)),
-                        y: .value("Carico", point.value)
-                    )
-                    .foregroundStyle(tint)
-                    .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
-                    .interpolationMethod(.monotone)
+                        LineMark(
+                            x: .value("Misurazione", Double(point.index)),
+                            y: .value("Carico", point.value)
+                        )
+                        .foregroundStyle(tint)
+                        .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                        .interpolationMethod(.monotone)
 
-                    PointMark(
-                        x: .value("Misurazione", Double(point.index)),
-                        y: .value("Carico", point.value)
-                    )
-                    .foregroundStyle(point.isEstimated ? tint.opacity(0.55) : tint)
-                    .symbolSize(point.isEstimated ? 28 : 55)
-                }
-                .chartXScale(domain: xDomain)
-                .chartYScale(domain: yDomain)
-                .chartYAxis {
-                    AxisMarks(position: .leading) { value in
-                        AxisGridLine().foregroundStyle(Theme.stroke)
-                        AxisValueLabel {
-                            if let number = value.as(Double.self) {
-                                Text(number.formatted(.number.precision(.fractionLength(0))))
-                                    .font(Theme.rounded(10, .medium))
-                                    .foregroundStyle(Theme.textTertiary)
+                        PointMark(
+                            x: .value("Misurazione", Double(point.index)),
+                            y: .value("Carico", point.value)
+                        )
+                        .foregroundStyle(point.isEstimated ? tint.opacity(0.55) : tint)
+                        .symbolSize(point.isEstimated ? 28 : 55)
+                    }
+                    .chartXScale(domain: xDomain)
+                    .chartYScale(domain: yDomain)
+                    .chartYAxis {
+                        AxisMarks(position: .leading) { value in
+                            AxisGridLine().foregroundStyle(Theme.stroke)
+                            AxisValueLabel {
+                                if let number = value.as(Double.self) {
+                                    Text(number.formatted(.number.precision(.fractionLength(0))))
+                                        .font(Theme.rounded(10, .medium))
+                                        .foregroundStyle(Theme.textTertiary)
+                                }
                             }
                         }
                     }
-                }
-                .chartXAxis {
-                    AxisMarks(values: Stats.tickIndices(count: chartPoints.count).map(Double.init)) { value in
-                        AxisValueLabel {
-                            if let index = value.as(Double.self).map({ Int($0.rounded()) }), chartPoints.indices.contains(index) {
-                                Text(Fmt.shortDate(chartPoints[index].date))
-                                    .font(Theme.rounded(10, .medium))
-                                    .foregroundStyle(Theme.textTertiary)
+                    .chartXAxis {
+                        AxisMarks(values: Stats.tickIndices(count: chartPoints.count).map(Double.init)) { value in
+                            AxisValueLabel {
+                                if let index = value.as(Double.self).map({ Int($0.rounded()) }), chartPoints.indices.contains(index) {
+                                    Text(Fmt.shortDate(chartPoints[index].date))
+                                        .font(Theme.rounded(10, .medium))
+                                        .foregroundStyle(Theme.textTertiary)
+                                }
                             }
                         }
                     }
-                }
-                .frame(height: 190)
+                    .frame(height: 190)
 
-                HStack(spacing: 14) {
-                    LegendDot(color: tint, label: "Registrato")
-                    LegendDot(color: tint.opacity(0.55), label: "Da allenamento")
+                    HStack(spacing: 14) {
+                        LegendDot(color: tint, label: "Registrato")
+                        LegendDot(color: tint.opacity(0.55), label: "Da allenamento")
+                    }
+                } else {
+                    Text("Dati non sufficienti per questo intervallo")
+                        .font(Theme.rounded(12, .medium))
+                        .foregroundStyle(Theme.textTertiary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .frame(height: 120)
                 }
             }
         }

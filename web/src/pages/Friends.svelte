@@ -105,7 +105,7 @@
 				<div class="sec-title">{t('Novità')}</div>
 				{#if news.length}
 					<div class="card list">
-						{#each news as e (e.id + e.catalog)}
+						{#each news as e, i (e.id + e.catalog + e.date + i)}
 							<button class="item" onclick={() => go(`amici/${e.id}`)}>
 								<div class="grow ellipsis"><b>@{e.username}</b> · {names.get(e.catalog) ?? e.name}<div class="small muted">{relDay(e.date)}</div></div>
 								<div style="text-align:right"><b class="num">{W(e.weight)} × {e.reps}</b>{#if e.sorpasso}<div class="small" style="color:var(--neg)">{t('Ti ha superato')}</div>{/if}</div>
