@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { beats, bestOf, oneRepMax, plateMode, round2, toDisplay } from '@common/domain.ts'
+	import { beats, bestOf, defaultBarWeightFor, oneRepMax, plateMode, round2, toDisplay } from '@common/domain.ts'
 	import { addSet, deleteSet, patchSet } from '../lib/actions.ts'
 	import { stepOf, suggestionFor, warmupFor } from '../lib/derive.ts'
 	import { W, fromUnit, relDay, setLine, toUnit, unit } from '../lib/fmt.ts'
@@ -20,15 +20,25 @@
 	const step = stepOf(ex, m)
 	const nf = (v: number) => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(v)
 
+	const barKg = $derived(ex.barWeight ?? defaultBarWeightFor(ex.glyphName ?? suggestedGlyph(ex.name, ex.muscleGroup), ex.name))
+	const bar = $derived(toUnit(barKg))
+	const isRel = $derived(ex.weightDisplay === 'relative' && bar > 0)
+
+	function toDisplayWeight(absKg: number): number {
+		const u = toUnit(absKg)
+		return (ex.weightDisplay === 'relative' && bar > 0) ? Math.max(0, round2(u - bar)) : u
+	}
+
 	// partenza: la serie stessa; altrimenti l'ultima di questo esercizio nell'allenamento, l'ultima di sempre,
 	// il massimale (almeno 5 rip), quattro passi
 	function start(): { w: number; r: number } {
-		if (set) return { w: toUnit(set.weight), r: set.reps }
+		if (set) return { w: toDisplayWeight(set.weight), r: set.reps }
 		const inWorkout = [...workout.sets].reverse().find((s) => s.exercise === ex.uuid && !s.isWarmup)
 		const prev = inWorkout ?? ex.sets.find((s) => !s.isWarmup) ?? [...workout.sets].reverse().find((s) => s.exercise === ex.uuid) ?? ex.sets[0]
-		if (prev) return { w: toUnit(prev.weight), r: prev.reps }
-		if (ex.records[0]) return { w: toUnit(ex.records[0].weight), r: Math.max(5, ex.records[0].reps) }
-		return { w: round2(step * 4), r: 8 }
+		if (prev) return { w: toDisplayWeight(prev.weight), r: prev.reps }
+		if (ex.records[0]) return { w: toDisplayWeight(ex.records[0].weight), r: Math.max(5, ex.records[0].reps) }
+		const defWeight = round2(step * 4)
+		return { w: (ex.weightDisplay === 'relative' && bar > 0) ? Math.max(0, round2(defWeight - bar)) : defWeight, r: 8 }
 	}
 	const init = start()
 	let weight = $state(init.w)
@@ -36,18 +46,27 @@
 	let warm = $state(set?.isWarmup ?? false)
 	let showRecent = $state(false)
 	const prevSets = $derived((set ? ex.sets.filter((s) => s.uuid !== set.uuid) : ex.sets).filter((s) => !s.isWarmup))
+	// l'attrezzo: quello del catalogo (glyphName lo usa già), oppure l'icona scelta; senza icona lo si deduce dal nome
+	const mode = $derived(m.settings.plateCalculatorEnabled ? plateMode(ex.glyphName ?? suggestedGlyph(ex.name, ex.muscleGroup), ex.name, barKg) : null)
+	const plates = $derived(m.settings.availablePlates.map((p) => round2(toDisplay(p, m.settings.unit))))
 
-	const kg = $derived(fromUnit(weight))
+	const absWeight = $derived(isRel ? round2(weight + bar) : weight)
+	const relWeight = $derived(isRel ? weight : Math.max(0, round2(weight - (mode?.bar ? bar : 0))))
+	const perSide = $derived(round2(relWeight / 2))
+
+	const inWorkoutPrev = $derived([...workout.sets].reverse().find((s) => s.exercise === ex.uuid && !s.isWarmup && (!set || s.uuid !== set.uuid)))
+	const prevSet = $derived(inWorkoutPrev ?? ex.sets.find((s) => !s.isWarmup && (!set || s.uuid !== set.uuid)))
+	const prevAbsWeight = $derived(prevSet ? toUnit(prevSet.weight) : null)
+	const delta = $derived(prevAbsWeight !== null ? round2(absWeight - prevAbsWeight) : null)
+
+	const kg = $derived(fromUnit(absWeight))
 	const reference = $derived(bestOf(set ? ex.records.filter((r) => r.uuid !== set.uuid) : ex.records))
 	const isRecord = $derived(!warm && beats(kg, reps, reference))
 	const next = $derived(set ? null : suggestionFor(ex, m))
 	const warmSteps = $derived(warmupFor(ex, m))
-	// l'attrezzo: quello del catalogo (glyphName lo usa già), oppure l'icona scelta; senza icona lo si deduce dal nome
-	const mode = $derived(m.settings.plateCalculatorEnabled ? plateMode(ex.glyphName ?? suggestedGlyph(ex.name, ex.muscleGroup), ex.name) : null)
-	const plates = $derived(m.settings.availablePlates.map((p) => round2(toDisplay(p, m.settings.unit))))
 
 	function save() {
-		if (!(weight > 0) || reps < 1) return
+		if (!(absWeight > 0) || reps < 1) return
 		if (set) { const isPR = patchSet(set.uuid, { weight: kg, reps, isWarmup: warm }); onadded?.({ isPR, isWarmup: warm, uuid: set.uuid }) }
 		else { const r = addSet(workout.uuid, ex.uuid, kg, reps, warm); onadded?.({ isPR: r.isPR, isWarmup: warm, uuid: r.uuid }) }
 		onclose()
@@ -61,14 +80,64 @@
 </script>
 
 <Sheet title={ex.name} {onclose}>
-	{#snippet action()}<button class="btn primary small" onclick={save} disabled={!(weight > 0)}>{set ? t('Salva') : t('Aggiungi')}</button>{/snippet}
+	{#snippet action()}<button class="btn primary small" onclick={save} disabled={!(absWeight > 0)}>{set ? t('Salva') : t('Aggiungi')}</button>{/snippet}
 	<div class="stack">
 		<div class="card">
 			{#if next && !warm}
-				<button class="chip" style="margin-bottom:10px" onclick={() => { weight = next.weight; reps = next.reps }}>{t('Consigliato')}: {nf(next.weight)} {unit()} × {next.reps}</button>
+				{@const nextDisp = isRel ? Math.max(0, round2(next.weight - bar)) : next.weight}
+				<button class="chip" style="margin-bottom:10px" onclick={() => { weight = nextDisp; reps = next.reps }}>
+					{t('Consigliato')}: {nf(nextDisp)} {unit()}{#if isRel} <span class="tiny faint">({t('dischi')})</span>{/if} × {next.reps}
+				</button>
 			{/if}
-			<div class="sec-title" style="margin-top:0">{t('Carico')}</div>
+			<div class="row between" style="align-items:baseline">
+				<div class="sec-title" style="margin-top:0">{isRel ? t('Carico dischi') : t('Carico')}</div>
+				{#if mode?.bar && bar > 0}
+					<span class="small badge muted">{t('Sbarra')} {nf(bar)} {unit()}</span>
+				{/if}
+			</div>
 			<Stepper bind:value={weight} {step} min={0} max={5000} unit={unit()} />
+
+			{#if mode?.bar && bar > 0}
+				<div class="bar-breakdown">
+					{#if isRel}
+						<div class="row between">
+							<span class="small muted">{t('Carico relativo (dischi)')}</span>
+							<b class="num" style="font-size:15px;color:var(--accent)">{nf(relWeight)} {unit()} <span class="muted small" style="font-weight:500">({nf(perSide)} {unit()} {t('per lato')})</span></b>
+						</div>
+						<div class="row between" style="margin-top:4px">
+							<span class="small muted">{t('Carico assoluto (totale con sbarra)')}</span>
+							<span class="num" style="font-weight:700">{nf(absWeight)} {unit()}</span>
+						</div>
+					{:else}
+						<div class="row between">
+							<span class="small muted">{t('Carico assoluto (totale)')}</span>
+							<b class="num" style="font-size:15px">{nf(absWeight)} {unit()}</b>
+						</div>
+						<div class="row between" style="margin-top:4px">
+							<span class="small muted">{t('Carico relativo (dischi)')}</span>
+							<span class="num" style="font-weight:700;color:var(--accent)">
+								{nf(relWeight)} {unit()}
+								<span class="muted small" style="font-weight:500">({nf(perSide)} {unit()} {t('per lato')})</span>
+							</span>
+						</div>
+					{/if}
+				</div>
+			{/if}
+
+			{#if delta !== null && delta !== 0}
+				<div class="delta-box" class:pos={delta > 0} class:neg={delta < 0}>
+					<div class="row" style="gap:6px">
+						{#if delta > 0}
+							<Icon name="up" size={15} />
+							<span><b>+{nf(delta)} {unit()}</b>{#if mode?.bar && bar > 0 || mode} (+{nf(delta / 2)} {unit()} {t('per lato')}){/if} <span class="muted">{inWorkoutPrev ? t('rispetto alla serie precedente') : t('rispetto all\'ultimo allenamento')}</span></span>
+						{:else}
+							<Icon name="down" size={15} />
+							<span><b>-{nf(Math.abs(delta))} {unit()}</b>{#if mode?.bar && bar > 0 || mode} (-{nf(Math.abs(delta) / 2)} {unit()} {t('per lato')}){/if} <span class="muted">{inWorkoutPrev ? t('rispetto alla serie precedente') : t('rispetto all\'ultimo allenamento')}</span></span>
+						{/if}
+					</div>
+				</div>
+			{/if}
+
 			<div class="sec-title">{t('Ripetizioni')}</div>
 			<Stepper bind:value={reps} step={1} min={1} max={50} />
 			<div class="chips" style="margin-top:8px">
@@ -76,7 +145,7 @@
 			</div>
 		</div>
 
-		{#if mode && weight > 0}<PlateBar total={weight} bar={mode.bar ? toUnit(m.settings.barWeight) : 0} {plates} unit={unit()} />{/if}
+		{#if mode && absWeight > 0}<PlateBar total={absWeight} bar={mode.bar ? bar : 0} {plates} unit={unit()} {delta} />{/if}
 		{#if !warm}
 			<div class="card" style={isRecord ? 'border-color:rgba(var(--accent-rgb),.5)' : ''}>
 				<div class="row between">
@@ -98,7 +167,10 @@
 		<label class="row between card"><span><b>{t('Serie di riscaldamento')}</b><br /><span class="small muted">{t('Esclusa dal volume e dai record')}</span></span><input class="toggle" type="checkbox" bind:checked={warm} /></label>
 		{#if warm && warmSteps.length}
 			<div class="chips">
-				{#each warmSteps as s}<button class="chip" onclick={() => { weight = s.weight; reps = s.reps }}>{Math.round(s.percent * 100)}% · {nf(s.weight)} × {s.reps}</button>{/each}
+				{#each warmSteps as s}
+					{@const sWeight = isRel ? Math.max(0, round2(s.weight - bar)) : s.weight}
+					<button class="chip" onclick={() => { weight = sWeight; reps = s.reps }}>{Math.round(s.percent * 100)}% · {nf(sWeight)} × {s.reps}</button>
+				{/each}
 			</div>
 		{/if}
 
@@ -122,8 +194,15 @@
 						<div class="tiny muted">{t('Tocca una serie per usarla nel modulo.')}</div>
 						<div class="list">
 							{#each prevSets.slice(0, 15) as s (s.uuid)}
-								<button class="item" style="background:none;border:0;width:100%;text-align:left;cursor:pointer" onclick={() => { weight = toUnit(s.weight); reps = s.reps; warm = false }}>
-									<div class="grow num" style="font-weight:700">{setLine(s.weight, s.reps)}</div>
+								<button class="item" style="background:none;border:0;width:100%;text-align:left;cursor:pointer" onclick={() => { weight = toDisplayWeight(s.weight); reps = s.reps; warm = false }}>
+									<div class="grow num" style="font-weight:700">
+										{#if isRel}
+											{setLine(Math.max(0, s.weight - barKg), s.reps)}
+											<span class="tiny muted" style="font-weight:500">({t('tot.')} {W(s.weight)})</span>
+										{:else}
+											{setLine(s.weight, s.reps)}
+										{/if}
+									</div>
 									<div class="small muted">{relDay(s.createdAt)}</div>
 									{#if s.isPR}<span class="badge pos">PR</span>{/if}
 									{#if s.reps > 1}<span class="small muted num">≈ {W(oneRepMax(s.weight, s.reps))}</span>{/if}
@@ -138,3 +217,24 @@
 		{#if set}<button class="btn danger block" onclick={remove}>{t('Elimina serie')}</button>{/if}
 	</div>
 </Sheet>
+
+<style>
+	.bar-breakdown {
+		margin-top: 10px;
+		padding: 8px 12px;
+		border-radius: 12px;
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid var(--stroke);
+	}
+	.delta-box {
+		margin-top: 8px;
+		padding: 6px 10px;
+		border-radius: 10px;
+		font-size: 13px;
+		font-family: var(--font-num);
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid var(--stroke);
+	}
+	.delta-box.pos { border-color: rgba(50, 205, 50, 0.3); color: #32cd32; background: rgba(50, 205, 50, 0.08); }
+	.delta-box.neg { border-color: rgba(255, 69, 0, 0.3); color: #ff6b6b; background: rgba(255, 69, 0, 0.08); }
+</style>

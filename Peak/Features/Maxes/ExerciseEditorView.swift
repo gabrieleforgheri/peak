@@ -19,6 +19,8 @@ struct ExerciseEditorView: View {
     @State private var step: Double = 2.5
     /// Incremento scritto a mano invece di uno dei valori preimpostati.
     @State private var notes = ""
+    @State private var barWeight: Double = 0
+    @State private var weightDisplay: String = "absolute"
     @State private var isUnilateral = false
     @State private var restSeconds = 0
     @State private var isArchived = false
@@ -156,6 +158,62 @@ struct ExerciseEditorView: View {
 
                     GlassCard {
                         VStack(alignment: .leading, spacing: 12) {
+                            SectionHeader(title: "Peso della sbarra")
+                            Stepper(
+                                value: Binding(
+                                    get: { settings.unit.fromKilograms(barWeight) },
+                                    set: { barWeight = max(0, settings.unit.toKilograms($0)) }
+                                ),
+                                in: 0...(settings.unit == .kg ? 60 : 135),
+                                step: settings.unit == .kg ? 1 : 2.5
+                            ) {
+                                Text(barWeight > 0
+                                     ? Fmt.weight(barWeight, unit: settings.unit)
+                                     : "Nessuna (0)")
+                                    .font(Theme.rounded(15, .semibold))
+                            }
+
+                            HStack(spacing: 8) {
+                                ForEach(settings.unit == .kg ? [0.0, 10.0, 15.0, 20.0] : [0.0, 25.0, 35.0, 45.0], id: \.self) { p in
+                                    let kg = settings.unit.toKilograms(p)
+                                    let isOn = abs(barWeight - kg) < 0.1
+                                    stepChip(p == 0 ? "Nessuna (0)" : "\(Int(p)) \(settings.unit.symbol)", isOn: isOn) {
+                                        barWeight = kg
+                                    }
+                                }
+                            }
+
+                            Text(barWeight > 0
+                                 ? "Inclusa nel calcolo del carico totale e dei dischi."
+                                 : "Nessuna sbarra: il carico inserito è solo dei dischi o del macchinario.")
+                                .font(Theme.rounded(11, .medium))
+                                .foregroundStyle(Theme.textTertiary)
+                        }
+                    }
+
+                    if barWeight > 0 {
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: 12) {
+                                SectionHeader(title: "Visualizzazione del carico")
+                                HStack(spacing: 8) {
+                                    stepChip("Assoluto (totale)", isOn: weightDisplay == "absolute") {
+                                        weightDisplay = "absolute"
+                                    }
+                                    stepChip("Relativo (dischi)", isOn: weightDisplay == "relative") {
+                                        weightDisplay = "relative"
+                                    }
+                                }
+                                Text(weightDisplay == "relative"
+                                     ? "Nelle serie inserisci e visualizzi solo i dischi. Per classifiche e massimali vale sempre il totale con la sbarra."
+                                     : "Mostra il carico totale sollevato, compreso il peso della sbarra.")
+                                    .font(Theme.rounded(11, .medium))
+                                    .foregroundStyle(Theme.textTertiary)
+                            }
+                        }
+                    }
+
+                    GlassCard {
+                        VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "Esecuzione")
                             HStack(spacing: 8) {
                                 stepChip(group == .gambe ? "Entrambe le gambe" : "Entrambe le braccia", isOn: !isUnilateral) {
@@ -281,6 +339,7 @@ struct ExerciseEditorView: View {
         group = entry.muscleGroup
         step = entry.step
         notes = entry.notes
+        barWeight = Plates.defaultBar(for: entry.machineGlyph, name: entry.name)
     }
 
     // MARK: - Foto e pittogramma
@@ -549,7 +608,12 @@ struct ExerciseEditorView: View {
     private func load() {
         guard !didLoad else { return }
         didLoad = true
-        guard let exercise else { picking = .new; return }
+        guard let exercise else {
+            picking = .new
+            barWeight = 0
+            weightDisplay = "absolute"
+            return
+        }
         catalogID = exercise.catalogID
         isCustom = exercise.isCustom
         muscles = exercise.muscleIDs
@@ -566,6 +630,8 @@ struct ExerciseEditorView: View {
         photoOffset = exercise.photoOffset
         dragStart = exercise.photoOffset
         pickedGlyph = MachineGlyph(rawValue: exercise.glyphRaw)
+        barWeight = exercise.barWeight
+        weightDisplay = exercise.weightDisplay
     }
 
     private func save() {
@@ -586,6 +652,8 @@ struct ExerciseEditorView: View {
             exercise.isCustom = catalogID.isEmpty && isCustom
             exercise.musclesRaw = muscles.map(\.rawValue).joined(separator: ",")
             exercise.viewRaw = figureSide.rawValue
+            exercise.barWeight = barWeight
+            exercise.weightDisplay = weightDisplay
         } else {
             let nextIndex = (allExercises.map(\.sortIndex).max() ?? 0) + 1
             let new = Exercise(
@@ -606,6 +674,8 @@ struct ExerciseEditorView: View {
             new.musclesRaw = muscles.map(\.rawValue).joined(separator: ",")
             new.viewRaw = figureSide.rawValue
             new.isHidden = isHidden
+            new.barWeight = barWeight
+            new.weightDisplay = weightDisplay
         }
         try? context.save()
         Haptics.commit()

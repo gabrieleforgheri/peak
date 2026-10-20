@@ -67,6 +67,10 @@ export interface ExerciseDoc {
   hidden: boolean
   /** Creato a mano di proposito, fuori dal catalogo: non serve ricordargli di collegarlo. */
   custom: boolean
+  /** Peso della sbarra in kg (0 = nessuna sbarra o carico già totale). */
+  barWeight: number
+  /** Visualizzazione del carico nelle serie: 'absolute' (totale con sbarra) o 'relative' (solo dischi). */
+  weightDisplay: 'absolute' | 'relative'
 }
 export interface RecordDoc { exercise: string; date: string; weight: number; reps: number; note: string }
 /** Una riga di scheda: sets/reps 0 = non indicato; weight in kg, null = si mostra l'ultimo usato. */
@@ -111,7 +115,7 @@ export const SETTING_DEFAULTS = {
   unit: 'kg', accent: 'lime',
   restTimerEnabled: true, restSeconds: 120,
   progressionEnabled: true, repRangeMin: 8, repRangeMax: 12,
-  plateCalculatorEnabled: true, barWeight: 20, availablePlates: [25, 20, 15, 10, 5, 2.5, 1.25],
+  plateCalculatorEnabled: true, availablePlates: [25, 20, 15, 10, 5, 2.5, 1.25],
   /** Il tutorial l'hai già fatto (su un dispositivo qualsiasi). */
   tutorialDone: false,
   /** L'ultimo giro del tutorial visto: 1 = quello di prima, 2 = con figure e medaglie. */
@@ -124,8 +128,8 @@ export const SETTING_DEFAULTS = {
   activeProgram: '',
 } as const
 export type SettingKey = keyof typeof SETTING_DEFAULTS
-/** Impostazioni tolte nella 3.0: i client vecchi le mandano ancora; il server le ignora senza segnalarle come errori. */
-export const LEGACY_SETTINGS: readonly string[] = ['formula', 'templateSets', 'templateReps', 'templateWeight', 'lastExportDate']
+/** Impostazioni tolte: i client vecchi le mandano ancora; il server le ignora senza segnalarle come errori. */
+export const LEGACY_SETTINGS: readonly string[] = ['formula', 'templateSets', 'templateReps', 'templateWeight', 'lastExportDate', 'barWeight']
 
 export const ACCENTS = ['lime', 'ember', 'ice', 'violet', 'coral'] as const
 
@@ -150,7 +154,6 @@ function cleanSetting(key: string, v: unknown): unknown {
     case 'weeklyGoal': return int(v, 0, 7) ?? undefined
     case 'tourSeen': return int(v, 1, 10) ?? undefined
     case 'repRangeMin': case 'repRangeMax': return int(v, 1, 30) ?? undefined
-    case 'barWeight': return num(v, 0, 100) ?? undefined
     case 'availablePlates':
       return Array.isArray(v) && v.length <= 20 && v.every((p) => num(p, 0.01, 100) !== null) ? v : undefined
     default: return undefined
@@ -238,13 +241,16 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
       const view = o.view ?? ''
       if (!(view === '' || view === 'front' || view === 'back')) return fail('view')
       if (restSeconds === null) return fail('restSeconds')
+      const barWeight = num(o.barWeight ?? 0, 0, 200)
+      if (barWeight === null) return fail('barWeight')
+      const weightDisplay = o.weightDisplay === 'relative' ? 'relative' : 'absolute'
       return {
         data: {
           name, muscleGroup: o.muscleGroup as MuscleGroup, notes, incrementStep, sortIndex,
           isArchived: o.isArchived === true, createdAt: isoSec(createdAt), glyph: glyph as ExerciseDoc['glyph'],
           photo: photo as string, photoOffset, isUnilateral: o.isUnilateral === true, restSeconds,
           catalog: catalog as string, hidden: o.hidden === true, custom: o.custom === true,
-          muscles, view: view as ExerciseDoc['view'],
+          muscles, view: view as ExerciseDoc['view'], barWeight, weightDisplay,
         },
       }
     }
@@ -340,13 +346,13 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
 export function upgradeDoc<T>(kind: Kind, data: T): T {
   if (!data) return data
   if (kind === 'workout') return { template: '', plan: [], ...data } as T
-  if (kind === 'exercise') return { catalog: '', hidden: false, custom: false, muscles: [], view: '', ...data } as T
+  if (kind === 'exercise') return { catalog: '', hidden: false, custom: false, muscles: [], view: '', barWeight: 0, weightDisplay: 'absolute' as const, ...data } as T
   if (kind === 'template') return { hidden: false, icon: '', program: '', weekday: -1, ...data } as T
   return data
 }
 
 /** Campi aggiunti dopo la 2.1: un client vecchio non li manda, e il server non deve cancellarli. */
-export const KEEP_IF_ABSENT: Partial<Record<Kind, readonly string[]>> = { exercise: ['catalog', 'hidden', 'custom', 'muscles', 'view'], template: ['hidden', 'icon', 'program', 'weekday'] }
+export const KEEP_IF_ABSENT: Partial<Record<Kind, readonly string[]>> = { exercise: ['catalog', 'hidden', 'custom', 'muscles', 'view', 'barWeight', 'weightDisplay'], template: ['hidden', 'icon', 'program', 'weekday'] }
 
 /** Chiave unica di un documento, per mappe in memoria. */
 export const docKey = (kind: Kind, uuid: string): string => `${kind}:${uuid}`

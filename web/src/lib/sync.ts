@@ -138,10 +138,12 @@ async function seedDevData() {
 	const legEx = cat.find((e) => e.id === 'leg-extension')
 	const latEx = cat.find((e) => e.id === 'lat-pulldown')
 	const benchEx = cat.find((e) => e.id === 'bench-press-barbell')
+	const smithEx = cat.find((e) => e.id === 'squat-smith')
 
 	const ex1Id = 'A0000000-0000-0000-0000-000000000001'
 	const ex2Id = 'A0000000-0000-0000-0000-000000000002'
 	const ex3Id = 'A0000000-0000-0000-0000-000000000003'
+	const ex4Id = 'A0000000-0000-0000-0000-000000000004'
 
 	put('exercise', ex1Id, {
 		name: isIt ? 'Leg Extension' : 'Leg Extension',
@@ -150,6 +152,8 @@ async function seedDevData() {
 		incrementStep: 5, sortIndex: 0, isArchived: false, createdAt: new Date().toISOString(),
 		glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 90,
 		catalog: legEx?.id ?? 'leg-extension', muscles: legEx?.muscles ?? ['quadriceps'], view: legEx?.view ?? 'front', hidden: false, custom: false,
+		barWeight: 0,
+		weightDisplay: 'absolute',
 	})
 
 	if (latEx) {
@@ -160,6 +164,8 @@ async function seedDevData() {
 			incrementStep: 5, sortIndex: 1, isArchived: false, createdAt: new Date().toISOString(),
 			glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 120,
 			catalog: latEx.id, muscles: latEx.muscles, view: latEx.view, hidden: false, custom: false,
+			barWeight: 0,
+			weightDisplay: 'absolute',
 		})
 	}
 
@@ -171,23 +177,46 @@ async function seedDevData() {
 			incrementStep: 2.5, sortIndex: 2, isArchived: false, createdAt: new Date().toISOString(),
 			glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 120,
 			catalog: benchEx.id, muscles: benchEx.muscles, view: benchEx.view, hidden: false, custom: false,
+			barWeight: 20,
+			weightDisplay: 'absolute',
 		})
 	}
 
-	// Allenamento scorso (con 3 serie di leg extension)
+	if (smithEx) {
+		put('exercise', ex4Id, {
+			name: isIt ? smithEx.it : smithEx.en,
+			muscleGroup: smithEx.group,
+			notes: isIt ? 'Piedi leggermente avanti rispetto alla sbarra.' : 'Feet slightly ahead of the bar.',
+			incrementStep: 2.5, sortIndex: 3, isArchived: false, createdAt: new Date().toISOString(),
+			glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 120,
+			catalog: smithEx.id, muscles: smithEx.muscles, view: smithEx.view, hidden: false, custom: false,
+			barWeight: 15,
+			weightDisplay: 'absolute',
+		})
+	}
+
+	// Allenamento scorso (con 3 serie di leg extension e 3 serie di panca piana)
 	const prevWkId = 'B0000000-0000-0000-0000-000000000001'
 	put('workout', prevWkId, {
 		date: new Date(Date.now() - 3 * 86400000).toISOString(),
 		endedAt: new Date(Date.now() - 3 * 86400000 + 3600000).toISOString(),
-		name: isIt ? 'Gambe & Schiena' : 'Legs & Back',
-		focus: 'gambe,schiena',
+		name: isIt ? 'Gambe & Petto' : 'Legs & Chest',
+		focus: 'gambe,petto',
 		note: isIt ? 'Ottime sensazioni, carichi stabili.' : 'Great feeling, steady weights.',
 		template: '',
-		plan: [{ exercise: ex1Id, sets: 3, repsMin: 8, repsMax: 10, weight: 60 }],
+		plan: [
+			{ exercise: ex1Id, sets: 3, repsMin: 8, repsMax: 10, weight: 60 },
+			...(benchEx ? [{ exercise: ex3Id, sets: 3, repsMin: 8, repsMax: 10, weight: 70 }] : []),
+		],
 	})
 	put('set', 'C0000000-0000-0000-0000-000000000001', { workout: prevWkId, exercise: ex1Id, weight: 50, reps: 12, rpe: null, isWarmup: false, order: 0, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false })
 	put('set', 'C0000000-0000-0000-0000-000000000002', { workout: prevWkId, exercise: ex1Id, weight: 55, reps: 10, rpe: null, isWarmup: false, order: 1, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false })
 	put('set', 'C0000000-0000-0000-0000-000000000003', { workout: prevWkId, exercise: ex1Id, weight: 60, reps: 8, rpe: null, isWarmup: false, order: 2, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false })
+	if (benchEx) {
+		put('set', 'C0000000-0000-0000-0000-000000000010', { workout: prevWkId, exercise: ex3Id, weight: 60, reps: 10, rpe: null, isWarmup: false, order: 3, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false })
+		put('set', 'C0000000-0000-0000-0000-000000000011', { workout: prevWkId, exercise: ex3Id, weight: 65, reps: 8, rpe: null, isWarmup: false, order: 4, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false })
+		put('set', 'C0000000-0000-0000-0000-000000000012', { workout: prevWkId, exercise: ex3Id, weight: 70, reps: 6, rpe: null, isWarmup: false, order: 5, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false })
+	}
 
 	// Allenamento in corso di oggi
 	const todayWkId = 'B0000000-0000-0000-0000-000000000002'
@@ -195,16 +224,20 @@ async function seedDevData() {
 		date: new Date().toISOString(),
 		endedAt: null,
 		name: isIt ? 'Allenamento di oggi' : 'Today\'s Workout',
-		focus: 'gambe,schiena',
+		focus: 'gambe,petto',
 		note: '',
 		template: '',
 		plan: [
 			{ exercise: ex1Id, sets: 4, repsMin: 8, repsMax: 10, weight: 60 },
-			...(latEx ? [{ exercise: ex2Id, sets: 3, repsMin: 8, repsMax: 12, weight: 55 }] : []),
 			...(benchEx ? [{ exercise: ex3Id, sets: 3, repsMin: 8, repsMax: 10, weight: 70 }] : []),
+			...(smithEx ? [{ exercise: ex4Id, sets: 3, repsMin: 8, repsMax: 10, weight: 55 }] : []),
+			...(latEx ? [{ exercise: ex2Id, sets: 3, repsMin: 8, repsMax: 12, weight: 55 }] : []),
 		],
 	})
 	put('set', 'C0000000-0000-0000-0000-000000000004', { workout: todayWkId, exercise: ex1Id, weight: 55, reps: 10, rpe: null, isWarmup: false, order: 0, createdAt: new Date().toISOString(), noRecord: false })
+	if (benchEx) {
+		put('set', 'C0000000-0000-0000-0000-000000000013', { workout: todayWkId, exercise: ex3Id, weight: 65, reps: 8, rpe: null, isWarmup: false, order: 1, createdAt: new Date().toISOString(), noRecord: false })
+	}
 }
 
 export async function boot() {
@@ -233,9 +266,11 @@ export async function boot() {
 	S.ready = true
 
 	const devSeedLang = localStorage.getItem('peak.dev-seed-lang')
-	if (import.meta.env.DEV && (getModel().exercises.length === 0 || devSeedLang !== lang)) {
+	const devSeedVer = localStorage.getItem('peak.dev-seed-ver')
+	if (import.meta.env.DEV && (getModel().exercises.length === 0 || devSeedLang !== lang || devSeedVer !== '3')) {
 		await seedDevData()
 		localStorage.setItem('peak.dev-seed-lang', lang)
+		localStorage.setItem('peak.dev-seed-ver', '3')
 	}
 
 	addEventListener('online', () => void syncNow())

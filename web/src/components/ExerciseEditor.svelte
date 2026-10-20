@@ -2,9 +2,9 @@
 	import { GLYPHS, MUSCLE_GROUPS, type GlyphName, type MuscleGroup } from '@common/docs.ts'
 	import type { Muscle, View } from '@common/muscle-info.ts'
 	import { GLYPH_TITLES, glyphOf } from '@common/glyph.ts'
-	import { PhotoFraming } from '@common/domain.ts'
+	import { PhotoFraming, defaultBarWeightFor, round2 } from '@common/domain.ts'
 	import { deleteExercise, saveExercise } from '../lib/actions.ts'
-	import { GROUP_NAMES } from '../lib/fmt.ts'
+	import { GROUP_NAMES, fromUnit, toUnit, unit } from '../lib/fmt.ts'
 	import { t } from '../lib/i18n.ts'
 	import { getModel } from '../lib/store.svelte.ts'
 	import { photoUrl, preparePhoto } from '../lib/photo.ts'
@@ -27,6 +27,8 @@
 	let group = $state<MuscleGroup>(existing?.muscleGroup ?? 'petto')
 	let notes = $state(existing?.notes ?? '')
 	let step = $state(existing?.incrementStep ?? 2.5)
+	let barWeight = $state(toUnit(existing?.barWeight ?? defaultBarWeightFor(existing?.glyphName ?? existing?.glyph ?? '', existing?.name ?? '')))
+	let weightDisplay = $state<'absolute' | 'relative'>(existing?.weightDisplay ?? 'absolute')
 	let glyph = $state<'' | GlyphName>(existing?.glyph ?? '')
 	let photo = $state(existing?.photo ?? '')
 	let offset = $state(existing?.photoOffset ?? 0)
@@ -54,6 +56,7 @@
 		if (wasNew) {
 			// precompila: il nome si può cambiare subito con uno familiare
 			name = startName.trim() || entryName(e); group = e.group; step = e.step; notes = e.notes
+			barWeight = toUnit(defaultBarWeightFor(e.glyph, entryName(e)))
 		}
 	}
 
@@ -94,6 +97,8 @@
 			name: name.trim(), muscleGroup: group, notes, incrementStep: step, isArchived: archived, glyph, photo,
 			photoOffset: Math.round(offset * 1000) / 1000, isUnilateral: unilateral, restSeconds: rest,
 			catalog, hidden, custom: !catalog && own, muscles, view,
+			barWeight: round2(fromUnit(Math.max(0, barWeight))),
+			weightDisplay,
 		})
 		onsaved?.(uuid)
 		onclose()
@@ -187,6 +192,36 @@
 			<span class="sec-title" style="margin:0 4px 6px">{t('Incremento del carico')}</span>
 			<Stepper compact bind:value={step} step={0.25} min={0.25} max={50} unit="kg" />
 		</div>
+
+		<div class="field">
+			<span class="sec-title" style="margin:0 4px 6px">{t('Peso della sbarra')}</span>
+			<Stepper compact bind:value={barWeight} step={unit() === 'kg' ? 1 : 2.5} min={0} max={unit() === 'kg' ? 60 : 135} unit={unit()} />
+			<div class="chips" style="margin-top:8px">
+				{#each (unit() === 'kg' ? [0, 10, 15, 20] : [0, 25, 35, 45]) as p}
+					<button class="chip" class:on={Math.abs(barWeight - p) < 0.1} onclick={() => (barWeight = p)}>
+						{p === 0 ? t('Nessuna (0)') : `${p} ${unit()}`}
+					</button>
+				{/each}
+			</div>
+			<p class="muted small" style="margin:6px 4px 0">
+				{barWeight > 0 ? t('Inclusa nel calcolo del carico totale e dei dischi.') : t('Nessuna sbarra: il carico inserito è solo dei dischi o del macchinario.')}
+			</p>
+		</div>
+
+		{#if barWeight > 0}
+			<div class="field">
+				<span class="sec-title" style="margin:0 4px 6px">{t('Visualizzazione del carico')}</span>
+				<div class="seg">
+					<button class:on={weightDisplay === 'absolute'} onclick={() => (weightDisplay = 'absolute')}>{t('Assoluto (totale)')}</button>
+					<button class:on={weightDisplay === 'relative'} onclick={() => (weightDisplay = 'relative')}>{t('Relativo (dischi)')}</button>
+				</div>
+				<p class="muted small" style="margin:6px 4px 0">
+					{weightDisplay === 'relative'
+						? t('Nelle serie inserisci e visualizzi solo i dischi. Per classifiche e massimali vale sempre il totale con la sbarra.')
+						: t('Mostra il carico totale sollevato, compreso il peso della sbarra.')}
+				</p>
+			</div>
+		{/if}
 
 		<div class="field">
 			<span class="sec-title" style="margin:0 4px 6px">{t('Esecuzione')}</span>

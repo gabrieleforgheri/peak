@@ -37,6 +37,10 @@ final class Exercise {
     var viewRaw: String = ""
     /// Creato a mano di proposito: non è «fuori catalogo da sistemare». Segue l'account.
     var isCustom: Bool = false
+    /// Peso della sbarra in kg (0 se nessuna sbarra).
+    var barWeight: Double = 0
+    /// Modalità di visualizzazione del carico: "absolute" (totale con sbarra) o "relative" (solo dischi).
+    var weightDisplayRaw: String = "absolute"
 
     @Relationship(deleteRule: .cascade, inverse: \MaxRecord.exercise)
     var records: [MaxRecord]? = []
@@ -86,6 +90,11 @@ final class Exercise {
 
     /// `true` se il pittogramma è stato scelto a mano.
     var hasCustomGlyph: Bool { MachineGlyph(rawValue: glyphRaw) != nil }
+
+    var weightDisplay: String {
+        get { weightDisplayRaw.isEmpty ? "absolute" : weightDisplayRaw }
+        set { weightDisplayRaw = newValue }
+    }
 
     var recordList: [MaxRecord] { records ?? [] }
     var setList: [WorkoutSet] { sets ?? [] }

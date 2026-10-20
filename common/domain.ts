@@ -105,13 +105,28 @@ export function loadPlates(total: number, bar: number, plates: number[]): PlateL
 
 export type PlateMode = { bar: true } | { bar: false } | null
 
+export function defaultBarWeightFor(glyph: string, name = ''): number {
+  const n = name.toLowerCase()
+  if (n.includes('manubri') || n.includes('dumbbell')) return 0
+  if (['barbell', 'benchFlat', 'benchIncline', 'squatRack', 'hipThrust', 'landmine', 'preacherBench'].includes(glyph)) return 20
+  if (glyph === 'smithMachine') return 15
+  if (glyph === 'ezBar') return 10
+  if (glyph === 'trapBar') return 25
+  if (n.includes('bilanciere') || n.includes('barbell')) return 20
+  if (n.includes('multipower') || n.includes('smith')) return 15
+  if (n.includes('ez')) return 10
+  if (n.includes('trap bar') || n.includes('quadra')) return 25
+  return 0
+}
+
 /**
  * Il calcolatore dischi compare dove c'è un bilanciere (anche panche, rack, hip thrust, EZ, trap bar) e per le plate loaded
  * (senza bilanciere). Con i manubri no: un vecchio «Panca Piana Manubri» personalizzato ha il pittogramma della panca.
  */
-export function plateMode(glyph: string, exerciseName: string): PlateMode {
+export function plateMode(glyph: string, exerciseName: string, barWeight?: number): PlateMode {
   const name = exerciseName.toLowerCase()
   if (glyph === 'plateLoaded' || name.includes('plate loaded')) return { bar: false }
+  if (barWeight !== undefined && barWeight > 0) return { bar: true }
   if (['barbell', 'benchFlat', 'benchIncline', 'squatRack', 'hipThrust', 'ezBar', 'trapBar'].includes(glyph)
     && !name.includes('manubri')) return { bar: true }
   return null
@@ -148,11 +163,11 @@ const sameList = (a: number[], b: number[]) =>
 
 /** Cambiando unità, dischi e bilanciere ancora di serie dell'unità vecchia passano a quelli di serie della nuova. */
 export function settingsForUnitChange(
-  from: Unit, to: Unit, plates: number[], bar: number,
-): { availablePlates: number[]; barWeight: number } {
+  from: Unit, to: Unit, plates: number[], bar?: number,
+): { availablePlates: number[]; barWeight?: number } {
   return {
     availablePlates: sameList(plates, defaultPlates(from)) ? defaultPlates(to) : plates,
-    barWeight: Math.abs(bar - defaultBar(from)) < 0.001 ? defaultBar(to) : bar,
+    ...(bar !== undefined ? { barWeight: Math.abs(bar - defaultBar(from)) < 0.001 ? defaultBar(to) : bar } : {}),
   }
 }
 

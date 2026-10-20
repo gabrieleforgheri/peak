@@ -17,12 +17,26 @@ enum Plates {
     /// Bilanciere di serie: 20 kg, 45 lb.
     static func defaultBar(for unit: WeightUnit) -> Double { unit == .kg ? 20 : 45 * kilogramsPerPound }
 
+    /// Peso predefinito della sbarra in base a pittogramma o nome (come defaultBarWeightFor nel web).
+    static func defaultBar(for glyph: MachineGlyph?, name: String) -> Double {
+        let n = name.lowercased()
+        if n.contains("manubri") || n.contains("dumbbell") { return 0 }
+        if glyph == .plateLoaded || n.contains("plate loaded") { return 0 }
+        if glyph == .ezBar || n.contains("ez") { return 10 }
+        if glyph == .trapBar || n.contains("trap bar") || n.contains("quadra") { return 25 }
+        if n.contains("multipower") || n.contains("smith") { return 15 }
+        if glyph == .barbell || glyph == .benchFlat || glyph == .benchIncline || glyph == .squatRack || glyph == .hipThrust
+            || n.contains("bilanciere") || n.contains("barbell") { return 20 }
+        return 0
+    }
+
     /// Il calcolatore compare dove c'è un bilanciere (anche panche, rack, hip thrust, EZ, trap bar) e per le
     /// plate loaded (senza). Non con i manubri: un vecchio «Panca piana manubri» personalizzato ha il pittogramma della panca.
     /// `nil` = niente calcolatore. Stessa regola del web (`plateMode` in common/domain.ts).
     static func barBase(glyph: MachineGlyph, name: String, barWeight: Double) -> Double? {
         let name = name.lowercased()
         if glyph == .plateLoaded || name.contains("plate loaded") { return 0 }
+        if barWeight > 0 { return barWeight }
         switch glyph {
         case .barbell, .benchFlat, .benchIncline, .squatRack, .hipThrust, .ezBar, .trapBar:
             return name.contains("manubri") ? nil : barWeight

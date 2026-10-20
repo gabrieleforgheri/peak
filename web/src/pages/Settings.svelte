@@ -105,7 +105,6 @@
 		{ id: 'dati', icon: 'archive', label: t('Dati') },
 	]
 	const cat = $derived(CATS.find((c) => c.id === route.parts[1]))
-	const stepBar = $derived(s.unit === 'kg' ? 2.5 : 5)
 </script>
 
 <main class="screen no-tabs">
@@ -167,7 +166,6 @@
 		<hr style="border:0;border-top:1px solid var(--stroke);width:100%;margin:0" />
 		<label class="row between"><span>{t('Calcolatore dischi')}</span><input class="toggle" type="checkbox" checked={s.plateCalculatorEnabled} onchange={(e) => setSetting('plateCalculatorEnabled', e.currentTarget.checked)} /></label>
 		{#if s.plateCalculatorEnabled}
-			<div><div class="small muted">{t('Peso del bilanciere')}</div><Stepper value={toUnit(s.barWeight)} step={stepBar} min={0} max={toUnit(30)} unit={unit()} onchange={(v) => setSetting('barWeight', fromUnit(v))} /></div>
 			<div><div class="small muted" style="margin-bottom:6px">{t('Dischi disponibili')}</div>
 				<div class="chips">{#each plateChips as p}<button class="chip" class:on={hasPlate(p)} onclick={() => togglePlate(p)}>{p} {unit()}</button>{/each}</div></div>
 		{/if}

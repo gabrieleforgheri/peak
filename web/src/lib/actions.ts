@@ -2,7 +2,7 @@
 // derivano dalle serie (common/records.ts), quindi cancellare o modificare una serie basta a tenerli giusti.
 
 import { isoSec, newUuid, MUSCLE_GROUPS, type DocDataMap, type ExerciseDoc, type Kind, type MuscleGroup, type SetDoc, type TemplateDoc, type TemplateItem, type WorkoutDoc } from '@common/docs.ts'
-import { settingsForUnitChange, type Unit } from '@common/domain.ts'
+import { defaultBarWeightFor, settingsForUnitChange, type Unit } from '@common/domain.ts'
 import { addItem, differsFromTemplate, moveItem, removeItem, replaceItem, sessionItems, type PlanSet } from '@common/plan.ts'
 import type { AnyRecord } from '@common/records.ts'
 import { activeProgram } from './derive.ts'
@@ -166,6 +166,8 @@ export async function copyTemplate(src: { name: string; rows: { catalog: string;
 					name: entry ? entryName(entry) : r.name, muscleGroup: entry?.group ?? 'petto', notes: entry?.notes ?? '', incrementStep: entry?.step ?? 2.5,
 					sortIndex: ++top, isArchived: false, createdAt: now(), glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0,
 					catalog: entry?.id ?? '', hidden: false, custom: !entry, muscles: [], view: '',
+					barWeight: entry ? defaultBarWeightFor(entry.glyph, entryName(entry)) : 0,
+					weightDisplay: 'absolute',
 				})
 				ex = { uuid, catalog: entry?.id ?? '', name: r.name } as Ex
 				mine.push(ex)
@@ -226,11 +228,10 @@ export const setSetting = (key: string, value: unknown) => put('setting', key, {
 export function changeUnit(to: Unit) {
 	const s = getModel().settings
 	if (s.unit === to) return
-	const next = settingsForUnitChange(s.unit, to, s.availablePlates, s.barWeight)
+	const next = settingsForUnitChange(s.unit, to, s.availablePlates)
 	batch(() => {
 		setSetting('unit', to)
 		setSetting('availablePlates', next.availablePlates)
-		setSetting('barWeight', next.barWeight)
 	})
 }
 

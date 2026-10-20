@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { oneRepMax, toDisplay, round2 } from '@common/domain.ts'
-	import { GROUP_NAMES, W, dateLong, dateShort, delta, relDay, setLine, unit } from '../lib/fmt.ts'
+	import { GROUP_NAMES, W, dateLong, dateShort, delta, relDay, setLine, toUnit, unit } from '../lib/fmt.ts'
 	import { deleteRecord } from '../lib/actions.ts'
 	import { deltaOf, stepOf, suggestionFor, warmupFor } from '../lib/derive.ts'
 	import { locale, t } from '../lib/i18n.ts'
@@ -87,6 +87,8 @@
 					<div class="row wrap" style="gap:6px">
 						<span class="badge" style="color:var(--{ex.muscleGroup});background:color-mix(in srgb, var(--{ex.muscleGroup}) 16%, transparent)">{GROUP_NAMES[ex.muscleGroup]}</span>
 						{#if ex.isUnilateral}<span class="badge">{ex.muscleGroup === 'gambe' ? t('Una gamba') : t('Un braccio')}</span>{/if}
+						{#if (ex.barWeight ?? 0) > 0}<span class="badge">{t('Sbarra')} {nf(toUnit(ex.barWeight))} {unit()}</span>{/if}
+						{#if (ex.barWeight ?? 0) > 0 && ex.weightDisplay === 'relative'}<span class="badge">{t('Dischi')}</span>{/if}
 						{#if ex.best?.isAuto}<span class="badge">{t('da allenamento')}</span>{/if}
 					</div>
 					{#if ex.best}
@@ -182,8 +184,19 @@
 			<div class="sec-title">{t('Ultime serie')}</div>
 			<div class="card list">
 				{#each ex.sets.slice(0, 8) as s (s.uuid)}
+					{@const isRel = ex.weightDisplay === 'relative' && (ex.barWeight ?? 0) > 0}
 					<div class="item">
-						<div class="grow"><div class="num" style="font-weight:700">{setLine(s.weight, s.reps)}</div><div class="small muted">{relDay(s.createdAt)}</div></div>
+						<div class="grow">
+							<div class="num" style="font-weight:700">
+								{#if isRel}
+									{setLine(Math.max(0, s.weight - ex.barWeight), s.reps)}
+									<span class="tiny muted" style="font-weight:500">({t('tot.')} {W(s.weight)})</span>
+								{:else}
+									{setLine(s.weight, s.reps)}
+								{/if}
+							</div>
+							<div class="small muted">{relDay(s.createdAt)}</div>
+						</div>
 						{#if s.isPR}<span class="badge pos">PR</span>{/if}
 						{#if s.isWarmup}<span class="badge">{t('risc.')}</span>{/if}
 					</div>

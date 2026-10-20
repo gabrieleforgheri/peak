@@ -76,6 +76,17 @@
 			.sort((a, b) => a.order - b.order || a.createdAt - b.createdAt)
 	}
 
+	function formatSetLine(weightKg: number, reps: number, ex: Ex): { main: string; sub?: string } {
+		if (ex.weightDisplay === 'relative' && (ex.barWeight ?? 0) > 0) {
+			const relKg = Math.max(0, weightKg - ex.barWeight)
+			return {
+				main: setLine(relKg, reps),
+				sub: `${t('tot.')} ${W(weightKg)}`,
+			}
+		}
+		return { main: setLine(weightKg, reps) }
+	}
+
 	function repeat(ex: Ex) {
 		const last = [...(wk?.sets ?? [])].reverse().find((s) => s.exercise === ex.uuid)
 		if (!last || !wk) return
@@ -172,9 +183,10 @@
 									<div class="tiny muted" style="font-weight:700">{t('Scorso:')}</div>
 									<div class="stack" style="gap:2px">
 										{#each prevSets as s, i}
+											{@const fmt = formatSetLine(s.weight, s.reps, ex)}
 											<div class="row small muted num" style="gap:6px">
 												<span style="width:16px;opacity:0.6">{i + 1}.</span>
-												<span>{setLine(s.weight, s.reps)}</span>
+												<span>{fmt.main}{#if fmt.sub} <span class="faint tiny">({fmt.sub})</span>{/if}</span>
 											</div>
 										{/each}
 									</div>
@@ -208,9 +220,12 @@
 					<!-- sempre presente (vuota non occupa nulla): così anche la prima serie di un esercizio entra con la sua transizione -->
 					<div class="list" style:margin-top={sets.length ? '12px' : '0'}>
 						{#each sets as s, i (s.uuid)}
+							{@const fmt = formatSetLine(s.weight, s.reps, ex)}
 							<button class="item" class:flash={s.isPR && s.uuid === fresh} onclick={() => (adding = { ex, set: s })} in:rowIn out:rowOut>
 								<span class="muted num" style="width:20px">{i + 1}</span>
-								<div class="grow num" style="font-weight:700">{setLine(s.weight, s.reps)}</div>
+								<div class="grow num" style="font-weight:700">
+									{fmt.main}{#if fmt.sub} <span class="tiny muted" style="font-weight:500">({fmt.sub})</span>{/if}
+								</div>
 								{#if s.isWarmup}<span class="badge">{t('risc.')}</span>{/if}
 								{#if s.isPR}<span class="badge pos">PR</span>{/if}
 								{#if s.reps > 1 && !s.isWarmup}<span class="small muted num">≈ {W(oneRepMax(s.weight, s.reps))}</span>{/if}

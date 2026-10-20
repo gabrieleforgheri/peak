@@ -23,7 +23,7 @@ enum SyncDocs {
     /// Le impostazioni che seguono l'account. Quelle del Watch, di Salute e dei dati interni restano del dispositivo.
     static let settingKeys = [
         "unit", "accent", "restTimerEnabled", "restSeconds", "progressionEnabled", "repRangeMin",
-        "repRangeMax", "plateCalculatorEnabled", "barWeight", "availablePlates", "tutorialDone", "tourSeen", "weeklyGoal", "language", "activeProgram"
+        "repRangeMax", "plateCalculatorEnabled", "availablePlates", "tutorialDone", "tourSeen", "weeklyGoal", "language", "activeProgram"
     ]
 
     private static func settingValue(_ name: String, _ settings: AppSettings) -> Any {
@@ -108,7 +108,9 @@ enum SyncDocs {
                 "hidden": exercise.isHidden,
                 "muscles": exercise.muscleIDs.map(\.rawValue),
                 "view": exercise.viewRaw,
-                "custom": exercise.isCustom
+                "custom": exercise.isCustom,
+                "barWeight": exercise.barWeight,
+                "weightDisplay": exercise.weightDisplay
             ]
             // solo i massimali inseriti a mano: gli altri si ricalcolano dalle serie
             for record in exercise.recordList where !record.isEstimated {
@@ -276,6 +278,8 @@ enum SyncDocs {
                 if let muscles = d["muscles"] as? [String] { exercise.musclesRaw = muscles.joined(separator: ",") }
                 if let view = text(d, "view") { exercise.viewRaw = view }
                 if let custom = d["custom"] as? Bool { exercise.isCustom = custom }
+                if let bar = number(d, "barWeight") { exercise.barWeight = bar }
+                if let wd = text(d, "weightDisplay"), ["absolute", "relative"].contains(wd) { exercise.weightDisplay = wd }
                 let sha = text(d, "photo") ?? ""
                 if sha.isEmpty { exercise.photo = nil }
                 else if let bytes = photos[sha] { exercise.photo = bytes }
