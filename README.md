@@ -142,10 +142,16 @@ tutti i pittogrammi per sceglierlo a mano.
 ## Durante l'allenamento
 
 Le serie si aggiungono, si **modificano** (tocco sulla riga) e si eliminano (menu
-contestuale): correggendo una serie il massimale automatico viene ricalcolato, così
-una correzione al ribasso non lascia in giro un record mai fatto. Ogni sessione ha
-il suo campo **note**, e il selettore degli esercizi mette in cima quelli **usati di
-recente**.
+contestuale): correggendo una serie il massimale automatico viene ricalcolato istantaneamente
+(sia al rialzo, mostrando il badge verde *Personal Record*, sia al ribasso, rimuovendo un record
+non più valido). Ogni scheda esercizio in sessione mostra le **serie allenanti dell'ultimo
+allenamento concluso** per avere un riferimento immediato dei carichi e delle ripetizioni
+raggiunti la volta precedente. Inoltre, dal menu a tre puntini dell'esercizio è disponibile
+l'azione **Vedi macchinario**, e durante l'inserimento o modifica di una serie un menu a comparsa
+permette di consultare lo storico di tutte le serie registrate in precedenza. Il titolo
+dell'esercizio è posizionato sempre in cima (sia in allenamento sia nell'editor delle schede)
+per una leggibilità immediata. Ogni sessione ha il suo campo **note**, e il selettore degli
+esercizi mette in cima quelli **usati di recente**.
 
 Dopo ogni serie parte il **timer di recupero** (attivabile in *Impostazioni →
 Allenamento*): durata predefinita lì, sovrascrivibile per macchinario nell'editor.
@@ -222,7 +228,7 @@ già l'iPhone.
 
 ## Peso corporeo e app Salute
 
-Le pesate si registrano dalla scheda Progressi e finiscono in un grafico a sei mesi.
+Le pesate si registrano dalla scheda Progressi con selettore dell'orizzonte temporale dinamico.
 La sincronizzazione con **Salute** (`Store/HealthService.swift`) funziona in due
 direzioni: legge l'ultima pesata da Salute e vi registra gli allenamenti conclusi
 come sessioni di *traditional strength training*.
@@ -273,6 +279,18 @@ misurazione, non un giorno di calendario**. Saltare due settimane non disegna pi
 lunga riga piatta, e il volume settimanale mostra solo le settimane in cui ti sei
 davvero allenato. Le date restano stampate sotto alcune tacche
 (`Stats.tickIndices`).
+
+Su tutti i grafici di andamento (Dettaglio esercizio, Peso corporeo, Progressione 1RM)
+è presente un **selettore dinamico dell'orizzonte temporale** (`1 mese`, `3 mesi`, `1 anno`,
+`Tutto`): le opzioni disponibili si adattano automaticamente all'effettiva anzianità dello storico:
+- con meno di 30 giorni di dati il selettore resta nascosto, mostrando direttamente tutto lo storico;
+- tra 30 e 89 giorni sono disponibili `1 mese` e `Tutto`;
+- tra 90 e 364 giorni sono disponibili `1 mese`, `3 mesi` e `Tutto`;
+- da 365 giorni in su sono disponibili `3 mesi`, `1 anno` e `Tutto`.
+
+Se in un intervallo selezionato i dati sono inferiori a 2 punti, la card rimane comunque visualizzata
+mostrando l'avviso dedicato (*«Dati non sufficienti per questo intervallo»* / *«Not enough data for this range»*),
+consentendo di tornare facilmente a un orizzonte più ampio.
 
 I pesi sono **sempre salvati in chilogrammi** e mostrati con **due decimali**, così un
 disco da 1,25 kg resta 1,25 e non diventa 1,3. L'impostazione kg/lb cambia solo come
