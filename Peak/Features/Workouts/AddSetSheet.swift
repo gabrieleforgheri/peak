@@ -29,7 +29,7 @@ struct AddSetSheet: View {
     @State private var isRecentSetsExpanded = false
 
     private var allPreviousSets: [WorkoutSet] {
-        let sets = exercise.setList
+        let sets = exercise.setList.filter { !$0.isWarmup }
         if case let .edit(currentSet) = mode {
             return sets.filter { $0.uuid != currentSet.uuid }.sorted { $0.createdAt > $1.createdAt }
         }
@@ -294,7 +294,7 @@ struct AddSetSheet: View {
                             Button {
                                 weight = prev.weight
                                 reps = prev.reps
-                                isWarmup = prev.isWarmup
+                                isWarmup = false
                                 Haptics.tap()
                             } label: {
                                 HStack(spacing: 8) {
@@ -302,20 +302,15 @@ struct AddSetSheet: View {
                                         HStack(spacing: 6) {
                                             Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit))
                                                 .font(Theme.rounded(14, .bold))
-                                                .foregroundStyle(prev.isWarmup ? Theme.textSecondary : Theme.textPrimary)
+                                                .foregroundStyle(Theme.textPrimary)
                                             if prev.isPersonalRecord { PRBadge() }
-                                            if prev.isWarmup {
-                                                Text("risc.")
-                                                    .font(Theme.rounded(10, .semibold))
-                                                    .foregroundStyle(Theme.textTertiary)
-                                            }
                                         }
                                         Text(Fmt.relativeDay(prev.createdAt))
                                             .font(Theme.rounded(11, .medium))
                                             .foregroundStyle(Theme.textTertiary)
                                     }
                                     Spacer()
-                                    if prev.reps > 1, !prev.isWarmup {
+                                    if prev.reps > 1 {
                                         Text("≈ \(Fmt.weight(prev.estimatedOneRepMax, unit: settings.unit))")
                                             .font(Theme.rounded(12, .medium))
                                             .foregroundStyle(Theme.textTertiary)

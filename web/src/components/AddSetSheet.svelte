@@ -24,8 +24,8 @@
 	// il massimale (almeno 5 rip), quattro passi
 	function start(): { w: number; r: number } {
 		if (set) return { w: toUnit(set.weight), r: set.reps }
-		const inWorkout = [...workout.sets].reverse().find((s) => s.exercise === ex.uuid)
-		const prev = inWorkout ?? ex.sets[0]
+		const inWorkout = [...workout.sets].reverse().find((s) => s.exercise === ex.uuid && !s.isWarmup)
+		const prev = inWorkout ?? ex.sets.find((s) => !s.isWarmup) ?? [...workout.sets].reverse().find((s) => s.exercise === ex.uuid) ?? ex.sets[0]
 		if (prev) return { w: toUnit(prev.weight), r: prev.reps }
 		if (ex.records[0]) return { w: toUnit(ex.records[0].weight), r: Math.max(5, ex.records[0].reps) }
 		return { w: round2(step * 4), r: 8 }
@@ -35,7 +35,7 @@
 	let reps = $state(init.r)
 	let warm = $state(set?.isWarmup ?? false)
 	let showRecent = $state(false)
-	const prevSets = $derived(set ? ex.sets.filter((s) => s.uuid !== set.uuid) : ex.sets)
+	const prevSets = $derived((set ? ex.sets.filter((s) => s.uuid !== set.uuid) : ex.sets).filter((s) => !s.isWarmup))
 
 	const kg = $derived(fromUnit(weight))
 	const reference = $derived(bestOf(set ? ex.records.filter((r) => r.uuid !== set.uuid) : ex.records))
@@ -122,12 +122,11 @@
 						<div class="tiny muted">{t('Tocca una serie per usarla nel modulo.')}</div>
 						<div class="list">
 							{#each prevSets.slice(0, 15) as s (s.uuid)}
-								<button class="item" style="background:none;border:0;width:100%;text-align:left;cursor:pointer" onclick={() => { weight = toUnit(s.weight); reps = s.reps; warm = s.isWarmup }}>
+								<button class="item" style="background:none;border:0;width:100%;text-align:left;cursor:pointer" onclick={() => { weight = toUnit(s.weight); reps = s.reps; warm = false }}>
 									<div class="grow num" style="font-weight:700">{setLine(s.weight, s.reps)}</div>
 									<div class="small muted">{relDay(s.createdAt)}</div>
-									{#if s.isWarmup}<span class="badge">{t('risc.')}</span>{/if}
 									{#if s.isPR}<span class="badge pos">PR</span>{/if}
-									{#if s.reps > 1 && !s.isWarmup}<span class="small muted num">≈ {W(oneRepMax(s.weight, s.reps))}</span>{/if}
+									{#if s.reps > 1}<span class="small muted num">≈ {W(oneRepMax(s.weight, s.reps))}</span>{/if}
 								</button>
 							{/each}
 						</div>

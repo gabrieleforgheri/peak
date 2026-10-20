@@ -350,8 +350,9 @@ struct WorkoutSessionView: View {
     }
 
     private func lastSet(for exercise: Exercise) -> WorkoutSet? {
-        workout.sets(for: exercise).last
-            ?? exercise.setList.max { $0.createdAt < $1.createdAt }
+        workout.sets(for: exercise).filter { !$0.isWarmup }.last
+            ?? exercise.setList.filter { !$0.isWarmup }.max { $0.createdAt < $1.createdAt }
+            ?? workout.sets(for: exercise).last
     }
 
     private func addSet(to exercise: Exercise, weight: Double, reps: Int, isWarmup: Bool) {
@@ -449,7 +450,6 @@ struct WorkoutSessionView: View {
         set.weight = weight
         set.reps = reps
         set.isWarmup = isWarmup
-        let wasRecord = set.isPersonalRecord
         if let exercise = set.exercise { RecordService.recompute(exercise, context: context) }
         let isRecord = set.isPersonalRecord
         try? context.save()
@@ -625,36 +625,53 @@ private struct ExerciseSessionCard: View {
                 .contentShape(Rectangle())
                 .onTapGesture(perform: onSelect)
 
-                // RIGA 2: Miniature (macchinario e corpo) + serie non di riscaldamento dello scorso allenamento
-                HStack(alignment: .top, spacing: 10) {
-                    HStack(spacing: 6) {
-                        ExerciseThumbnail(exercise: exercise, size: 34, zoomable: true)
-                        ExerciseFigure(exercise: exercise, size: 34)
+                // RIGA 2: Miniature (macchinario e corpo) + eventuale obiettivo
+                HStack(spacing: 8) {
+                    ExerciseThumbnail(exercise: exercise, size: 34, zoomable: true)
+                    ExerciseFigure(exercise: exercise, size: 34)
+
+                    if !goal.isEmpty {
+                        Text(goal)
+                            .font(Theme.rounded(12, .semibold))
+                            .foregroundStyle(Theme.textSecondary)
                     }
 
-                    VStack(alignment: .leading, spacing: 3) {
-                        if !previousSets.isEmpty {
-                            let summary = previousSets.map { Fmt.setLine(weight: $0.weight, reps: $0.reps, unit: settings.unit) }.joined(separator: ", ")
-                            Text("Scorso: \(summary)")
-                                .font(Theme.rounded(12, .medium))
-                                .foregroundStyle(Theme.textSecondary)
-                                .lineLimit(2)
-                        } else {
-                            Text("Nessun allenamento precedente")
-                                .font(Theme.rounded(12, .medium))
-                                .foregroundStyle(Theme.textTertiary)
-                        }
-
-                        if !goal.isEmpty {
-                            Text(goal)
-                                .font(Theme.rounded(11, .semibold))
-                                .foregroundStyle(Theme.textTertiary)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Spacer()
                 }
                 .contentShape(Rectangle())
                 .onTapGesture(perform: onSelect)
+
+                // RIGA 3: Serie dello scorso allenamento in lista verticale
+                if !previousSets.isEmpty {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Scorso:")
+                            .font(Theme.rounded(11, .bold))
+                            .foregroundStyle(Theme.textTertiary)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            ForEach(Array(previousSets.enumerated()), id: \.element.uuid) { idx, prev in
+                                HStack(spacing: 6) {
+                                    Text("\(idx + 1).")
+                                        .font(Theme.rounded(11, .semibold))
+                                        .foregroundStyle(Theme.textTertiary)
+                                        .frame(width: 16, alignment: .leading)
+                                    Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit))
+                                        .font(Theme.rounded(12, .medium))
+                                        .foregroundStyle(Theme.textSecondary)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.top, 2)
+                    .contentShape(Rectangle())
+                    .onTapGesture(perform: onSelect)
+                } else {
+                    Text("Nessun allenamento precedente")
+                        .font(Theme.rounded(12, .medium))
+                        .foregroundStyle(Theme.textTertiary)
+                        .contentShape(Rectangle())
+                        .onTapGesture(perform: onSelect)
+                }
 
                 if sets.isEmpty {
                     Text("Nessuna serie registrata")

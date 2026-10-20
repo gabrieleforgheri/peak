@@ -1,3 +1,21 @@
+# Visualizzazione serie precedenti, orizzonte temporale grafici, PR retroattivi e UI (20 ottobre 2026 — su `feature/workout-enhancements`, PR #2 aperta)
+
+Ramo di sviluppo `feature/workout-enhancements` (creata la Pull Request #2 verso `main`). Comprende miglioramenti su allenamenti, grafici temporali, visualizzazione schede e gestione record, mantenendo la parità completa tra **Web (Svelte 5)** e **iOS (SwiftUI)**, con traduzioni integrali italiano/inglese e copertura test unitari e corner case.
+
+| Fatto | Dove |
+|---|---|
+| **Serie precedenti dell'ultimo allenamento**: nella card dell'esercizio durante la sessione vengono mostrate le serie allenanti (escluso il riscaldamento) dell'ultima sessione conclusa in cui è stato eseguito quel macchinario, anziché solo il massimale. Rimossa la dicitura duplicata di carico/ripetizioni. | `web/src/pages/Session.svelte`, `web/src/components/ExerciseCard.svelte`, `Peak/Features/Workouts/WorkoutSessionView.swift`, `Peak/Design/Components.swift` |
+| **Titolo esercizio posizionato in cima**: sia nella sessione di allenamento sia nell'editor delle schede (`TemplateEditor`), il nome del macchinario è posizionato sopra le miniature del corpo e del macchinario con pulsanti di azione allineati a destra, garantendo visibilità immediata in ogni risoluzione e viewport. | `web/src/components/TemplateEditor.svelte`, `Peak/Features/Templates/TemplateEditorView.swift` |
+| **Pulsante "Vedi macchinario" nei tre puntini**: aggiunta opzione nel menu contestuale a 3 puntini della card esercizio in sessione per aprire direttamente la scheda del macchinario. | `web/src/pages/Session.svelte`, `Peak/Features/Workouts/WorkoutSessionView.swift` |
+| **Orizzonte temporale dinamico su TUTTI i grafici**: selettore (`1 mese`, `3 mesi`, `1 anno`, `Tutto`) calcolato dinamicamente in base all'anzianità dei dati (`<30gg` nasconde il selettore, `30..89gg` offre 1m/Tutto, `90..364gg` offre 1m/3m/Tutto, `≥365gg` offre 3m/1y/Tutto). Esteso a: Dettaglio Esercizio, Peso Corporeo, Progressione 1RM (Me / ProgressionCard) e LiftChartCard. Con fallback *"Dati non sufficienti per questo intervallo"* se un intervallo ha < 2 punti. | `Peak/Utils/Stats.swift` (`ChartRange`), `Peak/Features/Maxes/ExerciseDetailView.swift`, `Peak/Features/Progress/BodyWeightCard.swift`, `Peak/Features/Progress/ProgressionCard.swift`, `Peak/Features/Home/HomeSections.swift`, `web/src/pages/ExerciseDetail.svelte`, `web/src/components/BodyWeightCard.svelte`, `web/src/pages/Me.svelte` |
+| **PR retroattivo alla modifica serie**: modificare una serie (anche da non-PR a PR o viceversa) ricalcola istantaneamente i massimali automatici e aggiorna il badge verde Personal Record. | `web/src/pages/Session.svelte`, `Peak/Features/Workouts/WorkoutSessionView.swift`, `common/records.test.ts` |
+| **Menu a tendina storico serie passate**: menu/foglio a comparsa per visualizzare tutte le serie precedenti eseguite con il macchinario durante l'inserimento o modifica di una serie. | `web/src/pages/Session.svelte`, `Peak/Features/Workouts/WorkoutSessionView.swift` |
+| **Localizzazione e testi**: aggiunte traduzioni per tutte le nuove etichette in `en.json` e `Localizable.strings`. | `web/src/lib/en.json`, `Peak/en.lproj/Localizable.strings` |
+| **Script di test per macchinari**: creato script per generare macchinari di test che coprono corner case temporali (<30gg, 45gg, 120gg, >1 anno, serie precedenti, PR retroattivo). | `scripts/create-test-machines.ts` |
+| **Verifiche e build**: `npm test` (105/105 passati), `npm run check --prefix web` (0 errori, 0 avvisi), `npm run build --prefix web` (dist aggiornato), Xcode build (compilazione iOS Simulator completata con successo). | Verificato in ambiente locale |
+
+---
+
 # Frasi motivazionali ampliate e rotazione a 7s (18 ottobre 2026, sera — su `main`, PR #1 mergiata)
 
 Unite su `main` tramite PR #1. Aggiunte 16 nuove frasi motivazionali (32 totali) con traduzioni complete in italiano e inglese e virgola singola per l'a capo armonioso sia su web che su iOS. Intervallo di rotazione accelerato a 7 secondi (prima 10s). Ambiente locale verificato con Google Chrome su account `dev` con dati di test realistici (8 settimane di allenamenti, medaglie e record). **Installato con successo su iPhone e Apple Watch via wireless** (`scripts/install_device.sh`).

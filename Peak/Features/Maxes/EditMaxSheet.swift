@@ -126,7 +126,7 @@ struct EditMaxSheet: View {
         if let last = exercise.recordsByDateDesc.first {
             weight = last.weight
             reps = last.reps
-        } else if let lastSet = exercise.setList.sorted(by: { $0.createdAt > $1.createdAt }).first {
+        } else if let lastSet = exercise.setList.filter({ !$0.isWarmup }).sorted(by: { $0.createdAt > $1.createdAt }).first {
             weight = lastSet.weight
             reps = lastSet.reps
         } else {

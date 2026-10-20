@@ -163,7 +163,12 @@ enum Stats {
     }
 }
 
-/// Orizzonte temporale selezionabile per i grafici (Dettaglio esercizio, Peso corporeo, Progressione).
+/// Orizzonte temporale selezionabile per tutti i grafici (Dettaglio esercizio, Peso corporeo, Progressione, LiftChartCard).
+/// Calcola dinamicamente gli intervalli disponibili in base all'anzianità dei dati:
+/// - < 30 giorni: solo `.all` (il selettore viene nascosto quando count <= 1)
+/// - 30..<90 giorni: `.oneMonth` e `.all`
+/// - 90..<365 giorni: `.oneMonth`, `.threeMonths` e `.all`
+/// - >= 365 giorni: `.threeMonths`, `.year` e `.all`
 enum ChartRange: String, CaseIterable, Identifiable {
     case oneMonth
     case threeMonths
