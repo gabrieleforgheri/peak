@@ -5,6 +5,7 @@
 	import { GROUP_NAMES, V, duration, relDay, weekdayName } from '../lib/fmt.ts'
 	import { t, tn } from '../lib/i18n.ts'
 	import { go } from '../lib/router.svelte.ts'
+	import { stopRest } from '../lib/timer.svelte.ts'
 	import { getModel } from '../lib/store.svelte.ts'
 	import type { Prg, Tpl, Wk } from '../lib/types.ts'
 	import FocusPicker from '../components/FocusPicker.svelte'
@@ -51,6 +52,8 @@
 				<div class="mid" style="margin:4px 0">{title(active)}</div>
 				<div class="small muted">{tn(active.workingSets, '1 serie', '{0} serie')} · {V(active.volume)} · {tn(exCount(active), '1 esercizio', '{0} esercizi')}</div>
 				<button class="btn primary block" style="margin-top:12px" onclick={() => go(`allenamento/${active.uuid}`)}>{t('Riprendi allenamento')}</button>
+				<!-- per buttare una sessione lasciata aperta senza doverci entrare -->
+				<button class="btn danger block" style="margin-top:8px" onclick={() => { if (confirm(t('Eliminare questo allenamento e le sue serie?'))) { stopRest(); deleteWorkout(active.uuid) } }}><Icon name="trash" size={18} />{t('Elimina')}</button>
 			</div>
 		{:else}
 			<div class="card">
