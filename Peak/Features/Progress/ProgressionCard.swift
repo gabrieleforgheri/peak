@@ -24,6 +24,19 @@ struct ProgressionCard: View {
     let series: [Insights.Series]
 
     @State private var pickedID: UUID?
+    @State private var range: ChartRange = .all
+
+    private func availableRanges(for points: [Progression1RM.Point]) -> [ChartRange] {
+        guard let earliest = points.map(\.date).min() else { return [.all] }
+        let spanDays = max(0, Date().timeIntervalSince(earliest) / 86_400)
+        return ChartRange.available(forSpanDays: spanDays)
+    }
+
+    private func filteredPoints(for points: [Progression1RM.Point], activeRange: ChartRange) -> [Progression1RM.Point] {
+        guard let days = activeRange.days else { return points }
+        let cutoff = Date().addingTimeInterval(-days * 86_400)
+        return points.filter { $0.date >= cutoff }
+    }
 
     var body: some View {
         let current = series.first { $0.id == pickedID } ?? series.first
@@ -44,44 +57,63 @@ struct ProgressionCard: View {
                         }
                     }
                 }
-                if let current { chart(current.points) }
+                if let current {
+                    let avail = availableRanges(for: current.points)
+                    let active = avail.contains(range) ? range : (avail.first ?? .all)
+                    if avail.count > 1 {
+                        Picker("Intervallo", selection: $range) {
+                            ForEach(avail) { Text(LocalizedStringKey($0.title)).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                    let filtered = filteredPoints(for: current.points, activeRange: active)
+                    chart(filtered)
+                }
             }
         }
     }
 
     @ViewBuilder
     private func chart(_ pts: [Progression1RM.Point]) -> some View {
-        let unit = settings.unit
-        let lo = (pts.map(\.oneRm).min() ?? 0) * 0.95
-        let hi = (pts.map(\.oneRm).max() ?? 1) * 1.05
-        HStack {
-            Text("1RM stimato · un punto per allenamento").font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textSecondary)
-            Spacer()
-            if let a = pts.first, let b = pts.last {
-                let up = b.oneRm >= a.oneRm
-                Text("\(Fmt.weight(a.oneRm, unit: unit)) → \(Fmt.weight(b.oneRm, unit: unit))")
-                    .font(Theme.rounded(11, .bold)).foregroundStyle(up ? Theme.positive : Theme.negative)
-                    .padding(.horizontal, 8).padding(.vertical, 3).background(Capsule().fill((up ? Theme.positive : Theme.negative).opacity(0.15)))
+        if pts.count < 2 {
+            Text("Dati non sufficienti per questo intervallo")
+                .font(Theme.rounded(12, .medium))
+                .foregroundStyle(Theme.textTertiary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .frame(height: 120)
+        } else {
+            let unit = settings.unit
+            let lo = (pts.map(\.oneRm).min() ?? 0) * 0.95
+            let hi = (pts.map(\.oneRm).max() ?? 1) * 1.05
+            HStack {
+                Text("1RM stimato · un punto per allenamento").font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textSecondary)
+                Spacer()
+                if let a = pts.first, let b = pts.last {
+                    let up = b.oneRm >= a.oneRm
+                    Text("\(Fmt.weight(a.oneRm, unit: unit)) → \(Fmt.weight(b.oneRm, unit: unit))")
+                        .font(Theme.rounded(11, .bold)).foregroundStyle(up ? Theme.positive : Theme.negative)
+                        .padding(.horizontal, 8).padding(.vertical, 3).background(Capsule().fill((up ? Theme.positive : Theme.negative).opacity(0.15)))
+                }
             }
-        }
-        Chart(pts) { p in
-            LineMark(x: .value("Data", p.date), y: .value("1RM", unit.fromKilograms(p.oneRm)))
-                .foregroundStyle(settings.accentColor).interpolationMethod(.monotone)
-            PointMark(x: .value("Data", p.date), y: .value("1RM", unit.fromKilograms(p.oneRm)))
-                .foregroundStyle(settings.accentColor).symbolSize(34)
-        }
-        .chartYScale(domain: unit.fromKilograms(lo)...unit.fromKilograms(hi))
-        .chartYAxis {
-            AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { v in
-                AxisGridLine().foregroundStyle(Theme.stroke)
-                AxisValueLabel { if let n = v.as(Double.self) { Text(Int(n.rounded()).formatted()).font(Theme.rounded(10, .medium)).foregroundStyle(Theme.textTertiary) } }
+            Chart(pts) { p in
+                LineMark(x: .value("Data", p.date), y: .value("1RM", unit.fromKilograms(p.oneRm)))
+                    .foregroundStyle(settings.accentColor).interpolationMethod(.monotone)
+                PointMark(x: .value("Data", p.date), y: .value("1RM", unit.fromKilograms(p.oneRm)))
+                    .foregroundStyle(settings.accentColor).symbolSize(34)
             }
-        }
-        .chartXAxis {
-            AxisMarks(values: .automatic(desiredCount: 4)) { v in
-                AxisValueLabel { if let d = v.as(Date.self) { Text(Fmt.shortDate(d)).font(Theme.rounded(10, .medium)).foregroundStyle(Theme.textTertiary) } }
+            .chartYScale(domain: unit.fromKilograms(lo)...unit.fromKilograms(hi))
+            .chartYAxis {
+                AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { v in
+                    AxisGridLine().foregroundStyle(Theme.stroke)
+                    AxisValueLabel { if let n = v.as(Double.self) { Text(Int(n.rounded()).formatted()).font(Theme.rounded(10, .medium)).foregroundStyle(Theme.textTertiary) } }
+                }
             }
+            .chartXAxis {
+                AxisMarks(values: .automatic(desiredCount: 4)) { v in
+                    AxisValueLabel { if let d = v.as(Date.self) { Text(Fmt.shortDate(d)).font(Theme.rounded(10, .medium)).foregroundStyle(Theme.textTertiary) } }
+                }
+            }
+            .frame(height: 170)
         }
-        .frame(height: 170)
     }
 }

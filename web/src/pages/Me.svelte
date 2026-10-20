@@ -55,13 +55,47 @@
 	const groupTotal = $derived(groups.reduce((s, g) => s + g.volume, 0))
 
 	// ---- il sollevamento che cresce di più: il tuo miglior macchinario con almeno tre massimali ----
-	const lift = $derived.by(() => {
+	type Range = '1m' | '3m' | '1y' | 'all'
+	let liftRange = $state<Range>('all')
+
+	const liftPick = $derived.by(() => {
 		const cands = m.exercises.filter((e) => e.records.length >= 3).map((e) => ({ e, top: Math.max(...e.records.map((r) => oneRepMax(r.weight, r.reps))) }))
-		const pick = cands.sort((a, b) => b.top - a.top)[0]
-		if (!pick) return null
-		const pts = [...pick.e.records].sort((a, b) => a.date - b.date).slice(-12).map((r) => ({ y: oneRepMax(r.weight, r.reps), label: dateShort(r.date) }))
+		return cands.sort((a, b) => b.top - a.top)[0]?.e ?? null
+	})
+
+	const liftSpanDays = $derived.by(() => {
+		if (!liftPick || !liftPick.records.length) return 0
+		const earliest = Math.min(...liftPick.records.map((r) => r.date))
+		return Math.max(0, (Date.now() - earliest) / 86_400_000)
+	})
+
+	const liftAvailableRanges = $derived.by((): Range[] => {
+		const out: Range[] = []
+		if (liftSpanDays >= 30 && liftSpanDays < 365) out.push('1m')
+		if (liftSpanDays >= 90) out.push('3m')
+		if (liftSpanDays >= 365) out.push('1y')
+		out.push('all')
+		return out
+	})
+
+	$effect(() => {
+		if (!liftAvailableRanges.includes(liftRange)) liftRange = liftAvailableRanges[0] ?? 'all'
+	})
+
+	const lift = $derived.by(() => {
+		if (!liftPick) return null
+		const days = liftRange === '1m' ? 30 : liftRange === '3m' ? 90 : liftRange === '1y' ? 365 : null
+		const since = days ? Date.now() - days * 86_400_000 : 0
+		const recs = [...liftPick.records].filter((r) => r.date >= since).sort((a, b) => a.date - b.date)
+		const pts = recs.map((r) => ({ y: oneRepMax(r.weight, r.reps), label: dateShort(r.date) }))
 		const ys = pts.map((p) => p.y)
-		return { name: pick.e.name, points: pts, domain: [Math.min(...ys) * 0.97, Math.max(...ys) * 1.03] as [number, number], from: ys[0]!, to: ys.at(-1)! }
+		return {
+			name: liftPick.name,
+			points: pts,
+			domain: (ys.length ? [Math.min(...ys) * 0.97, Math.max(...ys) * 1.03] : [0, 1]) as [number, number],
+			from: ys[0] ?? 0,
+			to: ys.at(-1) ?? 0
+		}
 	})
 
 	const medalList = $derived(medalsAt(m, friendCount))
@@ -149,9 +183,30 @@
 		<div class="blk">
 			<div class="sec-title">{t('Il tuo sollevamento in crescita')}</div>
 			<div class="card">
-				<div class="row between"><b>{lift.name}</b><span class="badge pos">{W(lift.from)} → {W(lift.to)}</span></div>
-				<div class="small muted" style="margin-bottom:6px">{t('1RM stimato')}</div>
-				<LineChart points={lift.points} domain={lift.domain} />
+				<div class="row between">
+					<div>
+						<b>{lift.name}</b>
+						<div class="small muted">{t('1RM stimato')}</div>
+					</div>
+					{#if lift.points.length >= 2}
+						<span class="badge pos">{W(lift.from)} → {W(lift.to)}</span>
+					{/if}
+				</div>
+				{#if liftAvailableRanges.length > 1}
+					<div class="row end" style="margin:8px 0">
+						<div class="seg" style="width:auto">
+							{#if liftAvailableRanges.includes('1m')}<button class:on={liftRange === '1m'} onclick={() => (liftRange = '1m')}>{t('1 mese')}</button>{/if}
+							{#if liftAvailableRanges.includes('3m')}<button class:on={liftRange === '3m'} onclick={() => (liftRange = '3m')}>{t('3 mesi')}</button>{/if}
+							{#if liftAvailableRanges.includes('1y')}<button class:on={liftRange === '1y'} onclick={() => (liftRange = '1y')}>{t('1 anno')}</button>{/if}
+							<button class:on={liftRange === 'all'} onclick={() => (liftRange = 'all')}>{t('Tutto')}</button>
+						</div>
+					</div>
+				{/if}
+				{#if lift.points.length >= 2}
+					<LineChart points={lift.points} domain={lift.domain} />
+				{:else}
+					<div class="small muted center" style="padding:20px 0">{t('Dati non sufficienti per questo intervallo')}</div>
+				{/if}
 			</div>
 		</div>
 	{/if}

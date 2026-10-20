@@ -162,3 +162,47 @@ enum Stats {
         return min(5, max(2, Int(average.rounded())))
     }
 }
+
+/// Orizzonte temporale selezionabile per i grafici (Dettaglio esercizio, Peso corporeo, Progressione).
+enum ChartRange: String, CaseIterable, Identifiable {
+    case oneMonth
+    case threeMonths
+    case year
+    case all
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .oneMonth: return "1 mese"
+        case .threeMonths: return "3 mesi"
+        case .year: return "1 anno"
+        case .all: return "Tutto"
+        }
+    }
+
+    var days: Double? {
+        switch self {
+        case .oneMonth: return 30
+        case .threeMonths: return 90
+        case .year: return 365
+        case .all: return nil
+        }
+    }
+
+    static func available(forSpanDays spanDays: Double) -> [ChartRange] {
+        var ranges: [ChartRange] = []
+        if spanDays >= 30 && spanDays < 365 {
+            ranges.append(.oneMonth)
+        }
+        if spanDays >= 90 {
+            ranges.append(.threeMonths)
+        }
+        if spanDays >= 365 {
+            ranges.append(.year)
+        }
+        ranges.append(.all)
+        return ranges
+    }
+}
+

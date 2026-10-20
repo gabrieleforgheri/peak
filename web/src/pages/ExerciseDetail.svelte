@@ -143,7 +143,7 @@
 		</div>
 
 		<div class="blk">
-		{#if points.length >= 2}
+		{#if ex.records.length >= 2}
 			<div class="card lead">
 				<div class="row between" style="margin-bottom:10px">
 					<div class="sec-title" style="margin:0">{t('Andamento')}</div>
@@ -156,8 +156,12 @@
 						</div>
 					{/if}
 				</div>
-				<LineChart {points} {domain} />
-				<div class="row small muted" style="gap:14px"><span><span style="color:var(--accent)">●</span> {t('Registrato')}</span><span><span style="color:var(--accent);opacity:.5">●</span> {t('Da allenamento')}</span></div>
+				{#if points.length >= 2}
+					<LineChart {points} {domain} />
+					<div class="row small muted" style="gap:14px"><span><span style="color:var(--accent)">●</span> {t('Registrato')}</span><span><span style="color:var(--accent);opacity:.5">●</span> {t('Da allenamento')}</span></div>
+				{:else}
+					<div class="small muted center" style="padding:20px 0">{t('Dati non sufficienti per questo intervallo')}</div>
+				{/if}
 			</div>
 		{/if}
 
