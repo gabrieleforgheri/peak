@@ -15,3 +15,8 @@ studio-clips/renders/
 studio-clips/.hyperframes/
 studio-clips/shots/
 studio-clips/schermata-*.html
+
+# Scratch & tool outputs
+.claude/
+brag-output*/
+graphify-out/

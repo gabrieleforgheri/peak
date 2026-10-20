@@ -20,6 +20,8 @@
 	import TemplateEditor from '../components/TemplateEditor.svelte'
 	import Thumb from '../components/Thumb.svelte'
 	import FigThumb from '../components/FigThumb.svelte'
+	import CardBackground from '../components/CardBackground.svelte'
+	import MuscleDetailSheet from '../components/MuscleDetailSheet.svelte'
 
 	let { id }: { id: string } = $props()
 	const m = $derived(getModel())
@@ -35,6 +37,7 @@
 	let pickingEx = $state(false)
 	let editFocus = $state(false)
 	let menuFor = $state<Ex | null>(null)
+	let muscleDetailFor = $state<Ex | null>(null)
 	let replacing = $state<Ex | null>(null)
 	let savingTemplate = $state(false)
 	let adding = $state<{ ex: Ex; set: SetItem | null } | null>(null)
@@ -141,53 +144,84 @@
 			{@const ex = m.exById.get(it.exercise)!}
 			{@const sets = wk.sets.filter((s) => s.exercise === ex.uuid)}
 			{@const goal = targetLine(it, sets.filter((s) => !s.isWarmup).length, null)}
-			{@const prevSets = previousWorkingSets(ex, wk)}
-			<div class="card" style={current === ex.uuid && wk.isActive ? 'border-color:rgba(var(--accent-rgb),.45)' : ''}>
-				<!-- Titolo dell'esercizio sopra l'immagine del corpo e del macchinario -->
-				<div class="row between" style="align-items:flex-start;gap:8px">
-					<button class="row grow" style="background:none;border:0;text-align:left;padding:0;min-width:0;align-items:center;gap:6px" onclick={() => (current = ex.uuid)}>
-						<b class="ellipsis" style="display:block;font-size:16px">{ex.name}</b>
-						{#if current === ex.uuid && wk.isActive}<span class="tiny" style="color:var(--accent);font-weight:800;letter-spacing:.08em;flex-shrink:0">{t('IN CORSO')}</span>{/if}
-					</button>
-					{#if wk.isActive}<button class="icon-btn" onclick={() => (menuFor = ex)} aria-label={t('Altro')}><Icon name="more" /></button>{/if}
-				</div>
+			{@const prevSets = previousWorkingSets(ex, wk).slice(0, 3)}
+			<div class="card session-ex-card" style={current === ex.uuid && wk.isActive ? 'border-color:rgba(var(--accent-rgb),.45)' : ''}>
+				<CardBackground {ex} />
 
-				<button class="row" style="background:none;border:0;text-align:left;padding:0;width:100%;margin-top:8px;align-items:center;gap:10px" onclick={() => (current = ex.uuid)}>
-					<div class="row" style="gap:6px;flex-shrink:0">
-						<Thumb {ex} />{#if ex.figure.muscles.length}<FigThumb muscles={ex.figure.muscles} view={ex.figure.view} group={ex.muscleGroup} />{/if}
-					</div>
-					{#if goal}<div class="grow small muted num" style="min-width:0">{goal}</div>{/if}
-				</button>
-				{#if prevSets.length}
-					<div class="stack" style="gap:3px;margin-top:8px">
-						<div class="tiny muted" style="font-weight:700">{t('Scorso:')}</div>
-						<div class="stack" style="gap:2px">
-							{#each prevSets as s, i}
-								<div class="row small muted num" style="gap:6px">
-									<span style="width:16px;opacity:0.6">{i + 1}.</span>
-									<span>{setLine(s.weight, s.reps)}</span>
+				<div class="card-content-wrap">
+					<!-- Sezione superiore: Sinistra (Titolo grande + goal + ultime 3 serie) / Destra (menu + figura muscoli 68px e bottone Muscoli ↗ sotto) -->
+					<div class="row between" style="align-items:flex-start;gap:12px">
+						<!-- Colonna sinistra -->
+						<div class="stack grow" style="gap:6px;min-width:0">
+							<button class="stack" style="background:none;border:0;text-align:left;padding:0;gap:2px" onclick={() => (current = ex.uuid)}>
+								<div class="row" style="align-items:center;gap:6px">
+									<b class="ellipsis" style="display:block;font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.2">{ex.name}</b>
 								</div>
-							{/each}
+								{#if current === ex.uuid && wk.isActive}
+									<span class="tiny" style="color:var(--{ex.muscleGroup || 'accent'});font-weight:800;letter-spacing:.08em">{t('IN CORSO')}</span>
+								{/if}
+							</button>
+
+							{#if goal}
+								<div class="small muted num" style="font-weight:600">{goal}</div>
+							{/if}
+
+							<!-- Ultime serie (fino a 3) dello scorso allenamento -->
+							{#if prevSets.length}
+								<div class="stack" style="gap:3px;margin-top:2px">
+									<div class="tiny muted" style="font-weight:700">{t('Scorso:')}</div>
+									<div class="stack" style="gap:2px">
+										{#each prevSets as s, i}
+											<div class="row small muted num" style="gap:6px">
+												<span style="width:16px;opacity:0.6">{i + 1}.</span>
+												<span>{setLine(s.weight, s.reps)}</span>
+											</div>
+										{/each}
+									</div>
+								</div>
+							{:else}
+								<div class="small muted" style="margin-top:2px">{t('Nessun allenamento precedente')}</div>
+							{/if}
+						</div>
+
+						<!-- Colonna destra: Menu in alto, poi figura muscolo 68px con "Muscoli ↗" sotto -->
+						<div class="stack center" style="flex-shrink:0;gap:8px;align-items:flex-end">
+							{#if wk.isActive}
+								<button class="icon-btn" onclick={() => (menuFor = ex)} aria-label={t('Altro')}><Icon name="more" /></button>
+							{/if}
+
+							{#if ex.figure.muscles.length}
+								<button
+									class="muscle-btn"
+									onclick={() => (muscleDetailFor = ex)}
+									aria-label={t('Mappa muscolare')}
+								>
+									<FigThumb muscles={ex.figure.muscles} view={ex.figure.view} group={ex.muscleGroup} size={68} />
+									<span class="muscle-sub-label" style="color:var(--{ex.muscleGroup})">
+										{t('Muscoli')} ↗
+									</span>
+								</button>
+							{/if}
 						</div>
 					</div>
-				{:else}
-					<div class="small muted" style="margin-top:6px">{t('Nessun allenamento precedente')}</div>
-				{/if}
-				<!-- sempre presente (vuota non occupa nulla): così anche la prima serie di un esercizio entra con la sua transizione -->
-				<div class="list" style:margin-top={sets.length ? '10px' : '0'}>
-					{#each sets as s, i (s.uuid)}
-						<button class="item" class:flash={s.isPR && s.uuid === fresh} onclick={() => (adding = { ex, set: s })} in:rowIn out:rowOut>
-							<span class="muted num" style="width:20px">{i + 1}</span>
-							<div class="grow num" style="font-weight:700">{setLine(s.weight, s.reps)}</div>
-							{#if s.isWarmup}<span class="badge">{t('risc.')}</span>{/if}
-							{#if s.isPR}<span class="badge pos">PR</span>{/if}
-							{#if s.reps > 1 && !s.isWarmup}<span class="small muted num">≈ {W(oneRepMax(s.weight, s.reps))}</span>{/if}
-						</button>
-					{/each}
-				</div>
-				<div class="row" style="margin-top:12px">
-					<button class="btn small grow" onclick={() => (adding = { ex, set: null })}><Icon name="plus" size={18} />{t('Serie')}</button>
-					{#if sets.length}<button class="btn small" onclick={() => repeat(ex)} aria-label={t('Ripeti l\'ultima serie')}><Icon name="repeat" size={18} /></button>{/if}
+
+					<!-- sempre presente (vuota non occupa nulla): così anche la prima serie di un esercizio entra con la sua transizione -->
+					<div class="list" style:margin-top={sets.length ? '12px' : '0'}>
+						{#each sets as s, i (s.uuid)}
+							<button class="item" class:flash={s.isPR && s.uuid === fresh} onclick={() => (adding = { ex, set: s })} in:rowIn out:rowOut>
+								<span class="muted num" style="width:20px">{i + 1}</span>
+								<div class="grow num" style="font-weight:700">{setLine(s.weight, s.reps)}</div>
+								{#if s.isWarmup}<span class="badge">{t('risc.')}</span>{/if}
+								{#if s.isPR}<span class="badge pos">PR</span>{/if}
+								{#if s.reps > 1 && !s.isWarmup}<span class="small muted num">≈ {W(oneRepMax(s.weight, s.reps))}</span>{/if}
+							</button>
+						{/each}
+					</div>
+
+					<div class="row" style="margin-top:12px">
+						<button class="btn small grow" onclick={() => (adding = { ex, set: null })}><Icon name="plus" size={18} />{t('Serie')}</button>
+						{#if sets.length}<button class="btn small" onclick={() => repeat(ex)} aria-label={t('Ripeti l\'ultima serie')}><Icon name="repeat" size={18} /></button>{/if}
+					</div>
 				</div>
 			</div>
 		{/each}
@@ -233,8 +267,38 @@
 {#if savingTemplate && wk}<TemplateEditor initial={{ name: wk.name, items: itemsFromWorkout(wk) }} onclose={() => (savingTemplate = false)} onsaved={() => toast(t('Giorno salvato.'))} />{/if}
 {#if editFocus && wk}<FocusPicker workout={wk} onclose={() => (editFocus = false)} />{/if}
 {#if adding && wk}<AddSetSheet workout={wk} ex={adding.ex} set={adding.set} onclose={() => (adding = null)} onadded={(r) => added(adding!.ex, r)} />{/if}
+{#if muscleDetailFor}<MuscleDetailSheet ex={muscleDetailFor} onclose={() => (muscleDetailFor = null)} />{/if}
 
 <style>
+	.session-ex-card {
+		position: relative;
+		overflow: hidden;
+	}
+	.card-content-wrap {
+		position: relative;
+		z-index: 1;
+	}
+	.muscle-btn {
+		background: none;
+		border: 0;
+		padding: 0;
+		cursor: pointer;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 5px;
+	}
+	.muscle-sub-label {
+		font-size: 11px;
+		font-weight: 700;
+		padding: 2px 7px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.08);
+		letter-spacing: .02em;
+		display: inline-flex;
+		align-items: center;
+	}
+
 	/* serie nuova che è un record: lampo verde sotto la riga (solo opacità, 600 ms) e il badge PR fa «pop» */
 	.item.flash { position: relative; isolation: isolate; }
 	.item.flash::before { content: ''; position: absolute; inset: 2px -8px; z-index: -1; border-radius: 10px; background: rgba(95, 217, 138, .22); pointer-events: none; animation: flash 600ms var(--ease-out); }

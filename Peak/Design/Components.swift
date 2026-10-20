@@ -11,7 +11,7 @@ struct MuscleGroupChip: View {
             Image(systemName: group.symbol)
                 .font(.system(size: compact ? 10 : 12, weight: .semibold))
             if !compact {
-                Text(group.title.uppercased())
+                Text(group.title.tr.uppercased())
                     .font(Theme.rounded(11, .bold))
                     .tracking(0.6)
             }

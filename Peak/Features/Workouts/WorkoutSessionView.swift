@@ -528,6 +528,49 @@ struct WorkoutSessionView: View {
     }
 }
 
+// MARK: - Sfondo della card esercizio (foto macchinario o glyph sfocato + scrim)
+
+private struct ExerciseCardBackground: View {
+    let exercise: Exercise
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .bottomTrailing) {
+                if let data = exercise.photo, let uiImage = UIImage(data: data) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geo.size.width + 30, height: geo.size.height + 30)
+                        .clipped()
+                        .blur(radius: 10)
+                        .brightness(-0.15)
+                        .opacity(0.65)
+                        .scaleEffect(1.08)
+                        .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                } else if let glyph = exercise.glyph {
+                    MachineGlyphView(glyph: glyph, tint: exercise.muscleGroup.tint, size: 210)
+                        .opacity(0.28)
+                        .blur(radius: 1.5)
+                        .offset(x: 20, y: 15)
+                }
+
+                LinearGradient(
+                    stops: [
+                        .init(color: Color(red: 0.06, green: 0.07, blue: 0.09).opacity(0.90), location: 0.0),
+                        .init(color: Color(red: 0.06, green: 0.07, blue: 0.09).opacity(0.65), location: 0.55),
+                        .init(color: Color(red: 0.05, green: 0.06, blue: 0.08).opacity(0.40), location: 1.0)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+            .clipped()
+        }
+        .allowsHitTesting(false)
+    }
+}
+
 // MARK: - Card di un esercizio nella sessione
 
 private struct ExerciseSessionCard: View {
@@ -558,121 +601,143 @@ private struct ExerciseSessionCard: View {
     let onDeleteSet: (WorkoutSet) -> Void
     let onDetail: () -> Void
 
+    @State private var showingMuscleDetail = false
+
     var body: some View {
         GlassCard(padding: 16, tint: isCurrent ? exercise.muscleGroup.tint : nil) {
-            VStack(alignment: .leading, spacing: 12) {
-                // RIGA 1: Titolo esercizio sopra le immagini e pulsanti azione a destra
-                HStack(alignment: .center, spacing: 8) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(exercise.name)
-                            .font(Theme.rounded(16, .semibold))
-                            .foregroundStyle(Theme.textPrimary)
-                            .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                        if isCurrent {
-                            Text("IN CORSO")
-                                .font(Theme.rounded(10, .bold))
-                                .tracking(0.7)
-                                .foregroundStyle(exercise.muscleGroup.tint)
-                        }
-                    }
-
-                    Spacer(minLength: 4)
-
-                    HStack(spacing: 6) {
-                        Menu {
-                            Button {
-                                onDetail()
-                            } label: {
-                                Label("Vedi macchinario", systemImage: "info.circle")
-                            }
-
-                            if let onMove {
-                                Button { onMove(-1) } label: { Label("Su", systemImage: "chevron.up") }
-                                Button { onMove(1) } label: { Label("Giù", systemImage: "chevron.down") }
-                            }
-                            if let onReplace {
-                                Button(action: onReplace) { Label("Sostituisci", systemImage: "arrow.left.arrow.right") }
-                            }
-                            if let onRemove {
-                                Button(role: .destructive, action: onRemove) { Label("Togli dalla lista", systemImage: "trash") }
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis")
-                                .font(.system(size: 14, weight: .bold))
-                                .frame(width: 34, height: 34)
-                                .background(Theme.card, in: Circle())
-                        }
-                        .foregroundStyle(Theme.textSecondary)
-                        .accessibilityLabel("Altro")
-
-                        if let onStartOnWatch {
-                            Button {
-                                onStartOnWatch()
-                                Haptics.tap()
-                            } label: {
-                                Image(systemName: "applewatch.radiowaves.left.and.right")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .frame(width: 36, height: 36)
-                                    .background(Theme.card, in: Circle())
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(settings.accentColor)
-                            .accessibilityLabel("Avvia la serie sul Watch")
-                        }
-                    }
-                }
-                .contentShape(Rectangle())
-                .onTapGesture(perform: onSelect)
-
-                // RIGA 2: Miniature (macchinario e corpo) + eventuale obiettivo
-                HStack(spacing: 8) {
-                    ExerciseThumbnail(exercise: exercise, size: 34, zoomable: true)
-                    ExerciseFigure(exercise: exercise, size: 34)
-
-                    if !goal.isEmpty {
-                        Text(goal)
-                            .font(Theme.rounded(12, .semibold))
-                            .foregroundStyle(Theme.textSecondary)
-                    }
-
-                    Spacer()
-                }
-                .contentShape(Rectangle())
-                .onTapGesture(perform: onSelect)
-
-                // RIGA 3: Serie dello scorso allenamento in lista verticale
-                if !previousSets.isEmpty {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Scorso:")
-                            .font(Theme.rounded(11, .bold))
-                            .foregroundStyle(Theme.textTertiary)
-
+            VStack(alignment: .leading, spacing: 14) {
+                // SEZIONE SUPERIORE: Due colonne
+                // Sinistra: Titolo (grande), IN CORSO, Goal, e ultime 3 serie dello scorso allenamento
+                // Destra: in alto menu/watch, al centro figura muscoli con pulsante "Muscoli ↗" sotto
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 6) {
                         VStack(alignment: .leading, spacing: 2) {
-                            ForEach(Array(previousSets.enumerated()), id: \.element.uuid) { idx, prev in
-                                HStack(spacing: 6) {
-                                    Text("\(idx + 1).")
-                                        .font(Theme.rounded(11, .semibold))
-                                        .foregroundStyle(Theme.textTertiary)
-                                        .frame(width: 16, alignment: .leading)
-                                    Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit))
-                                        .font(Theme.rounded(12, .medium))
-                                        .foregroundStyle(Theme.textSecondary)
+                            Text(exercise.name)
+                                .font(Theme.rounded(22, .bold))
+                                .foregroundStyle(Theme.textPrimary)
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if isCurrent {
+                                Text("IN CORSO")
+                                    .font(Theme.rounded(10, .bold))
+                                    .tracking(0.7)
+                                    .foregroundStyle(exercise.muscleGroup.tint)
+                            }
+                        }
+
+                        if !goal.isEmpty {
+                            Text(goal)
+                                .font(Theme.rounded(12, .semibold))
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+
+                        // Ultime serie (fino a 3) dello scorso allenamento
+                        let shownPrev = Array(previousSets.prefix(3))
+                        if !shownPrev.isEmpty {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Scorso:".tr)
+                                    .font(Theme.rounded(11, .bold))
+                                    .foregroundStyle(Theme.textTertiary)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    ForEach(Array(shownPrev.enumerated()), id: \.element.uuid) { idx, prev in
+                                        HStack(spacing: 6) {
+                                            Text("\(idx + 1).")
+                                                .font(Theme.rounded(11, .semibold))
+                                                .foregroundStyle(Theme.textTertiary)
+                                                .frame(width: 16, alignment: .leading)
+                                            Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit))
+                                                .font(Theme.rounded(12, .medium))
+                                                .foregroundStyle(Theme.textSecondary)
+                                        }
+                                    }
                                 }
                             }
+                            .padding(.top, 2)
+                        } else {
+                            Text("Nessun allenamento precedente".tr)
+                                .font(Theme.rounded(12, .medium))
+                                .foregroundStyle(Theme.textTertiary)
+                                .padding(.top, 2)
                         }
                     }
-                    .padding(.top, 2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
                     .onTapGesture(perform: onSelect)
-                } else {
-                    Text("Nessun allenamento precedente")
-                        .font(Theme.rounded(12, .medium))
-                        .foregroundStyle(Theme.textTertiary)
-                        .contentShape(Rectangle())
-                        .onTapGesture(perform: onSelect)
+
+                    // Colonna destra: Menu/Watch in alto + Figura muscoli centrata con "Muscoli ↗" sotto
+                    VStack(alignment: .trailing, spacing: 10) {
+                        HStack(spacing: 6) {
+                            Menu {
+                                Button {
+                                    onDetail()
+                                } label: {
+                                    Label("Vedi macchinario", systemImage: "info.circle")
+                                }
+
+                                if let onMove {
+                                    Button { onMove(-1) } label: { Label("Su", systemImage: "chevron.up") }
+                                    Button { onMove(1) } label: { Label("Giù", systemImage: "chevron.down") }
+                                }
+                                if let onReplace {
+                                    Button(action: onReplace) { Label("Sostituisci", systemImage: "arrow.left.arrow.right") }
+                                }
+                                if let onRemove {
+                                    Button(role: .destructive, action: onRemove) { Label("Togli dalla lista", systemImage: "trash") }
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .frame(width: 34, height: 34)
+                                    .background(Theme.card, in: Circle())
+                            }
+                            .foregroundStyle(Theme.textSecondary)
+                            .accessibilityLabel("Altro")
+
+                            if let onStartOnWatch {
+                                Button {
+                                    onStartOnWatch()
+                                    Haptics.tap()
+                                } label: {
+                                    Image(systemName: "applewatch.radiowaves.left.and.right")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .frame(width: 36, height: 36)
+                                        .background(Theme.card, in: Circle())
+                                }
+                                .buttonStyle(.plain)
+                                .foregroundStyle(settings.accentColor)
+                                .accessibilityLabel("Avvia la serie sul Watch")
+                            }
+                        }
+
+                        // Riquadro muscolo cliccabile + etichetta Muscoli SOTTO la figura
+                        if !exercise.figureMuscles.isEmpty {
+                            Button {
+                                showingMuscleDetail = true
+                            } label: {
+                                VStack(spacing: 5) {
+                                    ExerciseFigure(exercise: exercise, size: 68)
+
+                                    HStack(spacing: 3) {
+                                        Text("Muscoli".tr)
+                                            .font(Theme.rounded(11, .semibold))
+                                        Image(systemName: "arrow.up.right")
+                                            .font(.system(size: 8, weight: .bold))
+                                    }
+                                    .foregroundStyle(exercise.muscleGroup.tint)
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 3)
+                                    .background(exercise.muscleGroup.tint.opacity(0.14), in: Capsule())
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Mappa muscolare".tr)
+                        }
+                    }
+                    .frame(width: 86)
                 }
 
+                // LISTA DELLE SERIE DI OGGI
                 if sets.isEmpty {
                     Text("Nessuna serie registrata")
                         .font(Theme.rounded(12, .medium))
@@ -695,7 +760,6 @@ private struct ExerciseSessionCard: View {
                                         Label("Elimina serie", systemImage: "trash")
                                     }
                                 }
-                                // entra piano (capita decine di volte a seduta), esce con una dissolvenza
                                 .transition(reduceMotion ? .opacity : .asymmetric(
                                     insertion: .opacity.combined(with: .offset(y: 6)),
                                     removal: .opacity.combined(with: .scale(scale: 0.98))
@@ -704,6 +768,7 @@ private struct ExerciseSessionCard: View {
                     }
                 }
 
+                // PULSANTI AZIONE (Serie e Ripeti)
                 HStack(spacing: 8) {
                     Button(action: onAddSet) {
                         Label("Serie", systemImage: "plus")
@@ -728,6 +793,13 @@ private struct ExerciseSessionCard: View {
                     }
                 }
             }
+            .background {
+                ExerciseCardBackground(exercise: exercise)
+                    .padding(-16)
+            }
+        }
+        .sheet(isPresented: $showingMuscleDetail) {
+            MuscleDetailSheet(exercise: exercise)
         }
     }
 }
