@@ -107,12 +107,19 @@
 			{@const ex = m.exById.get(r.exercise)}
 			{#if ex}
 				<div class="card">
-					<div class="row">
+					<!-- RIGA 1: Titolo esercizio sopra a tutta larghezza e pulsanti a destra -->
+					<div class="row between" style="align-items:center;gap:8px">
+						<b class="ellipsis grow" style="font-size:16px">{ex.name}</b>
+						<div class="row" style="gap:4px;flex-shrink:0">
+							<button class="icon-btn" onclick={() => move(i, -1)} disabled={i === 0} aria-label={t('Su')}><Icon name="up" /></button>
+							<button class="icon-btn" onclick={() => move(i, 1)} disabled={i === rows.length - 1} aria-label={t('Giù')}><Icon name="down" /></button>
+							<button class="icon-btn" onclick={() => (rows = rows.filter((x) => x !== r))} aria-label={t('Togli')}><Icon name="x" /></button>
+						</div>
+					</div>
+
+					<!-- RIGA 2: Miniature macchinario e corpo -->
+					<div class="row" style="margin-top:8px;gap:6px">
 						<Thumb {ex} />{#if ex.figure.muscles.length}<FigThumb muscles={ex.figure.muscles} view={ex.figure.view} group={ex.muscleGroup} />{/if}
-						<b class="grow ellipsis">{ex.name}</b>
-						<button class="icon-btn" onclick={() => move(i, -1)} disabled={i === 0} aria-label={t('Su')}><Icon name="up" /></button>
-						<button class="icon-btn" onclick={() => move(i, 1)} disabled={i === rows.length - 1} aria-label={t('Giù')}><Icon name="down" /></button>
-						<button class="icon-btn" onclick={() => (rows = rows.filter((x) => x !== r))} aria-label={t('Togli')}><Icon name="x" /></button>
 					</div>
 					<div class="row" style="margin-top:10px;gap:8px">
 						<label class="field grow"><span>{t('Serie')}</span><input class="input num" type="number" inputmode="numeric" min="0" max="20" bind:value={r.sets} /></label>
