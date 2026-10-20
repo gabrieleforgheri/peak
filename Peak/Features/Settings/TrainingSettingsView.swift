@@ -78,17 +78,6 @@ struct TrainingSettingsView: View {
                 .tint(settings.accentColor)
 
                 if settings.plateCalculatorEnabled {
-                    Stepper(
-                        value: Binding(
-                            get: { settings.unit.fromKilograms(settings.barWeight) },
-                            set: { settings.barWeight = settings.unit.toKilograms($0) }
-                        ),
-                        in: 0...(settings.unit == .kg ? 30 : 66),
-                        step: settings.unit == .kg ? 2.5 : 5
-                    ) {
-                        Text("Bilanciere: \(Fmt.weight(settings.barWeight, unit: settings.unit))")
-                            .font(Theme.rounded(14, .medium))
-                    }
                     Text("Dischi disponibili")
                         .font(Theme.rounded(12, .semibold))
                         .foregroundStyle(Theme.textTertiary)

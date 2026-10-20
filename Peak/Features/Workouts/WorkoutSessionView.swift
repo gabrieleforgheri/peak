@@ -646,9 +646,16 @@ private struct ExerciseSessionCard: View {
                                                 .font(Theme.rounded(11, .semibold))
                                                 .foregroundStyle(Theme.textTertiary)
                                                 .frame(width: 16, alignment: .leading)
-                                            Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit))
-                                                .font(Theme.rounded(12, .medium))
-                                                .foregroundStyle(Theme.textSecondary)
+                                            if exercise.weightDisplay == "relative", exercise.barWeight > 0 {
+                                                let relWeight = max(0, prev.weight - exercise.barWeight)
+                                                Text(Fmt.setLine(weight: relWeight, reps: prev.reps, unit: settings.unit))
+                                                    .font(Theme.rounded(12, .medium))
+                                                    .foregroundStyle(Theme.textSecondary)
+                                            } else {
+                                                Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit))
+                                                    .font(Theme.rounded(12, .medium))
+                                                    .foregroundStyle(Theme.textSecondary)
+                                            }
                                         }
                                     }
                                 }
@@ -782,7 +789,14 @@ private struct ExerciseSessionCard: View {
 
                     if let last = sets.last {
                         Button(action: onRepeatLast) {
-                            Label(Fmt.setLine(weight: last.weight, reps: last.reps, unit: settings.unit), systemImage: "arrow.counterclockwise")
+                            let repeatText: String = {
+                                if exercise.weightDisplay == "relative", exercise.barWeight > 0 {
+                                    let relWeight = max(0, last.weight - exercise.barWeight)
+                                    return Fmt.setLine(weight: relWeight, reps: last.reps, unit: settings.unit)
+                                }
+                                return Fmt.setLine(weight: last.weight, reps: last.reps, unit: settings.unit)
+                            }()
+                            Label(repeatText, systemImage: "arrow.counterclockwise")
                                 .font(Theme.rounded(13, .semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 9)
@@ -821,9 +835,21 @@ private struct SetRow: View {
                 .foregroundStyle(Theme.textTertiary)
                 .frame(width: 18)
 
-            Text(Fmt.setLine(weight: set.weight, reps: set.reps, unit: settings.unit))
-                .font(Theme.rounded(15, .semibold))
-                .foregroundStyle(set.isWarmup ? Theme.textSecondary : Theme.textPrimary)
+            if let ex = set.exercise, ex.weightDisplay == "relative", ex.barWeight > 0 {
+                let relWeight = max(0, set.weight - ex.barWeight)
+                HStack(spacing: 4) {
+                    Text(Fmt.setLine(weight: relWeight, reps: set.reps, unit: settings.unit))
+                        .font(Theme.rounded(15, .semibold))
+                        .foregroundStyle(set.isWarmup ? Theme.textSecondary : Theme.textPrimary)
+                    Text("(tot. \(Fmt.weight(set.weight, unit: settings.unit)))")
+                        .font(Theme.rounded(11, .medium))
+                        .foregroundStyle(Theme.textTertiary)
+                }
+            } else {
+                Text(Fmt.setLine(weight: set.weight, reps: set.reps, unit: settings.unit))
+                    .font(Theme.rounded(15, .semibold))
+                    .foregroundStyle(set.isWarmup ? Theme.textSecondary : Theme.textPrimary)
+            }
 
             if set.isPersonalRecord { PRBadge().bounce(trigger: tick, peak: 1.35) }
             if set.isWarmup {

@@ -49,7 +49,34 @@ struct AddSetSheet: View {
         guard settings.plateCalculatorEnabled else { return nil }
         // l'attrezzo: quello del catalogo (exercise.glyph lo usa già), oppure l'icona scelta; senza icona lo si deduce dal nome
         let glyph = exercise.glyph ?? .suggested(for: exercise.name, group: exercise.muscleGroup)
-        return Plates.barBase(glyph: glyph, name: exercise.name, barWeight: settings.barWeight)
+        return Plates.barBase(glyph: glyph, name: exercise.name, barWeight: exercise.barWeight)
+    }
+
+    private var isRel: Bool {
+        exercise.weightDisplay == "relative" && (plateBase ?? 0) > 0
+    }
+    private var barWeightKg: Double {
+        plateBase ?? 0
+    }
+
+    private var stepperWeight: Binding<Double> {
+        Binding(
+            get: { isRel ? max(0, weight - barWeightKg) : weight },
+            set: { newKg in
+                weight = isRel ? newKg + barWeightKg : newKg
+            }
+        )
+    }
+
+    private var previousSetWeight: Double? {
+        if case let .add(lastSet) = mode, let lastSet { return lastSet.weight }
+        return allPreviousSets.first?.weight
+    }
+    private var delta: Double? {
+        guard let prev = previousSetWeight else { return nil }
+        let currentU = (settings.unit.fromKilograms(weight) * 100).rounded() / 100
+        let prevU = (settings.unit.fromKilograms(prev) * 100).rounded() / 100
+        return abs(currentU - prevU) > 0.01 ? (currentU - prevU) : nil
     }
 
     private var suggestion: Progression.Suggestion? {
@@ -93,9 +120,69 @@ struct AddSetSheet: View {
             ScrollView {
                 VStack(spacing: 14) {
                     GlassCard(padding: 18, tint: tint) {
-                        VStack(spacing: 18) {
-                            SectionHeader(title: "Carico")
-                            WeightStepper(kilograms: $weight, step: exercise.incrementStep, unit: settings.unit, tint: tint)
+                        VStack(spacing: 14) {
+                            HStack(alignment: .firstTextBaseline) {
+                                SectionHeader(title: isRel ? "Carico dischi" : "Carico")
+                                Spacer()
+                                if let plateBase, plateBase > 0 {
+                                    Text("Sbarra \(Fmt.weight(plateBase, unit: settings.unit))")
+                                        .font(Theme.rounded(12, .semibold))
+                                        .foregroundStyle(Theme.textTertiary)
+                                }
+                            }
+                            WeightStepper(kilograms: stepperWeight, step: exercise.incrementStep, unit: settings.unit, tint: tint)
+
+                            if let plateBase, plateBase > 0 {
+                                let relKg = max(0, weight - plateBase)
+                                VStack(spacing: 4) {
+                                    HStack {
+                                        Text(isRel ? "Carico relativo (dischi)" : "Carico assoluto (totale)")
+                                            .font(Theme.rounded(12, .medium))
+                                            .foregroundStyle(Theme.textTertiary)
+                                        Spacer()
+                                        if isRel {
+                                            Text("\(Fmt.weight(relKg, unit: settings.unit)) (\(Fmt.weight(relKg / 2, unit: settings.unit)) per lato)")
+                                                .font(Theme.rounded(13, .bold))
+                                                .foregroundStyle(settings.accentColor)
+                                        } else {
+                                            Text(Fmt.weight(weight, unit: settings.unit))
+                                                .font(Theme.rounded(13, .bold))
+                                                .foregroundStyle(Theme.textPrimary)
+                                        }
+                                    }
+                                    HStack {
+                                        Text(isRel ? "Carico assoluto (totale con sbarra)" : "Carico relativo (dischi)")
+                                            .font(Theme.rounded(12, .medium))
+                                            .foregroundStyle(Theme.textTertiary)
+                                        Spacer()
+                                        if isRel {
+                                            Text(Fmt.weight(weight, unit: settings.unit))
+                                                .font(Theme.rounded(13, .semibold))
+                                                .foregroundStyle(Theme.textPrimary)
+                                        } else {
+                                            Text("\(Fmt.weight(relKg, unit: settings.unit)) (\(Fmt.weight(relKg / 2, unit: settings.unit)) per lato)")
+                                                .font(Theme.rounded(13, .semibold))
+                                                .foregroundStyle(settings.accentColor)
+                                        }
+                                    }
+                                }
+                                .padding(10)
+                                .background(Theme.card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            }
+
+                            if let delta, abs(delta) > 0.01 {
+                                HStack(spacing: 6) {
+                                    Image(systemName: delta > 0 ? "arrow.up.right" : "arrow.down.right")
+                                    let sign = delta > 0 ? "+" : ""
+                                    let perSide = (plateBase != nil) ? " (\(sign)\(Fmt.weight(settings.unit.toKilograms(delta / 2), unit: settings.unit)) per lato)" : ""
+                                    Text("\(sign)\(Fmt.weight(settings.unit.toKilograms(delta), unit: settings.unit))\(perSide) rispetto alla serie precedente")
+                                        .font(Theme.rounded(12, .semibold))
+                                }
+                                .foregroundStyle(delta > 0 ? Theme.positive : Theme.negative)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background((delta > 0 ? Theme.positive : Theme.negative).opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            }
                         }
                     }
 
@@ -168,11 +255,12 @@ struct AddSetSheet: View {
                                             reps = step.reps
                                             Haptics.tap()
                                         } label: {
+                                            let dispWeight = isRel ? max(0, step.weight - barWeightKg) : step.weight
                                             VStack(spacing: 3) {
                                                 Text(step.percentLabel)
                                                     .font(Theme.rounded(10, .bold))
                                                     .foregroundStyle(tint)
-                                                Text(Fmt.setLine(weight: step.weight, reps: step.reps, unit: settings.unit))
+                                                Text(Fmt.setLine(weight: dispWeight, reps: step.reps, unit: settings.unit))
                                                     .font(Theme.rounded(13, .bold))
                                                     .foregroundStyle(Theme.textPrimary)
                                                     .minimumScaleFactor(0.6)
@@ -207,7 +295,8 @@ struct AddSetSheet: View {
                                     .font(Theme.rounded(13, .semibold))
                                     .foregroundStyle(tint)
                                 Spacer()
-                                Text(Fmt.setLine(weight: suggestion.weight, reps: suggestion.reps, unit: settings.unit))
+                                let dispWeight = isRel ? max(0, suggestion.weight - barWeightKg) : suggestion.weight
+                                Text(Fmt.setLine(weight: dispWeight, reps: suggestion.reps, unit: settings.unit))
                                     .font(Theme.rounded(15, .bold))
                                     .foregroundStyle(Theme.textPrimary)
                             }
@@ -300,9 +389,21 @@ struct AddSetSheet: View {
                                 HStack(spacing: 8) {
                                     VStack(alignment: .leading, spacing: 2) {
                                         HStack(spacing: 6) {
-                                            Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit))
+                                            if isRel {
+                                                let rel = max(0, prev.weight - barWeightKg)
+                                                HStack(spacing: 4) {
+                                                    Text(Fmt.setLine(weight: rel, reps: prev.reps, unit: settings.unit))
+                                                    Text("(tot. \(Fmt.weight(prev.weight, unit: settings.unit)))")
+                                                        .font(Theme.rounded(11, .medium))
+                                                        .foregroundStyle(Theme.textTertiary)
+                                                }
                                                 .font(Theme.rounded(14, .bold))
                                                 .foregroundStyle(Theme.textPrimary)
+                                            } else {
+                                                Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit))
+                                                    .font(Theme.rounded(14, .bold))
+                                                    .foregroundStyle(Theme.textPrimary)
+                                            }
                                             if prev.isPersonalRecord { PRBadge() }
                                         }
                                         Text(Fmt.relativeDay(prev.createdAt))

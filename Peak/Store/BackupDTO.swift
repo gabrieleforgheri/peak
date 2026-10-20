@@ -43,6 +43,9 @@ struct ExerciseDTO: Codable {
     var view: String?
     /// Opzionale: creato a mano di proposito.
     var isCustom: Bool?
+    /// Opzionali: peso sbarra e modalità di visualizzazione (assente = 0, absolute).
+    var barWeight: Double?
+    var weightDisplay: String?
     var records: [MaxRecordDTO]
 }
 
