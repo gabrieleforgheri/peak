@@ -148,11 +148,13 @@ function compute(): Model {
 	}
 
 	const exercises: Ex[] = d.exercises.map((e) => {
+		// i documenti di prima della 2.1 non hanno catalog, muscles e view: senza default la figura rompe la sessione
+		const x = upgradeDoc('exercise', e.data)
 		const records = (byEx.get(e.uuid) ?? []).sort((a, b) => b.date - a.date)
 		return {
-			...e.data, uuid: e.uuid, glyphName: glyphOf(e.data, catalog.glyphs.get(e.data.catalog)), records, best: bestOf(records),
+			...x, uuid: e.uuid, glyphName: glyphOf(x, catalog.glyphs.get(x.catalog)), records, best: bestOf(records),
 			// la figura: quella della voce del catalogo se è collegato, altrimenti quella che hai toccato tu
-			figure: e.data.catalog ? (catalog.figures.get(e.data.catalog) ?? { muscles: [], view: '' as const }) : { muscles: e.data.muscles, view: e.data.view },
+			figure: x.catalog ? (catalog.figures.get(x.catalog) ?? { muscles: [], view: '' as const }) : { muscles: x.muscles, view: x.view },
 			sets: (setsByEx.get(e.uuid) ?? []).sort((a, b) => b.createdAt - a.createdAt || b.order - a.order),
 		}
 	}).sort((a, b) => a.sortIndex - b.sortIndex || a.name.localeCompare(b.name))
