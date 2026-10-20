@@ -139,4 +139,90 @@ final class RecordServiceTests: XCTestCase {
         XCTAssertTrue(workout.setList[0].excludedFromRecords)
         XCTAssertFalse(workout.setList[0].isPersonalRecord)
     }
+
+    func testChartRangeAvailability() {
+        XCTAssertEqual(ExerciseDetailView.ChartRange.available(forSpanDays: 10), [.all])
+        XCTAssertEqual(ExerciseDetailView.ChartRange.available(forSpanDays: 45), [.oneMonth, .all])
+        XCTAssertEqual(ExerciseDetailView.ChartRange.available(forSpanDays: 120), [.oneMonth, .threeMonths, .all])
+        XCTAssertEqual(ExerciseDetailView.ChartRange.available(forSpanDays: 400), [.threeMonths, .year, .all])
+    }
+
+    func testEditingSetReferenceRecordCalculation() throws {
+        let context = try makeContext()
+        let exercise = Exercise(name: "Panca Inclinata", muscleGroup: .petto)
+        context.insert(exercise)
+        let workout = addWorkout(context)
+
+        let base = Date()
+        // Prima serie: 80 kg × 5 (diventa record)
+        RecordService.addSet(to: workout, exercise: exercise, weight: 80, reps: 5, isWarmup: false, context: context)
+        workout.orderedSets[0].createdAt = base
+        RecordService.recompute(exercise, context: context)
+        try context.save()
+        XCTAssertEqual(exercise.recordList.count, 1)
+        let set1 = workout.orderedSets[0]
+
+        // Seconda serie: 75 kg × 5 (non è un record)
+        RecordService.addSet(to: workout, exercise: exercise, weight: 75, reps: 5, isWarmup: false, context: context)
+        workout.orderedSets[1].createdAt = base.addingTimeInterval(60)
+        RecordService.recompute(exercise, context: context)
+        try context.save()
+        let set2 = workout.orderedSets[1]
+        XCTAssertFalse(set2.isPersonalRecord)
+
+        // Quando modifichiamo set2 per portarlo a 85 kg × 5:
+        // Il record di riferimento esclude set2 (rimane set1 da 80kg)
+        let referenceWithoutSet2 = exercise.recordList.filter { $0.uuid != set2.uuid }.max { a, b in
+            if abs(a.weight - b.weight) > MaxRanking.epsilon { return a.weight < b.weight }
+            return a.reps < b.reps
+        }
+        XCTAssertEqual(referenceWithoutSet2?.weight, 80)
+        let best2 = referenceWithoutSet2.map { (weight: $0.weight, reps: $0.reps) }
+        XCTAssertTrue(MaxRanking.beats(weight: 85, reps: 5, than: best2))
+
+        // Se invece modifichiamo set1 escludendolo:
+        let referenceWithoutSet1 = exercise.recordList.filter { $0.uuid != set1.uuid }.max { a, b in
+            if abs(a.weight - b.weight) > MaxRanking.epsilon { return a.weight < b.weight }
+            return a.reps < b.reps
+        }
+        XCTAssertNil(referenceWithoutSet1)
+    }
+
+    func testPreviousWorkingSetsIgnoresWarmupAndCurrentWorkout() throws {
+        let context = try makeContext()
+        let exercise = Exercise(name: "Squat", muscleGroup: .gambe)
+        context.insert(exercise)
+
+        // Allenamento precedente (ieri)
+        let yesterday = Date().addingTimeInterval(-86400)
+        let pastWorkout = Workout(date: yesterday)
+        context.insert(pastWorkout)
+
+        // Serie di riscaldamento + 2 serie allenanti
+        RecordService.addSet(to: pastWorkout, exercise: exercise, weight: 60, reps: 10, isWarmup: true, context: context)
+        RecordService.addSet(to: pastWorkout, exercise: exercise, weight: 100, reps: 8, isWarmup: false, context: context)
+        RecordService.addSet(to: pastWorkout, exercise: exercise, weight: 105, reps: 6, isWarmup: false, context: context)
+
+        // Allenamento di oggi
+        let todayWorkout = addWorkout(context)
+        RecordService.addSet(to: todayWorkout, exercise: exercise, weight: 110, reps: 5, isWarmup: false, context: context)
+
+        let allWorkouts = [pastWorkout, todayWorkout]
+        let otherWorkouts = allWorkouts
+            .filter { $0.uuid != todayWorkout.uuid && $0.date < todayWorkout.date }
+            .sorted { $0.date > $1.date }
+
+        var previousWorking: [WorkoutSet] = []
+        for w in otherWorkouts {
+            let working = w.orderedSets.filter { $0.exercise?.uuid == exercise.uuid && !$0.isWarmup }
+            if !working.isEmpty {
+                previousWorking = working
+                break
+            }
+        }
+
+        XCTAssertEqual(previousWorking.count, 2)
+        XCTAssertEqual(previousWorking.map(\.weight), [100, 105])
+        XCTAssertEqual(previousWorking.map(\.reps), [8, 6])
+    }
 }

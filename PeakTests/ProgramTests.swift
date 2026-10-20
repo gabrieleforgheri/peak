@@ -1,5 +1,5 @@
 import XCTest
-@testable import Peak
+@testable import Massimali
 
 final class ProgramTests: XCTestCase {
     /// Stessi esempi di common/plan.test.ts: l'icona dedotta dal nome è la stessa sul web e qui.

@@ -14,10 +14,11 @@ struct ExerciseDetailView: View {
     @State private var range: ChartRange = .all
 
     enum ChartRange: String, CaseIterable, Identifiable {
-        case threeMonths, year, all
+        case oneMonth, threeMonths, year, all
         var id: String { rawValue }
         var title: String {
             switch self {
+            case .oneMonth: return "1 mese"
             case .threeMonths: return "3 mesi"
             case .year: return "1 anno"
             case .all: return "Tutto"
@@ -25,11 +26,32 @@ struct ExerciseDetailView: View {
         }
         var days: Double? {
             switch self {
+            case .oneMonth: return 30
             case .threeMonths: return 90
             case .year: return 365
             case .all: return nil
             }
         }
+        static func available(forSpanDays spanDays: Double) -> [ChartRange] {
+            var ranges: [ChartRange] = []
+            if spanDays >= 30 && spanDays < 365 {
+                ranges.append(.oneMonth)
+            }
+            if spanDays >= 90 {
+                ranges.append(.threeMonths)
+            }
+            if spanDays >= 365 {
+                ranges.append(.year)
+            }
+            ranges.append(.all)
+            return ranges
+        }
+    }
+
+    private var availableRanges: [ChartRange] {
+        guard let earliest = records.map(\.date).min() else { return [.all] }
+        let spanDays = max(0, Date().timeIntervalSince(earliest) / 86_400)
+        return ChartRange.available(forSpanDays: spanDays)
     }
 
     private var tint: Color { exercise.muscleGroup.tint }
@@ -37,7 +59,8 @@ struct ExerciseDetailView: View {
     private var records: [MaxRecord] { exercise.recordsByDateDesc }
 
     private var chartPoints: [ChartPoint] {
-        let cutoff = range.days.map { Date().addingTimeInterval(-$0 * 86_400) }
+        let activeRange = availableRanges.contains(range) ? range : (availableRanges.first ?? .all)
+        let cutoff = activeRange.days.map { Date().addingTimeInterval(-$0 * 86_400) }
         return records
             .filter { cutoff == nil || $0.date >= cutoff! }
             .sorted { $0.date < $1.date }
@@ -262,10 +285,12 @@ struct ExerciseDetailView: View {
                     Spacer()
                 }
 
-                Picker("Intervallo", selection: $range) {
-                    ForEach(ChartRange.allCases) { Text($0.title).tag($0) }
+                if availableRanges.count > 1 {
+                    Picker("Intervallo", selection: $range) {
+                        ForEach(availableRanges) { Text(LocalizedStringKey($0.title)).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
                 }
-                .pickerStyle(.segmented)
 
                 Chart(chartPoints) { point in
                     AreaMark(

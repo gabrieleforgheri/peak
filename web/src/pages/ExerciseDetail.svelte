@@ -18,7 +18,8 @@
 	let { id }: { id: string } = $props()
 	const m = $derived(getModel())
 	const ex = $derived(m.exById.get(id))
-	let range = $state<'3m' | '1y' | 'all'>('3m')
+	type Range = '1m' | '3m' | '1y' | 'all'
+	let range = $state<Range>('all')
 	let editing = $state(false)
 	let updating = $state(false)
 
@@ -28,13 +29,31 @@
 	onMount(() => { void loadFriends() })
 	$effect(() => { const c = catalog; board = null; if (c) void getBoard(c).then((r) => { if (c === catalog) board = r }) })
 
+	const spanDays = $derived.by(() => {
+		if (!ex || !ex.records.length) return 0
+		const earliest = Math.min(...ex.records.map((r) => r.date))
+		return Math.max(0, (Date.now() - earliest) / 86_400_000)
+	})
+	const availableRanges = $derived.by((): Range[] => {
+		const out: Range[] = []
+		if (spanDays >= 30 && spanDays < 365) out.push('1m')
+		if (spanDays >= 90) out.push('3m')
+		if (spanDays >= 365) out.push('1y')
+		out.push('all')
+		return out
+	})
+	$effect(() => {
+		if (!availableRanges.includes(range)) range = availableRanges[0] ?? 'all'
+	})
+
 	const warm = $derived(ex ? warmupFor(ex, m) : [])
 	const next = $derived(ex ? suggestionFor(ex, m) : null)
 	const nf = (v: number) => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(v)
 
 	const chartRecords = $derived.by(() => {
 		if (!ex) return []
-		const since = range === 'all' ? 0 : Date.now() - (range === '3m' ? 90 : 365) * 86_400_000
+		const days = range === '1m' ? 30 : range === '3m' ? 90 : range === '1y' ? 365 : null
+		const since = days ? Date.now() - days * 86_400_000 : 0
 		return [...ex.records].filter((r) => r.date >= since).sort((a, b) => a.date - b.date)
 	})
 	const points = $derived(chartRecords.map((r) => ({ y: round2(toDisplay(r.weight, m.settings.unit)), label: dateShort(r.date), faded: r.isAuto })))
@@ -128,7 +147,14 @@
 			<div class="card lead">
 				<div class="row between" style="margin-bottom:10px">
 					<div class="sec-title" style="margin:0">{t('Andamento')}</div>
-					<div class="seg" style="width:auto"><button class:on={range === '3m'} onclick={() => (range = '3m')}>{t('3 mesi')}</button><button class:on={range === '1y'} onclick={() => (range = '1y')}>{t('1 anno')}</button><button class:on={range === 'all'} onclick={() => (range = 'all')}>{t('Tutto')}</button></div>
+					{#if availableRanges.length > 1}
+						<div class="seg" style="width:auto">
+							{#if availableRanges.includes('1m')}<button class:on={range === '1m'} onclick={() => (range = '1m')}>{t('1 mese')}</button>{/if}
+							{#if availableRanges.includes('3m')}<button class:on={range === '3m'} onclick={() => (range = '3m')}>{t('3 mesi')}</button>{/if}
+							{#if availableRanges.includes('1y')}<button class:on={range === '1y'} onclick={() => (range = '1y')}>{t('1 anno')}</button>{/if}
+							<button class:on={range === 'all'} onclick={() => (range = 'all')}>{t('Tutto')}</button>
+						</div>
+					{/if}
 				</div>
 				<LineChart {points} {domain} />
 				<div class="row small muted" style="gap:14px"><span><span style="color:var(--accent)">●</span> {t('Registrato')}</span><span><span style="color:var(--accent);opacity:.5">●</span> {t('Da allenamento')}</span></div>

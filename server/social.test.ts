@@ -171,7 +171,7 @@ test('gli inviti per utente sono al massimo 20', () => {
 test('lega: tu e gli amici con volume, allenamenti e settimane di fila; i non amici fuori', async () => {
   const pam = login('pam'), rex = login('rex'), zed = login('zed')
   befriend(pam, rex)
-  await train(pam, 50, { name: 'Panca', catalog: 'bench-press-barbell' }, 100, 10, 2) // 1000 kg, due giorni fa
+  await train(pam, 50, { name: 'Panca', catalog: 'bench-press-barbell' }, 100, 10, 0.1) // 1000 kg, oggi
   await train(rex, 51, { name: 'Panca', catalog: 'bench-press-barbell' }, 50, 10, 45) // fuori dai 30 giorni
   await train(zed, 52, { name: 'Panca', catalog: 'bench-press-barbell' }, 50, 10, 1)
   const { righe } = await (await call('/api/lega', pam.h)).json() as { righe: { username: string; tu: boolean; volume30: number; sessions30: number; streak: number; last: number }[] }

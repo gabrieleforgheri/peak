@@ -2,12 +2,13 @@
 	import { beats, bestOf, oneRepMax, plateMode, round2, toDisplay } from '@common/domain.ts'
 	import { addSet, deleteSet, patchSet } from '../lib/actions.ts'
 	import { stepOf, suggestionFor, warmupFor } from '../lib/derive.ts'
-	import { W, fromUnit, setLine, toUnit, unit } from '../lib/fmt.ts'
+	import { W, fromUnit, relDay, setLine, toUnit, unit } from '../lib/fmt.ts'
 	import { locale, t } from '../lib/i18n.ts'
 	import { getModel } from '../lib/store.svelte.ts'
 	import { play } from '../lib/sound.ts'
 	import type { Ex, SetItem, Wk } from '../lib/types.ts'
 	import { suggestedGlyph } from '@common/glyph.ts'
+	import Icon from './Icon.svelte'
 	import PlateBar from './PlateBar.svelte'
 	import Sheet from './Sheet.svelte'
 	import Stepper from './Stepper.svelte'
@@ -33,6 +34,8 @@
 	let weight = $state(init.w)
 	let reps = $state(init.r)
 	let warm = $state(set?.isWarmup ?? false)
+	let showRecent = $state(false)
+	const prevSets = $derived(set ? ex.sets.filter((s) => s.uuid !== set.uuid) : ex.sets)
 
 	const kg = $derived(fromUnit(weight))
 	const reference = $derived(bestOf(set ? ex.records.filter((r) => r.uuid !== set.uuid) : ex.records))
@@ -45,7 +48,7 @@
 
 	function save() {
 		if (!(weight > 0) || reps < 1) return
-		if (set) { patchSet(set.uuid, { weight: kg, reps, isWarmup: warm }); onadded?.({ isPR: false, isWarmup: warm }) }
+		if (set) { const isPR = patchSet(set.uuid, { weight: kg, reps, isWarmup: warm }); onadded?.({ isPR, isWarmup: warm, uuid: set.uuid }) }
 		else { const r = addSet(workout.uuid, ex.uuid, kg, reps, warm); onadded?.({ isPR: r.isPR, isWarmup: warm, uuid: r.uuid }) }
 		onclose()
 	}
@@ -99,6 +102,39 @@
 			</div>
 		{/if}
 
+
+		<div class="card">
+			<button class="row between" style="background:none;border:0;width:100%;text-align:left;padding:0;cursor:pointer" onclick={() => (showRecent = !showRecent)}>
+				<span class="row" style="gap:8px">
+					<Icon name="timer" size={18} />
+					<b style="font-size:14px">{t('Ultime serie su questo macchinario')}</b>
+				</span>
+				<div class="row" style="gap:6px">
+					{#if prevSets.length}<span class="badge">{prevSets.length}</span>{/if}
+					<Icon name={showRecent ? 'up' : 'down'} size={16} />
+				</div>
+			</button>
+			{#if showRecent}
+				<div class="stack" style="margin-top:12px;gap:8px">
+					{#if !prevSets.length}
+						<div class="small muted">{t('Nessuna serie precedente')}</div>
+					{:else}
+						<div class="tiny muted">{t('Tocca una serie per usarla nel modulo.')}</div>
+						<div class="list">
+							{#each prevSets.slice(0, 15) as s (s.uuid)}
+								<button class="item" style="background:none;border:0;width:100%;text-align:left;cursor:pointer" onclick={() => { weight = toUnit(s.weight); reps = s.reps; warm = s.isWarmup }}>
+									<div class="grow num" style="font-weight:700">{setLine(s.weight, s.reps)}</div>
+									<div class="small muted">{relDay(s.createdAt)}</div>
+									{#if s.isWarmup}<span class="badge">{t('risc.')}</span>{/if}
+									{#if s.isPR}<span class="badge pos">PR</span>{/if}
+									{#if s.reps > 1 && !s.isWarmup}<span class="small muted num">≈ {W(oneRepMax(s.weight, s.reps))}</span>{/if}
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
+			{/if}
+		</div>
 
 		{#if set}<button class="btn danger block" onclick={remove}>{t('Elimina serie')}</button>{/if}
 	</div>
