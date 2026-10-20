@@ -34,6 +34,14 @@ export function createApi(store: Store, auth: Auth, push: Push, commit: () => st
       return true
     }
 
+    // gli errori JavaScript dei client finiscono nel log del server: sui telefoni degli altri non c'è una console da leggere
+    if (path === '/api/errore' && method === 'POST') {
+      const body = (await readJson(req, 8192)) as { msg?: unknown; stack?: unknown; url?: unknown; ua?: unknown }
+      console.log(`[errore client] utente ${user.id} ${String(body?.url ?? '').slice(0, 200)} | ${String(body?.msg ?? '').slice(0, 500)} | ${String(body?.ua ?? '').slice(0, 200)}\n${String(body?.stack ?? '').slice(0, 3000)}`)
+      res.writeHead(204).end()
+      return true
+    }
+
     if (path === '/api/sync' && method === 'GET') {
       const dopo = Number(query.get('dopo') ?? 0)
       if (!Number.isInteger(dopo) || dopo < 0) throw new HttpError(400, 'dopo')
