@@ -152,21 +152,27 @@
 					{#if wk.isActive}<button class="icon-btn" onclick={() => (menuFor = ex)} aria-label={t('Altro')}><Icon name="more" /></button>{/if}
 				</div>
 
-				<button class="row" style="background:none;border:0;text-align:left;padding:0;width:100%;margin-top:8px;align-items:flex-start;gap:10px" onclick={() => (current = ex.uuid)}>
+				<button class="row" style="background:none;border:0;text-align:left;padding:0;width:100%;margin-top:8px;align-items:center;gap:10px" onclick={() => (current = ex.uuid)}>
 					<div class="row" style="gap:6px;flex-shrink:0">
 						<Thumb {ex} />{#if ex.figure.muscles.length}<FigThumb muscles={ex.figure.muscles} view={ex.figure.view} group={ex.muscleGroup} />{/if}
 					</div>
-					<div class="grow" style="min-width:0">
-						{#if prevSets.length}
-							<div class="small muted num" style="line-height:1.35">
-								<span style="font-weight:600;color:var(--text-2)">{t('Scorso')}:</span> {prevSets.map((s) => setLine(s.weight, s.reps)).join(', ')}
-							</div>
-						{:else}
-							<div class="small muted">{t('Nessun allenamento precedente')}</div>
-						{/if}
-						{#if goal}<span class="small muted num" style="display:block;margin-top:2px">{goal}</span>{/if}
-					</div>
+					{#if goal}<div class="grow small muted num" style="min-width:0">{goal}</div>{/if}
 				</button>
+				{#if prevSets.length}
+					<div class="stack" style="gap:3px;margin-top:8px">
+						<div class="tiny muted" style="font-weight:700">{t('Scorso:')}</div>
+						<div class="stack" style="gap:2px">
+							{#each prevSets as s, i}
+								<div class="row small muted num" style="gap:6px">
+									<span style="width:16px;opacity:0.6">{i + 1}.</span>
+									<span>{setLine(s.weight, s.reps)}</span>
+								</div>
+							{/each}
+						</div>
+					</div>
+				{:else}
+					<div class="small muted" style="margin-top:6px">{t('Nessun allenamento precedente')}</div>
+				{/if}
 				<!-- sempre presente (vuota non occupa nulla): così anche la prima serie di un esercizio entra con la sua transizione -->
 				<div class="list" style:margin-top={sets.length ? '10px' : '0'}>
 					{#each sets as s, i (s.uuid)}
