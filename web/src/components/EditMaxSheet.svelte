@@ -15,7 +15,7 @@
 
 	// valori di partenza: l'ultimo massimale, altrimenti l'ultima serie, altrimenti quattro passi
 	const last = ex.records[0] ?? null
-	const lastSet = ex.sets[0] ?? null
+	const lastSet = ex.sets.find((s) => !s.isWarmup) ?? ex.sets[0] ?? null
 	let weight = $state(round2(toDisplay(last?.weight ?? lastSet?.weight ?? step * 4, m.settings.unit)))
 	let reps = $state(last?.reps ?? lastSet?.reps ?? 1)
 	let day = $state(toDateInput(Date.now()))

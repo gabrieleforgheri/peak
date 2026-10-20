@@ -350,8 +350,9 @@ struct WorkoutSessionView: View {
     }
 
     private func lastSet(for exercise: Exercise) -> WorkoutSet? {
-        workout.sets(for: exercise).last
-            ?? exercise.setList.max { $0.createdAt < $1.createdAt }
+        workout.sets(for: exercise).filter { !$0.isWarmup }.last
+            ?? exercise.setList.filter { !$0.isWarmup }.max { $0.createdAt < $1.createdAt }
+            ?? workout.sets(for: exercise).last
     }
 
     private func addSet(to exercise: Exercise, weight: Double, reps: Int, isWarmup: Bool) {
@@ -449,7 +450,6 @@ struct WorkoutSessionView: View {
         set.weight = weight
         set.reps = reps
         set.isWarmup = isWarmup
-        let wasRecord = set.isPersonalRecord
         if let exercise = set.exercise { RecordService.recompute(exercise, context: context) }
         let isRecord = set.isPersonalRecord
         try? context.save()
