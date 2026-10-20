@@ -208,6 +208,7 @@
 "Come è andata? Sensazioni, dolori, regolazioni del sedile…" = "How did it go? Feelings, pains, seat adjustments…";
 "Con l'account yG i tuoi dati si sincronizzano con il web e restano al sicuro sul server. Senza, Peak funziona solo su questo iPhone." = "With a yG account your data syncs with the web and stays safe on the server. Without it, Peak only works on this iPhone.";
 "Condividi" = "Share";
+"Consigli e setup" = "Tips and setup";
 "Consigliato" = "Suggested";
 "Continua" = "Continue";
 "Continua ad allenarti" = "Keep training";
@@ -233,6 +234,7 @@
 "Dati non sufficienti per questo intervallo" = "Not enough data for this range";
 "Deltoidi" = "Delts";
 "Dettagli" = "Details";
+"Dettaglio muscolare" = "Muscle detail";
 "Dischi disponibili" = "Available plates";
 "Dischi per lato" = "Plates per side";
 "Disco" = "Plate";
@@ -281,6 +283,7 @@
 "Femorali" = "Hamstrings";
 "Figure dei muscoli" = "Muscle figures";
 "Fine" = "Done";
+"Fronte" = "Front";
 "Forza" = "Strength";
 "Foto già quadrata: si vede tutta." = "The photo is already square: all of it shows.";
 "Gambe" = "Legs";
@@ -434,7 +437,9 @@
 "Mostra la foto di %lld" = "Show the photo of %lld";
 "Mostra tutti i macchinari" = "Show all machines";
 "Multipower" = "Smith machine";
+"Mappa muscolare" = "Muscle map";
 "Muscoli" = "Muscles";
+"Muscoli coinvolti" = "Target muscles";
 "Muscoli lavorati" = "Muscles worked";
 "NUOVO" = "NEW";
 "NUOVO RECORD" = "NEW RECORD";
@@ -581,6 +586,7 @@
 "Richiesta inviata." = "Request sent.";
 "Richieste" = "Requests";
 "Riepilogo" = "Summary";
+"Retro" = "Back";
 "Rifiuta" = "Decline";
 "Rimuovi" = "Remove";
 "Rimuovi foto" = "Remove photo";
@@ -846,4 +852,49 @@
 "Una serie in più oggi, un record in più domani." = "One more set today, one more record tomorrow.";
 "Fidati del processo, i risultati arriveranno." = "Trust the process, the results will follow.";
 "Non serve essere perfetti, basta essere costanti." = "You do not need to be perfect, just consistent.";
+
+/* Setup e consigli del catalogo */
+"Dischi da caricare a mano, uno per lato." = "Weight plates loaded manually, one on each side.";
+"La butterfly: seduto, chiudi le braccia davanti al petto." = "Pec deck fly: seated, bring arms together in front of chest.";
+"Il carico è per manubrio." = "Weight is per dumbbell.";
+"Il bilanciere guidato dai binari verticali." = "Barbell guided along vertical rails.";
+"In piedi fra due puleggie alte, chiudi le braccia davanti." = "Standing between two high pulleys, bring arms together in front.";
+"A corpo libero: segna l'eventuale zavorra in cintura." = "Bodyweight: log any added weight on your belt.";
+"Il carico è l'assistenza: più peso = più aiuto." = "Weight is assistance: more weight = more help.";
+"A corpo libero: segna l'eventuale zavorra." = "Bodyweight: log any added weight.";
+"Il carico è per braccio." = "Weight is per arm.";
+"Il carico è la zavorra in cintura." = "Weight is the added load on the belt.";
+"Con il triangolo o la presa supina." = "With the triangle or supinated grip.";
+"Seduto, tirata orizzontale al cavo basso." = "Seated, horizontal row on low cable.";
+"Braccia orizzontali, dischi da caricare a mano." = "Arms horizontal, weight plates loaded manually.";
+"Panca sotto la puleggia, seduto al contrario, tirata a mezza altezza un braccio per volta. Il carico è per braccio." = "Bench under pulley, seated backwards, mid-height row one arm at a time. Weight is per arm.";
+"Un ginocchio sulla panca, il carico è per braccio." = "One knee on bench, weight is per arm.";
+"Il gravitron: il carico è l'assistenza, più peso = più aiuto." = "Gravitron: weight is assistance, more weight = more help.";
+"Panca a 45° o orizzontale: segna l'eventuale disco al petto." = "Incline 45° or flat bench: log any weight plate held to chest.";
+"Piede posteriore sulla panca, il carico è per manubrio." = "Rear foot on bench, weight is per dumbbell.";
+"Schiena appoggiata alla panca, bilanciere sul bacino." = "Back against the bench, barbell over hips.";
+"La slanciata indietro, il carico è per gamba." = "Glute kickback, weight is per leg.";
+"Seduto, chiudi le gambe contro i cuscinetti." = "Seated, squeeze legs inward against pads.";
+"Seduto, apri le gambe contro i cuscinetti." = "Seated, push legs outward against pads.";
+"Il carico è per gamba." = "Weight is per leg.";
+"Il carico è per mano." = "Weight is per hand.";
+"La pectoral machine al contrario, per i deltoidi posteriori." = "Reverse pec deck machine for rear deltoids.";
+"Braccia appoggiate al leggio inclinato." = "Arms resting on the inclined pad.";
+"Seduto, gomito appoggiato all'interno coscia." = "Seated, elbow resting against inner thigh.";
+"Con la barra o la corda al cavo alto." = "With the straight bar or rope on high cable.";
+"Panca piana con presa stretta, per i tricipiti." = "Flat bench with close grip, targeting triceps.";
+"Per gli avambracci." = "For forearms.";
+"In ginocchio davanti al cavo alto, con la corda." = "Kneeling in front of high cable, using rope attachment.";
+"Seduto, ruoti il busto contro il carico." = "Seated, rotate torso against the resistance.";
+"Il castello: appeso sugli avambracci, porti le ginocchia al petto." = "Captain's chair: supported on forearms, bring knees to chest.";
+"Segna l'eventuale disco tenuto al petto." = "Log any plate held to your chest.";
+"A corpo libero: qui conviene segnare i secondi al posto delle ripetizioni." = "Bodyweight: track seconds instead of repetitions here.";
+"Punta i piedi leggermente verso l'esterno." = "Point your toes slightly outward.";
+"Tira la sbarra verso il petto alto mantenendo i gomiti verso il basso." = "Pull the bar to your upper chest keeping your elbows down.";
+"Mantieni le scapole addotte e i piedi stabili a terra." = "Keep shoulder blades retracted and feet flat on the floor.";
+"Ottime sensazioni, carichi stabili." = "Great feeling, steady weights.";
+"Gambe & Schiena" = "Legs & Back";
+"Allenamento di oggi" = "Today's workout";
+"Allenamento di Oggi" = "Today's workout";
+
 

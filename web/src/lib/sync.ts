@@ -3,7 +3,9 @@
 
 import type { Kind } from '@common/docs.ts'
 import * as idb from './idb.ts'
-import { S, applyRemote, countDirty, load, onWrite, rows, wipeLocal } from './store.svelte.ts'
+import { S, applyRemote, countDirty, getModel, load, onWrite, put, rows, wipeLocal } from './store.svelte.ts'
+import { loadCatalog } from './catalog.ts'
+import { lang } from './i18n.ts'
 
 const PUSH_BATCH = 500
 let running: Promise<void> | null = null
@@ -85,6 +87,12 @@ async function pull() {
 export function syncNow(): Promise<void> {
 	if (running) return running
 	if (!S.ready || S.auth === 'none') return Promise.resolve()
+	if (import.meta.env.DEV && S.user?.sub === 'dev') {
+		S.online = true
+		S.auth = 'ok'
+		S.error = ''
+		return Promise.resolve()
+	}
 	S.syncing = true
 	running = (async () => {
 		try {
@@ -124,6 +132,81 @@ export async function resync() {
 	await syncNow()
 }
 
+async function seedDevData() {
+	const cat = await loadCatalog()
+	const isIt = lang === 'it'
+	const legEx = cat.find((e) => e.id === 'leg-extension')
+	const latEx = cat.find((e) => e.id === 'lat-pulldown')
+	const benchEx = cat.find((e) => e.id === 'bench-press-barbell')
+
+	const ex1Id = 'A0000000-0000-0000-0000-000000000001'
+	const ex2Id = 'A0000000-0000-0000-0000-000000000002'
+	const ex3Id = 'A0000000-0000-0000-0000-000000000003'
+
+	put('exercise', ex1Id, {
+		name: isIt ? 'Leg Extension' : 'Leg Extension',
+		muscleGroup: legEx?.group ?? 'gambe',
+		notes: isIt ? 'Punta i piedi leggermente verso l\'esterno.' : 'Point your toes slightly outward.',
+		incrementStep: 5, sortIndex: 0, isArchived: false, createdAt: new Date().toISOString(),
+		glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 90,
+		catalog: legEx?.id ?? 'leg-extension', muscles: legEx?.muscles ?? ['quadriceps'], view: legEx?.view ?? 'front', hidden: false, custom: false,
+	})
+
+	if (latEx) {
+		put('exercise', ex2Id, {
+			name: isIt ? latEx.it : latEx.en,
+			muscleGroup: latEx.group,
+			notes: isIt ? 'Tira la sbarra verso il petto alto mantenendo i gomiti verso il basso.' : 'Pull the bar to your upper chest keeping your elbows down.',
+			incrementStep: 5, sortIndex: 1, isArchived: false, createdAt: new Date().toISOString(),
+			glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 120,
+			catalog: latEx.id, muscles: latEx.muscles, view: latEx.view, hidden: false, custom: false,
+		})
+	}
+
+	if (benchEx) {
+		put('exercise', ex3Id, {
+			name: isIt ? benchEx.it : benchEx.en,
+			muscleGroup: benchEx.group,
+			notes: isIt ? 'Mantieni le scapole addotte e i piedi stabili a terra.' : 'Keep shoulder blades retracted and feet flat on the floor.',
+			incrementStep: 2.5, sortIndex: 2, isArchived: false, createdAt: new Date().toISOString(),
+			glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 120,
+			catalog: benchEx.id, muscles: benchEx.muscles, view: benchEx.view, hidden: false, custom: false,
+		})
+	}
+
+	// Allenamento scorso (con 3 serie di leg extension)
+	const prevWkId = 'B0000000-0000-0000-0000-000000000001'
+	put('workout', prevWkId, {
+		date: new Date(Date.now() - 3 * 86400000).toISOString(),
+		endedAt: new Date(Date.now() - 3 * 86400000 + 3600000).toISOString(),
+		name: isIt ? 'Gambe & Schiena' : 'Legs & Back',
+		focus: 'gambe,schiena',
+		note: isIt ? 'Ottime sensazioni, carichi stabili.' : 'Great feeling, steady weights.',
+		template: '',
+		plan: [{ exercise: ex1Id, sets: 3, repsMin: 8, repsMax: 10, weight: 60 }],
+	})
+	put('set', 'C0000000-0000-0000-0000-000000000001', { workout: prevWkId, exercise: ex1Id, weight: 50, reps: 12, rpe: null, isWarmup: false, order: 0, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false })
+	put('set', 'C0000000-0000-0000-0000-000000000002', { workout: prevWkId, exercise: ex1Id, weight: 55, reps: 10, rpe: null, isWarmup: false, order: 1, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false })
+	put('set', 'C0000000-0000-0000-0000-000000000003', { workout: prevWkId, exercise: ex1Id, weight: 60, reps: 8, rpe: null, isWarmup: false, order: 2, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false })
+
+	// Allenamento in corso di oggi
+	const todayWkId = 'B0000000-0000-0000-0000-000000000002'
+	put('workout', todayWkId, {
+		date: new Date().toISOString(),
+		endedAt: null,
+		name: isIt ? 'Allenamento di oggi' : 'Today\'s Workout',
+		focus: 'gambe,schiena',
+		note: '',
+		template: '',
+		plan: [
+			{ exercise: ex1Id, sets: 4, repsMin: 8, repsMax: 10, weight: 60 },
+			...(latEx ? [{ exercise: ex2Id, sets: 3, repsMin: 8, repsMax: 12, weight: 55 }] : []),
+			...(benchEx ? [{ exercise: ex3Id, sets: 3, repsMin: 8, repsMax: 10, weight: 70 }] : []),
+		],
+	})
+	put('set', 'C0000000-0000-0000-0000-000000000004', { workout: todayWkId, exercise: ex1Id, weight: 55, reps: 10, rpe: null, isWarmup: false, order: 0, createdAt: new Date().toISOString(), noRecord: false })
+}
+
 export async function boot() {
 	onWrite(schedule)
 	let sub = localStorage.getItem('peak.sub')
@@ -133,15 +216,28 @@ export async function boot() {
 		if (res.status === 401) {
 			// niente sessione: con rete si va al login, senza si resta sulla copia locale se c'è
 			S.auth = 'expired'
-			if (!sub) { location.href = '/auth/login'; return }
+			if (!sub && !import.meta.env.DEV) { location.href = '/auth/login'; return }
 		} else if (res.ok) info = await res.json()
 	} catch { S.online = false }
 	if (info) { sub = info.sub; localStorage.setItem('peak.sub', sub); S.user = info }
+	if (!sub && import.meta.env.DEV) {
+		sub = 'dev'
+		localStorage.setItem('peak.sub', sub)
+		info = { sub: 'dev', nome: 'Gabriele', username: 'gabriele', vapid: '' }
+		S.user = info
+	}
 	if (!sub) { S.error = 'offline'; S.ready = true; return }
 	await load(sub)
 	cursor = (await idb.getMeta<number>('cursor')) ?? 0
-	S.synced = (await idb.getMeta<boolean>('synced')) ?? false
+	S.synced = (await idb.getMeta<boolean>('synced')) ?? (import.meta.env.DEV ? true : false)
 	S.ready = true
+
+	const devSeedLang = localStorage.getItem('peak.dev-seed-lang')
+	if (import.meta.env.DEV && (getModel().exercises.length === 0 || devSeedLang !== lang)) {
+		await seedDevData()
+		localStorage.setItem('peak.dev-seed-lang', lang)
+	}
+
 	addEventListener('online', () => void syncNow())
 	addEventListener('offline', () => { S.online = false })
 	document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void syncNow() })
