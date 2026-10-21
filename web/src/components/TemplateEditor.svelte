@@ -6,14 +6,15 @@
 	import { fromUnit, toUnit, unit, weekdayName } from '../lib/fmt.ts'
 	import { t } from '../lib/i18n.ts'
 	import { getModel } from '../lib/store.svelte.ts'
-	import type { Tpl } from '../lib/types.ts'
+	import type { Ex, Tpl } from '../lib/types.ts'
 	import ExercisePicker from './ExercisePicker.svelte'
 	import Icon from './Icon.svelte'
 	import IconPicker from './IconPicker.svelte'
 	import TemplateIconView from './TemplateIcon.svelte'
 	import Sheet from './Sheet.svelte'
-	import Thumb from './Thumb.svelte'
 	import FigThumb from './FigThumb.svelte'
+	import MuscleDetailSheet from './MuscleDetailSheet.svelte'
+	import CardBackground from './CardBackground.svelte'
 
 	/** `tpl`: modifica una scheda; `initial`: righe già pronte (salva come scheda), la scheda è nuova. */
 	let { tpl = null, initial = null, onclose, onsaved }: {
@@ -27,6 +28,7 @@
 	let name = $state(source?.name ?? '')
 	let rows = $state<Row[]>((source?.items ?? []).filter((i) => m.exById.has(i.exercise)).map(toRow))
 	let picking = $state(false)
+	let muscleDetailFor = $state<Ex | null>(null)
 	let hidden = $state(tpl?.hidden ?? false)
 	let icon = $state<'' | TemplateIcon>(tpl?.icon ?? '')
 	let allIcons = $state(false)
@@ -106,26 +108,38 @@
 		{#each rows as r, i (r.exercise)}
 			{@const ex = m.exById.get(r.exercise)}
 			{#if ex}
-				<div class="card">
-					<!-- RIGA 1: Titolo esercizio sopra a tutta larghezza e pulsanti a destra -->
-					<div class="row between" style="align-items:center;gap:8px">
-						<b class="ellipsis grow" style="font-size:16px">{ex.name}</b>
-						<div class="row" style="gap:4px;flex-shrink:0">
-							<button class="icon-btn" onclick={() => move(i, -1)} disabled={i === 0} aria-label={t('Su')}><Icon name="up" /></button>
-							<button class="icon-btn" onclick={() => move(i, 1)} disabled={i === rows.length - 1} aria-label={t('Giù')}><Icon name="down" /></button>
-							<button class="icon-btn" onclick={() => (rows = rows.filter((x) => x !== r))} aria-label={t('Togli')}><Icon name="x" /></button>
+				<div class="card" style="position:relative;overflow:hidden">
+					<CardBackground {ex} />
+					<div class="card-content-wrap">
+						<div class="row between" style="align-items:flex-start;gap:12px">
+							<b class="ellipsis grow" style="font-size:16px;line-height:1.3">{ex.name}</b>
+							<div class="stack center" style="flex-shrink:0;gap:8px;align-items:flex-end">
+								<div class="row" style="gap:4px">
+									<button class="icon-btn" onclick={() => move(i, -1)} disabled={i === 0} aria-label={t('Su')}><Icon name="up" /></button>
+									<button class="icon-btn" onclick={() => move(i, 1)} disabled={i === rows.length - 1} aria-label={t('Giù')}><Icon name="down" /></button>
+									<button class="icon-btn" onclick={() => (rows = rows.filter((x) => x !== r))} aria-label={t('Togli')}><Icon name="x" /></button>
+								</div>
+								{#if ex.figure.muscles.length}
+									<button
+										class="muscle-btn"
+										onclick={() => (muscleDetailFor = ex)}
+										aria-label={t('Mappa muscolare')}
+									>
+										<FigThumb muscles={ex.figure.muscles} view={ex.figure.view} group={ex.muscleGroup} size={68} />
+										<span class="muscle-sub-label" style="color:var(--{ex.muscleGroup})">
+											{t('Muscoli')} ↗
+										</span>
+									</button>
+								{/if}
+							</div>
 						</div>
-					</div>
 
-					<!-- RIGA 2: Miniature macchinario e corpo -->
-					<div class="row" style="margin-top:8px;gap:6px">
-						<Thumb {ex} />{#if ex.figure.muscles.length}<FigThumb muscles={ex.figure.muscles} view={ex.figure.view} group={ex.muscleGroup} />{/if}
-					</div>
-					<div class="row" style="margin-top:10px;gap:8px">
-						<label class="field grow"><span>{t('Serie')}</span><input class="input num" type="number" inputmode="numeric" min="0" max="20" bind:value={r.sets} /></label>
-						<label class="field grow"><span>{t('Rip min')}</span><input class="input num" type="number" inputmode="numeric" min="0" max="100" bind:value={r.repsMin} /></label>
-						<label class="field grow"><span>{t('Rip max')}</span><input class="input num" type="number" inputmode="numeric" min="0" max="100" bind:value={r.repsMax} /></label>
-						<label class="field" style="flex:1.6"><span>{unit()}</span><input class="input num" type="number" inputmode="decimal" min="0" step="0.5" bind:value={r.weight} placeholder={t('ultimo')} /></label>
+						<div class="row" style="margin-top:10px;gap:8px">
+							<label class="field grow"><span>{t('Serie')}</span><input class="input num" type="number" inputmode="numeric" min="0" max="20" bind:value={r.sets} /></label>
+							<label class="field grow"><span>{t('Rip min')}</span><input class="input num" type="number" inputmode="numeric" min="0" max="100" bind:value={r.repsMin} /></label>
+							<label class="field grow"><span>{t('Rip max')}</span><input class="input num" type="number" inputmode="numeric" min="0" max="100" bind:value={r.repsMax} /></label>
+							<label class="field" style="flex:1.6"><span>{unit()}</span><input class="input num" type="number" inputmode="decimal" min="0" step="0.5" bind:value={r.weight} placeholder={t('ultimo')} /></label>
+						</div>
 					</div>
 				</div>
 			{/if}
@@ -139,3 +153,28 @@
 
 {#if allIcons}<IconPicker current={icon} onpick={(i) => (icon = i)} onclose={() => (allIcons = false)} />{/if}
 {#if picking}<ExercisePicker focus={new Set()} onclose={() => (picking = false)} onpick={(ex) => { if (!rows.some((x) => x.exercise === ex.uuid)) rows = [...rows, { exercise: ex.uuid, sets: null, repsMin: null, repsMax: null, weight: null }] }} />{/if}
+{#if muscleDetailFor}<MuscleDetailSheet ex={muscleDetailFor} onclose={() => (muscleDetailFor = null)} />{/if}
+
+<style>
+	.card-content-wrap { position: relative; z-index: 1; }
+	.muscle-btn {
+		background: none;
+		border: 0;
+		padding: 0;
+		cursor: pointer;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 5px;
+	}
+	.muscle-sub-label {
+		font-size: 11px;
+		font-weight: 700;
+		padding: 2px 7px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.08);
+		letter-spacing: .02em;
+		display: inline-flex;
+		align-items: center;
+	}
+</style>

@@ -233,9 +233,13 @@ struct WorkoutSessionView: View {
         ) {
             Button("Aggiorna") {
                 if let template = templateToUpdate { update(template) }
-                showingSummary = true
+                templateToUpdate = nil
+                presentSummary()
             }
-            Button("No", role: .cancel) { showingSummary = true }
+            Button("No", role: .cancel) {
+                templateToUpdate = nil
+                presentSummary()
+            }
         }
         .alert(
             "App Salute",
@@ -502,6 +506,14 @@ struct WorkoutSessionView: View {
         return template
     }
 
+    private func presentSummary() {
+        Task { @MainActor in
+            // Lascia completare l'animazione di chiusura del dialog / alert UIKit prima di presentare il foglio
+            try? await Task.sleep(for: .milliseconds(350))
+            showingSummary = true
+        }
+    }
+
     private func finish() {
         let changed = changedTemplate()
         workout.endedAt = Date()
@@ -517,7 +529,14 @@ struct WorkoutSessionView: View {
         }
 
         Haptics.success()
-        if let changed { templateToUpdate = changed } else { showingSummary = true }
+        if let changed {
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(350))
+                templateToUpdate = changed
+            }
+        } else {
+            presentSummary()
+        }
     }
 
     /// Aggiorna la scheda con la lista di oggi, tenendo gli obiettivi scritti.
@@ -525,49 +544,6 @@ struct WorkoutSessionView: View {
         let known = exerciseByUUID
         template.items = workout.items(.targets, exists: { known[$0] != nil })
         try? context.save()
-    }
-}
-
-// MARK: - Sfondo della card esercizio (foto macchinario o glyph sfocato + scrim)
-
-private struct ExerciseCardBackground: View {
-    let exercise: Exercise
-
-    var body: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .bottomTrailing) {
-                if let data = exercise.photo, let uiImage = UIImage(data: data) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: geo.size.width + 30, height: geo.size.height + 30)
-                        .clipped()
-                        .blur(radius: 10)
-                        .brightness(-0.15)
-                        .opacity(0.65)
-                        .scaleEffect(1.08)
-                        .position(x: geo.size.width / 2, y: geo.size.height / 2)
-                } else if let glyph = exercise.glyph {
-                    MachineGlyphView(glyph: glyph, tint: exercise.muscleGroup.tint, size: 210)
-                        .opacity(0.28)
-                        .blur(radius: 1.5)
-                        .offset(x: 20, y: 15)
-                }
-
-                LinearGradient(
-                    stops: [
-                        .init(color: Color(red: 0.06, green: 0.07, blue: 0.09).opacity(0.90), location: 0.0),
-                        .init(color: Color(red: 0.06, green: 0.07, blue: 0.09).opacity(0.65), location: 0.55),
-                        .init(color: Color(red: 0.05, green: 0.06, blue: 0.08).opacity(0.40), location: 1.0)
-                    ],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            }
-            .frame(width: geo.size.width, height: geo.size.height)
-            .clipped()
-        }
-        .allowsHitTesting(false)
     }
 }
 
