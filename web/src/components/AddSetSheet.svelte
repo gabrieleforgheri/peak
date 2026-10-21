@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { beats, bestOf, defaultBarWeightFor, oneRepMax, plateMode, round2, toDisplay } from '@common/domain.ts'
 	import { addSet, deleteSet, patchSet } from '../lib/actions.ts'
-	import { stepOf, suggestionFor, warmupFor } from '../lib/derive.ts'
+	import { stepOf, warmupFor } from '../lib/derive.ts'
 	import { W, fromUnit, relDay, setLine, toUnit, unit } from '../lib/fmt.ts'
 	import { locale, t } from '../lib/i18n.ts'
 	import { getModel } from '../lib/store.svelte.ts'
@@ -62,13 +62,12 @@
 	const kg = $derived(fromUnit(absWeight))
 	const reference = $derived(bestOf(set ? ex.records.filter((r) => r.uuid !== set.uuid) : ex.records))
 	const isRecord = $derived(!warm && beats(kg, reps, reference))
-	const next = $derived(set ? null : suggestionFor(ex, m))
 	const warmSteps = $derived(warmupFor(ex, m))
 
-	function save() {
+	function save(isWarm: boolean = warm) {
 		if (!(absWeight > 0) || reps < 1) return
-		if (set) { const isPR = patchSet(set.uuid, { weight: kg, reps, isWarmup: warm }); onadded?.({ isPR, isWarmup: warm, uuid: set.uuid }) }
-		else { const r = addSet(workout.uuid, ex.uuid, kg, reps, warm); onadded?.({ isPR: r.isPR, isWarmup: warm, uuid: r.uuid }) }
+		if (set) { const isPR = patchSet(set.uuid, { weight: kg, reps, isWarmup: isWarm }); onadded?.({ isPR, isWarmup: isWarm, uuid: set.uuid }) }
+		else { const r = addSet(workout.uuid, ex.uuid, kg, reps, isWarm); onadded?.({ isPR: r.isPR, isWarmup: isWarm, uuid: r.uuid }) }
 		onclose()
 	}
 	function remove() {
@@ -80,15 +79,9 @@
 </script>
 
 <Sheet title={ex.name} {onclose}>
-	{#snippet action()}<button class="btn primary small" onclick={save} disabled={!(absWeight > 0)}>{set ? t('Salva') : t('Aggiungi')}</button>{/snippet}
 	<div class="stack">
+		<!-- CARD CARICO -->
 		<div class="card">
-			{#if next && !warm}
-				{@const nextDisp = isRel ? Math.max(0, round2(next.weight - bar)) : next.weight}
-				<button class="chip" style="margin-bottom:10px" onclick={() => { weight = nextDisp; reps = next.reps }}>
-					{t('Consigliato')}: {nf(nextDisp)} {unit()}{#if isRel} <span class="tiny faint">({t('dischi')})</span>{/if} × {next.reps}
-				</button>
-			{/if}
 			<div class="row between" style="align-items:baseline">
 				<div class="sec-title" style="margin-top:0">{isRel ? t('Carico dischi') : t('Carico')}</div>
 				{#if mode?.bar && bar > 0}
@@ -137,8 +130,11 @@
 					</div>
 				</div>
 			{/if}
+		</div>
 
-			<div class="sec-title">{t('Ripetizioni')}</div>
+		<!-- CARD RIPETIZIONI -->
+		<div class="card">
+			<div class="sec-title" style="margin-top:0">{t('Ripetizioni')}</div>
 			<Stepper bind:value={reps} step={1} min={1} max={50} />
 			<div class="chips" style="margin-top:8px">
 				{#each [1, 3, 5, 8, 10, 12] as q}<button class="chip" class:on={reps === q} onclick={() => (reps = q)}>{q}</button>{/each}
@@ -146,35 +142,24 @@
 		</div>
 
 		{#if mode && absWeight > 0}<PlateBar total={absWeight} bar={mode.bar ? bar : 0} {plates} unit={unit()} {delta} />{/if}
-		{#if !warm}
-			<div class="card" style={isRecord ? 'border-color:rgba(var(--accent-rgb),.5)' : ''}>
-				<div class="row between">
-					<span class="tiny muted" style="font-weight:800;letter-spacing:.08em">{isRecord ? t('QUESTA SERIE') : t('MASSIMALE DA BATTERE')}</span>
-					{#if isRecord}<span class="badge accent">{t('NUOVO RECORD')}</span>{/if}
-				</div>
-				{#if isRecord}
-					<div class="mid num">{setLine(kg, reps)}</div>
-					{#if reps > 1}<div class="small muted">≈ {W(oneRepMax(kg, reps))} {t('di 1RM stimato')}</div>{/if}
-					{#if reference}<div class="small muted">{t('Precedente')}: {setLine(reference.weight, reference.reps)}</div>{/if}
-				{:else if reference}
-					<div class="mid num">{setLine(reference.weight, reference.reps)}</div>
-				{:else}
-					<div class="muted">{t('Nessun massimale: la prima serie lo stabilisce.')}</div>
-				{/if}
+
+		<div class="card" style={isRecord ? 'border-color:rgba(var(--accent-rgb),.5)' : ''}>
+			<div class="row between">
+				<span class="tiny muted" style="font-weight:800;letter-spacing:.08em">{isRecord ? t('QUESTA SERIE') : t('MASSIMALE DA BATTERE')}</span>
+				{#if isRecord}<span class="badge accent">{t('NUOVO RECORD')}</span>{/if}
 			</div>
-		{/if}
+			{#if isRecord}
+				<div class="mid num">{setLine(kg, reps)}</div>
+				{#if reps > 1}<div class="small muted">≈ {W(oneRepMax(kg, reps))} {t('di 1RM stimato')}</div>{/if}
+				{#if reference}<div class="small muted">{t('Precedente')}: {setLine(reference.weight, reference.reps)}</div>{/if}
+			{:else if reference}
+				<div class="mid num">{setLine(reference.weight, reference.reps)}</div>
+			{:else}
+				<div class="muted">{t('Nessun massimale: la prima serie lo stabilisce.')}</div>
+			{/if}
+		</div>
 
-		<label class="row between card"><span><b>{t('Serie di riscaldamento')}</b><br /><span class="small muted">{t('Esclusa dal volume e dai record')}</span></span><input class="toggle" type="checkbox" bind:checked={warm} /></label>
-		{#if warm && warmSteps.length}
-			<div class="chips">
-				{#each warmSteps as s}
-					{@const sWeight = isRel ? Math.max(0, round2(s.weight - bar)) : s.weight}
-					<button class="chip" onclick={() => { weight = sWeight; reps = s.reps }}>{Math.round(s.percent * 100)}% · {nf(sWeight)} × {s.reps}</button>
-				{/each}
-			</div>
-		{/if}
-
-
+		<!-- ULTIME SERIE SU QUESTO MACCHINARIO SUBITO SOTTO MASSIMALE DA BATTERE -->
 		<div class="card">
 			<button class="row between" style="background:none;border:0;width:100%;text-align:left;padding:0;cursor:pointer" onclick={() => (showRecent = !showRecent)}>
 				<span class="row" style="gap:8px">
@@ -212,6 +197,29 @@
 					{/if}
 				</div>
 			{/if}
+		</div>
+
+		<!-- CHIP RISCALDAMENTO CONSIGLIATO -->
+		{#if warmSteps.length}
+			<div class="stack" style="gap:6px">
+				<div class="tiny faint" style="font-weight:700">{t('Riscaldamento consigliato')}:</div>
+				<div class="chips">
+					{#each warmSteps as s}
+						{@const sWeight = isRel ? Math.max(0, round2(s.weight - bar)) : s.weight}
+						<button class="chip" onclick={() => { weight = sWeight; reps = s.reps }}>{Math.round(s.percent * 100)}% · {nf(sWeight)} × {s.reps}</button>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
+		<!-- PULSANTI AZIONE: RISCALDAMENTO DIRETTO E AGGIUNGI SERIE -->
+		<div class="row" style="gap:10px;margin-top:6px">
+			<button class="btn block" style="flex:1;background:rgba(255,255,255,0.06);border-color:var(--stroke)" onclick={() => save(true)} disabled={!(absWeight > 0)}>
+				<Icon name="flame" size={17} />{t('Riscaldamento')}
+			</button>
+			<button class="btn primary block" style="flex:1.4" onclick={() => save(false)} disabled={!(absWeight > 0)}>
+				<Icon name="plus" size={17} />{set ? t('Salva') : t('Aggiungi serie')}
+			</button>
 		</div>
 
 		{#if set}<button class="btn danger block" onclick={remove}>{t('Elimina serie')}</button>{/if}

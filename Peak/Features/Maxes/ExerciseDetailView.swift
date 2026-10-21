@@ -13,6 +13,7 @@ struct ExerciseDetailView: View {
 
     @State private var showingNewRecord = false
     @State private var showingEditor = false
+    @State private var showingMuscleDetail = false
     @State private var range: ChartRange = .all
 
     private var availableRanges: [ChartRange] {
@@ -131,6 +132,9 @@ struct ExerciseDetailView: View {
         .sheet(isPresented: $showingEditor) {
             ExerciseEditorView(exercise: exercise) { dismiss() }
         }
+        .sheet(isPresented: $showingMuscleDetail) {
+            MuscleDetailSheet(exercise: exercise)
+        }
     }
 
     // MARK: - Testata
@@ -138,68 +142,94 @@ struct ExerciseDetailView: View {
     private var heroCard: some View {
         GlassCard(padding: 20, tint: tint) {
             VStack(alignment: .leading, spacing: 16) {
-                HStack(spacing: 10) {
-                    ExerciseThumbnail(exercise: exercise, size: 52, zoomable: true)
-                    ExerciseFigure(exercise: exercise, size: 52)
-                    MuscleGroupChip(group: exercise.muscleGroup)
-                    if exercise.isUnilateral {
-                        Text(exercise.worksLegs ? "Una gamba" : "Un braccio")
-                            .font(Theme.rounded(11, .semibold))
-                            .foregroundStyle(Theme.textSecondary)
-                    }
-                    if exercise.barWeight > 0 {
-                        Text("Sbarra \(Fmt.weight(exercise.barWeight, unit: settings.unit))")
-                            .font(Theme.rounded(11, .semibold))
-                            .foregroundStyle(Theme.textSecondary)
-                    }
-                    if exercise.barWeight > 0, exercise.weightDisplay == "relative" {
-                        Text("Dischi")
-                            .font(Theme.rounded(11, .semibold))
-                            .foregroundStyle(Theme.textSecondary)
-                    }
-                    Spacer()
-                    if let best = exercise.bestRecord, best.isEstimated {
-                        Text("da allenamento")
-                            .font(Theme.rounded(11, .medium))
-                            .foregroundStyle(Theme.textTertiary)
-                    }
-                }
-
-                if let best = exercise.bestRecord {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Text(Fmt.weightValue(best.weight, unit: settings.unit))
-                                .font(Theme.display(52))
-                                .foregroundStyle(Theme.textPrimary)
-                            Text(settings.unit.symbol)
-                                .font(Theme.rounded(18, .semibold))
-                                .foregroundStyle(Theme.textSecondary)
-                            Text("× \(best.reps)")
-                                .font(Theme.rounded(18, .semibold))
-                                .foregroundStyle(Theme.textSecondary)
-                        }
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 10) {
                         HStack(spacing: 8) {
-                            Text("Massimale attuale · \(Fmt.date(best.date))")
-                                .font(Theme.rounded(12, .medium))
-                                .foregroundStyle(Theme.textTertiary)
-                            if let previous = exercise.bestWeight(before: best.date), previous > 0 {
-                                DeltaBadge(percent: (best.weight - previous) / previous * 100)
+                            MuscleGroupChip(group: exercise.muscleGroup)
+                            if exercise.isUnilateral {
+                                Text(exercise.worksLegs ? "Una gamba" : "Un braccio")
+                                    .font(Theme.rounded(11, .semibold))
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
+                            if exercise.barWeight > 0 {
+                                Text("Sbarra \(Fmt.weight(exercise.barWeight, unit: settings.unit))")
+                                    .font(Theme.rounded(11, .semibold))
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
+                            if exercise.barWeight > 0, exercise.weightDisplay == "relative" {
+                                Text("Dischi")
+                                    .font(Theme.rounded(11, .semibold))
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
+                            if let best = exercise.bestRecord, best.isEstimated {
+                                Text("da allenamento")
+                                    .font(Theme.rounded(11, .medium))
+                                    .foregroundStyle(Theme.textTertiary)
                             }
                         }
-                        if best.reps > 1 {
-                            Text("≈ \(Fmt.weight(best.estimatedOneRepMax, unit: settings.unit)) di 1RM stimato")
-                                .font(Theme.rounded(11, .medium))
-                                .foregroundStyle(Theme.textTertiary)
+
+                        if let best = exercise.bestRecord {
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                    Text(Fmt.weightValue(best.weight, unit: settings.unit))
+                                        .font(Theme.display(52))
+                                        .foregroundStyle(Theme.textPrimary)
+                                    Text(settings.unit.symbol)
+                                        .font(Theme.rounded(18, .semibold))
+                                        .foregroundStyle(Theme.textSecondary)
+                                    Text("× \(best.reps)")
+                                        .font(Theme.rounded(18, .semibold))
+                                        .foregroundStyle(Theme.textSecondary)
+                                }
+                                HStack(spacing: 8) {
+                                    Text("Massimale attuale · \(Fmt.date(best.date))")
+                                        .font(Theme.rounded(12, .medium))
+                                        .foregroundStyle(Theme.textTertiary)
+                                    if let previous = exercise.bestWeight(before: best.date), previous > 0 {
+                                        DeltaBadge(percent: (best.weight - previous) / previous * 100)
+                                    }
+                                }
+                                if best.reps > 1 {
+                                    Text("≈ \(Fmt.weight(best.estimatedOneRepMax, unit: settings.unit)) di 1RM stimato")
+                                        .font(Theme.rounded(11, .medium))
+                                        .foregroundStyle(Theme.textTertiary)
+                                }
+                            }
+                        } else {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("—")
+                                    .font(Theme.display(52))
+                                    .foregroundStyle(Theme.textTertiary)
+                                Text("Nessun massimale registrato")
+                                    .font(Theme.rounded(12, .medium))
+                                    .foregroundStyle(Theme.textTertiary)
+                            }
                         }
                     }
-                } else {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("—")
-                            .font(Theme.display(52))
-                            .foregroundStyle(Theme.textTertiary)
-                        Text("Nessun massimale registrato")
-                            .font(Theme.rounded(12, .medium))
-                            .foregroundStyle(Theme.textTertiary)
+
+                    Spacer(minLength: 4)
+
+                    if !exercise.figureMuscles.isEmpty {
+                        Button {
+                            showingMuscleDetail = true
+                        } label: {
+                            VStack(spacing: 5) {
+                                ExerciseFigure(exercise: exercise, size: 68)
+
+                                HStack(spacing: 3) {
+                                    Text("Muscoli".tr)
+                                        .font(Theme.rounded(11, .semibold))
+                                    Image(systemName: "arrow.up.right")
+                                        .font(.system(size: 8, weight: .bold))
+                                }
+                                .foregroundStyle(exercise.muscleGroup.tint)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background(exercise.muscleGroup.tint.opacity(0.14), in: Capsule())
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Mappa muscolare".tr)
                     }
                 }
 
@@ -209,6 +239,10 @@ struct ExerciseDetailView: View {
                     Label("Aggiorna massimale", systemImage: "arrow.up.circle.fill")
                 }
                 .buttonStyle(PrimaryButtonStyle(tint: tint))
+            }
+            .background {
+                ExerciseCardBackground(exercise: exercise)
+                    .padding(-20)
             }
         }
     }

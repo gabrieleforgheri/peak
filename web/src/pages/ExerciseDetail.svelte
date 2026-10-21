@@ -12,8 +12,9 @@
 	import ExerciseEditor from '../components/ExerciseEditor.svelte'
 	import Icon from '../components/Icon.svelte'
 	import LineChart from '../components/LineChart.svelte'
-	import Thumb from '../components/Thumb.svelte'
-	import MuscleFigure from '../components/MuscleFigure.svelte'
+	import FigThumb from '../components/FigThumb.svelte'
+	import MuscleDetailSheet from '../components/MuscleDetailSheet.svelte'
+	import CardBackground from '../components/CardBackground.svelte'
 
 	let { id }: { id: string } = $props()
 	const m = $derived(getModel())
@@ -22,6 +23,7 @@
 	let range = $state<Range>('all')
 	let editing = $state(false)
 	let updating = $state(false)
+	let showingMuscleDetail = $state(false)
 
 	// la classifica con gli amici: solo per i macchinari del catalogo, e solo se hai degli amici
 	let board = $state<BoardRow[] | null>(null)
@@ -79,30 +81,44 @@
 
 		<!-- a schermo largo: a sinistra il massimale e cosa fare, a destra andamento e storico -->
 		<div class="blk">
-		<div class="card" style="--tint:var(--{ex.muscleGroup})">
-			{#if ex.figure.muscles.length}<div style="width:220px;margin:0 auto"><MuscleFigure muscles={ex.figure.muscles} view={ex.figure.view} /></div>{/if}
-			<div class="row" style="align-items:flex-start">
-				<Thumb {ex} large />
-				<div class="grow">
-					<div class="row wrap" style="gap:6px">
-						<span class="badge" style="color:var(--{ex.muscleGroup});background:color-mix(in srgb, var(--{ex.muscleGroup}) 16%, transparent)">{GROUP_NAMES[ex.muscleGroup]}</span>
-						{#if ex.isUnilateral}<span class="badge">{ex.muscleGroup === 'gambe' ? t('Una gamba') : t('Un braccio')}</span>{/if}
-						{#if (ex.barWeight ?? 0) > 0}<span class="badge">{t('Sbarra')} {nf(toUnit(ex.barWeight))} {unit()}</span>{/if}
-						{#if (ex.barWeight ?? 0) > 0 && ex.weightDisplay === 'relative'}<span class="badge">{t('Dischi')}</span>{/if}
-						{#if ex.best?.isAuto}<span class="badge">{t('da allenamento')}</span>{/if}
-					</div>
-					{#if ex.best}
-						<div class="big num" style="margin-top:6px">{W(ex.best.weight, false)}<span class="mid muted"> {unit()} × {ex.best.reps}</span></div>
-						<div class="small muted">{dateLong(ex.best.date)}
-							{#if deltaOf(ex) !== null}<span class="badge pos" style="margin-left:6px">{delta(deltaOf(ex)!)}</span>{/if}
+		<div class="card" style="--tint:var(--{ex.muscleGroup});position:relative;overflow:hidden">
+			<CardBackground {ex} />
+			<div class="card-content-wrap">
+				<div class="row between" style="align-items:flex-start;gap:12px">
+					<div class="grow" style="min-width:0">
+						<div class="row wrap" style="gap:6px">
+							<span class="badge" style="color:var(--{ex.muscleGroup});background:color-mix(in srgb, var(--{ex.muscleGroup}) 16%, transparent)">{GROUP_NAMES[ex.muscleGroup]}</span>
+							{#if ex.isUnilateral}<span class="badge">{ex.muscleGroup === 'gambe' ? t('Una gamba') : t('Un braccio')}</span>{/if}
+							{#if (ex.barWeight ?? 0) > 0}<span class="badge">{t('Sbarra')} {nf(toUnit(ex.barWeight))} {unit()}</span>{/if}
+							{#if (ex.barWeight ?? 0) > 0 && ex.weightDisplay === 'relative'}<span class="badge">{t('Dischi')}</span>{/if}
+							{#if ex.best?.isAuto}<span class="badge">{t('da allenamento')}</span>{/if}
 						</div>
-						{#if ex.best.reps > 1}<div class="small muted">≈ {W(oneRepMax(ex.best.weight, ex.best.reps))} {t('di 1RM stimato')}</div>{/if}
-					{:else}
-						<div class="mid" style="margin-top:6px">{t('Nessun massimale')}</div>
+						{#if ex.best}
+							<div class="big num" style="margin-top:6px">{W(ex.best.weight, false)}<span class="mid muted"> {unit()} × {ex.best.reps}</span></div>
+							<div class="small muted">{dateLong(ex.best.date)}
+								{#if deltaOf(ex) !== null}<span class="badge pos" style="margin-left:6px">{delta(deltaOf(ex)!)}</span>{/if}
+							</div>
+							{#if ex.best.reps > 1}<div class="small muted">≈ {W(oneRepMax(ex.best.weight, ex.best.reps))} {t('di 1RM stimato')}</div>{/if}
+						{:else}
+							<div class="mid" style="margin-top:6px">{t('Nessun massimale')}</div>
+						{/if}
+					</div>
+
+					{#if ex.figure.muscles.length}
+						<button
+							class="muscle-btn"
+							onclick={() => (showingMuscleDetail = true)}
+							aria-label={t('Mappa muscolare')}
+						>
+							<FigThumb muscles={ex.figure.muscles} view={ex.figure.view} group={ex.muscleGroup} size={68} />
+							<span class="muscle-sub-label" style="color:var(--{ex.muscleGroup})">
+								{t('Muscoli')} ↗
+							</span>
+						</button>
 					{/if}
 				</div>
+				<button class="btn primary block" style="margin-top:14px" onclick={() => (updating = true)}>{t('Aggiorna massimale')}</button>
 			</div>
-			<button class="btn primary block" style="margin-top:14px" onclick={() => (updating = true)}>{t('Aggiorna massimale')}</button>
 		</div>
 
 		{#if catalog && F.friends?.amici.length && board && board.length > 1}
@@ -211,8 +227,31 @@
 
 {#if ex && editing}<ExerciseEditor id={ex.uuid} onclose={() => (editing = false)} ondeleted={() => back('macchinari')} />{/if}
 {#if ex && updating}<EditMaxSheet {ex} onclose={() => (updating = false)} />{/if}
+{#if ex && showingMuscleDetail}<MuscleDetailSheet {ex} onclose={() => (showingMuscleDetail = false)} />{/if}
 
 <style>
+	.card-content-wrap { position: relative; z-index: 1; }
+	.muscle-btn {
+		background: none;
+		border: 0;
+		padding: 0;
+		cursor: pointer;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 5px;
+		flex-shrink: 0;
+	}
+	.muscle-sub-label {
+		font-size: 11px;
+		font-weight: 700;
+		padding: 2px 7px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.08);
+		letter-spacing: .02em;
+		display: inline-flex;
+		align-items: center;
+	}
 	/* il primo riquadro della colonna a destra segue l'ultimo della sinistra: sul telefono la distanza è quella fra due card */
 	.lead { margin-top: 12px; }
 	@media (min-width: 900px) { .lead { margin-top: 0; } }

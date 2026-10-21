@@ -79,11 +79,6 @@ struct AddSetSheet: View {
         return abs(currentU - prevU) > 0.01 ? (currentU - prevU) : nil
     }
 
-    private var suggestion: Progression.Suggestion? {
-        guard settings.progressionEnabled, !isWarmup, !isEditing else { return nil }
-        return exercise.progression(range: settings.repRange, unit: settings.unit)
-    }
-
     private var referenceRecord: MaxRecord? {
         if case let .edit(set) = mode {
             let others = exercise.recordList.filter { $0.uuid != set.uuid }
@@ -206,119 +201,102 @@ struct AddSetSheet: View {
                         }
                     }
 
-                    if !isWarmup {
-                        GlassCard(padding: 16, tint: isRecord ? Theme.positive : nil) {
-                            HStack(alignment: .firstTextBaseline) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(isRecord ? "QUESTA SERIE" : "MASSIMALE DA BATTERE")
-                                        .font(Theme.rounded(10, .bold))
-                                        .tracking(0.7)
+                    GlassCard(padding: 16, tint: isRecord ? Theme.positive : nil) {
+                        HStack(alignment: .firstTextBaseline) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(isRecord ? "QUESTA SERIE" : "MASSIMALE DA BATTERE")
+                                    .font(Theme.rounded(10, .bold))
+                                    .tracking(0.7)
+                                    .foregroundStyle(Theme.textTertiary)
+                                Text(reference)
+                                    .font(Theme.display(24))
+                                    .foregroundStyle(isRecord ? Theme.positive : Theme.textPrimary)
+                                    .contentTransition(.numericText())
+                                    .animation(.snappy, value: reference)
+                                if reps > 1 {
+                                    Text("questa serie ≈ \(Fmt.weight(estimated, unit: settings.unit)) di 1RM")
+                                        .font(Theme.rounded(11, .medium))
                                         .foregroundStyle(Theme.textTertiary)
-                                    Text(reference)
-                                        .font(Theme.display(24))
-                                        .foregroundStyle(isRecord ? Theme.positive : Theme.textPrimary)
-                                        .contentTransition(.numericText())
-                                        .animation(.snappy, value: reference)
-                                    if reps > 1 {
-                                        Text("questa serie ≈ \(Fmt.weight(estimated, unit: settings.unit)) di 1RM")
-                                            .font(Theme.rounded(11, .medium))
-                                            .foregroundStyle(Theme.textTertiary)
-                                    }
                                 }
-                                Spacer()
-                                if isRecord { PRBadge(text: "NUOVO RECORD") }
                             }
+                            Spacer()
+                            if isRecord { PRBadge(text: "NUOVO RECORD") }
                         }
-                    }
-
-                    GlassCard(padding: 16) {
-                        Toggle(isOn: $isWarmup) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Serie di riscaldamento")
-                                    .font(Theme.rounded(15, .semibold))
-                                Text("Esclusa dal volume e dai record.")
-                                    .font(Theme.rounded(11, .medium))
-                                    .foregroundStyle(Theme.textTertiary)
-                            }
-                        }
-                        .tint(tint)
-                    }
-
-                    if isWarmup, !warmupPlan.isEmpty {
-                        GlassCard(padding: 16) {
-                            VStack(alignment: .leading, spacing: 10) {
-                                SectionHeader(title: "Riscaldamento consigliato")
-                                HStack(spacing: 8) {
-                                    ForEach(warmupPlan) { step in
-                                        Button {
-                                            weight = step.weight
-                                            reps = step.reps
-                                            Haptics.tap()
-                                        } label: {
-                                            let dispWeight = isRel ? max(0, step.weight - barWeightKg) : step.weight
-                                            VStack(spacing: 3) {
-                                                Text(step.percentLabel)
-                                                    .font(Theme.rounded(10, .bold))
-                                                    .foregroundStyle(tint)
-                                                Text(Fmt.setLine(weight: dispWeight, reps: step.reps, unit: settings.unit))
-                                                    .font(Theme.rounded(13, .bold))
-                                                    .foregroundStyle(Theme.textPrimary)
-                                                    .minimumScaleFactor(0.6)
-                                                    .lineLimit(1)
-                                            }
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 10)
-                                            .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                                    .strokeBorder(tint.opacity(0.25), lineWidth: 1)
-                                            )
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                }
-                                Text("Tocca per compilare peso e ripetizioni.")
-                                    .font(Theme.rounded(11, .medium))
-                                    .foregroundStyle(Theme.textTertiary)
-                            }
-                        }
-                    }
-
-                    if let suggestion {
-                        Button {
-                            weight = suggestion.weight
-                            reps = suggestion.reps
-                            Haptics.tap()
-                        } label: {
-                            HStack {
-                                Label("Consigliato", systemImage: "arrow.up.right")
-                                    .font(Theme.rounded(13, .semibold))
-                                    .foregroundStyle(tint)
-                                Spacer()
-                                let dispWeight = isRel ? max(0, suggestion.weight - barWeightKg) : suggestion.weight
-                                Text(Fmt.setLine(weight: dispWeight, reps: suggestion.reps, unit: settings.unit))
-                                    .font(Theme.rounded(15, .bold))
-                                    .foregroundStyle(Theme.textPrimary)
-                            }
-                            .padding(14)
-                            .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        }
-                        .buttonStyle(.plain)
                     }
 
                     recentSetsDropdown
 
-                    Button {
-                        onSave(weight, reps, isWarmup)
-                        dismiss()
-                    } label: {
-                        Label(
-                            isEditing ? "Salva modifica" : "Aggiungi serie",
-                            systemImage: isEditing ? "checkmark.circle.fill" : "plus.circle.fill"
-                        )
+                    if !warmupPlan.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            SectionHeader(title: "Riscaldamento consigliato")
+                            HStack(spacing: 8) {
+                                ForEach(warmupPlan) { step in
+                                    Button {
+                                        weight = step.weight
+                                        reps = step.reps
+                                        Haptics.tap()
+                                    } label: {
+                                        let dispWeight = isRel ? max(0, step.weight - barWeightKg) : step.weight
+                                        VStack(spacing: 2) {
+                                            Text(step.percentLabel)
+                                                .font(Theme.rounded(10, .bold))
+                                                .foregroundStyle(Theme.textTertiary)
+                                            Text(Fmt.setLine(weight: dispWeight, reps: step.reps, unit: settings.unit))
+                                                .font(Theme.rounded(12, .bold))
+                                                .foregroundStyle(Theme.textPrimary)
+                                                .minimumScaleFactor(0.7)
+                                                .lineLimit(1)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                        .background(Theme.card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                .strokeBorder(Theme.stroke, lineWidth: 1)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
                     }
-                    .buttonStyle(PrimaryButtonStyle(tint: tint))
-                    .disabled(weight <= 0 || reps < 1)
+
+                    HStack(spacing: 10) {
+                        Button {
+                            onSave(weight, reps, true)
+                            dismiss()
+                        } label: {
+                            Label("Riscaldamento", systemImage: "flame.fill")
+                                .font(Theme.rounded(15, .semibold))
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 52)
+                                .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .strokeBorder(Theme.stroke, lineWidth: 1)
+                                )
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(weight <= 0 || reps < 1)
+
+                        Button {
+                            onSave(weight, reps, false)
+                            dismiss()
+                        } label: {
+                            Label(
+                                isEditing ? "Salva modifica" : "Aggiungi serie",
+                                systemImage: isEditing ? "checkmark.circle.fill" : "plus.circle.fill"
+                            )
+                            .font(Theme.rounded(16, .bold))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(tint, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .foregroundStyle(.black)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(weight <= 0 || reps < 1)
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)

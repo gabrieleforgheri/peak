@@ -33,6 +33,7 @@ struct TemplateEditorView: View {
     @State private var icon: String
     @State private var programRaw: String
     @State private var weekday: Int
+    @State private var muscleDetailExercise: Exercise? = nil
 
     init(template: WorkoutTemplate? = nil, initialName: String = "", initialItems: [TemplateItem] = [], onSaved: (() -> Void)? = nil) {
         self.template = template
@@ -140,6 +141,9 @@ struct TemplateEditorView: View {
                     }
                 }
             }
+            .sheet(item: $muscleDetailExercise) { ex in
+                MuscleDetailSheet(exercise: ex)
+            }
             .confirmationDialog("Eliminare questo giorno? Gli allenamenti già fatti restano.", isPresented: $confirmingDelete, titleVisibility: .visible) {
                 Button("Elimina giorno", role: .destructive) {
                     if let template { context.delete(template) }
@@ -227,22 +231,44 @@ struct TemplateEditorView: View {
     private func rowCard(index: Int, exercise: Exercise) -> some View {
         GlassCard(padding: 14) {
             VStack(alignment: .leading, spacing: 10) {
-                // RIGA 1: Titolo esercizio e pulsanti azione
-                HStack {
+                HStack(alignment: .top, spacing: 12) {
                     Text(exercise.name)
                         .font(Theme.rounded(16, .semibold))
                         .foregroundStyle(Theme.textPrimary)
-                        .lineLimit(1)
-                    Spacer(minLength: 4)
-                    roundButton("chevron.up", label: "Su", disabled: index == 0) { rows.swapAt(index, index - 1) }
-                    roundButton("chevron.down", label: "Giù", disabled: index == rows.count - 1) { rows.swapAt(index, index + 1) }
-                    roundButton("xmark", label: "Togli", disabled: false) { rows.remove(at: index) }
-                }
+                        .lineLimit(2)
 
-                // RIGA 2: Miniature macchinario e corpo
-                HStack(spacing: 6) {
-                    ExerciseThumbnail(exercise: exercise, size: 34)
-                    ExerciseFigure(exercise: exercise, size: 34)
+                    Spacer(minLength: 4)
+
+                    VStack(alignment: .trailing, spacing: 8) {
+                        HStack(spacing: 6) {
+                            roundButton("chevron.up", label: "Su", disabled: index == 0) { rows.swapAt(index, index - 1) }
+                            roundButton("chevron.down", label: "Giù", disabled: index == rows.count - 1) { rows.swapAt(index, index + 1) }
+                            roundButton("xmark", label: "Togli", disabled: false) { rows.remove(at: index) }
+                        }
+
+                        if !exercise.figureMuscles.isEmpty {
+                            Button {
+                                muscleDetailExercise = exercise
+                            } label: {
+                                VStack(spacing: 5) {
+                                    ExerciseFigure(exercise: exercise, size: 68)
+
+                                    HStack(spacing: 3) {
+                                        Text("Muscoli".tr)
+                                            .font(Theme.rounded(11, .semibold))
+                                        Image(systemName: "arrow.up.right")
+                                            .font(.system(size: 8, weight: .bold))
+                                    }
+                                    .foregroundStyle(exercise.muscleGroup.tint)
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 3)
+                                    .background(exercise.muscleGroup.tint.opacity(0.14), in: Capsule())
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Mappa muscolare".tr)
+                        }
+                    }
                 }
 
                 HStack(spacing: 8) {
@@ -251,6 +277,10 @@ struct TemplateEditorView: View {
                     field("Rip max", text: binding(index, \.repsMax), keyboard: .numberPad)
                     field(settings.unit.symbol, text: binding(index, \.weight), keyboard: .decimalPad, prompt: "–")
                 }
+            }
+            .background {
+                ExerciseCardBackground(exercise: exercise)
+                    .padding(-14)
             }
         }
     }
