@@ -282,3 +282,117 @@ struct SectionHeader: View {
         }
     }
 }
+
+// MARK: - Storici per mese
+
+/// Un mese di calendario (ora locale) con i suoi elementi.
+struct MonthGroup<T>: Identifiable {
+    let id: String
+    let date: Date
+    let items: [T]
+
+    /// "Ottobre 2026".
+    var title: String { date.formatted(.dateTime.month(.wide).year()).localizedCapitalized }
+}
+
+/// Raggruppa per mese mantenendo l'ordine in ingresso: dal più recente se gli elementi lo sono.
+func byMonth<T>(_ items: [T], date: (T) -> Date, calendar: Calendar = .current) -> [MonthGroup<T>] {
+    var order: [String] = []
+    var firsts: [String: Date] = [:]
+    var buckets: [String: [T]] = [:]
+    for item in items {
+        let d = date(item)
+        let c = calendar.dateComponents([.year, .month], from: d)
+        let key = "\(c.year ?? 0)-\(c.month ?? 0)"
+        if buckets[key] == nil { order.append(key); firsts[key] = d }
+        buckets[key, default: []].append(item)
+    }
+    return order.map { MonthGroup(id: $0, date: firsts[$0]!, items: buckets[$0]!) }
+}
+
+/// Intestazione di un mese: tocca per aprire o chiudere.
+struct MonthHeader: View {
+    let title: String
+    let count: String
+    let open: Bool
+    let toggle: () -> Void
+
+    var body: some View {
+        Button(action: toggle) {
+            HStack(spacing: 8) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .rotationEffect(.degrees(open ? 90 : 0))
+                Text(verbatim: title)
+                    .font(Theme.rounded(13, .bold))
+                Spacer()
+                Text(verbatim: count.tr)
+                    .font(Theme.rounded(11, .semibold))
+            }
+            .foregroundStyle(Theme.textSecondary)
+            .padding(.vertical, 4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Mesi apribili dentro una `List`: una Section per mese, il più recente aperto e gli altri chiusi.
+struct MonthSections<T, Row: View>: View {
+    let items: [T]
+    let date: (T) -> Date
+    let count: (Int) -> String
+    @ViewBuilder let row: (T) -> Row
+
+    /// I mesi che l'utente ha girato rispetto alla partenza (il primo aperto).
+    @State private var flipped: Set<String> = []
+
+    var body: some View {
+        ForEach(Array(byMonth(items, date: date).enumerated()), id: \.element.id) { index, group in
+            let open = (index == 0) != flipped.contains(group.id)
+            Section {
+                if open { ForEach(Array(group.items.enumerated()), id: \.offset) { _, item in row(item) } }
+            } header: {
+                MonthHeader(title: group.title, count: count(group.items.count), open: open) {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        if flipped.contains(group.id) { flipped.remove(group.id) } else { flipped.insert(group.id) }
+                    }
+                }
+                .textCase(nil)
+                .padding(.horizontal, 2)
+            }
+        }
+    }
+}
+
+/// Lo stesso dentro una scheda: i mesi uno sotto l'altro, con un filetto fra le righe se `dividers`.
+/// `openFirst`: il mese più recente parte aperto.
+struct MonthStack<T, Row: View>: View {
+    let items: [T]
+    let date: (T) -> Date
+    let count: (Int) -> String
+    var openFirst = true
+    var dividers = false
+    @ViewBuilder let row: (T) -> Row
+
+    @State private var flipped: Set<String> = []
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(byMonth(items, date: date).enumerated()), id: \.element.id) { index, group in
+                let open = (openFirst && index == 0) != flipped.contains(group.id)
+                MonthHeader(title: group.title, count: count(group.items.count), open: open) {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        if flipped.contains(group.id) { flipped.remove(group.id) } else { flipped.insert(group.id) }
+                    }
+                }
+                if open {
+                    ForEach(Array(group.items.enumerated()), id: \.offset) { i, item in
+                        row(item)
+                        if dividers && i < group.items.count - 1 { Divider().overlay(Theme.stroke) }
+                    }
+                }
+            }
+        }
+    }
+}

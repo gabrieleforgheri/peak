@@ -2,7 +2,7 @@
 	import { GLYPHS, MUSCLE_GROUPS, type GlyphName, type MuscleGroup } from '@common/docs.ts'
 	import type { Muscle, View } from '@common/muscle-info.ts'
 	import { GLYPH_TITLES, glyphOf } from '@common/glyph.ts'
-	import { PhotoFraming, defaultBarWeightFor, round2 } from '@common/domain.ts'
+	import { PhotoFraming, defaultBarWeightFor, guessPlateLoaded, round2 } from '@common/domain.ts'
 	import { deleteExercise, saveExercise } from '../lib/actions.ts'
 	import { GROUP_NAMES, fromUnit, toUnit, unit } from '../lib/fmt.ts'
 	import { t } from '../lib/i18n.ts'
@@ -29,6 +29,8 @@
 	let step = $state(existing?.incrementStep ?? 2.5)
 	let barWeight = $state(toUnit(existing?.barWeight ?? defaultBarWeightFor(existing?.glyphName ?? existing?.glyph ?? '', existing?.name ?? '')))
 	let weightDisplay = $state<'absolute' | 'relative'>(existing?.weightDisplay ?? 'absolute')
+	let plateLoaded = $state(existing ? existing.plateLoaded : guessPlateLoaded('', startName))
+	let perSide = $state(existing?.perSide ?? false)
 	let glyph = $state<'' | GlyphName>(existing?.glyph ?? '')
 	let photo = $state(existing?.photo ?? '')
 	let offset = $state(existing?.photoOffset ?? 0)
@@ -57,6 +59,7 @@
 			// precompila: il nome si può cambiare subito con uno familiare
 			name = startName.trim() || entryName(e); group = e.group; step = e.step; notes = e.notes
 			barWeight = toUnit(defaultBarWeightFor(e.glyph, entryName(e)))
+			plateLoaded = guessPlateLoaded(e.glyph, entryName(e))
 		}
 	}
 
@@ -98,7 +101,7 @@
 			photoOffset: Math.round(offset * 1000) / 1000, isUnilateral: unilateral, restSeconds: rest,
 			catalog, hidden, custom: !catalog && own, muscles, view,
 			barWeight: round2(fromUnit(Math.max(0, barWeight))),
-			weightDisplay,
+			weightDisplay, plateLoaded, perSide,
 		})
 		onsaved?.(uuid)
 		onclose()
@@ -208,7 +211,19 @@
 			</p>
 		</div>
 
-		{#if barWeight > 0}
+		{#if barWeight <= 0}
+			<div class="field">
+				<label class="row between card"><span>{t('Carico a dischi')}</span><input class="toggle" type="checkbox" bind:checked={plateLoaded} /></label>
+				<p class="muted small" style="margin:6px 4px 0">{t('Calcolatore dischi senza sbarra (es. macchinari plate loaded).')}</p>
+			</div>
+		{/if}
+
+		<div class="field">
+			<label class="row between card"><span>{t('Peso inserito per lato')}</span><input class="toggle" type="checkbox" bind:checked={perSide} /></label>
+			<p class="muted small" style="margin:6px 4px 0">{t('Inserisci il peso di un lato: il totale è il doppio (più la sbarra).')}</p>
+		</div>
+
+		{#if barWeight > 0 && !perSide}
 			<div class="field">
 				<span class="sec-title" style="margin:0 4px 6px">{t('Visualizzazione del carico')}</span>
 				<div class="seg">

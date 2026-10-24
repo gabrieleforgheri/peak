@@ -153,7 +153,7 @@ async function seedDevData() {
 		glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 90,
 		catalog: legEx?.id ?? 'leg-extension', muscles: legEx?.muscles ?? ['quadriceps'], view: legEx?.view ?? 'front', hidden: false, custom: false,
 		barWeight: 0,
-		weightDisplay: 'absolute',
+		weightDisplay: 'absolute', plateLoaded: false, perSide: false,
 	})
 
 	if (latEx) {
@@ -165,7 +165,7 @@ async function seedDevData() {
 			glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 120,
 			catalog: latEx.id, muscles: latEx.muscles, view: latEx.view, hidden: false, custom: false,
 			barWeight: 0,
-			weightDisplay: 'absolute',
+			weightDisplay: 'absolute', plateLoaded: false, perSide: false,
 		})
 	}
 
@@ -178,7 +178,7 @@ async function seedDevData() {
 			glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 120,
 			catalog: benchEx.id, muscles: benchEx.muscles, view: benchEx.view, hidden: false, custom: false,
 			barWeight: 20,
-			weightDisplay: 'absolute',
+			weightDisplay: 'absolute', plateLoaded: false, perSide: false,
 		})
 	}
 
@@ -191,7 +191,7 @@ async function seedDevData() {
 			glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 120,
 			catalog: smithEx.id, muscles: smithEx.muscles, view: smithEx.view, hidden: false, custom: false,
 			barWeight: 15,
-			weightDisplay: 'absolute',
+			weightDisplay: 'absolute', plateLoaded: false, perSide: false,
 		})
 	}
 

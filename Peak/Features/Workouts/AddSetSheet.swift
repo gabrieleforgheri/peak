@@ -27,6 +27,8 @@ struct AddSetSheet: View {
     @State private var isWarmup = false
     @State private var didPrefill = false
     @State private var isRecentSetsExpanded = false
+    /// Giorni aperti nelle serie recenti: all'inizio solo il più recente.
+    @State private var openDays: Set<Date> = []
 
     private var allPreviousSets: [WorkoutSet] {
         let sets = exercise.setList.filter { !$0.isWarmup }
@@ -49,22 +51,36 @@ struct AddSetSheet: View {
         guard settings.plateCalculatorEnabled else { return nil }
         // l'attrezzo: quello del catalogo (exercise.glyph lo usa già), oppure l'icona scelta; senza icona lo si deduce dal nome
         let glyph = exercise.glyph ?? .suggested(for: exercise.name, group: exercise.muscleGroup)
-        return Plates.barBase(glyph: glyph, name: exercise.name, barWeight: exercise.barWeight)
+        return Plates.barBase(glyph: glyph, name: exercise.name, barWeight: exercise.barWeight, plateLoaded: exercise.plateLoaded)
     }
 
+    /// Tre modi di leggere il campo peso: totale, solo dischi (tolta la sbarra), un lato (totale = 2 x + sbarra).
+    /// `weight` resta sempre il totale in kg: cambia solo come lo si mostra e lo si digita.
+    private var isSide: Bool { exercise.perSide }
     private var isRel: Bool {
-        exercise.weightDisplay == "relative" && (plateBase ?? 0) > 0
+        !isSide && exercise.weightDisplay == "relative" && (plateBase ?? 0) > 0
     }
     private var barWeightKg: Double {
         plateBase ?? 0
     }
 
+    /// Totale in kg -> valore del campo (e delle serie recenti).
+    private func fieldKg(_ total: Double) -> Double {
+        if isSide { return max(0, (total - exercise.barWeight) / 2) }
+        if isRel { return max(0, total - barWeightKg) }
+        return total
+    }
+    /// Valore del campo in kg -> totale.
+    private func totalKg(_ field: Double) -> Double {
+        if isSide { return field * 2 + exercise.barWeight }
+        if isRel { return field + barWeightKg }
+        return field
+    }
+
     private var stepperWeight: Binding<Double> {
         Binding(
-            get: { isRel ? max(0, weight - barWeightKg) : weight },
-            set: { newKg in
-                weight = isRel ? newKg + barWeightKg : newKg
-            }
+            get: { fieldKg(weight) },
+            set: { weight = totalKg($0) }
         )
     }
 
@@ -117,7 +133,7 @@ struct AddSetSheet: View {
                     GlassCard(padding: 18, tint: tint) {
                         VStack(spacing: 14) {
                             HStack(alignment: .firstTextBaseline) {
-                                SectionHeader(title: isRel ? "Carico dischi" : "Carico")
+                                SectionHeader(title: isSide ? "Per lato" : isRel ? "Carico dischi" : "Carico")
                                 Spacer()
                                 if let plateBase, plateBase > 0 {
                                     Text("Sbarra \(Fmt.weight(plateBase, unit: settings.unit))")
@@ -127,7 +143,14 @@ struct AddSetSheet: View {
                             }
                             WeightStepper(kilograms: stepperWeight, step: exercise.incrementStep, unit: settings.unit, tint: tint)
 
-                            if let plateBase, plateBase > 0 {
+                            if isSide {
+                                Text("Totale \(Fmt.weight(weight, unit: settings.unit))")
+                                    .font(Theme.rounded(12, .semibold))
+                                    .foregroundStyle(Theme.textTertiary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
+                            if let plateBase, plateBase > 0, !isSide {
                                 let relKg = max(0, weight - plateBase)
                                 VStack(spacing: 4) {
                                     HStack {
@@ -169,7 +192,7 @@ struct AddSetSheet: View {
                                 HStack(spacing: 6) {
                                     Image(systemName: delta > 0 ? "arrow.up.right" : "arrow.down.right")
                                     let sign = delta > 0 ? "+" : ""
-                                    let perSide = (plateBase != nil) ? " (\(sign)\(Fmt.weight(settings.unit.toKilograms(delta / 2), unit: settings.unit)) per lato)" : ""
+                                    let perSide = (plateBase != nil || isSide) ? " (\(sign)\(Fmt.weight(settings.unit.toKilograms(delta / 2), unit: settings.unit)) per lato)" : ""
                                     Text("\(sign)\(Fmt.weight(settings.unit.toKilograms(delta), unit: settings.unit))\(perSide) rispetto alla serie precedente")
                                         .font(Theme.rounded(12, .semibold))
                                 }
@@ -236,7 +259,7 @@ struct AddSetSheet: View {
                                         reps = step.reps
                                         Haptics.tap()
                                     } label: {
-                                        let dispWeight = isRel ? max(0, step.weight - barWeightKg) : step.weight
+                                        let dispWeight = fieldKg(step.weight)
                                         VStack(spacing: 2) {
                                             Text(step.percentLabel)
                                                 .font(Theme.rounded(10, .bold))
@@ -316,6 +339,7 @@ struct AddSetSheet: View {
     private func prefill() {
         guard !didPrefill else { return }
         didPrefill = true
+        if let first = allPreviousSets.first { openDays = [Calendar.current.startOfDay(for: first.createdAt)] }
 
         if case let .edit(set) = mode {
             weight = set.weight
@@ -340,6 +364,66 @@ struct AddSetSheet: View {
         }
     }
 
+    private struct DayGroup: Identifiable {
+        let day: Date
+        let sets: [WorkoutSet]
+        var id: Date { day }
+    }
+
+    /// Le serie recenti per giorno di calendario (ora locale), gli ultimi 5 giorni.
+    private var recentDays: [DayGroup] {
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: allPreviousSets) { calendar.startOfDay(for: $0.createdAt) }
+        return grouped.keys.sorted(by: >).prefix(5).map { DayGroup(day: $0, sets: grouped[$0] ?? []) }
+    }
+
+    private func bestSet(_ sets: [WorkoutSet]) -> WorkoutSet {
+        sets.dropFirst().reduce(sets[0]) { best, candidate in
+            MaxRanking.beats(weight: candidate.weight, reps: candidate.reps, than: (best.weight, best.reps)) ? candidate : best
+        }
+    }
+
+    private func dayBinding(_ day: Date) -> Binding<Bool> {
+        Binding(
+            get: { openDays.contains(day) },
+            set: { if $0 { openDays.insert(day) } else { openDays.remove(day) } }
+        )
+    }
+
+    private func recentSetButton(_ prev: WorkoutSet) -> some View {
+        Button {
+            weight = prev.weight
+            reps = prev.reps
+            isWarmup = false
+            Haptics.tap()
+        } label: {
+            HStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    HStack(spacing: 4) {
+                        Text(Fmt.setLine(weight: fieldKg(prev.weight), reps: prev.reps, unit: settings.unit))
+                        if isRel || isSide {
+                            Text("(tot. \(Fmt.weight(prev.weight, unit: settings.unit)))")
+                                .font(Theme.rounded(11, .medium))
+                                .foregroundStyle(Theme.textTertiary)
+                        }
+                    }
+                    .font(Theme.rounded(14, .bold))
+                    .foregroundStyle(Theme.textPrimary)
+                    if prev.isPersonalRecord { PRBadge() }
+                }
+                Spacer()
+                if prev.reps > 1 {
+                    Text("≈ \(Fmt.weight(prev.estimatedOneRepMax, unit: settings.unit))")
+                        .font(Theme.rounded(12, .medium))
+                        .foregroundStyle(Theme.textTertiary)
+                }
+            }
+            .padding(10)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
     private var recentSetsDropdown: some View {
         GlassCard(padding: 16) {
             DisclosureGroup(isExpanded: $isRecentSetsExpanded) {
@@ -357,48 +441,25 @@ struct AddSetSheet: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.top, 4)
 
-                        ForEach(Array(allPreviousSets.prefix(15))) { prev in
-                            Button {
-                                weight = prev.weight
-                                reps = prev.reps
-                                isWarmup = false
-                                Haptics.tap()
-                            } label: {
-                                HStack(spacing: 8) {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        HStack(spacing: 6) {
-                                            if isRel {
-                                                let rel = max(0, prev.weight - barWeightKg)
-                                                HStack(spacing: 4) {
-                                                    Text(Fmt.setLine(weight: rel, reps: prev.reps, unit: settings.unit))
-                                                    Text("(tot. \(Fmt.weight(prev.weight, unit: settings.unit)))")
-                                                        .font(Theme.rounded(11, .medium))
-                                                        .foregroundStyle(Theme.textTertiary)
-                                                }
-                                                .font(Theme.rounded(14, .bold))
-                                                .foregroundStyle(Theme.textPrimary)
-                                            } else {
-                                                Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit))
-                                                    .font(Theme.rounded(14, .bold))
-                                                    .foregroundStyle(Theme.textPrimary)
-                                            }
-                                            if prev.isPersonalRecord { PRBadge() }
-                                        }
-                                        Text(Fmt.relativeDay(prev.createdAt))
-                                            .font(Theme.rounded(11, .medium))
-                                            .foregroundStyle(Theme.textTertiary)
-                                    }
-                                    Spacer()
-                                    if prev.reps > 1 {
-                                        Text("≈ \(Fmt.weight(prev.estimatedOneRepMax, unit: settings.unit))")
-                                            .font(Theme.rounded(12, .medium))
-                                            .foregroundStyle(Theme.textTertiary)
-                                    }
+                        ForEach(recentDays) { group in
+                            DisclosureGroup(isExpanded: dayBinding(group.day)) {
+                                VStack(spacing: 8) {
+                                    ForEach(group.sets) { prev in recentSetButton(prev) }
                                 }
-                                .padding(10)
-                                .background(Theme.card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .padding(.top, 8)
+                            } label: {
+                                let best = bestSet(group.sets)
+                                HStack(spacing: 8) {
+                                    Text(Fmt.relativeDay(group.day))
+                                        .font(Theme.rounded(13, .semibold))
+                                        .foregroundStyle(Theme.textPrimary)
+                                    Spacer()
+                                    Text("\(group.sets.count) serie · \(Fmt.setLine(weight: fieldKg(best.weight), reps: best.reps, unit: settings.unit))")
+                                        .font(Theme.rounded(12, .medium))
+                                        .foregroundStyle(Theme.textTertiary)
+                                }
                             }
-                            .buttonStyle(.plain)
+                            .tint(Theme.textSecondary)
                         }
                     }
                     .padding(.top, 8)

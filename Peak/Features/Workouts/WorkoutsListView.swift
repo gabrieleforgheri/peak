@@ -124,24 +124,26 @@ struct WorkoutsListView: View {
                     }
                 } else {
                     Section {
-                        ForEach(finishedWorkouts) { workout in
-                            ZStack {
-                                NavigationLink(value: workout) { EmptyView() }.opacity(0)
-                                WorkoutRow(workout: workout)
-                            }
+                        SectionHeader(title: "Storico", trailing: "\(finishedWorkouts.count)")
                             .plainListRow()
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    delete(workout)
-                                } label: {
-                                    Label("Elimina", systemImage: "trash")
-                                }
+                    }
+                    MonthSections(
+                        items: finishedWorkouts,
+                        date: \.date,
+                        count: { $0 == 1 ? "1 allenamento" : "\($0) allenamenti" }
+                    ) { workout in
+                        ZStack {
+                            NavigationLink(value: workout) { EmptyView() }.opacity(0)
+                            WorkoutRow(workout: workout)
+                        }
+                        .plainListRow()
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                delete(workout)
+                            } label: {
+                                Label("Elimina", systemImage: "trash")
                             }
                         }
-                    } header: {
-                        SectionHeader(title: "Storico", trailing: "\(finishedWorkouts.count)")
-                            .textCase(nil)
-                            .padding(.horizontal, 2)
                     }
                 }
             }

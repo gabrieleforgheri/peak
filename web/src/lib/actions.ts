@@ -2,7 +2,7 @@
 // derivano dalle serie (common/records.ts), quindi cancellare o modificare una serie basta a tenerli giusti.
 
 import { isoSec, newUuid, MUSCLE_GROUPS, type DocDataMap, type ExerciseDoc, type Kind, type MuscleGroup, type SetDoc, type TemplateDoc, type TemplateItem, type WorkoutDoc } from '@common/docs.ts'
-import { defaultBarWeightFor, settingsForUnitChange, type Unit } from '@common/domain.ts'
+import { defaultBarWeightFor, guessPlateLoaded, settingsForUnitChange, type Unit } from '@common/domain.ts'
 import { addItem, differsFromTemplate, moveItem, removeItem, replaceItem, sessionItems, type PlanSet } from '@common/plan.ts'
 import type { AnyRecord } from '@common/records.ts'
 import { activeProgram } from './derive.ts'
@@ -168,6 +168,7 @@ export async function copyTemplate(src: { name: string; rows: { catalog: string;
 					catalog: entry?.id ?? '', hidden: false, custom: !entry, muscles: [], view: '',
 					barWeight: entry ? defaultBarWeightFor(entry.glyph, entryName(entry)) : 0,
 					weightDisplay: 'absolute',
+					plateLoaded: entry ? guessPlateLoaded(entry.glyph, entryName(entry)) : false, perSide: false,
 				})
 				ex = { uuid, catalog: entry?.id ?? '', name: r.name } as Ex
 				mine.push(ex)

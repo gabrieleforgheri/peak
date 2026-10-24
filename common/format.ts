@@ -33,3 +33,17 @@ export const delta = (percent: number, locale = 'it'): string => `${percent > 0 
 
 /** "80 kg × 5". */
 export const setLine = (kg: number, reps: number, unit: Unit, locale = 'it'): string => `${weight(kg, unit, locale)} × ${reps}`
+
+/** Raggruppa per mese di calendario (ora locale) mantenendo l'ordine in ingresso: con elementi dal più recente, i mesi vengono dal più recente. `ms` è la data del primo elemento. */
+export function byMonth<T>(items: readonly T[], dateOf: (item: T) => number): { key: string; ms: number; items: T[] }[] {
+  const groups = new Map<string, { key: string; ms: number; items: T[] }>()
+  for (const item of items) {
+    const ms = dateOf(item)
+    const d = new Date(ms)
+    const key = `${d.getFullYear()}-${d.getMonth() + 1}`
+    const g = groups.get(key)
+    if (g) g.items.push(item)
+    else groups.set(key, { key, ms, items: [item] })
+  }
+  return [...groups.values()]
+}
