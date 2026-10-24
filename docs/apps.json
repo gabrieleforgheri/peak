@@ -13,6 +13,14 @@
       "tintColor": "34C759",
       "versions": [
         {
+          "version": "3.0",
+          "date": "2026-10-24T14:22:44Z",
+          "localizedDescription": "Merge pull request #7 from gabrieleforgheri/feature/dischi-lato-storici-installa",
+          "downloadURL": "https://github.com/gabrieleforgheri/peak/releases/download/v3.0/Peak.ipa",
+          "size": 2128737,
+          "minOSVersion": "17.0"
+        },
+        {
           "version": "2.1",
           "date": "2026-10-15T09:01:43Z",
           "localizedDescription": "Peak 2.1: versione e descrizione AltStore",
