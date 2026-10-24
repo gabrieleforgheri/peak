@@ -1,6 +1,6 @@
-# Carico a dischi, peso per lato, storici per mese e banner Installa (24 ottobre 2026 — ramo `feature/addset-redesign-and-card-blur`)
+# Carico a dischi, peso per lato, storici per mese e banner Installa (24 ottobre 2026 — PUBBLICATO: PR #7, server 5708d13, AltStore v3.0, pagina studio)
 
-Web + iPhone in parità (tranne il banner, solo web). Codice scritto da subagenti Sonnet, rivisto e unito a mano.
+Web + iPhone in parità (tranne il banner, solo web). Codice scritto da subagenti Sonnet, rivisto e unito a mano. Pubblicato: server riavviato (commit 5708d13), tag `v3.0` → AltStore 3.0, clip della pagina studio rifatte e yG pubblicato. Da provare: la 3.0 sul telefono vero (migrazione SwiftData con `plateLoaded`/`perSide`).
 
 | Fatto | Dove |
 |---|---|
