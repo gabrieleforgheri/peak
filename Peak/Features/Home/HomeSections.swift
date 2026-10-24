@@ -424,11 +424,12 @@ struct HeatmapCard: View {
                         HStack(spacing: 0) {
                             Color.clear.frame(width: label + 6, height: 12)
                             ZStack(alignment: .leading) {
+                                // il mese sta sopra la colonna che contiene il giorno 1 (guardo la domenica), non sopra il primo lunedì
                                 ForEach(Array(columns.enumerated()), id: \.offset) { i, column in
-                                    let month = Calendar.current.component(.month, from: column[0].date)
-                                    let prev = i > 0 ? Calendar.current.component(.month, from: columns[i - 1][0].date) : -1
+                                    let month = Calendar.current.component(.month, from: column[6].date)
+                                    let prev = i > 0 ? Calendar.current.component(.month, from: columns[i - 1][6].date) : -1
                                     if month != prev {
-                                        Text(column[0].date.formatted(.dateTime.month(.abbreviated)))
+                                        Text(column[6].date.formatted(.dateTime.month(.abbreviated)))
                                             .font(Theme.rounded(9, .medium)).foregroundStyle(Theme.textTertiary)
                                             .fixedSize()
                                             .offset(x: CGFloat(i) * (cell + gap))
@@ -440,7 +441,7 @@ struct HeatmapCard: View {
                         HStack(alignment: .top, spacing: 6) {
                             VStack(spacing: gap) {
                                 ForEach(0..<7, id: \.self) { r in
-                                    Text(["L", "M", "M", "G", "V", "S", "D"][r])
+                                    Text(Calendar.current.veryShortStandaloneWeekdaySymbols[(r + 1) % 7])
                                         .font(Theme.rounded(9, .medium)).foregroundStyle(Theme.textTertiary)
                                         .frame(width: label, height: cell)
                                 }
@@ -451,6 +452,12 @@ struct HeatmapCard: View {
                                         ForEach(Array(column.enumerated()), id: \.offset) { _, c in
                                             RoundedRectangle(cornerRadius: 4, style: .continuous)
                                                 .fill(color(c.sets))
+                                                .overlay {
+                                                    // il giorno 1 del mese è bordato: si vede dove inizia il mese dentro la settimana
+                                                    if Calendar.current.component(.day, from: c.date) == 1 {
+                                                        RoundedRectangle(cornerRadius: 4, style: .continuous).strokeBorder(Theme.textSecondary, lineWidth: 1.5)
+                                                    }
+                                                }
                                                 .frame(width: cell, height: cell)
                                         }
                                     }

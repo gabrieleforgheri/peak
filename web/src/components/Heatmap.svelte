@@ -18,7 +18,8 @@
 	// le righe sono i giorni (lunedì in alto), le colonne le settimane: lettera del giorno a sinistra, mese sopra
 	const dayNames = Array.from({ length: 7 }, (_, i) => new Intl.DateTimeFormat(locale, { weekday: 'narrow' }).format(new Date(2024, 0, 1 + i)))
 	const monthOf = new Intl.DateTimeFormat(locale, { month: 'short' })
-	const months = $derived(cells.map((col, c) => (c === 0 || col[0]!.d.getMonth() !== cells[c - 1]![0]!.d.getMonth() ? monthOf.format(col[0]!.d) : '')))
+	// il mese sta sopra la colonna che contiene il giorno 1 (guardo la domenica), non sopra il primo lunedì
+	const months = $derived(cells.map((col, c) => (c === 0 || col[6]!.d.getMonth() !== cells[c - 1]![6]!.d.getMonth() ? monthOf.format(col[6]!.d) : '')))
 	const level = (n: number) => (n <= 0 ? 0 : n < 8 ? 1 : n < 16 ? 2 : n < 24 ? 3 : 4)
 </script>
 
@@ -30,7 +31,7 @@
 			{#each cells as col}
 				<div class="col">
 					{#each col as c}
-						<div class="cell" class:future={c.n < 0} data-l={level(c.n)} title="{dateShort(c.d.getTime())}{c.n > 0 ? ' · ' + c.n : ''}"></div>
+						<div class="cell" class:future={c.n < 0} class:first={c.d.getDate() === 1} data-l={level(c.n)} title="{dateShort(c.d.getTime())}{c.n > 0 ? ' · ' + c.n : ''}"></div>
 					{/each}
 				</div>
 			{/each}
@@ -49,6 +50,8 @@
 	.col { display: grid; grid-template-rows: repeat(7, 1fr); gap: 4px; }
 	.cell { aspect-ratio: 1; border-radius: 4px; background: rgba(255,255,255,.06); }
 	.cell.future { background: transparent; }
+	/* il giorno 1 del mese è bordato: si vede dove inizia il mese dentro la settimana */
+	.cell.first { outline: 1.5px solid var(--text-2); outline-offset: -1.5px; }
 	.cell[data-l='1'] { background: rgba(var(--accent-rgb), .3); }
 	.cell[data-l='2'] { background: rgba(var(--accent-rgb), .55); }
 	.cell[data-l='3'] { background: rgba(var(--accent-rgb), .8); }
