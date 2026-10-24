@@ -22,12 +22,16 @@
 
 	const barKg = $derived(ex.barWeight ?? defaultBarWeightFor(ex.glyphName ?? suggestedGlyph(ex.name, ex.muscleGroup), ex.name))
 	const bar = $derived(toUnit(barKg))
-	const isRel = $derived(ex.weightDisplay === 'relative' && bar > 0)
-
-	function toDisplayWeight(absKg: number): number {
-		const u = toUnit(absKg)
-		return (ex.weightDisplay === 'relative' && bar > 0) ? Math.max(0, round2(u - bar)) : u
-	}
+	// tre modi di leggere il campo peso: totale, solo dischi (tolta la sbarra), un lato (totale = 2 x + sbarra); si salva sempre il totale
+	const side = $derived(ex.perSide === true)
+	const isRel = $derived(!side && ex.weightDisplay === 'relative' && bar > 0)
+	/** totale (unità scelta) -> valore del campo */
+	const fromTotal = (u: number): number => side ? Math.max(0, round2((u - bar) / 2)) : isRel ? Math.max(0, round2(u - bar)) : u
+	/** valore del campo -> totale (unità scelta) */
+	const toTotal = (v: number): number => side ? round2(v * 2 + bar) : isRel ? round2(v + bar) : v
+	/** totale in kg -> kg mostrati nelle serie recenti */
+	const listKg = (kg: number): number => side ? Math.max(0, (kg - barKg) / 2) : isRel ? Math.max(0, kg - barKg) : kg
+	const toDisplayWeight = (absKg: number): number => fromTotal(toUnit(absKg))
 
 	// partenza: la serie stessa; altrimenti l'ultima di questo esercizio nell'allenamento, l'ultima di sempre,
 	// il massimale (almeno 5 rip), quattro passi
@@ -38,7 +42,7 @@
 		if (prev) return { w: toDisplayWeight(prev.weight), r: prev.reps }
 		if (ex.records[0]) return { w: toDisplayWeight(ex.records[0].weight), r: Math.max(5, ex.records[0].reps) }
 		const defWeight = round2(step * 4)
-		return { w: (ex.weightDisplay === 'relative' && bar > 0) ? Math.max(0, round2(defWeight - bar)) : defWeight, r: 8 }
+		return { w: fromTotal(defWeight), r: 8 }
 	}
 	const init = start()
 	let weight = $state(init.w)
@@ -46,13 +50,24 @@
 	let warm = $state(set?.isWarmup ?? false)
 	let showRecent = $state(false)
 	const prevSets = $derived((set ? ex.sets.filter((s) => s.uuid !== set.uuid) : ex.sets).filter((s) => !s.isWarmup))
+	// le serie recenti per giorno di calendario (locale), gli ultimi 5 giorni; prevSets è già dal più recente
+	const days = $derived.by(() => {
+		const out: { key: string; at: number; sets: SetItem[] }[] = []
+		for (const s of prevSets) {
+			const d = new Date(s.createdAt), key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+			const g = out.find((x) => x.key === key)
+			if (g) g.sets.push(s); else out.push({ key, at: s.createdAt, sets: [s] })
+		}
+		return out.slice(0, 5)
+	})
+	const bestSet = (sets: SetItem[]) => bestOf(sets.map((s) => ({ weight: s.weight, reps: s.reps, date: s.createdAt })))!
 	// l'attrezzo: quello del catalogo (glyphName lo usa già), oppure l'icona scelta; senza icona lo si deduce dal nome
-	const mode = $derived(m.settings.plateCalculatorEnabled ? plateMode(ex.glyphName ?? suggestedGlyph(ex.name, ex.muscleGroup), ex.name, barKg) : null)
+	const mode = $derived(m.settings.plateCalculatorEnabled ? plateMode(ex.glyphName ?? suggestedGlyph(ex.name, ex.muscleGroup), ex.name, barKg, ex.plateLoaded) : null)
 	const plates = $derived(m.settings.availablePlates.map((p) => round2(toDisplay(p, m.settings.unit))))
 
-	const absWeight = $derived(isRel ? round2(weight + bar) : weight)
-	const relWeight = $derived(isRel ? weight : Math.max(0, round2(weight - (mode?.bar ? bar : 0))))
-	const perSide = $derived(round2(relWeight / 2))
+	const absWeight = $derived(toTotal(weight))
+	const relWeight = $derived(isRel ? weight : Math.max(0, round2(absWeight - (mode?.bar ? bar : 0))))
+	const perSideW = $derived(round2(relWeight / 2))
 
 	const inWorkoutPrev = $derived([...workout.sets].reverse().find((s) => s.exercise === ex.uuid && !s.isWarmup && (!set || s.uuid !== set.uuid)))
 	const prevSet = $derived(inWorkoutPrev ?? ex.sets.find((s) => !s.isWarmup && (!set || s.uuid !== set.uuid)))
@@ -83,19 +98,20 @@
 		<!-- CARD CARICO -->
 		<div class="card">
 			<div class="row between" style="align-items:baseline">
-				<div class="sec-title" style="margin-top:0">{isRel ? t('Carico dischi') : t('Carico')}</div>
+				<div class="sec-title" style="margin-top:0">{side ? t('Per lato') : isRel ? t('Carico dischi') : t('Carico')}</div>
 				{#if mode?.bar && bar > 0}
 					<span class="small badge muted">{t('Sbarra')} {nf(bar)} {unit()}</span>
 				{/if}
 			</div>
 			<Stepper bind:value={weight} {step} min={0} max={5000} unit={unit()} />
+			{#if side}<div class="small muted" style="margin-top:6px">{t('Totale')} <b class="num">{nf(absWeight)} {unit()}</b></div>{/if}
 
-			{#if mode?.bar && bar > 0}
+			{#if mode?.bar && bar > 0 && !side}
 				<div class="bar-breakdown">
 					{#if isRel}
 						<div class="row between">
 							<span class="small muted">{t('Carico relativo (dischi)')}</span>
-							<b class="num" style="font-size:15px;color:var(--accent)">{nf(relWeight)} {unit()} <span class="muted small" style="font-weight:500">({nf(perSide)} {unit()} {t('per lato')})</span></b>
+							<b class="num" style="font-size:15px;color:var(--accent)">{nf(relWeight)} {unit()} <span class="muted small" style="font-weight:500">({nf(perSideW)} {unit()} {t('per lato')})</span></b>
 						</div>
 						<div class="row between" style="margin-top:4px">
 							<span class="small muted">{t('Carico assoluto (totale con sbarra)')}</span>
@@ -110,7 +126,7 @@
 							<span class="small muted">{t('Carico relativo (dischi)')}</span>
 							<span class="num" style="font-weight:700;color:var(--accent)">
 								{nf(relWeight)} {unit()}
-								<span class="muted small" style="font-weight:500">({nf(perSide)} {unit()} {t('per lato')})</span>
+								<span class="muted small" style="font-weight:500">({nf(perSideW)} {unit()} {t('per lato')})</span>
 							</span>
 						</div>
 					{/if}
@@ -122,10 +138,10 @@
 					<div class="row" style="gap:6px">
 						{#if delta > 0}
 							<Icon name="up" size={15} />
-							<span><b>+{nf(delta)} {unit()}</b>{#if mode?.bar && bar > 0 || mode} (+{nf(delta / 2)} {unit()} {t('per lato')}){/if} <span class="muted">{inWorkoutPrev ? t('rispetto alla serie precedente') : t('rispetto all\'ultimo allenamento')}</span></span>
+							<span><b>+{nf(delta)} {unit()}</b>{#if mode?.bar && bar > 0 || mode || side} (+{nf(delta / 2)} {unit()} {t('per lato')}){/if} <span class="muted">{inWorkoutPrev ? t('rispetto alla serie precedente') : t('rispetto all\'ultimo allenamento')}</span></span>
 						{:else}
 							<Icon name="down" size={15} />
-							<span><b>-{nf(Math.abs(delta))} {unit()}</b>{#if mode?.bar && bar > 0 || mode} (-{nf(Math.abs(delta) / 2)} {unit()} {t('per lato')}){/if} <span class="muted">{inWorkoutPrev ? t('rispetto alla serie precedente') : t('rispetto all\'ultimo allenamento')}</span></span>
+							<span><b>-{nf(Math.abs(delta))} {unit()}</b>{#if mode?.bar && bar > 0 || mode || side} (-{nf(Math.abs(delta) / 2)} {unit()} {t('per lato')}){/if} <span class="muted">{inWorkoutPrev ? t('rispetto alla serie precedente') : t('rispetto all\'ultimo allenamento')}</span></span>
 						{/if}
 					</div>
 				</div>
@@ -177,23 +193,27 @@
 						<div class="small muted">{t('Nessuna serie precedente')}</div>
 					{:else}
 						<div class="tiny muted">{t('Tocca una serie per usarla nel modulo.')}</div>
-						<div class="list">
-							{#each prevSets.slice(0, 15) as s (s.uuid)}
-								<button class="item" style="background:none;border:0;width:100%;text-align:left;cursor:pointer" onclick={() => { weight = toDisplayWeight(s.weight); reps = s.reps; warm = false }}>
-									<div class="grow num" style="font-weight:700">
-										{#if isRel}
-											{setLine(Math.max(0, s.weight - barKg), s.reps)}
-											<span class="tiny muted" style="font-weight:500">({t('tot.')} {W(s.weight)})</span>
-										{:else}
-											{setLine(s.weight, s.reps)}
-										{/if}
-									</div>
-									<div class="small muted">{relDay(s.createdAt)}</div>
-									{#if s.isPR}<span class="badge pos">PR</span>{/if}
-									{#if s.reps > 1}<span class="small muted num">≈ {W(oneRepMax(s.weight, s.reps))}</span>{/if}
-								</button>
-							{/each}
-						</div>
+						{#each days as d, i (d.key)}
+							{@const best = bestSet(d.sets)}
+							<details class="day" open={i === 0}>
+								<summary class="row between">
+									<span class="row" style="gap:6px"><Icon name="right" size={14} /><b>{relDay(d.at)}</b></span>
+									<span class="small muted num">{t('{0} serie', d.sets.length)} · {setLine(listKg(best.weight), best.reps)}</span>
+								</summary>
+								<div class="list">
+									{#each d.sets as s (s.uuid)}
+										<button class="item" style="background:none;border:0;width:100%;text-align:left;cursor:pointer" onclick={() => { weight = toDisplayWeight(s.weight); reps = s.reps; warm = false }}>
+											<div class="grow num" style="font-weight:700">
+												{setLine(listKg(s.weight), s.reps)}
+												{#if isRel || side}<span class="tiny muted" style="font-weight:500">({t('tot.')} {W(s.weight)})</span>{/if}
+											</div>
+											{#if s.isPR}<span class="badge pos">PR</span>{/if}
+											{#if s.reps > 1}<span class="small muted num">≈ {W(oneRepMax(s.weight, s.reps))}</span>{/if}
+										</button>
+									{/each}
+								</div>
+							</details>
+						{/each}
 					{/if}
 				</div>
 			{/if}
@@ -205,7 +225,7 @@
 				<div class="tiny faint" style="font-weight:700">{t('Riscaldamento consigliato')}:</div>
 				<div class="chips">
 					{#each warmSteps as s}
-						{@const sWeight = isRel ? Math.max(0, round2(s.weight - bar)) : s.weight}
+						{@const sWeight = fromTotal(s.weight)}
 						<button class="chip" onclick={() => { weight = sWeight; reps = s.reps }}>{Math.round(s.percent * 100)}% · {nf(sWeight)} × {s.reps}</button>
 					{/each}
 				</div>
@@ -227,6 +247,10 @@
 </Sheet>
 
 <style>
+	.day > summary { cursor: pointer; padding: 6px 0; list-style: none; }
+	.day > summary::-webkit-details-marker { display: none; }
+	.day > summary :global(svg) { transition: transform .15s ease; }
+	.day[open] > summary :global(svg) { transform: rotate(90deg); }
 	.bar-breakdown {
 		margin-top: 10px;
 		padding: 8px 12px;

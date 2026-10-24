@@ -30,13 +30,24 @@ enum Plates {
         return 0
     }
 
+    /// «plate» all'inizio di una parola nel nome (plated, plate loaded), non «template».
+    private static func isPlateNamed(_ lowercasedName: String) -> Bool {
+        lowercasedName.range(of: "\\bplate", options: .regularExpression) != nil
+    }
+
+    /// Euristica iniziale del flag «Carico a dischi» (nuovo esercizio o scelta dal catalogo).
+    static func guessPlateLoaded(glyph: MachineGlyph?, name: String) -> Bool {
+        glyph == .plateLoaded || isPlateNamed(name.lowercased())
+    }
+
     /// Il calcolatore compare dove c'è un bilanciere (anche panche, rack, hip thrust, EZ, trap bar) e per le
     /// plate loaded (senza). Non con i manubri: un vecchio «Panca piana manubri» personalizzato ha il pittogramma della panca.
     /// `nil` = niente calcolatore. Stessa regola del web (`plateMode` in common/domain.ts).
-    static func barBase(glyph: MachineGlyph, name: String, barWeight: Double) -> Double? {
+    static func barBase(glyph: MachineGlyph, name: String, barWeight: Double, plateLoaded: Bool = false) -> Double? {
         let name = name.lowercased()
-        if glyph == .plateLoaded || name.contains("plate loaded") { return 0 }
         if barWeight > 0 { return barWeight }
+        /// L'euristica sul nome è in OR con il flag, quindi l'interruttore non può spegnere il calcolatore di un macchinario con «plate» nel nome.
+        if plateLoaded || glyph == .plateLoaded || isPlateNamed(name) { return 0 }
         switch glyph {
         case .barbell, .benchFlat, .benchIncline, .squatRack, .hipThrust, .ezBar, .trapBar:
             return name.contains("manubri") ? nil : barWeight

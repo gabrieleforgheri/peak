@@ -3,7 +3,7 @@
 	import { GROUP_NAMES, W, dateLong, dateShort, delta, relDay, setLine, toUnit, unit } from '../lib/fmt.ts'
 	import { deleteRecord } from '../lib/actions.ts'
 	import { deltaOf, stepOf, suggestionFor, warmupFor } from '../lib/derive.ts'
-	import { locale, t } from '../lib/i18n.ts'
+	import { locale, t, tn } from '../lib/i18n.ts'
 	import { back, go } from '../lib/router.svelte.ts'
 	import { F, getBoard, loadFriends, type BoardRow } from '../lib/social.svelte.ts'
 	import { onMount } from 'svelte'
@@ -12,6 +12,7 @@
 	import ExerciseEditor from '../components/ExerciseEditor.svelte'
 	import Icon from '../components/Icon.svelte'
 	import LineChart from '../components/LineChart.svelte'
+	import MonthGroups from '../components/MonthGroups.svelte'
 	import FigThumb from '../components/FigThumb.svelte'
 	import MuscleDetailSheet from '../components/MuscleDetailSheet.svelte'
 	import CardBackground from '../components/CardBackground.svelte'
@@ -89,8 +90,9 @@
 						<div class="row wrap" style="gap:6px">
 							<span class="badge" style="color:var(--{ex.muscleGroup});background:color-mix(in srgb, var(--{ex.muscleGroup}) 16%, transparent)">{GROUP_NAMES[ex.muscleGroup]}</span>
 							{#if ex.isUnilateral}<span class="badge">{ex.muscleGroup === 'gambe' ? t('Una gamba') : t('Un braccio')}</span>{/if}
+							{#if ex.perSide}<span class="badge">{t('Per lato')}</span>{/if}
 							{#if (ex.barWeight ?? 0) > 0}<span class="badge">{t('Sbarra')} {nf(toUnit(ex.barWeight))} {unit()}</span>{/if}
-							{#if (ex.barWeight ?? 0) > 0 && ex.weightDisplay === 'relative'}<span class="badge">{t('Dischi')}</span>{/if}
+							{#if (ex.barWeight ?? 0) > 0 && ex.weightDisplay === 'relative' && !ex.perSide}<span class="badge">{t('Dischi')}</span>{/if}
 							{#if ex.best?.isAuto}<span class="badge">{t('da allenamento')}</span>{/if}
 						</div>
 						{#if ex.best}
@@ -185,39 +187,39 @@
 
 		<div class="sec-title">{t('Storico dei massimali')}</div>
 		{#if ex.records.length}
-			<div class="card list">
-				{#each ex.records.slice(0, 12) as r (r.uuid)}
-					<div class="item">
-						<div class="grow"><div class="num" style="font-weight:700">{setLine(r.weight, r.reps)}</div><div class="small muted">{dateLong(r.date)} · {r.isAuto ? t('Da allenamento') : t('Registrato')}</div></div>
-						{#if r.reps > 1}<span class="small muted num">≈ {W(oneRepMax(r.weight, r.reps))}</span>{/if}
-						<button class="icon-btn" style="width:34px;height:34px" onclick={() => deleteRecord(r)} aria-label={t('Elimina')}><Icon name="trash" size={16} /></button>
-					</div>
-				{/each}
-			</div>
+			<MonthGroups items={ex.records} dateOf={(r) => r.date} count={(n) => tn(n, '1 massimale', '{0} massimali')}>
+				{#snippet row(r)}
+				<div class="item">
+					<div class="grow"><div class="num" style="font-weight:700">{setLine(r.weight, r.reps)}</div><div class="small muted">{dateLong(r.date)} · {r.isAuto ? t('Da allenamento') : t('Registrato')}</div></div>
+					{#if r.reps > 1}<span class="small muted num">≈ {W(oneRepMax(r.weight, r.reps))}</span>{/if}
+					<button class="icon-btn" style="width:34px;height:34px" onclick={() => deleteRecord(r)} aria-label={t('Elimina')}><Icon name="trash" size={16} /></button>
+				</div>
+				{/snippet}
+			</MonthGroups>
 		{:else}<div class="card muted">{t('Ancora nessun massimale.')}</div>{/if}
 
 		{#if ex.sets.length}
-			<div class="sec-title">{t('Ultime serie')}</div>
-			<div class="card list">
-				{#each ex.sets.slice(0, 8) as s (s.uuid)}
-					{@const isRel = ex.weightDisplay === 'relative' && (ex.barWeight ?? 0) > 0}
-					<div class="item">
-						<div class="grow">
-							<div class="num" style="font-weight:700">
-								{#if isRel}
-									{setLine(Math.max(0, s.weight - ex.barWeight), s.reps)}
-									<span class="tiny muted" style="font-weight:500">({t('tot.')} {W(s.weight)})</span>
-								{:else}
-									{setLine(s.weight, s.reps)}
-								{/if}
-							</div>
-							<div class="small muted">{relDay(s.createdAt)}</div>
+			<div class="sec-title">{t('Serie')}</div>
+			<MonthGroups items={ex.sets} dateOf={(s) => s.createdAt} count={(n) => tn(n, '1 serie', '{0} serie')}>
+				{#snippet row(s)}
+				{@const isRel = ex.weightDisplay === 'relative' && !ex.perSide && (ex.barWeight ?? 0) > 0}
+				<div class="item">
+					<div class="grow">
+						<div class="num" style="font-weight:700">
+							{#if isRel}
+								{setLine(Math.max(0, s.weight - ex.barWeight), s.reps)}
+								<span class="tiny muted" style="font-weight:500">({t('tot.')} {W(s.weight)})</span>
+							{:else}
+								{setLine(s.weight, s.reps)}
+							{/if}
 						</div>
-						{#if s.isPR}<span class="badge pos">PR</span>{/if}
-						{#if s.isWarmup}<span class="badge">{t('risc.')}</span>{/if}
+						<div class="small muted">{relDay(s.createdAt)}</div>
 					</div>
-				{/each}
-			</div>
+					{#if s.isPR}<span class="badge pos">PR</span>{/if}
+					{#if s.isWarmup}<span class="badge">{t('risc.')}</span>{/if}
+				</div>
+				{/snippet}
+			</MonthGroups>
 		{/if}
 
 		{#if ex.notes}<div class="sec-title">{t('Note')}</div><div class="card muted" style="white-space:pre-wrap">{ex.notes}</div>{/if}

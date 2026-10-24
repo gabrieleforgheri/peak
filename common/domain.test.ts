@@ -95,9 +95,13 @@ test('calcolatore dischi: bilanciere e plate loaded, non manubri né multipower'
   assert.deepEqual(plateMode('rowMachine', 'Rematore Plate Loaded'), { bar: false })
   assert.deepEqual(plateMode('ezBar', 'Curl Bilanciere EZ'), { bar: true })
   assert.equal(plateMode('legCurlLying', 'Leg Curl Sdraiato'), null)
+  assert.deepEqual(plateMode('rowMachine', 'Plated row', 0), { bar: false })
+  assert.deepEqual(plateMode('rowMachine', 'Rematore macchina', 0, true), { bar: false })
+  assert.equal(plateMode('cable', 'Pulley', 0, false), null)
+  assert.deepEqual(plateMode('rowMachine', 'Rematore macchina', 20), { bar: true })
   // il catalogo: nessun manubrio, kettlebell o macchina a pacco pesi riceve il calcolatore con il bilanciere
   for (const e of CATALOG) {
-    if (/manubri|kettlebell|machine/i.test(e.it) && !/plate loaded/i.test(e.it)) assert.equal(plateMode(e.glyph, e.it), null, e.it)
+    if (/manubri|kettlebell|machine/i.test(e.it) && !/plate/i.test(e.it)) assert.equal(plateMode(e.glyph, e.it), null, e.it)
   }
 })
 

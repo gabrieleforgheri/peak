@@ -41,6 +41,10 @@ final class Exercise {
     var barWeight: Double = 0
     /// Modalità di visualizzazione del carico: "absolute" (totale con sbarra) o "relative" (solo dischi).
     var weightDisplayRaw: String = "absolute"
+    /// Macchinario a dischi senza sbarra: il calcolatore dischi compare anche con barWeight 0.
+    var plateLoaded: Bool = false
+    /// Il peso si inserisce per un lato (totale = 2 x + sbarra); le serie restano salvate come totale.
+    var perSide: Bool = false
 
     @Relationship(deleteRule: .cascade, inverse: \MaxRecord.exercise)
     var records: [MaxRecord]? = []

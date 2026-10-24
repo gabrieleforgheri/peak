@@ -38,6 +38,7 @@ export function relDay(ms: number): string {
 	if (days === 1) return t('Ieri')
 	return intl({ weekday: 'short', day: 'numeric', month: 'short' }).format(ms)
 }
+export const monthYear = (ms: number): string => intl({ month: 'long', year: 'numeric' }).format(ms)
 export const dateShort = (ms: number): string => intl({ day: 'numeric', month: 'short' }).format(ms)
 export const dateLong = (ms: number): string => intl({ day: 'numeric', month: 'short', year: 'numeric' }).format(ms)
 export const dateTime = (ms: number): string => intl({ day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(ms)

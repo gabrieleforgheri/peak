@@ -77,7 +77,7 @@
 	}
 
 	function formatSetLine(weightKg: number, reps: number, ex: Ex): { main: string; sub?: string } {
-		if (ex.weightDisplay === 'relative' && (ex.barWeight ?? 0) > 0) {
+		if (ex.weightDisplay === 'relative' && !ex.perSide && (ex.barWeight ?? 0) > 0) {
 			const relKg = Math.max(0, weightKg - ex.barWeight)
 			return {
 				main: setLine(relKg, reps),

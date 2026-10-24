@@ -17,6 +17,7 @@
 	import GoalPicker from '../components/GoalPicker.svelte'
 	import SummitHero from '../components/SummitHero.svelte'
 	import Icon from '../components/Icon.svelte'
+	import InstallBanner from '../components/InstallBanner.svelte'
 	import TemplateIconView from '../components/TemplateIcon.svelte'
 	import Medal from '../components/Medal.svelte'
 
@@ -99,6 +100,8 @@
 	<!-- a schermo largo: a sinistra la montagna, il giorno che tocca e le medaglie; a destra record e novità -->
 	<div class="blk main">
 		<div bind:this={heroBox}><SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={shown ?? weekCount} goal={goalN} {roll} onchangegoal={() => (choosing = true)} onavatar={() => go('me')} /></div>
+
+		<InstallBanner />
 
 		{#if choosing}<GoalPicker current={m.settings.weeklyGoal} suggested={weeklyGoal(stat)} onclose={() => (choosing = false)} />{/if}
 
