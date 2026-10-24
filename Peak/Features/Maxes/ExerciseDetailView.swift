@@ -148,12 +148,17 @@ struct ExerciseDetailView: View {
                                     .font(Theme.rounded(11, .semibold))
                                     .foregroundStyle(Theme.textSecondary)
                             }
+                            if exercise.perSide {
+                                Text("Per lato")
+                                    .font(Theme.rounded(11, .semibold))
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
                             if exercise.barWeight > 0 {
                                 Text("Sbarra \(Fmt.weight(exercise.barWeight, unit: settings.unit))")
                                     .font(Theme.rounded(11, .semibold))
                                     .foregroundStyle(Theme.textSecondary)
                             }
-                            if exercise.barWeight > 0, exercise.weightDisplay == "relative" {
+                            if exercise.barWeight > 0, exercise.weightDisplay == "relative", !exercise.perSide {
                                 Text("Dischi")
                                     .font(Theme.rounded(11, .semibold))
                                     .foregroundStyle(Theme.textSecondary)
@@ -449,7 +454,7 @@ struct ExerciseDetailView: View {
                     count: { $0 == 1 ? "1 serie" : "\($0) serie" }
                 ) { set in
                     HStack(spacing: 10) {
-                        if exercise.weightDisplay == "relative", exercise.barWeight > 0 {
+                        if exercise.weightDisplay == "relative", !exercise.perSide, exercise.barWeight > 0 {
                             let relWeight = max(0, set.weight - exercise.barWeight)
                             HStack(spacing: 4) {
                                 Text(Fmt.setLine(weight: relWeight, reps: set.reps, unit: settings.unit))

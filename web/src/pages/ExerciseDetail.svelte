@@ -90,8 +90,9 @@
 						<div class="row wrap" style="gap:6px">
 							<span class="badge" style="color:var(--{ex.muscleGroup});background:color-mix(in srgb, var(--{ex.muscleGroup}) 16%, transparent)">{GROUP_NAMES[ex.muscleGroup]}</span>
 							{#if ex.isUnilateral}<span class="badge">{ex.muscleGroup === 'gambe' ? t('Una gamba') : t('Un braccio')}</span>{/if}
+							{#if ex.perSide}<span class="badge">{t('Per lato')}</span>{/if}
 							{#if (ex.barWeight ?? 0) > 0}<span class="badge">{t('Sbarra')} {nf(toUnit(ex.barWeight))} {unit()}</span>{/if}
-							{#if (ex.barWeight ?? 0) > 0 && ex.weightDisplay === 'relative'}<span class="badge">{t('Dischi')}</span>{/if}
+							{#if (ex.barWeight ?? 0) > 0 && ex.weightDisplay === 'relative' && !ex.perSide}<span class="badge">{t('Dischi')}</span>{/if}
 							{#if ex.best?.isAuto}<span class="badge">{t('da allenamento')}</span>{/if}
 						</div>
 						{#if ex.best}
@@ -201,7 +202,7 @@
 			<div class="sec-title">{t('Serie')}</div>
 			<MonthGroups items={ex.sets} dateOf={(s) => s.createdAt} count={(n) => tn(n, '1 serie', '{0} serie')}>
 				{#snippet row(s)}
-				{@const isRel = ex.weightDisplay === 'relative' && (ex.barWeight ?? 0) > 0}
+				{@const isRel = ex.weightDisplay === 'relative' && !ex.perSide && (ex.barWeight ?? 0) > 0}
 				<div class="item">
 					<div class="grow">
 						<div class="num" style="font-weight:700">

@@ -904,5 +904,10 @@
 "Gambe & Schiena" = "Legs & Back";
 "Allenamento di oggi" = "Today's workout";
 "Allenamento di Oggi" = "Today's workout";
-
-
+"Carico a dischi" = "Plate loaded";
+"Calcolatore dischi senza sbarra (es. macchinari plate loaded)." = "Plate calculator without a bar (e.g. plate-loaded machines).";
+"Peso inserito per lato" = "Weight entered per side";
+"Inserisci il peso di un lato: il totale è il doppio (più la sbarra)." = "Enter the weight of one side: the total is double (plus the bar).";
+"Per lato" = "Per side";
+"Totale %@" = "Total %@";
+"%lld serie · %@" = "%lld sets · %@";

@@ -110,7 +110,9 @@ enum SyncDocs {
                 "view": exercise.viewRaw,
                 "custom": exercise.isCustom,
                 "barWeight": exercise.barWeight,
-                "weightDisplay": exercise.weightDisplay
+                "weightDisplay": exercise.weightDisplay,
+                "plateLoaded": exercise.plateLoaded,
+                "perSide": exercise.perSide
             ]
             // solo i massimali inseriti a mano: gli altri si ricalcolano dalle serie
             for record in exercise.recordList where !record.isEstimated {
@@ -280,6 +282,8 @@ enum SyncDocs {
                 if let custom = d["custom"] as? Bool { exercise.isCustom = custom }
                 if let bar = number(d, "barWeight") { exercise.barWeight = bar }
                 if let wd = text(d, "weightDisplay"), ["absolute", "relative"].contains(wd) { exercise.weightDisplay = wd }
+                if let plate = d["plateLoaded"] as? Bool { exercise.plateLoaded = plate }
+                if let side = d["perSide"] as? Bool { exercise.perSide = side }
                 let sha = text(d, "photo") ?? ""
                 if sha.isEmpty { exercise.photo = nil }
                 else if let bytes = photos[sha] { exercise.photo = bytes }

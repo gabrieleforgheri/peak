@@ -71,6 +71,10 @@ export interface ExerciseDoc {
   barWeight: number
   /** Visualizzazione del carico nelle serie: 'absolute' (totale con sbarra) o 'relative' (solo dischi). */
   weightDisplay: 'absolute' | 'relative'
+  /** Macchinario a dischi senza sbarra: il calcolatore dischi compare anche con barWeight 0. */
+  plateLoaded: boolean
+  /** Il peso si inserisce per un lato (totale = 2 x + sbarra); le serie restano salvate come totale. */
+  perSide: boolean
 }
 export interface RecordDoc { exercise: string; date: string; weight: number; reps: number; note: string }
 /** Una riga di scheda: sets/reps 0 = non indicato; weight in kg, null = si mostra l'ultimo usato. */
@@ -244,13 +248,14 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
       const barWeight = num(o.barWeight ?? 0, 0, 200)
       if (barWeight === null) return fail('barWeight')
       const weightDisplay = o.weightDisplay === 'relative' ? 'relative' : 'absolute'
+      const plateLoaded = o.plateLoaded === true, perSide = o.perSide === true
       return {
         data: {
           name, muscleGroup: o.muscleGroup as MuscleGroup, notes, incrementStep, sortIndex,
           isArchived: o.isArchived === true, createdAt: isoSec(createdAt), glyph: glyph as ExerciseDoc['glyph'],
           photo: photo as string, photoOffset, isUnilateral: o.isUnilateral === true, restSeconds,
           catalog: catalog as string, hidden: o.hidden === true, custom: o.custom === true,
-          muscles, view: view as ExerciseDoc['view'], barWeight, weightDisplay,
+          muscles, view: view as ExerciseDoc['view'], barWeight, weightDisplay, plateLoaded, perSide,
         },
       }
     }
@@ -346,13 +351,13 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
 export function upgradeDoc<T>(kind: Kind, data: T): T {
   if (!data) return data
   if (kind === 'workout') return { template: '', plan: [], ...data } as T
-  if (kind === 'exercise') return { catalog: '', hidden: false, custom: false, muscles: [], view: '', barWeight: 0, weightDisplay: 'absolute' as const, ...data } as T
+  if (kind === 'exercise') return { catalog: '', hidden: false, custom: false, muscles: [], view: '', barWeight: 0, weightDisplay: 'absolute' as const, plateLoaded: false, perSide: false, ...data } as T
   if (kind === 'template') return { hidden: false, icon: '', program: '', weekday: -1, ...data } as T
   return data
 }
 
 /** Campi aggiunti dopo la 2.1: un client vecchio non li manda, e il server non deve cancellarli. */
-export const KEEP_IF_ABSENT: Partial<Record<Kind, readonly string[]>> = { exercise: ['catalog', 'hidden', 'custom', 'muscles', 'view', 'barWeight', 'weightDisplay'], template: ['hidden', 'icon', 'program', 'weekday'] }
+export const KEEP_IF_ABSENT: Partial<Record<Kind, readonly string[]>> = { exercise: ['catalog', 'hidden', 'custom', 'muscles', 'view', 'barWeight', 'weightDisplay', 'plateLoaded', 'perSide'], template: ['hidden', 'icon', 'program', 'weekday'] }
 
 /** Chiave unica di un documento, per mappe in memoria. */
 export const docKey = (kind: Kind, uuid: string): string => `${kind}:${uuid}`

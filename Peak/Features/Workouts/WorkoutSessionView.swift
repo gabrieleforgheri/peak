@@ -622,7 +622,7 @@ private struct ExerciseSessionCard: View {
                                                 .font(Theme.rounded(11, .semibold))
                                                 .foregroundStyle(Theme.textTertiary)
                                                 .frame(width: 16, alignment: .leading)
-                                            if exercise.weightDisplay == "relative", exercise.barWeight > 0 {
+                                            if exercise.weightDisplay == "relative", !exercise.perSide, exercise.barWeight > 0 {
                                                 let relWeight = max(0, prev.weight - exercise.barWeight)
                                                 Text(Fmt.setLine(weight: relWeight, reps: prev.reps, unit: settings.unit))
                                                     .font(Theme.rounded(12, .medium))
@@ -766,7 +766,7 @@ private struct ExerciseSessionCard: View {
                     if let last = sets.last {
                         Button(action: onRepeatLast) {
                             let repeatText: String = {
-                                if exercise.weightDisplay == "relative", exercise.barWeight > 0 {
+                                if exercise.weightDisplay == "relative", !exercise.perSide, exercise.barWeight > 0 {
                                     let relWeight = max(0, last.weight - exercise.barWeight)
                                     return Fmt.setLine(weight: relWeight, reps: last.reps, unit: settings.unit)
                                 }
@@ -811,7 +811,7 @@ private struct SetRow: View {
                 .foregroundStyle(Theme.textTertiary)
                 .frame(width: 18)
 
-            if let ex = set.exercise, ex.weightDisplay == "relative", ex.barWeight > 0 {
+            if let ex = set.exercise, ex.weightDisplay == "relative", !ex.perSide, ex.barWeight > 0 {
                 let relWeight = max(0, set.weight - ex.barWeight)
                 HStack(spacing: 4) {
                     Text(Fmt.setLine(weight: relWeight, reps: set.reps, unit: settings.unit))

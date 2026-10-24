@@ -123,14 +123,19 @@ export function defaultBarWeightFor(glyph: string, name = ''): number {
  * Il calcolatore dischi compare dove c'è un bilanciere (anche panche, rack, hip thrust, EZ, trap bar) e per le plate loaded
  * (senza bilanciere). Con i manubri no: un vecchio «Panca Piana Manubri» personalizzato ha il pittogramma della panca.
  */
-export function plateMode(glyph: string, exerciseName: string, barWeight?: number): PlateMode {
+export function plateMode(glyph: string, exerciseName: string, barWeight?: number, plateLoaded?: boolean): PlateMode {
   const name = exerciseName.toLowerCase()
-  if (glyph === 'plateLoaded' || name.includes('plate loaded')) return { bar: false }
   if (barWeight !== undefined && barWeight > 0) return { bar: true }
+  // ponytail: l'euristica sul nome è in OR con il flag, quindi l'interruttore non può spegnere il calcolatore di un macchinario con «plate» nel nome
+  if (plateLoaded || glyph === 'plateLoaded' || /\bplate/.test(name)) return { bar: false }
   if (['barbell', 'benchFlat', 'benchIncline', 'squatRack', 'hipThrust', 'ezBar', 'trapBar'].includes(glyph)
     && !name.includes('manubri')) return { bar: true }
   return null
 }
+
+/** Euristica iniziale del flag «Carico a dischi» (nuovo esercizio o scelta dal catalogo). */
+export const guessPlateLoaded = (glyph: string, exerciseName: string): boolean =>
+  glyph === 'plateLoaded' || /\bplate/.test(exerciseName.toLowerCase())
 
 // ---- unità -------------------------------------------------------------------------------------------
 

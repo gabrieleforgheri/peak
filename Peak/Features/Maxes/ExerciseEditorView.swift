@@ -21,6 +21,8 @@ struct ExerciseEditorView: View {
     @State private var notes = ""
     @State private var barWeight: Double = 0
     @State private var weightDisplay: String = "absolute"
+    @State private var plateLoaded = false
+    @State private var perSide = false
     @State private var isUnilateral = false
     @State private var restSeconds = 0
     @State private var isArchived = false
@@ -191,7 +193,35 @@ struct ExerciseEditorView: View {
                         }
                     }
 
-                    if barWeight > 0 {
+                    if barWeight <= 0 {
+                        GlassCard {
+                            Toggle(isOn: $plateLoaded) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Carico a dischi")
+                                        .font(Theme.rounded(15, .semibold))
+                                    Text("Calcolatore dischi senza sbarra (es. macchinari plate loaded).")
+                                        .font(Theme.rounded(11, .medium))
+                                        .foregroundStyle(Theme.textTertiary)
+                                }
+                            }
+                            .tint(settings.accentColor)
+                        }
+                    }
+
+                    GlassCard {
+                        Toggle(isOn: $perSide) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Peso inserito per lato")
+                                    .font(Theme.rounded(15, .semibold))
+                                Text("Inserisci il peso di un lato: il totale è il doppio (più la sbarra).")
+                                    .font(Theme.rounded(11, .medium))
+                                    .foregroundStyle(Theme.textTertiary)
+                            }
+                        }
+                        .tint(settings.accentColor)
+                    }
+
+                    if barWeight > 0, !perSide {
                         GlassCard {
                             VStack(alignment: .leading, spacing: 12) {
                                 SectionHeader(title: "Visualizzazione del carico")
@@ -340,6 +370,7 @@ struct ExerciseEditorView: View {
         step = entry.step
         notes = entry.notes
         barWeight = Plates.defaultBar(for: entry.machineGlyph, name: entry.name)
+        plateLoaded = Plates.guessPlateLoaded(glyph: entry.machineGlyph, name: entry.name)
     }
 
     // MARK: - Foto e pittogramma
@@ -612,6 +643,8 @@ struct ExerciseEditorView: View {
             picking = .new
             barWeight = 0
             weightDisplay = "absolute"
+            plateLoaded = false
+            perSide = false
             return
         }
         catalogID = exercise.catalogID
@@ -632,6 +665,8 @@ struct ExerciseEditorView: View {
         pickedGlyph = MachineGlyph(rawValue: exercise.glyphRaw)
         barWeight = exercise.barWeight
         weightDisplay = exercise.weightDisplay
+        plateLoaded = exercise.plateLoaded
+        perSide = exercise.perSide
     }
 
     private func save() {
@@ -654,6 +689,8 @@ struct ExerciseEditorView: View {
             exercise.viewRaw = figureSide.rawValue
             exercise.barWeight = barWeight
             exercise.weightDisplay = weightDisplay
+            exercise.plateLoaded = plateLoaded
+            exercise.perSide = perSide
         } else {
             let nextIndex = (allExercises.map(\.sortIndex).max() ?? 0) + 1
             let new = Exercise(
@@ -676,6 +713,8 @@ struct ExerciseEditorView: View {
             new.isHidden = isHidden
             new.barWeight = barWeight
             new.weightDisplay = weightDisplay
+            new.plateLoaded = plateLoaded
+            new.perSide = perSide
         }
         try? context.save()
         Haptics.commit()
