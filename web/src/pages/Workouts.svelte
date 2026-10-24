@@ -10,6 +10,7 @@
 	import type { Prg, Tpl, Wk } from '../lib/types.ts'
 	import FocusPicker from '../components/FocusPicker.svelte'
 	import Icon from '../components/Icon.svelte'
+	import MonthGroups from '../components/MonthGroups.svelte'
 	import TemplateIconView from '../components/TemplateIcon.svelte'
 	import Sheet from '../components/Sheet.svelte'
 	import ProgramEditor from '../components/ProgramEditor.svelte'
@@ -92,8 +93,8 @@
 		{#if history.length === 0}
 			<div class="empty">{t('Qui compariranno gli allenamenti conclusi.')}</div>
 		{:else}
-			<div class="stack cells">
-				{#each history as w (w.uuid)}
+			<MonthGroups items={history} dateOf={(w) => w.dateMs} body="stack cells" count={(n) => tn(n, '1 allenamento', '{0} allenamenti')}>
+				{#snippet row(w)}
 					<button class="card" style="text-align:left;color:inherit;display:block;width:100%"
 						onclick={() => { if (!longPressed) go(`allenamento/${w.uuid}`) }} onpointerdown={() => press(w)} onpointerup={release} onpointerleave={release} onpointercancel={release}
 						oncontextmenu={(e) => { e.preventDefault(); menu = w }}>
@@ -107,8 +108,8 @@
 							<span class="row" style="gap:5px">{#each groupsOf(w) as g}<span title={GROUP_NAMES[g]} style="width:10px;height:10px;border-radius:50%;background:var(--{g})"></span>{/each}</span>
 						</div>
 					</button>
-				{/each}
-			</div>
+				{/snippet}
+			</MonthGroups>
 		{/if}
 	</div>
 </main>

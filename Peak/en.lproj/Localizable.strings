@@ -25,6 +25,7 @@
 "%@–%@ rip" = "%@–%@ reps";
 "%lld / %lld · Vedi tutto" = "%lld / %lld · See all";
 "%lld a settimana" = "%lld a week";
+"%lld allenamenti" = "%lld workouts";
 "%lld allenamenti in 14 settimane" = "%lld workouts in 14 weeks";
 "%lld amici" = "%lld friends";
 "%lld esercizi" = "%lld exercises";
@@ -33,8 +34,11 @@
 "%lld macchinari con massimale su %lld" = "%lld machines with a max out of %lld";
 "%lld macchinari e %lld allenamenti dal %lld." = "%lld machines and %lld workouts from %lld.";
 "%lld min" = "%lld min";
+"%lld massimali" = "%lld maxes";
 "%lld modifiche in attesa di essere inviate" = "%lld changes waiting to be sent";
+"%lld pesate" = "%lld weigh-ins";
 "%lld rip" = "%lld reps";
+"%lld serie" = "%lld sets";
 "%lld serie · %lld" = "%lld sets · %lld";
 "%lld% sopra di te" = "%lld% above you";
 "%lld% sotto di te" = "%lld% below you";
@@ -47,16 +51,19 @@
 "+%@ oltre l'obiettivo" = "+%@ over the goal";
 "+%lld oltre l'obiettivo" = "+%lld over the goal";
 "+1 oltre l'obiettivo" = "+1 over the goal";
+"1 allenamento" = "1 workout";
 "1 allenamento in 14 settimane" = "1 workout in 14 weeks";
 "1 amico" = "1 friend";
 "1 anno" = "1 year";
 "1 barra = 1 settimana" = "1 bar = 1 week";
 "1 esercizio" = "1 exercise";
 "1 macchinario fuori catalogo" = "1 machine outside the catalog";
+"1 massimale" = "1 max";
 "1 massimale automatico senza serie è stato scartato." = "1 automatic max without a set was discarded.";
 "1 mese" = "1 month";
 "1 modifica da sincronizzare" = "1 change to sync";
 "1 richiesta in attesa" = "1 pending request";
+"1 pesata" = "1 weigh-in";
 "1 serie" = "1 set";
 "1RM" = "1RM";
 "1RM stimato" = "Estimated 1RM";
@@ -660,6 +667,7 @@
 "Senza peso scritto si vede l'ultimo usato." = "With no weight written, the last one used is shown.";
 "Senza rete" = "No connection";
 "Serie" = "Sets";
+"Serie in allenamento" = "Sets in workouts";
 "Serie di riscaldamento" = "Warm-up set";
 "Serve la connessione." = "A connection is needed.";
 "Serve la connessione. Riprova." = "A connection is needed. Try again.";
@@ -726,6 +734,7 @@
 "Tricipiti" = "Triceps";
 "Tu" = "You";
 "Tutte" = "All";
+"Tutte le pesate" = "All weigh-ins";
 "Tutti" = "All";
 "Tutti i gruppi" = "All groups";
 "Tutti i gruppi · %@" = "All groups · %@";
@@ -736,7 +745,6 @@
 "Ultima sincronizzazione %@" = "Last sync %@";
 "Ultima sincronizzazione %lld" = "Last sync %lld";
 "Ultime serie" = "Latest sets";
-"Ultime serie in allenamento" = "Latest sets in workouts";
 "Ultime serie su questo macchinario" = "Recent sets on this machine";
 "Ultimi 30 giorni" = "Last 30 days";
 "Ultimi record" = "Latest records";

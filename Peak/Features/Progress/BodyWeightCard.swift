@@ -14,6 +14,7 @@ struct BodyWeightCard: View {
     @State private var editing: BodyWeightEntry?
     @State private var importing = false
     @State private var importMessage: String?
+    @State private var showingAll = false
 
     @State private var range: ChartRange = .all
 
@@ -173,24 +174,37 @@ struct BodyWeightCard: View {
                 if !entries.isEmpty {
                     Divider().overlay(Theme.stroke)
                     ForEach(entries.prefix(5)) { entry in
+                        weighRow(entry)
+                    }
+                    if entries.count > 5 {
                         Button {
-                            editing = entry
+                            withAnimation(.easeOut(duration: 0.2)) { showingAll.toggle() }
                         } label: {
-                            HStack {
-                                Text(Fmt.date(entry.date))
-                                    .font(Theme.rounded(12, .medium))
-                                    .foregroundStyle(Theme.textTertiary)
+                            HStack(spacing: 8) {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .rotationEffect(.degrees(showingAll ? 90 : 0))
+                                Text("Tutte le pesate")
+                                    .font(Theme.rounded(13, .bold))
                                 Spacer()
-                                Text(Fmt.weight(entry.weight, unit: settings.unit))
-                                    .font(Theme.rounded(13, .semibold))
-                                    .foregroundStyle(Theme.textPrimary)
-                                Image(systemName: "pencil")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundStyle(Theme.textTertiary)
+                                Text("\(entries.count)")
+                                    .font(Theme.rounded(11, .semibold))
                             }
+                            .foregroundStyle(Theme.textSecondary)
+                            .padding(.vertical, 4)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        if showingAll {
+                            MonthStack(
+                                items: Array(entries),
+                                date: \.date,
+                                count: { $0 == 1 ? "1 pesata" : "\($0) pesate" },
+                                openFirst: false
+                            ) { entry in
+                                weighRow(entry)
+                            }
+                        }
                     }
                 }
             }
@@ -201,6 +215,28 @@ struct BodyWeightCard: View {
         .sheet(item: $editing) { entry in
             BodyWeightSheet(lastWeight: entry.weight, entry: entry)
         }
+    }
+
+    /// Una pesata: toccala per correggerla o cancellarla.
+    private func weighRow(_ entry: BodyWeightEntry) -> some View {
+        Button {
+            editing = entry
+        } label: {
+            HStack {
+                Text(Fmt.date(entry.date))
+                    .font(Theme.rounded(12, .medium))
+                    .foregroundStyle(Theme.textTertiary)
+                Spacer()
+                Text(Fmt.weight(entry.weight, unit: settings.unit))
+                    .font(Theme.rounded(13, .semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                Image(systemName: "pencil")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Theme.textTertiary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     /// Prende l'ultima pesata da Salute, saltandola se è la stessa già registrata.

@@ -45,12 +45,9 @@ struct ExerciseDetailView: View {
 
     private var warmupPlan: [Warmup.Step] { exercise.warmupPlan(unit: settings.unit) }
 
-    /// Ultime serie eseguite in allenamento su questo macchinario.
+    /// Le serie eseguite in allenamento su questo macchinario, dalla più recente.
     private var recentSets: [WorkoutSet] {
-        exercise.setList
-            .sorted { $0.createdAt > $1.createdAt }
-            .prefix(8)
-            .map { $0 }
+        exercise.setList.sorted { $0.createdAt > $1.createdAt }
     }
 
     @State private var board: [BoardRow]?
@@ -396,7 +393,12 @@ struct ExerciseDetailView: View {
             VStack(alignment: .leading, spacing: 12) {
                 SectionHeader(title: "Storico massimali", trailing: "\(records.count)")
 
-                ForEach(records.prefix(12)) { record in
+                MonthStack(
+                    items: records,
+                    date: \.date,
+                    count: { $0 == 1 ? "1 massimale" : "\($0) massimali" },
+                    dividers: true
+                ) { record in
                     HStack(spacing: 12) {
                         Circle()
                             .fill(record.isEstimated ? tint.opacity(0.45) : tint)
@@ -429,10 +431,6 @@ struct ExerciseDetailView: View {
                         .buttonStyle(.plain)
                     }
                     .padding(.vertical, 4)
-
-                    if record.persistentModelID != records.prefix(12).last?.persistentModelID {
-                        Divider().overlay(Theme.stroke)
-                    }
                 }
             }
         }
@@ -443,9 +441,13 @@ struct ExerciseDetailView: View {
     private var setsCard: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
-                SectionHeader(title: "Ultime serie in allenamento")
+                SectionHeader(title: "Serie in allenamento")
 
-                ForEach(recentSets) { set in
+                MonthStack(
+                    items: recentSets,
+                    date: \.createdAt,
+                    count: { $0 == 1 ? "1 serie" : "\($0) serie" }
+                ) { set in
                     HStack(spacing: 10) {
                         if exercise.weightDisplay == "relative", exercise.barWeight > 0 {
                             let relWeight = max(0, set.weight - exercise.barWeight)

@@ -217,7 +217,6 @@
   "Tutti": "All",
   "Tutto": "All",
   "Tutto sincronizzato": "All synced",
-  "Ultime serie": "Latest sets",
   "Ultime serie su questo macchinario": "Recent sets on this machine",
   "Ultimi record": "Latest records",
   "Un braccio": "One arm",
@@ -573,5 +572,12 @@
   "Carico assoluto (totale con sbarra)": "Absolute weight (total with bar)",
   "dischi": "plates",
   "Dischi": "Plates",
-  "tot.": "tot."
+  "tot.": "tot.",
+  "1 allenamento": "1 workout",
+  "{0} allenamenti": "{0} workouts",
+  "1 massimale": "1 max",
+  "{0} massimali": "{0} maxes",
+  "1 pesata": "1 weigh-in",
+  "{0} pesate": "{0} weigh-ins",
+  "Tutte le pesate": "All weigh-ins"
 }

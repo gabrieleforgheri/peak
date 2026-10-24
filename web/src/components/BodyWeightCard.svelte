@@ -1,17 +1,20 @@
 <script lang="ts">
 	import { round2, toDisplay } from '@common/domain.ts'
 	import { W, dateLong, dateShort, unit } from '../lib/fmt.ts'
-	import { locale, t } from '../lib/i18n.ts'
+	import { locale, t, tn } from '../lib/i18n.ts'
 	import { getModel } from '../lib/store.svelte.ts'
 	import type { Bw } from '../lib/types.ts'
 	import BodyWeightSheet from './BodyWeightSheet.svelte'
 	import Icon from './Icon.svelte'
 	import LineChart from './LineChart.svelte'
+	import MonthGroups from './MonthGroups.svelte'
 
 	const m = $derived(getModel())
 	let sheet = $state<Bw | 'new' | null>(null)
 	type Range = '1m' | '3m' | '1y' | 'all'
 	let range = $state<Range>('all')
+	let showAll = $state(false)
+	const newest = $derived([...m.bodyweights].reverse())
 
 	const latest = $derived(m.bodyweights.at(-1))
 	// la variazione è rispetto alla prima pesata di almeno 30 giorni prima dell'ultima
@@ -91,10 +94,23 @@
 			</div>
 		{/if}
 		<div class="list" style="margin-top:10px">
-			{#each [...m.bodyweights].reverse().slice(0, 5) as b (b.uuid)}
+			{#each newest.slice(0, 5) as b (b.uuid)}
 				<button class="item" onclick={() => (sheet = b)}><div class="grow small muted">{dateLong(b.dateMs)}</div><b class="num">{W(b.weight)}</b></button>
 			{/each}
 		</div>
+		{#if newest.length > 5}
+			<button class="item small muted" style="margin-top:10px;font-weight:700;gap:8px" aria-expanded={showAll} onclick={() => (showAll = !showAll)}>
+				<span style="display:inline-flex;transition:transform .15s ease;transform:rotate({showAll ? 90 : 0}deg)"><Icon name="right" size={16} /></span>
+				<span class="grow">{t('Tutte le pesate')}</span><span class="num">{newest.length}</span>
+			</button>
+			{#if showAll}
+				<MonthGroups items={newest} dateOf={(b) => b.dateMs} open={0} count={(n) => tn(n, '1 pesata', '{0} pesate')}>
+					{#snippet row(b)}
+						<button class="item" onclick={() => (sheet = b)}><div class="grow small muted">{dateLong(b.dateMs)}</div><b class="num">{W(b.weight)}</b></button>
+					{/snippet}
+				</MonthGroups>
+			{/if}
+		{/if}
 	{:else}
 		<p class="muted small" style="margin-top:6px">{t('Registra le pesate per vedere come cambia il tuo peso.')}</p>
 	{/if}
