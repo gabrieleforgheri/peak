@@ -60,7 +60,7 @@ function seed(sub: string, username: string, name: string, scale: number, days: 
     name: p.name, sortIndex: p.sort, createdAt: iso(monday - 50 * DAY), hidden: false,
     items: p.items.map((e) => ({ exercise: e.id, sets: 3, repsMin: e.reps - 2, repsMax: e.reps + 2, weight: null })),
   })
-  for (const [k, v] of Object.entries({ weeklyGoal: 4, tutorialDone: true, accent: 'lime', unit: 'kg' })) put('setting', k, { value: v })
+  for (const [k, v] of Object.entries({ weeklyGoal: 4, tutorialDone: true, tourSeen: 2, accent: 'lime', unit: 'kg' })) put('setting', k, { value: v })
 
   // Otto settimane piene e questa a metà; il peso sale ogni due settimane, l'ultima settimana porta un record.
   const kg = (e: Ex, week: number) => Math.round(((e.start + e.step * Math.floor(week / 2)) * scale) / e.step) * e.step
