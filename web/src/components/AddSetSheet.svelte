@@ -197,7 +197,7 @@
 							{@const best = bestSet(d.sets)}
 							<details class="day" open={i === 0}>
 								<summary class="row between">
-									<b>{relDay(d.at)}</b>
+									<span class="row" style="gap:6px"><Icon name="right" size={14} /><b>{relDay(d.at)}</b></span>
 									<span class="small muted num">{t('{0} serie', d.sets.length)} · {setLine(listKg(best.weight), best.reps)}</span>
 								</summary>
 								<div class="list">
@@ -247,7 +247,10 @@
 </Sheet>
 
 <style>
-	.day > summary { cursor: pointer; padding: 6px 0; }
+	.day > summary { cursor: pointer; padding: 6px 0; list-style: none; }
+	.day > summary::-webkit-details-marker { display: none; }
+	.day > summary :global(svg) { transition: transform .15s ease; }
+	.day[open] > summary :global(svg) { transform: rotate(90deg); }
 	.bar-breakdown {
 		margin-top: 10px;
 		padding: 8px 12px;

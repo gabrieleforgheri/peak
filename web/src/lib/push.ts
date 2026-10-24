@@ -8,7 +8,7 @@ const FLAG = 'peak.push'
 export type PushState = 'unsupported' | 'needs-install' | 'denied' | 'off' | 'on'
 
 export const pushSupported = (): boolean => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
-export const standalone =(): boolean => matchMedia('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true
+export const standalone = (): boolean => matchMedia('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true
 const isIos = (): boolean => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 const enabled = (): boolean => { try { return localStorage.getItem(FLAG) === '1' } catch { return false } }
 

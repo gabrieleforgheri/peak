@@ -1,3 +1,21 @@
+# Carico a dischi, peso per lato, storici per mese e banner Installa (24 ottobre 2026 — ramo `feature/addset-redesign-and-card-blur`)
+
+Web + iPhone in parità (tranne il banner, solo web). Codice scritto da subagenti Sonnet, rivisto e unito a mano.
+
+| Fatto | Dove |
+|---|---|
+| **Carico a dischi**: campo esercizio `plateLoaded`; `plateMode`/`Plates.barBase` mostrano il calcolatore senza sbarra anche con sbarra 0 se il flag è acceso, il pittogramma è plate loaded o il nome contiene «plate» (es. «Plated row»). Interruttore nell'editor quando la sbarra è 0. Limite: il nome in OR col flag, l'interruttore non spegne un nome con «plate» | `common/domain.ts`, `Peak/Model/Plates.swift`, `ExerciseEditor.svelte`, `ExerciseEditorView.swift` |
+| **Peso per lato**: campo `perSide`; nel foglio serie si inserisce un lato, si salva sempre il totale (2 x + sbarra) e sotto c'è «Totale X». Record, 1RM, amici invariati | `AddSetSheet.svelte`, `AddSetSheet.swift`, badge «Per lato» nei dettagli |
+| **Serie recenti per giorno** nel foglio serie, ultimi 5 giorni, l'ultimo aperto | come sopra |
+| **Storici per mese** (allenamenti, massimali, serie del macchinario, pesate «Tutte le pesate»): mese più recente aperto, tolti i limiti 8/12 | `common/format.ts` `byMonth`, `MonthGroups.svelte`, `Components.swift` `MonthSections`/`MonthStack` |
+| **Banner Installa Peak** in Home: istruzioni per iPhone Safari/altri, Android (prompt nativo, Samsung, Firefox, altri), desktop col prompt; chiuso = 30 giorni | `common/install.ts`, `web/src/lib/install.svelte.ts`, `InstallBanner.svelte` |
+| Suono: l'interruttore esiste già (Impostazioni → Generale), nessuna modifica | — |
+| Verifiche: `npm test` 107/107, svelte-check 0, i18n 0 mancanti, `swiftc -typecheck` di tutto `Peak/` ok, prova in Chrome (build vera su :3016) di banner, storici, Plated row per lato con calcolatore e serie per giorno. iPhone non provato a schermo | — |
+
+Nota sviluppo: in `vite dev` l'utente `dev` non sincronizza (`syncNow` esce subito): per provare con i dati del server usare la build (`vite build`) servita dal server, riavviandolo dopo ogni build.
+
+---
+
 # Visualizzazione serie precedenti, orizzonte temporale grafici, PR retroattivi e UI (20 ottobre 2026 — su `feature/workout-enhancements`, PR #2 aperta)
 
 Ramo di sviluppo `feature/workout-enhancements` (creata la Pull Request #2 verso `main`). Comprende miglioramenti su allenamenti, grafici temporali, visualizzazione schede e gestione record, mantenendo la parità completa tra **Web (Svelte 5)** e **iOS (SwiftUI)**, con traduzioni integrali italiano/inglese e copertura test unitari e corner case.
