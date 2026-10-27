@@ -191,6 +191,8 @@ enum BackupService {
     /// Scrive/aggiorna il backup automatico. Restituisce la data di scrittura.
     @discardableResult
     static func writeAutoBackup(context: ModelContext) throws -> Date {
+        // Con lo store di emergenza (in memoria) sovrascriverebbe il backup buono con un file vuoto.
+        guard !AppStore.isFallback else { throw CocoaError(.featureUnsupported) }
         let payload = try data(context: context)
         try payload.write(to: autoBackupURL, options: .atomic)
         return Date()

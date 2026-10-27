@@ -168,7 +168,7 @@ export function createAuth(store: Store, cfg: AuthConfig | null, dataDir: string
     const t = T[langOf(req)]
     const method = req.method ?? 'GET'
 
-    if (path === '/auth/dev' && method === 'GET') {
+    if (path === '/auth/dev' && method === 'GET' && !cfg) {
       const user = store.upsertUser('dev', 'dev@example.com', 'dev', 'Dev')
       const token = store.createSession(user.id, 30)
       redirect(res, '/', [cookie(SESSION, token, '/', Math.round(30 * 86_400))])

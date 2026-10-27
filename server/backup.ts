@@ -25,7 +25,7 @@ export interface ExerciseDTO {
   isArchived: boolean; createdAt: string; glyph?: string; photo?: string; photoOffset?: number
   isUnilateral?: boolean; restSeconds?: number; catalogID?: string; isHidden?: boolean; isCustom?: boolean
   /** La figura dei muscoli: solo per i macchinari personalizzati; assenti nei backup vecchi. */
-  muscles?: string[]; view?: string; records: RecordDTO[]
+  muscles?: string[]; view?: string; barWeight?: number; weightDisplay?: string; plateLoaded?: boolean; perSide?: boolean; records: RecordDTO[]
 }
 /** Riga di scheda; `weight` assente = si mostra l'ultimo usato. */
 export interface ItemDTO { exerciseUUID: string; sets: number; repsMin: number; repsMax: number; weight?: number }
@@ -93,6 +93,10 @@ export function exportBackup(docs: Iterable<LiveDoc>, photo: (sha: string) => Ui
       if (e.custom) dto.isCustom = true
       if (e.muscles.length) dto.muscles = e.muscles
       if (e.view) dto.view = e.view
+      if (e.barWeight > 0) dto.barWeight = e.barWeight
+      if (e.weightDisplay === 'relative') dto.weightDisplay = e.weightDisplay
+      if (e.plateLoaded) dto.plateLoaded = true
+      if (e.perSide) dto.perSide = true
       return dto
     })
 
@@ -181,6 +185,9 @@ export function parseBackup(raw: unknown): ParseResult {
       restSeconds: typeof e.restSeconds === 'number' ? e.restSeconds : undefined, records,
       catalogID: typeof e.catalogID === 'string' && CATALOG_ID_RE.test(e.catalogID) ? e.catalogID : undefined, isHidden: e.isHidden === true ? true : undefined, isCustom: e.isCustom === true ? true : undefined,
       muscles: Array.isArray(e.muscles) ? e.muscles.map(String) : undefined, view: typeof e.view === 'string' ? e.view : undefined,
+      barWeight: typeof e.barWeight === 'number' && e.barWeight >= 0 && e.barWeight <= 200 ? e.barWeight : undefined,
+      weightDisplay: typeof e.weightDisplay === 'string' ? e.weightDisplay : undefined,
+      plateLoaded: e.plateLoaded === true ? true : undefined, perSide: e.perSide === true ? true : undefined,
     })
   }
   /** Righe di scheda del file: tollerante, una riga rotta si scarta (non invalida tutto il backup). */
@@ -333,6 +340,8 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
       isUnilateral: ex.isUnilateral === true, restSeconds: ex.restSeconds ?? 0,
       catalog, hidden: ex.isHidden === true, custom: ex.isCustom === true,
       muscles: cleanMuscles(ex.muscles ?? []) ?? [], view: ex.view === 'front' || ex.view === 'back' ? ex.view : '',
+      barWeight: ex.barWeight ?? 0, weightDisplay: ex.weightDisplay === 'relative' ? 'relative' : 'absolute',
+      plateLoaded: ex.plateLoaded === true, perSide: ex.perSide === true,
     })
     let target = ex.uuid
     let isNew = true
