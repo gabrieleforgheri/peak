@@ -103,7 +103,7 @@
 	const nextLine = (md: (typeof medalList)[number]) => md.next === null ? t('Oro conquistato.') : t('Mancano {0} per {1}.', fmtMedal(md.id, md.next - md.value), TIERS[md.tier + 1])
 
 	const movers = $derived(topMovers(m.exercises.map((e) => ({ id: e.uuid, records: e.records })), 90, 5))
-	const latest = $derived([...allRecords].sort((a, b) => b.date - a.date).slice(0, 8))
+	const latest = $derived([...allRecords].sort((a, b) => b.date - a.date).slice(0, 4))
 </script>
 
 <main class="screen page">
@@ -129,6 +129,17 @@
 			<div><Icon name="trophy" size={22} /><div><b class="num">{allRecords.length}</b><span class="small muted">{t('Record')}</span></div></div>
 		</div>
 	</div>
+
+	{#if latest.length}
+		<div class="blk">
+			<div class="sec-title">{t('Record recenti')}</div>
+			<div class="card list">
+				{#each latest as r (r.uuid)}
+					<div class="item"><span class="trophy"><Icon name="trophy" size={18} /></span><div class="grow ellipsis"><b>{r.name}</b><div class="small muted">{relDay(r.date)}</div></div><b class="num">{W(r.weight)} × {r.reps}</b></div>
+				{/each}
+			</div>
+		</div>
+	{/if}
 
 	<div class="blk span">
 		<div class="row between sec-row"><div class="sec-title">{t('Medaglie')}</div><span class="small muted">{totals.earned} / {totals.total}</span></div>
@@ -223,17 +234,6 @@
 			</div>
 		</div>
 	{/if}
-
-	{#if latest.length}
-		<div class="blk">
-			<div class="sec-title">{t('Ultimi record')}</div>
-			<div class="card list">
-				{#each latest as r (r.uuid)}
-					<div class="item"><div class="grow"><b class="ellipsis" style="display:block">{r.name}</b><span class="small muted">{relDay(r.date)}</span></div><b class="num">{W(r.weight)} × {r.reps}</b></div>
-				{/each}
-			</div>
-		</div>
-	{/if}
 </main>
 
 <style>
@@ -248,5 +248,6 @@
 	.donut { width: 132px; flex: none; color: var(--text); }
 	.friends { margin: 14px 0 4px; gap: 10px; }
 	@media (min-width: 900px) { .friends { margin: 0; } .friends > .btn { flex: none; width: auto; min-width: 240px; } }
+	.trophy { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,212,94,.14); color: #ffd45e; flex: none; }
 	.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 </style>

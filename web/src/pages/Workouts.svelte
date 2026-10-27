@@ -1,13 +1,20 @@
 <script lang="ts">
+	import { onDestroy, untrack } from 'svelte'
 	import type { MuscleGroup } from '@common/docs.ts'
-	import { deleteWorkout, setActiveProgram } from '../lib/actions.ts'
-	import { activeProgram, daysOf } from '../lib/derive.ts'
+	import { weekStart, weeklyGoal, weeklyStreak, type StatWorkout } from '@common/stats.ts'
+	import { deleteWorkout, setActiveProgram, startWorkout } from '../lib/actions.ts'
+	import { activeProgram, daysOf, todayDay } from '../lib/derive.ts'
 	import { GROUP_NAMES, V, duration, relDay, weekdayName } from '../lib/fmt.ts'
 	import { t, tn } from '../lib/i18n.ts'
 	import { go } from '../lib/router.svelte.ts'
 	import { stopRest } from '../lib/timer.svelte.ts'
-	import { getModel } from '../lib/store.svelte.ts'
+	import { S, getModel } from '../lib/store.svelte.ts'
+	import { celebrated, confetti, sequence } from '../lib/fx.ts'
+	import { play, playDay } from '../lib/sound.ts'
 	import type { Prg, Tpl, Wk } from '../lib/types.ts'
+	import GoalPicker from '../components/GoalPicker.svelte'
+	import InstallBanner from '../components/InstallBanner.svelte'
+	import SummitHero from '../components/SummitHero.svelte'
 	import FocusPicker from '../components/FocusPicker.svelte'
 	import Icon from '../components/Icon.svelte'
 	import MonthGroups from '../components/MonthGroups.svelte'
@@ -40,6 +47,51 @@
 	let longPressed = false
 	const press = (w: Wk) => { longPressed = false; clearTimeout(pressTimer); pressTimer = setTimeout(() => { longPressed = true; menu = w }, 520) }
 	const release = () => clearTimeout(pressTimer)
+
+	// ---- la montagna in cima: chi sei e come va la settimana ----
+	const hour = new Date().getHours()
+	const greeting = hour < 12 ? t('Buongiorno') : hour < 18 ? t('Buon pomeriggio') : t('Buonasera')
+	const first = $derived((S.user?.nome ?? '').split(' ')[0] || S.user?.username || '')
+	let choosing = $state(false)
+	const today = $derived(todayDay(m))
+	const stat = $derived<StatWorkout[]>(history.map((w) => ({ date: w.dateMs, sets: w.sets.map((s) => ({ exercise: s.exercise, weight: s.weight, reps: s.reps, isWarmup: s.isWarmup })) })))
+	const streak = $derived(weeklyStreak(stat))
+	const weekCount = $derived(history.filter((w) => w.dateMs >= weekStart(Date.now())).length)
+	const goalN = $derived(m.settings.weeklyGoal || weeklyGoal(stat))
+
+	// ---- festa: quello che è salito da quando l'hai visto l'ultima volta (un allenamento fatto sull'iPhone e arrivato con la sincronizzazione) ----
+	// Il confronto è con ciò che Riepilogo o questa stessa pagina hanno già festeggiato (celebrated); la prima volta si salva in silenzio.
+	let shown = $state<number | null>(null) // segmenti mostrati mentre si festeggia (null: quelli veri)
+	let roll = $state<{ from: number; delay: number } | undefined>() // la serie sale da `from`
+	let heroBox = $state<HTMLElement>()
+	const tl = sequence()
+	onDestroy(tl.stop) // uscendo da qui non resta nessun suono in coda
+	// $effect.pre: il confronto avviene prima che il DOM mostri i numeri nuovi, così non c'è il lampo del valore finale
+	$effect.pre(() => {
+		if (!S.synced) return
+		const n = weekCount, s = streak, g = goalN, ws = weekStart(Date.now())
+		untrack(() => {
+			const cw = celebrated.week(), cs = celebrated.streak()
+			celebrated.setWeek(ws, n)
+			celebrated.setStreak(s)
+			const base = cw ? (cw.ws === ws ? cw.n : 0) : n // un'altra settimana: si riparte da zero
+			const streakUp = cs !== null && s > cs
+			if (n <= base && !streakUp) return
+			tl.stop()
+			let t = 500
+			if (n > base) {
+				shown = base
+				for (let k = base; k < n; k++, t += 160) tl.at(t, () => { shown = k + 1; playDay(k) }) // un segmento e una nota alla volta
+				if (n >= g && base < g) { tl.at(t, () => { play('goal'); confetti(heroBox) }); t += 450 }
+			}
+			if (streakUp) {
+				roll = { from: cs, delay: t }
+				tl.at(t, () => { play('streak') })
+				t += 900
+			}
+			tl.at(t, () => { shown = null; roll = undefined })
+		})
+	})
 </script>
 
 <main class="screen page split">
@@ -47,8 +99,12 @@
 
 	<!-- a schermo largo: a sinistra cosa fare adesso e la scheda, a destra lo storico -->
 	<div class="blk">
+		<div bind:this={heroBox}><SummitHero {greeting} name={first || 'Peak'} {streak} weekSessions={shown ?? weekCount} goal={goalN} {roll} onchangegoal={() => (choosing = true)} onavatar={() => go('me')} /></div>
+		<InstallBanner />
+		{#if choosing}<GoalPicker current={m.settings.weeklyGoal} suggested={weeklyGoal(stat)} onclose={() => (choosing = false)} />{/if}
+
 		{#if active}
-			<div class="card" style="border-color:rgba(var(--accent-rgb),.4)">
+			<div class="card" style="margin-top:12px;border-color:rgba(var(--accent-rgb),.4)">
 				<div class="tiny" style="color:var(--accent);font-weight:800;letter-spacing:.08em">{t('SESSIONE IN CORSO')}</div>
 				<div class="mid" style="margin:4px 0">{title(active)}</div>
 				<div class="small muted">{tn(active.workingSets, '1 serie', '{0} serie')} · {V(active.volume)} · {tn(exCount(active), '1 esercizio', '{0} esercizi')}</div>
@@ -56,12 +112,15 @@
 				<!-- per buttare una sessione lasciata aperta senza doverci entrare -->
 				<button class="btn danger block" style="margin-top:8px" onclick={() => { if (confirm(t('Eliminare questo allenamento e le sue serie?'))) { stopRest(); deleteWorkout(active.uuid) } }}><Icon name="trash" size={18} />{t('Elimina')}</button>
 			</div>
+		{:else if today}
+			<button class="next" onclick={() => go(`allenamento/${startWorkout('', [], today)}`)} data-tour="start">
+				<span class="ni"><TemplateIconView icon={today.icon} name={today.name} size={26} /></span>
+				<span class="nt"><b>{t('Avvia {0}', today.name)}</b><span class="small muted">{tn(today.items.length, '1 esercizio', '{0} esercizi')}</span></span>
+				<Icon name="right" size={20} />
+			</button>
+			<button class="link small pick" onclick={() => (starting = true)}>{t('oppure scegli tu')}</button>
 		{:else}
-			<div class="card">
-				<div class="mid">{t('Inizia allenamento')}</div>
-				<p class="muted small" style="margin:4px 0 12px">{t('Scegli cosa alleni e registra le serie una per una.')}</p>
-				<button class="btn primary block" onclick={() => (starting = true)}><Icon name="plus" size={20} />{t('Inizia allenamento')}</button>
-			</div>
+			<button class="btn primary block" style="margin-top:12px" onclick={() => (starting = true)} data-tour="start"><Icon name="plus" size={20} />{t('Avvia allenamento')}</button>
 		{/if}
 
 		<div class="row between sec-row"><div class="sec-title">{t('Scheda')}</div><button class="link small" onclick={() => (editingProg = 'new')}>{t('Nuova scheda')}</button></div>
@@ -127,5 +186,11 @@
 {/if}
 
 <style>
+	.next { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 12px; padding: 12px 14px; border-radius: 18px; text-align: left; color: inherit;
+		background: var(--card); border: 1px solid var(--stroke); }
+	.next .ni { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); flex: none; }
+	.next .nt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+	.next .nt b { font-size: 16px; }
+	.pick { display: block; margin: 8px auto 0; }
 	.ti { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: rgba(var(--accent-rgb), .16); color: var(--accent); flex: none; }
 </style>

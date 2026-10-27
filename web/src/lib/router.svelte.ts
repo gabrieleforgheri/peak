@@ -6,7 +6,7 @@ function parse() {
 	const h = location.hash.replace(/^#\/?/, '')
 	const parts = h ? h.split('/').map(decodeURIComponent) : []
 	// i nomi di prima della 3.0 (segnalibri, schermata aggiunta alla Home)
-	const renamed: Record<string, string> = { massimali: 'macchinari', allenamenti: 'allenamento', progressi: 'me' }
+	const renamed: Record<string, string> = { massimali: 'macchinari', allenamenti: 'allenamento', progressi: 'me', home: 'allenamento' }
 	if (parts[0] && renamed[parts[0]]) parts[0] = renamed[parts[0]]
 	route.parts = parts
 }

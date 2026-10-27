@@ -48,6 +48,14 @@ export const daysOf = (m: Model, prog: Prg | null): Tpl[] => (prog ? m.templates
  * Il giorno che tocca: con giorni fissi, quello di oggi o il prossimo in calendario; senza, quello dopo l'ultimo
  * fatto in questa scheda, a rotazione.
  */
+/** Il giorno di oggi nella scheda in uso: solo con i giorni fissi e se oggi ne cade uno (altrimenti è riposo). */
+export function todayDay(m: Model, now = new Date()): Tpl | null {
+	const prog = activeProgram(m)
+	if (!prog?.useDays) return null
+	const today = (now.getDay() + 6) % 7
+	return daysOf(m, prog).find((d) => d.weekday === today) ?? null
+}
+
 export function nextDay(m: Model, now = new Date()): Tpl | null {
 	const prog = activeProgram(m)
 	const days = daysOf(m, prog)
