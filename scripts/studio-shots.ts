@@ -113,18 +113,17 @@ const browser = await chromium.launch({ executablePath: '/Applications/Google Ch
 type Beat = { sel: string; kind: 'up' | 'right' | 'pop' | 'fade'; at: number; step?: number; dur?: number }
 type Spec = { name: string; hash: string; beats: Beat[]; scroll?: { sel: string; at: number; dur: number; offset?: number }[]; callouts?: { sel: string; at: number }[] }
 const shots: Spec[] = [
-  { name: 'home', hash: '#/home', beats: [
+  // la montagna in cima ad Allenamento, poi il pulsante per partire e i giorni della scheda
+  { name: 'home', hash: '#/allenamento', beats: [
     { sel: '.peak .mount', kind: 'up', at: 0.3, dur: 0.9 },
     { sel: '.peak .segs i.on', kind: 'right', at: 1.0, step: 0.22, dur: 0.3 },
-    { sel: '.stats .stat', kind: 'pop', at: 1.5, step: 0.12, dur: 0.45 },
-    { sel: '.grid .col', kind: 'up', at: 2.1, step: 0.05, dur: 0.3 },
-    { sel: 'main .bars > div', kind: 'up', at: 4.3, step: 0.06, dur: 0.45 },
-    { sel: '.donut', kind: 'pop', at: 5.2, dur: 0.6 },
-  ], scroll: [{ sel: 'main .bars', at: 3.2, dur: 1.0, offset: 260 }], callouts: [{ sel: '.stat.flame', at: 2.0 }] },
+    { sel: '.peak .pill', kind: 'pop', at: 1.8, dur: 0.45 },
+    { sel: '.card.list .item', kind: 'fade', at: 2.4, step: 0.15, dur: 0.45 },
+  ], callouts: [{ sel: '.peak .pill', at: 2.0 }] },
   { name: 'schede', hash: '#/allenamento', beats: [
-    { sel: '.card.list .item', kind: 'fade', at: 0.4, step: 0.15, dur: 0.45 },
-    { sel: 'main .stack > .card', kind: 'fade', at: 1.0, step: 0.15, dur: 0.45 },
-  ], callouts: [{ sel: '.card.list .item', at: 1.8 }] },
+    { sel: '.card.list .item', kind: 'fade', at: 1.3, step: 0.15, dur: 0.45 },
+    { sel: 'main .stack > .card', kind: 'fade', at: 2.0, step: 0.15, dur: 0.45 },
+  ], scroll: [{ sel: '.card.list', at: 0.3, dur: 0.9, offset: 140 }], callouts: [{ sel: '.card.list .item', at: 2.6 }] },
   { name: 'sessione', hash: `#/allenamento/${live}`, beats: [
     { sel: 'main .list .item', kind: 'fade', at: 0.4, step: 0.2, dur: 0.4 },
     { sel: 'main .badge.pos', kind: 'pop', at: 1.4, step: 0.15, dur: 0.45 },
@@ -151,7 +150,7 @@ const shots: Spec[] = [
 ]
 const hide = (sels: string[]) => `${sels.join(',')}{visibility:hidden!important}`
 for (const lang of ['it', 'en']) {
-  // movimento ridotto: la frase della Home non cambia fra una foto e l'altra
+  // movimento ridotto: la frase della montagna non cambia fra una foto e l'altra
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: lang === 'it' ? 'it-IT' : 'en-GB', timezoneId: 'Europe/Rome', reducedMotion: 'reduce' })
   await ctx.addCookies([{ name: 'peak', value: cookie, url: base }])
   for (const spec of shots) {

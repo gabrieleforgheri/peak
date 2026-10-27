@@ -1,4 +1,4 @@
-# Via la Home: montagna in Allenamento, record recenti in Me (27 ottobre 2026 — su `main`, NON pubblicato)
+# Via la Home: montagna in Allenamento, record recenti in Me (27 ottobre 2026 — PUBBLICATO: Peak 3.1, server 3414196, AltStore v3.1, pagina studio)
 
 Web + iPhone in parità. Codice scritto da subagenti Sonnet, rivisto e unito a mano.
 
@@ -9,7 +9,8 @@ Web + iPhone in parità. Codice scritto da subagenti Sonnet, rivisto e unito a m
 | Pulsante: con i giorni fissi e un giorno oggi «Avvia X» + link «oppure scegli tu»; altrimenti (anche a riposo) «Avvia allenamento» che apre la scelta. Tolti `Programs.next`/`nextDay`, nuovi `Programs.today`/`todayDay` | `Programs.swift`, `derive.ts`, `ProgramTests.swift` |
 | Me: «Record recenti» (uno per macchinario) dopo Panoramica; tolto il vecchio «Ultimi record». Novità degli amici solo in Amici | `MeView.swift`, `Me.svelte` |
 | Tutorial: passi spostati su Allenamento e Me | `TourOverlay.swift`, `Tour.svelte` |
-| Verifiche: `swiftc -typecheck` ok, svelte-check 0, i18n 0 mancanti, `npm test` 107/107, prova in Chrome (build vera su :3016) con e senza il giorno di oggi. iPhone non provato a schermo; `web/dist` da ricostruire alla pubblicazione; clip della pagina studio da rifare (mostrano la Home) | — |
+| Verifiche: `swiftc -typecheck` ok, svelte-check 0, i18n 0 mancanti, `npm test` 107/107, prova in Chrome (build vera su :3016) con e senza il giorno di oggi. | Rilascio: 85/85 test sul telefono vero, installata su iPhone e Watch (il Watch non era nel profilo: registrato con una build di `PeakWatch` verso l'orologio), avvio con i dati veri senza errori nel log; i README di documentazione esclusi dai target in `project.yml`; pagina studio rifatta (clip «home» ora è Allenamento) e testi aggiornati in yG (`lib/seeds.js` + `data/site` sul server, backup `*.bak-peak31-*`) | — |
+| Aperto: la serie di settimane vale 0 finché nella settimana in corso non ti alleni (`weeklyStreak`, voluto da `domain.test.ts:207`?) — da decidere | — |
 
 ---
 
