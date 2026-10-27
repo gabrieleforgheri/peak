@@ -65,4 +65,20 @@ enum Fmt {
     static func setLine(weight: Double, reps: Int, unit: WeightUnit) -> String {
         "\(Self.weight(weight, unit: unit)) × \(reps)"
     }
+
+    /// Riga da taccuino: serie consecutive con lo stesso peso raggruppate, ripetizioni unite da "·",
+    /// gruppi separati da " · ", es. "71,5 kg 8·6 · 54 kg 8".
+    static func notebookLine(_ sets: [(weight: Double, reps: Int)], unit: WeightUnit) -> String {
+        var groups: [(weight: Double, reps: [Int])] = []
+        for s in sets {
+            if let last = groups.last, last.weight == s.weight {
+                groups[groups.count - 1].reps.append(s.reps)
+            } else {
+                groups.append((s.weight, [s.reps]))
+            }
+        }
+        return groups
+            .map { "\(weight($0.weight, unit: unit)) \($0.reps.map(String.init).joined(separator: "·"))" }
+            .joined(separator: " · ")
+    }
 }

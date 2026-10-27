@@ -3,7 +3,7 @@
 	import type { MuscleGroup } from '@common/docs.ts'
 	import { oneRepMax } from '@common/domain.ts'
 	import { addSet, addToPlan, deleteWorkout, endWorkout, itemsFromWorkout, moveInPlan, patchWorkout, removeFromPlan, replaceInPlan, templateChanged, todayItems, updateTemplateFromWorkout } from '../lib/actions.ts'
-	import { GROUP_NAMES, V, W, clock, dateTime, duration, setLine, targetLine } from '../lib/fmt.ts'
+	import { GROUP_NAMES, V, W, clock, dateShort, dateTime, duration, notebookLine, setLine, targetLine } from '../lib/fmt.ts'
 	import { t, tn } from '../lib/i18n.ts'
 	import { back, go } from '../lib/router.svelte.ts'
 	import { getModel } from '../lib/store.svelte.ts'
@@ -75,6 +75,28 @@
 			.filter((s) => s.workout === prevWkId && !s.isWarmup)
 			.sort((a, b) => a.order - b.order || a.createdAt - b.createdAt)
 	}
+
+	// gli ultimi 3 allenamenti (giorni) con questo esercizio, escluso quello in corso, dal più recente; riscaldamento fuori
+	function previousDays(exercise: Ex, currentWk: Wk): { dateMs: number; line: string }[] {
+		const rel = exercise.weightDisplay === 'relative' && !exercise.perSide && (exercise.barWeight ?? 0) > 0
+		const ids = [...new Set(exercise.sets.filter((s) => s.workout !== currentWk.uuid && !s.isWarmup).map((s) => s.workout))]
+		return ids
+			.map((id) => m.wkById.get(id))
+			.filter((w) => !!w)
+			.sort((a, b) => b.dateMs - a.dateMs)
+			.slice(0, 3)
+			.map((w) => ({
+				dateMs: w.dateMs,
+				line: notebookLine(
+					exercise.sets
+						.filter((s) => s.workout === w.uuid && !s.isWarmup)
+						.sort((a, b) => a.order - b.order || a.createdAt - b.createdAt)
+						.map((s) => ({ weight: rel ? Math.max(0, s.weight - exercise.barWeight) : s.weight, reps: s.reps })),
+				),
+			}))
+	}
+	// pagina visibile del blocco «Scorso» di ogni esercizio, per i puntini
+	let prevPage = $state<Record<string, number>>({})
 
 	function formatSetLine(weightKg: number, reps: number, ex: Ex): { main: string; sub?: string } {
 		if (ex.weightDisplay === 'relative' && !ex.perSide && (ex.barWeight ?? 0) > 0) {
@@ -156,6 +178,7 @@
 			{@const sets = wk.sets.filter((s) => s.exercise === ex.uuid)}
 			{@const goal = targetLine(it, sets.filter((s) => !s.isWarmup).length, null)}
 			{@const prevSets = previousWorkingSets(ex, wk).slice(0, 3)}
+			{@const prevDays = previousDays(ex, wk)}
 			<div class="card session-ex-card" style={current === ex.uuid && wk.isActive ? 'border-color:rgba(var(--accent-rgb),.45)' : ''}>
 				<CardBackground {ex} />
 
@@ -177,18 +200,28 @@
 								<div class="small muted num" style="font-weight:600">{goal}</div>
 							{/if}
 
-							<!-- Ultime serie (fino a 3) dello scorso allenamento -->
+							<!-- Scorso: due pagine da scorrere, le ultime serie (fino a 3) e gli ultimi 3 allenamenti in riga da taccuino -->
 							{#if prevSets.length}
 								<div class="stack" style="gap:3px;margin-top:2px">
 									<div class="tiny muted" style="font-weight:700">{t('Scorso:')}</div>
-									<div class="stack" style="gap:2px">
-										{#each prevSets as s, i}
-											{@const fmt = formatSetLine(s.weight, s.reps, ex)}
-											<div class="row small muted num" style="gap:6px">
-												<span style="width:16px;opacity:0.6">{i + 1}.</span>
-												<span>{fmt.main}{#if fmt.sub} <span class="faint tiny">({fmt.sub})</span>{/if}</span>
-											</div>
-										{/each}
+									<div class="prev-pager" onscroll={(e) => (prevPage[ex.uuid] = Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
+										<div class="stack" style="gap:2px">
+											{#each prevSets as s, i}
+												{@const fmt = formatSetLine(s.weight, s.reps, ex)}
+												<div class="row small muted num" style="gap:6px">
+													<span style="width:16px;opacity:0.6">{i + 1}.</span>
+													<span>{fmt.main}{#if fmt.sub} <span class="faint tiny">({fmt.sub})</span>{/if}</span>
+												</div>
+											{/each}
+										</div>
+										<div class="stack small muted num" style="gap:2px">
+											{#each prevDays as d}
+												<div><span style="opacity:0.6">{dateShort(d.dateMs)}</span>&nbsp; {d.line}</div>
+											{/each}
+										</div>
+									</div>
+									<div class="prev-dots" aria-hidden="true">
+										<i class:on={!prevPage[ex.uuid]}></i><i class:on={prevPage[ex.uuid] === 1}></i>
 									</div>
 								</div>
 							{:else}
@@ -293,6 +326,19 @@
 		position: relative;
 		z-index: 1;
 	}
+	/* due pagine affiancate che si agganciano allo scorrimento orizzontale; gli altri gesti restano alla pagina */
+	.prev-pager {
+		display: flex;
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		scrollbar-width: none;
+		overscroll-behavior-x: contain;
+	}
+	.prev-pager::-webkit-scrollbar { display: none; }
+	.prev-pager > * { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; }
+	.prev-dots { display: flex; gap: 4px; }
+	.prev-dots i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .25; }
+	.prev-dots i.on { opacity: .7; }
 	.muscle-btn {
 		background: none;
 		border: 0;

@@ -82,6 +82,7 @@ struct WorkoutSessionView: View {
                             settings: settings
                         ),
                         previousSets: previousWorkingSets(for: exercise),
+                        previousDays: previousDays(for: exercise),
                         sets: sets,
                         recordSet: recordSet,
                         recordTick: recordTick,
@@ -353,6 +354,17 @@ struct WorkoutSessionView: View {
         return lastWk.setList.filter { $0.exercise?.uuid == exercise.uuid && !$0.isWarmup }.sorted { $0.order < $1.order }
     }
 
+    /// Gli ultimi 3 allenamenti (giorni) con questo esercizio, escluso quello in corso, dal più recente; riscaldamento fuori.
+    private func previousDays(for exercise: Exercise) -> [(date: Date, sets: [WorkoutSet])] {
+        let others = exercise.setList.filter { !$0.isWarmup && $0.workout?.uuid != workout.uuid }
+        var seen = Set<UUID>()
+        let wks = others.compactMap(\.workout).filter { seen.insert($0.uuid).inserted }
+            .sorted { $0.date > $1.date }.prefix(3)
+        return wks.map { wk in
+            (wk.date, others.filter { $0.workout?.uuid == wk.uuid }.sorted { $0.order < $1.order })
+        }
+    }
+
     private func lastSet(for exercise: Exercise) -> WorkoutSet? {
         workout.sets(for: exercise).filter { !$0.isWarmup }.last
             ?? exercise.setList.filter { !$0.isWarmup }.max { $0.createdAt < $1.createdAt }
@@ -557,6 +569,8 @@ private struct ExerciseSessionCard: View {
     /// Obiettivo della scheda («2/4 serie · 8–10 rip · 60 kg»), vuoto se non c'è.
     let goal: String
     let previousSets: [WorkoutSet]
+    /// Gli ultimi 3 allenamenti, per la seconda pagina di «Scorso».
+    let previousDays: [(date: Date, sets: [WorkoutSet])]
     let sets: [WorkoutSet]
     /// La serie dell'ultimo record e il contatore delle feste: la sua riga si accende a ogni cambio.
     let recordSet: UUID?
@@ -578,6 +592,8 @@ private struct ExerciseSessionCard: View {
     let onDetail: () -> Void
 
     @State private var showingMuscleDetail = false
+    /// Pagina visibile di «Scorso» (0 = ultime serie, 1 = ultimi allenamenti), per i puntini.
+    @State private var prevPage: Int? = 0
 
     var body: some View {
         GlassCard(padding: 16, tint: isCurrent ? exercise.muscleGroup.tint : nil) {
@@ -607,7 +623,7 @@ private struct ExerciseSessionCard: View {
                                 .foregroundStyle(Theme.textSecondary)
                         }
 
-                        // Ultime serie (fino a 3) dello scorso allenamento
+                        // Scorso: due pagine da scorrere, le ultime serie (fino a 3) e gli ultimi 3 allenamenti in riga da taccuino
                         let shownPrev = Array(previousSets.prefix(3))
                         if !shownPrev.isEmpty {
                             VStack(alignment: .leading, spacing: 3) {
@@ -615,26 +631,59 @@ private struct ExerciseSessionCard: View {
                                     .font(Theme.rounded(11, .bold))
                                     .foregroundStyle(Theme.textTertiary)
 
-                                VStack(alignment: .leading, spacing: 2) {
-                                    ForEach(Array(shownPrev.enumerated()), id: \.element.uuid) { idx, prev in
-                                        HStack(spacing: 6) {
-                                            Text("\(idx + 1).")
-                                                .font(Theme.rounded(11, .semibold))
-                                                .foregroundStyle(Theme.textTertiary)
-                                                .frame(width: 16, alignment: .leading)
-                                            if exercise.weightDisplay == "relative", !exercise.perSide, exercise.barWeight > 0 {
-                                                let relWeight = max(0, prev.weight - exercise.barWeight)
-                                                Text(Fmt.setLine(weight: relWeight, reps: prev.reps, unit: settings.unit))
-                                                    .font(Theme.rounded(12, .medium))
-                                                    .foregroundStyle(Theme.textSecondary)
-                                            } else {
-                                                Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit))
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(alignment: .top, spacing: 0) {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            ForEach(Array(shownPrev.enumerated()), id: \.element.uuid) { idx, prev in
+                                                HStack(spacing: 6) {
+                                                    Text("\(idx + 1).")
+                                                        .font(Theme.rounded(11, .semibold))
+                                                        .foregroundStyle(Theme.textTertiary)
+                                                        .frame(width: 16, alignment: .leading)
+                                                    if exercise.weightDisplay == "relative", !exercise.perSide, exercise.barWeight > 0 {
+                                                        let relWeight = max(0, prev.weight - exercise.barWeight)
+                                                        Text(Fmt.setLine(weight: relWeight, reps: prev.reps, unit: settings.unit))
+                                                            .font(Theme.rounded(12, .medium))
+                                                            .foregroundStyle(Theme.textSecondary)
+                                                    } else {
+                                                        Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit))
+                                                            .font(Theme.rounded(12, .medium))
+                                                            .foregroundStyle(Theme.textSecondary)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        .containerRelativeFrame(.horizontal, alignment: .leading)
+                                        .id(0)
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            ForEach(Array(previousDays.enumerated()), id: \.offset) { _, day in
+                                                let relative = exercise.weightDisplay == "relative" && !exercise.perSide && exercise.barWeight > 0
+                                                let line = Fmt.notebookLine(
+                                                    day.sets.map { (weight: relative ? max(0, $0.weight - exercise.barWeight) : $0.weight, reps: $0.reps) },
+                                                    unit: settings.unit
+                                                )
+                                                (Text(Fmt.shortDate(day.date)).foregroundStyle(Theme.textTertiary) + Text("  \(line)"))
                                                     .font(Theme.rounded(12, .medium))
                                                     .foregroundStyle(Theme.textSecondary)
                                             }
                                         }
+                                        .containerRelativeFrame(.horizontal, alignment: .leading)
+                                        .id(1)
+                                    }
+                                    .scrollTargetLayout()
+                                }
+                                .scrollTargetBehavior(.paging)
+                                .scrollPosition(id: $prevPage)
+
+                                HStack(spacing: 4) {
+                                    ForEach(0..<2, id: \.self) { i in
+                                        Circle()
+                                            .fill(Theme.textTertiary.opacity(prevPage == i ? 0.9 : 0.35))
+                                            .frame(width: 5, height: 5)
                                     }
                                 }
+                                .accessibilityHidden(true)
                             }
                             .padding(.top, 2)
                         } else {

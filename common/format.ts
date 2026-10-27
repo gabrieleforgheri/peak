@@ -34,6 +34,17 @@ export const delta = (percent: number, locale = 'it'): string => `${percent > 0 
 /** "80 kg × 5". */
 export const setLine = (kg: number, reps: number, unit: Unit, locale = 'it'): string => `${weight(kg, unit, locale)} × ${reps}`
 
+/** Riga da taccuino: serie consecutive con lo stesso peso raggruppate, ripetizioni unite da "·", gruppi separati da " · ". "71,5 kg 8·6 · 54 kg 8". */
+export function notebookLine(sets: readonly { weight: number; reps: number }[], unit: Unit, locale = 'it'): string {
+  const groups: { weight: number; reps: number[] }[] = []
+  for (const s of sets) {
+    const g = groups[groups.length - 1]
+    if (g && g.weight === s.weight) g.reps.push(s.reps)
+    else groups.push({ weight: s.weight, reps: [s.reps] })
+  }
+  return groups.map((g) => `${weight(g.weight, unit, locale)} ${g.reps.join('·')}`).join(' · ')
+}
+
 /** Raggruppa per mese di calendario (ora locale) mantenendo l'ordine in ingresso: con elementi dal più recente, i mesi vengono dal più recente. `ms` è la data del primo elemento. */
 export function byMonth<T>(items: readonly T[], dateOf: (item: T) => number): { key: string; ms: number; items: T[] }[] {
   const groups = new Map<string, { key: string; ms: number; items: T[] }>()
