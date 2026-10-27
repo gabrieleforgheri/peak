@@ -14,6 +14,7 @@ struct EditMaxSheet: View {
     @State private var reps: Int = 1
     @State private var date: Date = Date()
     @State private var note: String = ""
+    @State private var singleArm = false
     @State private var didPrefill = false
 
     private var tint: Color { exercise.muscleGroup.tint }
@@ -22,7 +23,8 @@ struct EditMaxSheet: View {
         OneRepMax.estimate(weight: weight, reps: reps)
     }
 
-    private var previousBest: MaxRecord? { exercise.bestRecord }
+    /// Il confronto è dentro la propria linea: a un braccio solo con i massimali a un braccio.
+    private var previousBest: MaxRecord? { singleArm ? exercise.singleArmBestRecord : exercise.bestRecord }
 
     private var isRecord: Bool {
         MaxRanking.beats(
@@ -48,6 +50,12 @@ struct EditMaxSheet: View {
                             SectionHeader(title: "Ripetizioni")
                             RepsStepper(reps: $reps, tint: tint)
                         }
+                    }
+
+                    GlassCard(padding: 16) {
+                        Toggle("Un braccio", isOn: $singleArm)
+                            .font(Theme.rounded(15, .semibold))
+                            .tint(tint)
                     }
 
                     estimateCard
@@ -111,7 +119,7 @@ struct EditMaxSheet: View {
                 }
 
                 if let previousBest {
-                    Text("Precedente: \(Fmt.setLine(weight: previousBest.weight, reps: previousBest.reps, unit: settings.unit))")
+                    Text("Precedente: \(Fmt.setLine(weight: previousBest.weight, reps: previousBest.reps, unit: settings.unit, singleArm: singleArm))")
                         .font(Theme.rounded(12, .medium))
                         .foregroundStyle(Theme.textTertiary)
                 }
@@ -141,7 +149,8 @@ struct EditMaxSheet: View {
             reps: reps,
             date: date,
             isEstimated: false,
-            note: note
+            note: note,
+            singleArm: singleArm
         )
         context.insert(record)
         record.exercise = exercise

@@ -16,4 +16,8 @@ test('notebookLine: raggruppa per peso consecutivo, non per peso uguale ma separ
   assert.equal(notebookLine([s(71.5, 8), s(71.5, 6), s(54, 8)], 'kg'), '71,5 kg 8·6 · 54 kg 8')
   assert.equal(notebookLine([s(54, 8), s(71.5, 6), s(54, 8)], 'kg'), '54 kg 8 · 71,5 kg 6 · 54 kg 8')
   assert.equal(notebookLine([], 'kg'), '')
+  // a un braccio: il gruppo si spezza anche a parità di peso e porta il prefisso
+  const a = (w: number, r: number) => ({ weight: w, reps: r, singleArm: true })
+  assert.equal(notebookLine([s(40, 8), a(40, 8), a(40, 7), s(70, 10)], 'kg'), '40 kg 8 · 1 br 40 kg 8·7 · 70 kg 10')
+  assert.equal(notebookLine([a(40, 8)], 'kg', 'en'), '1 arm 40 kg 8')
 })

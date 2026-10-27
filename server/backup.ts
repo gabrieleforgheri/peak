@@ -15,10 +15,12 @@ import { CATALOG } from './catalog.ts'
 export const BACKUP_VERSION = 1
 const MAX_PHOTO = 1_000_000
 
-export interface RecordDTO { uuid: string; date: string; weight: number; reps: number; isEstimated: boolean; note: string }
+export interface RecordDTO { uuid: string; date: string; weight: number; reps: number; isEstimated: boolean; note: string; singleArm?: boolean }
 export interface SetDTO {
   uuid: string; exerciseUUID?: string; weight: number; reps: number; rpe?: number; isWarmup: boolean
   order: number; createdAt: string; isPersonalRecord: boolean; excludedFromRecords?: boolean
+  /** Un braccio solo; assente nei backup vecchi = due braccia. */
+  singleArm?: boolean
 }
 export interface ExerciseDTO {
   uuid: string; name: string; muscleGroup: string; notes: string; incrementStep: number; sortIndex: number
@@ -58,12 +60,12 @@ export function exportBackup(docs: Iterable<LiveDoc>, photo: (sha: string) => Ui
   const liveEx = new Set(d.exercises.map((e) => e.uuid))
   const liveWk = new Set(d.workouts.map((w) => w.uuid))
   const manual: RecManual[] = d.records.filter((r) => liveEx.has(r.data.exercise)).map((r) => ({
-    uuid: r.uuid, exercise: r.data.exercise, date: Date.parse(r.data.date), weight: r.data.weight, reps: r.data.reps,
+    uuid: r.uuid, exercise: r.data.exercise, date: Date.parse(r.data.date), weight: r.data.weight, reps: r.data.reps, singleArm: r.data.singleArm === true,
   }))
   const sets: RecSet[] = d.sets.filter((s) => liveWk.has(s.data.workout)).map((s) => ({
     uuid: s.uuid, exercise: s.data.exercise && liveEx.has(s.data.exercise) ? s.data.exercise : null, workout: s.data.workout,
     weight: s.data.weight, reps: s.data.reps, isWarmup: s.data.isWarmup, order: s.data.order,
-    createdAt: Date.parse(s.data.createdAt), noRecord: s.data.noRecord,
+    createdAt: Date.parse(s.data.createdAt), noRecord: s.data.noRecord, singleArm: s.data.singleArm === true,
   }))
   const { prSets, auto } = deriveRecords(manual, sets, liveWk)
 
@@ -73,9 +75,11 @@ export function exportBackup(docs: Iterable<LiveDoc>, photo: (sha: string) => Ui
       const records: RecordDTO[] = [
         ...d.records.filter((r) => r.data.exercise === uuid).map((r) => ({
           uuid: r.uuid, date: r.data.date, weight: r.data.weight, reps: r.data.reps, isEstimated: false, note: r.data.note,
+          ...(r.data.singleArm ? { singleArm: true } : {}),
         })),
         ...auto.filter((a) => a.exercise === uuid).map((a) => ({
           uuid: a.uuid, date: isoSec(a.date), weight: a.weight, reps: a.reps, isEstimated: true, note: 'Da allenamento',
+          ...(a.singleArm ? { singleArm: true } : {}),
         })),
       ].sort((a, b) => cmp(a.date, b.date) || cmp(a.uuid, b.uuid))
       const dto: ExerciseDTO = {
@@ -115,6 +119,7 @@ export function exportBackup(docs: Iterable<LiveDoc>, photo: (sha: string) => Ui
             if (s.exercise && liveEx.has(s.exercise)) out.exerciseUUID = s.exercise
             if (s.rpe !== null) out.rpe = s.rpe
             if (s.noRecord) out.excludedFromRecords = true
+            if (s.singleArm) out.singleArm = true
             return out
           }),
       }
@@ -174,7 +179,7 @@ export function parseBackup(raw: unknown): ParseResult {
       const ru = normUuid(r.uuid)
       const date = parseIso(r.date)
       if (!ru || date === null || typeof r.weight !== 'number' || typeof r.reps !== 'number') return bad
-      records.push({ uuid: ru, date: isoSec(date), weight: r.weight, reps: r.reps, isEstimated: r.isEstimated === true, note: typeof r.note === 'string' ? r.note : '' })
+      records.push({ uuid: ru, date: isoSec(date), weight: r.weight, reps: r.reps, isEstimated: r.isEstimated === true, note: typeof r.note === 'string' ? r.note : '', singleArm: r.singleArm === true ? true : undefined })
     }
     exercises.push({
       uuid, name: e.name, muscleGroup: typeof e.muscleGroup === 'string' ? e.muscleGroup : 'petto',
@@ -223,6 +228,7 @@ export function parseBackup(raw: unknown): ParseResult {
         rpe: typeof s.rpe === 'number' ? s.rpe : undefined, isWarmup: s.isWarmup === true,
         order: typeof s.order === 'number' ? s.order : 0, createdAt: isoSec(createdAt), isPersonalRecord: false,
         excludedFromRecords: s.excludedFromRecords === true ? true : undefined,
+        singleArm: s.singleArm === true ? true : undefined,
       })
     }
     const plan = readItems(w.plan)
@@ -369,10 +375,10 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
       if (merge && liveRecIds.has(r.uuid)) continue
       if (merge && !isNew) {
         const dup = [...(liveRecs.get(target) ?? [])].some((x) =>
-          x.data.date === r.date && x.data.reps === r.reps && Math.abs(x.data.weight - r.weight) < EPSILON)
+          x.data.date === r.date && x.data.reps === r.reps && Math.abs(x.data.weight - r.weight) < EPSILON && (x.data.singleArm === true) === (r.singleArm === true))
         if (dup) continue
       }
-      add('record', r.uuid, { exercise: target, date: r.date, weight: r.weight, reps: r.reps, note: r.note }, 'record')
+      add('record', r.uuid, { exercise: target, date: r.date, weight: r.weight, reps: r.reps, note: r.note, singleArm: r.singleArm === true }, 'record')
     }
   }
 
@@ -394,7 +400,7 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
       const ex = s.exerciseUUID ? (exMap.get(s.exerciseUUID) ?? (liveEx.has(s.exerciseUUID) ? s.exerciseUUID : null)) : null
       add('set', s.uuid, {
         workout: w.uuid, exercise: ex, weight: s.weight, reps: s.reps, rpe: s.rpe ?? null, isWarmup: s.isWarmup,
-        order: s.order, createdAt: s.createdAt, noRecord: s.excludedFromRecords === true,
+        order: s.order, createdAt: s.createdAt, noRecord: s.excludedFromRecords === true, singleArm: s.singleArm === true,
       }, 'serie')
     }
   }

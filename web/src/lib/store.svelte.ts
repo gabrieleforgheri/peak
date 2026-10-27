@@ -9,6 +9,7 @@ import { loadCatalog } from './catalog.ts'
 import type { Muscle, View } from '@common/muscle-info.ts'
 import { bestOf } from '@common/domain.ts'
 import { deriveRecords, recordsByExercise } from '@common/records.ts'
+import { setVolume } from '@common/stats.ts'
 import * as idb from './idb.ts'
 import type { Bw, Ex, Model, Prg, SetItem, Settings, Tpl, Wk } from './types.ts'
 
@@ -125,19 +126,20 @@ function compute(): Model {
 	const exIds = new Set(d.exercises.map((e) => e.uuid))
 	const wkIds = new Set(d.workouts.map((w) => w.uuid))
 	const manual = d.records.filter((r) => exIds.has(r.data.exercise))
-		.map((r) => ({ uuid: r.uuid, exercise: r.data.exercise, date: Date.parse(r.data.date), weight: r.data.weight, reps: r.data.reps }))
+		.map((r) => ({ uuid: r.uuid, exercise: r.data.exercise, date: Date.parse(r.data.date), weight: r.data.weight, reps: r.data.reps, singleArm: r.data.singleArm === true }))
 	const recSets = d.sets.filter((s) => wkIds.has(s.data.workout)).map((s) => ({
 		uuid: s.uuid, exercise: s.data.exercise && exIds.has(s.data.exercise) ? s.data.exercise : null, workout: s.data.workout,
 		weight: s.data.weight, reps: s.data.reps, isWarmup: s.data.isWarmup, order: s.data.order,
-		createdAt: Date.parse(s.data.createdAt), noRecord: s.data.noRecord,
+		createdAt: Date.parse(s.data.createdAt), noRecord: s.data.noRecord, singleArm: s.data.singleArm === true,
 	}))
 	const { prSets, auto } = deriveRecords(manual, recSets, wkIds)
 	const byEx = recordsByExercise(manual, auto)
+	const byExArm = recordsByExercise(manual, auto, true)
 
 	const rpeOf = new Map(d.sets.map((s) => [s.uuid, s.data.rpe]))
 	const items: SetItem[] = recSets.map((s) => ({
 		uuid: s.uuid, workout: s.workout, exercise: s.exercise, weight: s.weight, reps: s.reps, rpe: rpeOf.get(s.uuid) ?? null,
-		isWarmup: s.isWarmup, order: s.order, createdAt: s.createdAt, noRecord: s.noRecord, isPR: prSets.has(s.uuid),
+		isWarmup: s.isWarmup, order: s.order, createdAt: s.createdAt, noRecord: s.noRecord, isPR: prSets.has(s.uuid), singleArm: s.singleArm === true,
 	}))
 
 	const setsByEx = new Map<string, SetItem[]>()
@@ -151,8 +153,9 @@ function compute(): Model {
 		// i documenti di prima della 2.1 non hanno catalog, muscles e view: senza default la figura rompe la sessione
 		const x = upgradeDoc('exercise', e.data)
 		const records = (byEx.get(e.uuid) ?? []).sort((a, b) => b.date - a.date)
+		const armRecords = (byExArm.get(e.uuid) ?? []).sort((a, b) => b.date - a.date)
 		return {
-			...x, uuid: e.uuid, glyphName: glyphOf(x, catalog.glyphs.get(x.catalog)), records, best: bestOf(records),
+			...x, uuid: e.uuid, glyphName: glyphOf(x, catalog.glyphs.get(x.catalog)), records, best: bestOf(records), armRecords, armBest: bestOf(armRecords),
 			// la figura: quella della voce del catalogo se è collegato, altrimenti quella che hai toccato tu
 			figure: x.catalog ? (catalog.figures.get(x.catalog) ?? { muscles: [], view: '' as const }) : { muscles: x.muscles, view: x.view },
 			sets: (setsByEx.get(e.uuid) ?? []).sort((a, b) => b.createdAt - a.createdAt || b.order - a.order),
@@ -164,7 +167,7 @@ function compute(): Model {
 		const working = sets.filter((s) => !s.isWarmup)
 		return {
 			...upgradeDoc('workout', w.data), uuid: w.uuid, dateMs: Date.parse(w.data.date), endedMs: w.data.endedAt ? Date.parse(w.data.endedAt) : null,
-			isActive: !w.data.endedAt, sets, volume: working.reduce((v, s) => v + s.weight * s.reps, 0),
+			isActive: !w.data.endedAt, sets, volume: working.reduce((v, s) => v + setVolume(s), 0),
 			workingSets: working.length, prCount: sets.filter((s) => s.isPR).length,
 		}
 	}).sort((a, b) => b.dateMs - a.dateMs)

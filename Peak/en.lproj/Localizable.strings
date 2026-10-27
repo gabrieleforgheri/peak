@@ -56,6 +56,7 @@
 "1 amico" = "1 friend";
 "1 anno" = "1 year";
 "1 barra = 1 settimana" = "1 bar = 1 week";
+"1 br" = "1 arm";
 "1 esercizio" = "1 exercise";
 "1 macchinario fuori catalogo" = "1 machine outside the catalog";
 "1 massimale" = "1 max";
@@ -428,6 +429,7 @@
 "Mancano %lld per lato con i dischi disponibili." = "%lld per side still missing with the available plates.";
 "Manubri" = "Dumbbells";
 "Massimale" = "Max";
+"Massimale a un braccio" = "One-arm max";
 "Massimale attuale · %@" = "Current max · %@";
 "Massimale attuale · %lld" = "Current max · %lld";
 "Massimali" = "Maxes";

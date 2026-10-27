@@ -198,6 +198,20 @@
 			</MonthGroups>
 		{:else}<div class="card muted">{t('Ancora nessun massimale.')}</div>{/if}
 
+		<!-- una linea a parte: il peso è quello del singolo manico, non si confronta con le serie a due braccia -->
+		{#if ex.armRecords.length}
+			<div class="sec-title">{t('Massimale a un braccio')}</div>
+			<div class="list">
+				{#each ex.armRecords as r (r.uuid)}
+					<div class="item">
+						<div class="grow"><div class="num" style="font-weight:700">{setLine(r.weight, r.reps, true)}</div><div class="small muted">{dateLong(r.date)} · {r.isAuto ? t('Da allenamento') : t('Registrato')}</div></div>
+						{#if r.reps > 1}<span class="small muted num">≈ {W(oneRepMax(r.weight, r.reps))}</span>{/if}
+						<button class="icon-btn" style="width:34px;height:34px" onclick={() => deleteRecord(r)} aria-label={t('Elimina')}><Icon name="trash" size={16} /></button>
+					</div>
+				{/each}
+			</div>
+		{/if}
+
 		{#if ex.sets.length}
 			<div class="sec-title">{t('Serie')}</div>
 			<MonthGroups items={ex.sets} dateOf={(s) => s.createdAt} count={(n) => tn(n, '1 serie', '{0} serie')}>
@@ -207,10 +221,10 @@
 					<div class="grow">
 						<div class="num" style="font-weight:700">
 							{#if isRel}
-								{setLine(Math.max(0, s.weight - ex.barWeight), s.reps)}
+								{setLine(Math.max(0, s.weight - ex.barWeight), s.reps, s.singleArm)}
 								<span class="tiny muted" style="font-weight:500">({t('tot.')} {W(s.weight)})</span>
 							{:else}
-								{setLine(s.weight, s.reps)}
+								{setLine(s.weight, s.reps, s.singleArm)}
 							{/if}
 						</div>
 						<div class="small muted">{relDay(s.createdAt)}</div>

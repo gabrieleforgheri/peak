@@ -53,11 +53,11 @@ export function deleteWorkout(id: string) {
 	})
 }
 
-export function addSet(workout: string, exercise: string, weight: number, reps: number, isWarmup: boolean): { uuid: string; isPR: boolean } {
+export function addSet(workout: string, exercise: string, weight: number, reps: number, isWarmup: boolean, singleArm = false): { uuid: string; isPR: boolean } {
 	const wk = getModel().wkById.get(workout)
 	const order = (wk?.sets.reduce((m, s) => Math.max(m, s.order), -1) ?? -1) + 1
 	const uuid = newUuid()
-	put('set', uuid, { workout, exercise, weight, reps, rpe: null, isWarmup, order, createdAt: now(), noRecord: false })
+	put('set', uuid, { workout, exercise, weight, reps, rpe: null, isWarmup, order, createdAt: now(), noRecord: false, singleArm })
 	return { uuid, isPR: getModel().wkById.get(workout)?.sets.find((s) => s.uuid === uuid)?.isPR ?? false }
 }
 
@@ -202,8 +202,8 @@ export function deleteExercise(id: string) {
 	})
 }
 
-export function addRecord(exercise: string, weight: number, reps: number, dateMs: number, note: string) {
-	put('record', newUuid(), { exercise, date: isoSec(dateMs), weight, reps, note })
+export function addRecord(exercise: string, weight: number, reps: number, dateMs: number, note: string, singleArm = false) {
+	put('record', newUuid(), { exercise, date: isoSec(dateMs), weight, reps, note, singleArm })
 }
 
 /** Un massimale manuale si elimina; uno automatico torna "non conta" sulla serie che l'ha fatto nascere. */

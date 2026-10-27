@@ -14,6 +14,7 @@ enum RecordRules {
         let date: Date
         let weight: Double
         let reps: Int
+        var singleArm = false
     }
 
     struct SetEntry {
@@ -24,6 +25,7 @@ enum RecordRules {
         let reps: Int
         let isWarmup: Bool
         let excludedFromRecords: Bool
+        var singleArm = false
     }
 
     private struct Event {
@@ -47,25 +49,28 @@ enum RecordRules {
     /// una serie che lo batte è un record. `sets` va già filtrato a quelle di un allenamento
     /// che esiste ancora.
     static func personalRecordSets(manual: [ManualRecord], sets: [SetEntry]) -> [String] {
-        var events = manual.map {
-            Event(time: floorSeconds($0.date), isManual: true, order: 0, uuid: $0.uuid, weight: $0.weight, reps: $0.reps)
-        }
-        for set in sets where !set.isWarmup && !set.excludedFromRecords && set.weight > 0 && set.reps >= 1 {
-            events.append(Event(time: floorSeconds(set.createdAt), isManual: false, order: set.order,
-                                uuid: set.uuid, weight: set.weight, reps: set.reps))
-        }
-        events.sort { a, b in
-            if a.time != b.time { return a.time < b.time }
-            if a.isManual != b.isManual { return a.isManual }
-            if a.order != b.order { return a.order < b.order }
-            return a.uuid < b.uuid
-        }
-
-        var best: (weight: Double, reps: Int)?
         var records: [String] = []
-        for event in events where MaxRanking.beats(weight: event.weight, reps: event.reps, than: best) {
-            best = (event.weight, event.reps)
-            if !event.isManual { records.append(event.uuid) }
+        // Due linee separate: il peso a un braccio (sul singolo manico) non si confronta con quello a due braccia.
+        for singleArm in [false, true] {
+            var events = manual.filter { $0.singleArm == singleArm }.map {
+                Event(time: floorSeconds($0.date), isManual: true, order: 0, uuid: $0.uuid, weight: $0.weight, reps: $0.reps)
+            }
+            for set in sets where set.singleArm == singleArm && !set.isWarmup && !set.excludedFromRecords && set.weight > 0 && set.reps >= 1 {
+                events.append(Event(time: floorSeconds(set.createdAt), isManual: false, order: set.order,
+                                    uuid: set.uuid, weight: set.weight, reps: set.reps))
+            }
+            events.sort { a, b in
+                if a.time != b.time { return a.time < b.time }
+                if a.isManual != b.isManual { return a.isManual }
+                if a.order != b.order { return a.order < b.order }
+                return a.uuid < b.uuid
+            }
+
+            var best: (weight: Double, reps: Int)?
+            for event in events where MaxRanking.beats(weight: event.weight, reps: event.reps, than: best) {
+                best = (event.weight, event.reps)
+                if !event.isManual { records.append(event.uuid) }
+            }
         }
         return records
     }

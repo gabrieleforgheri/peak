@@ -20,10 +20,11 @@ enum RecordService {
         weight: Double,
         reps: Int,
         isWarmup: Bool,
+        singleArm: Bool = false,
         context: ModelContext
     ) -> Bool {
         let order = (workout.setList.map(\.order).max() ?? -1) + 1
-        let set = WorkoutSet(weight: weight, reps: reps, isWarmup: isWarmup, order: order)
+        let set = WorkoutSet(weight: weight, reps: reps, isWarmup: isWarmup, singleArm: singleArm, order: order)
         context.insert(set)
         set.exercise = exercise
         set.workout = workout
@@ -48,12 +49,13 @@ enum RecordService {
         let sets = exercise.setList.filter { !$0.isDeleted && $0.workout != nil }
         let winners = Set(RecordRules.personalRecordSets(
             manual: manual.map {
-                RecordRules.ManualRecord(uuid: $0.uuid.uuidString, date: $0.date, weight: $0.weight, reps: $0.reps)
+                RecordRules.ManualRecord(uuid: $0.uuid.uuidString, date: $0.date, weight: $0.weight, reps: $0.reps, singleArm: $0.singleArm)
             },
             sets: sets.map {
                 RecordRules.SetEntry(
                     uuid: $0.uuid.uuidString, createdAt: $0.createdAt, order: $0.order, weight: $0.weight,
-                    reps: $0.reps, isWarmup: $0.isWarmup, excludedFromRecords: $0.excludedFromRecords
+                    reps: $0.reps, isWarmup: $0.isWarmup, excludedFromRecords: $0.excludedFromRecords,
+                    singleArm: $0.singleArm
                 )
             }
         ))
@@ -72,11 +74,12 @@ enum RecordService {
             if let record = kept[set.uuid] {
                 if record.weight != set.weight { record.weight = set.weight }
                 if record.reps != set.reps { record.reps = set.reps }
+                if record.singleArm != set.singleArm { record.singleArm = set.singleArm }
                 if record.date != set.createdAt { record.date = set.createdAt }
                 if record.note != note { record.note = note }
                 continue
             }
-            let record = MaxRecord(weight: set.weight, reps: set.reps, date: set.createdAt, isEstimated: true, note: note)
+            let record = MaxRecord(weight: set.weight, reps: set.reps, date: set.createdAt, isEstimated: true, note: note, singleArm: set.singleArm)
             record.uuid = set.uuid
             context.insert(record)
             record.exercise = exercise

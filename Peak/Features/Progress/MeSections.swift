@@ -31,13 +31,13 @@ struct HomeStats {
         streak = Stats.weeklyStreak(workouts: done, calendar: cal, now: now)
         goal = chosenGoal > 0 ? chosenGoal : Stats.weeklyGoal(workouts: done, calendar: cal, now: now)
         totalVolume = done.reduce(0) { $0 + $1.totalVolume }
-        recordCount = exercises.reduce(0) { $0 + $1.recordList.count }
-        let used = exercises.filter { !$0.recordList.isEmpty || !$0.setList.isEmpty }
+        recordCount = exercises.reduce(0) { $0 + $1.twoArmRecords.count }
+        let used = exercises.filter { !$0.twoArmRecords.isEmpty || !$0.setList.isEmpty }
         machinesUsed = used.count
         var best = 0.0
         for e in used {
-            for r in e.recordList { best = max(best, r.estimatedOneRepMax) }
-            for s in e.setList where !s.isWarmup { best = max(best, s.estimatedOneRepMax) }
+            for r in e.twoArmRecords { best = max(best, r.estimatedOneRepMax) }
+            for s in e.setList where !s.isWarmup && !s.singleArm { best = max(best, s.estimatedOneRepMax) }
         }
         bestOneRm = best
         var days: [Date: Int] = [:]

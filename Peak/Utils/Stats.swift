@@ -90,13 +90,13 @@ enum Stats {
         let cutoff = now.addingTimeInterval(-Double(days) * 86_400)
 
         return exercises.compactMap { exercise -> Mover? in
-            let recent = exercise.recordList
+            let recent = exercise.twoArmRecords
                 .filter { $0.date >= cutoff }
                 .map(\.weight)
                 .max()
             guard let recent else { return nil }
 
-            let previous = exercise.recordList
+            let previous = exercise.twoArmRecords
                 .filter { $0.date < cutoff }
                 .map(\.weight)
                 .max() ?? 0

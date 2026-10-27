@@ -20,13 +20,15 @@
 	let reps = $state(last?.reps ?? lastSet?.reps ?? 1)
 	let day = $state(toDateInput(Date.now()))
 	let note = $state('')
+	let arm = $state(false)
 
 	const kg = $derived(fromUnit(weight))
-	const isNew = $derived(beats(kg, reps, ex.best))
+	const best = $derived(arm ? ex.armBest : ex.best)
+	const isNew = $derived(beats(kg, reps, best))
 	const est = $derived(oneRepMax(kg, reps))
 
 	function save() {
-		addRecord(ex.uuid, kg, reps, fromDateInput(day), note.trim())
+		addRecord(ex.uuid, kg, reps, fromDateInput(day), note.trim(), arm)
 		onclose()
 	}
 </script>
@@ -46,8 +48,9 @@
 				{#if isNew}<span class="badge accent">{t('NUOVO RECORD')}</span>{/if}
 			</div>
 			{#if reps > 1}<div class="row between"><span class="muted">{t('1RM stimato')}</span><b class="num">≈ {W(est)}</b></div>{/if}
-			{#if ex.best}<div class="row between"><span class="muted">{t('Precedente')}</span><span class="num">{setLine(ex.best.weight, ex.best.reps)} · {dateLong(ex.best.date)}</span></div>{/if}
+			{#if best}<div class="row between"><span class="muted">{t('Precedente')}</span><span class="num">{setLine(best.weight, best.reps, arm)} · {dateLong(best.date)}</span></div>{/if}
 		</div>
+		<label class="card row between"><span>{t('Un braccio')}</span><input class="toggle" type="checkbox" bind:checked={arm} /></label>
 		<label class="field"><span>{t('Data')}</span><input class="input" type="date" bind:value={day} max={toDateInput(Date.now())} /></label>
 		<label class="field"><span>{t('Nota')}</span><input class="input" bind:value={note} maxlength="500" placeholder={t('Facoltativa')} /></label>
 	</div>

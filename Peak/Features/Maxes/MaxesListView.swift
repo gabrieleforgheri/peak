@@ -31,7 +31,7 @@ struct MaxesListView: View {
     }
 
     private var withMaxCount: Int {
-        allExercises.filter { !$0.isArchived && !$0.recordList.isEmpty }.count
+        allExercises.filter { !$0.isArchived && !$0.twoArmRecords.isEmpty }.count
     }
 
     var body: some View {

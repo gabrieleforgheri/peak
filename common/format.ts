@@ -31,18 +31,26 @@ export function duration(seconds: number): string {
 /** "+4,2%". */
 export const delta = (percent: number, locale = 'it'): string => `${percent > 0 ? '+' : ''}${nf(locale, 0, 1).format(percent)}%`
 
-/** "80 kg × 5". */
-export const setLine = (kg: number, reps: number, unit: Unit, locale = 'it'): string => `${weight(kg, unit, locale)} × ${reps}`
+/** Il segno di una serie a un braccio: "1 br" (italiano), "1 arm". */
+export const armMarker = (locale = 'it'): string => (locale.startsWith('en') ? '1 arm' : '1 br')
 
-/** Riga da taccuino: serie consecutive con lo stesso peso raggruppate, ripetizioni unite da "·", gruppi separati da " · ". "71,5 kg 8·6 · 54 kg 8". */
-export function notebookLine(sets: readonly { weight: number; reps: number }[], unit: Unit, locale = 'it'): string {
-  const groups: { weight: number; reps: number[] }[] = []
+/** "80 kg × 5", a un braccio "80 kg × 5 · 1 br". */
+export const setLine = (kg: number, reps: number, unit: Unit, locale = 'it', singleArm = false): string =>
+  `${weight(kg, unit, locale)} × ${reps}${singleArm ? ` · ${armMarker(locale)}` : ''}`
+
+/**
+ * Riga da taccuino: serie consecutive con lo stesso peso (e lo stesso numero di bracci) raggruppate, ripetizioni unite
+ * da "·", gruppi separati da " · ". "71,5 kg 8·6 · 54 kg 8"; un gruppo a un braccio comincia con "1 br ".
+ */
+export function notebookLine(sets: readonly { weight: number; reps: number; singleArm?: boolean }[], unit: Unit, locale = 'it'): string {
+  const groups: { weight: number; singleArm: boolean; reps: number[] }[] = []
   for (const s of sets) {
     const g = groups[groups.length - 1]
-    if (g && g.weight === s.weight) g.reps.push(s.reps)
-    else groups.push({ weight: s.weight, reps: [s.reps] })
+    const one = s.singleArm === true
+    if (g && g.weight === s.weight && g.singleArm === one) g.reps.push(s.reps)
+    else groups.push({ weight: s.weight, singleArm: one, reps: [s.reps] })
   }
-  return groups.map((g) => `${weight(g.weight, unit, locale)} ${g.reps.join('·')}`).join(' · ')
+  return groups.map((g) => `${g.singleArm ? `${armMarker(locale)} ` : ''}${weight(g.weight, unit, locale)} ${g.reps.join('·')}`).join(' · ')
 }
 
 /** Raggruppa per mese di calendario (ora locale) mantenendo l'ordine in ingresso: con elementi dal più recente, i mesi vengono dal più recente. `ms` è la data del primo elemento. */

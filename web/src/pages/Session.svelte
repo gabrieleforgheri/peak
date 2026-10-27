@@ -91,28 +91,28 @@
 					exercise.sets
 						.filter((s) => s.workout === w.uuid && !s.isWarmup)
 						.sort((a, b) => a.order - b.order || a.createdAt - b.createdAt)
-						.map((s) => ({ weight: rel ? Math.max(0, s.weight - exercise.barWeight) : s.weight, reps: s.reps })),
+						.map((s) => ({ weight: rel ? Math.max(0, s.weight - exercise.barWeight) : s.weight, reps: s.reps, singleArm: s.singleArm })),
 				),
 			}))
 	}
 	// pagina visibile del blocco «Scorso» di ogni esercizio, per i puntini
 	let prevPage = $state<Record<string, number>>({})
 
-	function formatSetLine(weightKg: number, reps: number, ex: Ex): { main: string; sub?: string } {
+	function formatSetLine(weightKg: number, reps: number, ex: Ex, singleArm: boolean): { main: string; sub?: string } {
 		if (ex.weightDisplay === 'relative' && !ex.perSide && (ex.barWeight ?? 0) > 0) {
 			const relKg = Math.max(0, weightKg - ex.barWeight)
 			return {
-				main: setLine(relKg, reps),
+				main: setLine(relKg, reps, singleArm),
 				sub: `${t('tot.')} ${W(weightKg)}`,
 			}
 		}
-		return { main: setLine(weightKg, reps) }
+		return { main: setLine(weightKg, reps, singleArm) }
 	}
 
 	function repeat(ex: Ex) {
 		const last = [...(wk?.sets ?? [])].reverse().find((s) => s.exercise === ex.uuid)
 		if (!last || !wk) return
-		const r = addSet(wk.uuid, ex.uuid, last.weight, last.reps, last.isWarmup)
+		const r = addSet(wk.uuid, ex.uuid, last.weight, last.reps, last.isWarmup, last.singleArm)
 		added(ex, { isPR: r.isPR, isWarmup: last.isWarmup, uuid: r.uuid })
 	}
 
@@ -207,7 +207,7 @@
 									<div class="prev-pager" onscroll={(e) => (prevPage[ex.uuid] = Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
 										<div class="stack" style="gap:2px">
 											{#each prevSets as s, i}
-												{@const fmt = formatSetLine(s.weight, s.reps, ex)}
+												{@const fmt = formatSetLine(s.weight, s.reps, ex, s.singleArm)}
 												<div class="row small muted num" style="gap:6px">
 													<span style="width:16px;opacity:0.6">{i + 1}.</span>
 													<span>{fmt.main}{#if fmt.sub} <span class="faint tiny">({fmt.sub})</span>{/if}</span>
@@ -253,7 +253,7 @@
 					<!-- sempre presente (vuota non occupa nulla): così anche la prima serie di un esercizio entra con la sua transizione -->
 					<div class="list" style:margin-top={sets.length ? '12px' : '0'}>
 						{#each sets as s, i (s.uuid)}
-							{@const fmt = formatSetLine(s.weight, s.reps, ex)}
+							{@const fmt = formatSetLine(s.weight, s.reps, ex, s.singleArm)}
 							<button class="item" class:flash={s.isPR && s.uuid === fresh} onclick={() => (adding = { ex, set: s })} in:rowIn out:rowOut>
 								<span class="muted num" style="width:20px">{i + 1}</span>
 								<div class="grow num" style="font-weight:700">
@@ -277,7 +277,7 @@
 		{#if orphanSets.length}
 			<div class="card">
 				<b class="muted">{t('Esercizio rimosso')}</b>
-				<div class="list" style="margin-top:8px">{#each orphanSets as s (s.uuid)}<div class="item num"><div class="grow">{setLine(s.weight, s.reps)}</div>{#if s.isWarmup}<span class="badge">{t('risc.')}</span>{/if}</div>{/each}</div>
+				<div class="list" style="margin-top:8px">{#each orphanSets as s (s.uuid)}<div class="item num"><div class="grow">{setLine(s.weight, s.reps, s.singleArm)}</div>{#if s.isWarmup}<span class="badge">{t('risc.')}</span>{/if}</div>{/each}</div>
 			</div>
 		{/if}
 

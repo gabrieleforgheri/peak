@@ -184,15 +184,15 @@ struct WorkoutSessionView: View {
         .sheet(item: $addSetTarget) { exercise in
             AddSetSheet(
                 exercise: exercise,
-                mode: .add(lastSet: lastSet(for: exercise))
-            ) { weight, reps, isWarmup in
-                addSet(to: exercise, weight: weight, reps: reps, isWarmup: isWarmup)
+                mode: .add(lastSet: lastSet(for: exercise), singleArm: workout.defaultSingleArm(for: exercise))
+            ) { weight, reps, isWarmup, singleArm in
+                addSet(to: exercise, weight: weight, reps: reps, isWarmup: isWarmup, singleArm: singleArm)
             }
         }
         .sheet(item: $editingSet) { set in
             if let exercise = set.exercise {
-                AddSetSheet(exercise: exercise, mode: .edit(set)) { weight, reps, isWarmup in
-                    update(set, weight: weight, reps: reps, isWarmup: isWarmup)
+                AddSetSheet(exercise: exercise, mode: .edit(set)) { weight, reps, isWarmup, singleArm in
+                    update(set, weight: weight, reps: reps, isWarmup: isWarmup, singleArm: singleArm)
                 }
             }
         }
@@ -371,13 +371,14 @@ struct WorkoutSessionView: View {
             ?? workout.sets(for: exercise).last
     }
 
-    private func addSet(to exercise: Exercise, weight: Double, reps: Int, isWarmup: Bool) {
+    private func addSet(to exercise: Exercise, weight: Double, reps: Int, isWarmup: Bool, singleArm: Bool) {
         let isRecord = RecordService.addSet(
             to: workout,
             exercise: exercise,
             weight: weight,
             reps: reps,
             isWarmup: isWarmup,
+            singleArm: singleArm,
             context: context
         )
         startRest(for: exercise)
@@ -456,16 +457,17 @@ struct WorkoutSessionView: View {
 
     private func repeatLastSet(for exercise: Exercise) {
         guard let last = lastSet(for: exercise) else { return }
-        addSet(to: exercise, weight: last.weight, reps: last.reps, isWarmup: last.isWarmup)
+        addSet(to: exercise, weight: last.weight, reps: last.reps, isWarmup: last.isWarmup, singleArm: last.singleArm)
     }
 
     /// Applica la correzione e ricalcola i record del macchinario: una serie corretta al ribasso
     /// non deve lasciarsi dietro il massimale che aveva fatto scattare, e le serie dopo di lei
     /// si ricontrollano (una che prima non lo era può diventarlo).
-    private func update(_ set: WorkoutSet, weight: Double, reps: Int, isWarmup: Bool) {
+    private func update(_ set: WorkoutSet, weight: Double, reps: Int, isWarmup: Bool, singleArm: Bool) {
         set.weight = weight
         set.reps = reps
         set.isWarmup = isWarmup
+        set.singleArm = singleArm
         if let exercise = set.exercise { RecordService.recompute(exercise, context: context) }
         let isRecord = set.isPersonalRecord
         try? context.save()
@@ -642,11 +644,11 @@ private struct ExerciseSessionCard: View {
                                                         .frame(width: 16, alignment: .leading)
                                                     if exercise.weightDisplay == "relative", !exercise.perSide, exercise.barWeight > 0 {
                                                         let relWeight = max(0, prev.weight - exercise.barWeight)
-                                                        Text(Fmt.setLine(weight: relWeight, reps: prev.reps, unit: settings.unit))
+                                                        Text(Fmt.setLine(weight: relWeight, reps: prev.reps, unit: settings.unit, singleArm: prev.singleArm))
                                                             .font(Theme.rounded(12, .medium))
                                                             .foregroundStyle(Theme.textSecondary)
                                                     } else {
-                                                        Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit))
+                                                        Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit, singleArm: prev.singleArm))
                                                             .font(Theme.rounded(12, .medium))
                                                             .foregroundStyle(Theme.textSecondary)
                                                     }
@@ -660,7 +662,7 @@ private struct ExerciseSessionCard: View {
                                             ForEach(Array(previousDays.enumerated()), id: \.offset) { _, day in
                                                 let relative = exercise.weightDisplay == "relative" && !exercise.perSide && exercise.barWeight > 0
                                                 let line = Fmt.notebookLine(
-                                                    day.sets.map { (weight: relative ? max(0, $0.weight - exercise.barWeight) : $0.weight, reps: $0.reps) },
+                                                    day.sets.map { (weight: relative ? max(0, $0.weight - exercise.barWeight) : $0.weight, reps: $0.reps, singleArm: $0.singleArm) },
                                                     unit: settings.unit
                                                 )
                                                 (Text(Fmt.shortDate(day.date)).foregroundStyle(Theme.textTertiary) + Text("  \(line)"))
@@ -817,9 +819,9 @@ private struct ExerciseSessionCard: View {
                             let repeatText: String = {
                                 if exercise.weightDisplay == "relative", !exercise.perSide, exercise.barWeight > 0 {
                                     let relWeight = max(0, last.weight - exercise.barWeight)
-                                    return Fmt.setLine(weight: relWeight, reps: last.reps, unit: settings.unit)
+                                    return Fmt.setLine(weight: relWeight, reps: last.reps, unit: settings.unit, singleArm: last.singleArm)
                                 }
-                                return Fmt.setLine(weight: last.weight, reps: last.reps, unit: settings.unit)
+                                return Fmt.setLine(weight: last.weight, reps: last.reps, unit: settings.unit, singleArm: last.singleArm)
                             }()
                             Label(repeatText, systemImage: "arrow.counterclockwise")
                                 .font(Theme.rounded(13, .semibold))
@@ -863,7 +865,7 @@ private struct SetRow: View {
             if let ex = set.exercise, ex.weightDisplay == "relative", !ex.perSide, ex.barWeight > 0 {
                 let relWeight = max(0, set.weight - ex.barWeight)
                 HStack(spacing: 4) {
-                    Text(Fmt.setLine(weight: relWeight, reps: set.reps, unit: settings.unit))
+                    Text(Fmt.setLine(weight: relWeight, reps: set.reps, unit: settings.unit, singleArm: set.singleArm))
                         .font(Theme.rounded(15, .semibold))
                         .foregroundStyle(set.isWarmup ? Theme.textSecondary : Theme.textPrimary)
                     Text("(tot. \(Fmt.weight(set.weight, unit: settings.unit)))")
@@ -871,7 +873,7 @@ private struct SetRow: View {
                         .foregroundStyle(Theme.textTertiary)
                 }
             } else {
-                Text(Fmt.setLine(weight: set.weight, reps: set.reps, unit: settings.unit))
+                Text(Fmt.setLine(weight: set.weight, reps: set.reps, unit: settings.unit, singleArm: set.singleArm))
                     .font(Theme.rounded(15, .semibold))
                     .foregroundStyle(set.isWarmup ? Theme.textSecondary : Theme.textPrimary)
             }

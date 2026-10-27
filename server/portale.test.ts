@@ -33,10 +33,10 @@ function seed(sub: string, email: string) {
   app.store.applyPlan(u.id, { photos: new Map(), del: [], put: [
     { kind: 'exercise', uuid: ex, data: { name: 'Chest Press', muscleGroup: 'petto', notes: '', incrementStep: 5, sortIndex: 0, isArchived: false, createdAt: at(now - 90 * DAY), glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0 } },
     { kind: 'workout', uuid: w2, data: { date: at(now - 60 * DAY), endedAt: at(now - 60 * DAY + 3600_000), note: '', name: 'Vecchio', focus: '', template: '', plan: [] } },
-    { kind: 'set', uuid: newUuid(), data: { workout: w2, exercise: ex, weight: 50, reps: 5, rpe: null, isWarmup: false, order: 0, createdAt: at(now - 60 * DAY + 600_000), noRecord: false } },
+    { kind: 'set', uuid: newUuid(), data: { workout: w2, exercise: ex, weight: 50, reps: 5, rpe: null, isWarmup: false, order: 0, createdAt: at(now - 60 * DAY + 600_000), noRecord: false, singleArm: false } },
     { kind: 'workout', uuid: w1, data: { date: at(now - DAY), endedAt: at(now - DAY + 2700_000), note: '', name: 'Push', focus: 'petto', template: '', plan: [] } },
-    { kind: 'set', uuid: newUuid(), data: { workout: w1, exercise: ex, weight: 60, reps: 5, rpe: null, isWarmup: false, order: 0, createdAt: at(now - DAY + 600_000), noRecord: false } },
-    { kind: 'set', uuid: newUuid(), data: { workout: w1, exercise: ex, weight: 20, reps: 10, rpe: null, isWarmup: true, order: 1, createdAt: at(now - DAY + 700_000), noRecord: false } },
+    { kind: 'set', uuid: newUuid(), data: { workout: w1, exercise: ex, weight: 60, reps: 5, rpe: null, isWarmup: false, order: 0, createdAt: at(now - DAY + 600_000), noRecord: false, singleArm: false } },
+    { kind: 'set', uuid: newUuid(), data: { workout: w1, exercise: ex, weight: 20, reps: 10, rpe: null, isWarmup: true, order: 1, createdAt: at(now - DAY + 700_000), noRecord: false, singleArm: false } },
   ] }, now)
   return u
 }

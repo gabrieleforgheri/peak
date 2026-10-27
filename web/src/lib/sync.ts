@@ -209,13 +209,13 @@ async function seedDevData() {
 			...(benchEx ? [{ exercise: ex3Id, sets: 3, repsMin: 8, repsMax: 10, weight: 70 }] : []),
 		],
 	})
-	put('set', 'C0000000-0000-0000-0000-000000000001', { workout: prevWkId, exercise: ex1Id, weight: 50, reps: 12, rpe: null, isWarmup: false, order: 0, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false })
-	put('set', 'C0000000-0000-0000-0000-000000000002', { workout: prevWkId, exercise: ex1Id, weight: 55, reps: 10, rpe: null, isWarmup: false, order: 1, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false })
-	put('set', 'C0000000-0000-0000-0000-000000000003', { workout: prevWkId, exercise: ex1Id, weight: 60, reps: 8, rpe: null, isWarmup: false, order: 2, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false })
+	put('set', 'C0000000-0000-0000-0000-000000000001', { workout: prevWkId, exercise: ex1Id, weight: 50, reps: 12, rpe: null, isWarmup: false, order: 0, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false, singleArm: false })
+	put('set', 'C0000000-0000-0000-0000-000000000002', { workout: prevWkId, exercise: ex1Id, weight: 55, reps: 10, rpe: null, isWarmup: false, order: 1, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false, singleArm: false })
+	put('set', 'C0000000-0000-0000-0000-000000000003', { workout: prevWkId, exercise: ex1Id, weight: 60, reps: 8, rpe: null, isWarmup: false, order: 2, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false, singleArm: false })
 	if (benchEx) {
-		put('set', 'C0000000-0000-0000-0000-000000000010', { workout: prevWkId, exercise: ex3Id, weight: 60, reps: 10, rpe: null, isWarmup: false, order: 3, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false })
-		put('set', 'C0000000-0000-0000-0000-000000000011', { workout: prevWkId, exercise: ex3Id, weight: 65, reps: 8, rpe: null, isWarmup: false, order: 4, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false })
-		put('set', 'C0000000-0000-0000-0000-000000000012', { workout: prevWkId, exercise: ex3Id, weight: 70, reps: 6, rpe: null, isWarmup: false, order: 5, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false })
+		put('set', 'C0000000-0000-0000-0000-000000000010', { workout: prevWkId, exercise: ex3Id, weight: 60, reps: 10, rpe: null, isWarmup: false, order: 3, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false, singleArm: false })
+		put('set', 'C0000000-0000-0000-0000-000000000011', { workout: prevWkId, exercise: ex3Id, weight: 65, reps: 8, rpe: null, isWarmup: false, order: 4, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false, singleArm: false })
+		put('set', 'C0000000-0000-0000-0000-000000000012', { workout: prevWkId, exercise: ex3Id, weight: 70, reps: 6, rpe: null, isWarmup: false, order: 5, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), noRecord: false, singleArm: false })
 	}
 
 	// Allenamento in corso di oggi
@@ -234,9 +234,9 @@ async function seedDevData() {
 			...(latEx ? [{ exercise: ex2Id, sets: 3, repsMin: 8, repsMax: 12, weight: 55 }] : []),
 		],
 	})
-	put('set', 'C0000000-0000-0000-0000-000000000004', { workout: todayWkId, exercise: ex1Id, weight: 55, reps: 10, rpe: null, isWarmup: false, order: 0, createdAt: new Date().toISOString(), noRecord: false })
+	put('set', 'C0000000-0000-0000-0000-000000000004', { workout: todayWkId, exercise: ex1Id, weight: 55, reps: 10, rpe: null, isWarmup: false, order: 0, createdAt: new Date().toISOString(), noRecord: false, singleArm: false })
 	if (benchEx) {
-		put('set', 'C0000000-0000-0000-0000-000000000013', { workout: todayWkId, exercise: ex3Id, weight: 65, reps: 8, rpe: null, isWarmup: false, order: 1, createdAt: new Date().toISOString(), noRecord: false })
+		put('set', 'C0000000-0000-0000-0000-000000000013', { workout: todayWkId, exercise: ex3Id, weight: 65, reps: 8, rpe: null, isWarmup: false, order: 1, createdAt: new Date().toISOString(), noRecord: false, singleArm: false })
 	}
 }
 

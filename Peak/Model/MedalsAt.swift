@@ -10,12 +10,12 @@ extension Medals {
         var records = 0, machines = 0
         var best = 0.0
         for e in exercises {
-            let rs = e.recordList.filter { cut($0.date) }
+            let rs = e.twoArmRecords.filter { cut($0.date) }
             let ss = e.setList.filter { !$0.isWarmup && ($0.workout.map { ids.contains($0.uuid) } ?? false) }
             records += rs.count
             if !rs.isEmpty || !ss.isEmpty { machines += 1 }
             for r in rs { best = max(best, r.estimatedOneRepMax) }
-            for s in ss { best = max(best, s.estimatedOneRepMax) }
+            for s in ss where !s.singleArm { best = max(best, s.estimatedOneRepMax) }
         }
         return list(MedalInput(
             sessions: done.count, records: records,

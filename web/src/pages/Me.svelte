@@ -22,7 +22,7 @@
 
 	const name = $derived(S.user?.nome || S.user?.username || 'Peak')
 	const finished = $derived(m.workouts.filter((w) => !w.isActive))
-	const stat = $derived<StatWorkout[]>(finished.map((w) => ({ date: w.dateMs, sets: w.sets.map((s) => ({ exercise: s.exercise, weight: s.weight, reps: s.reps, isWarmup: s.isWarmup })) })))
+	const stat = $derived<StatWorkout[]>(finished.map((w) => ({ date: w.dateMs, sets: w.sets.map((s) => ({ exercise: s.exercise, weight: s.weight, reps: s.reps, isWarmup: s.isWarmup, singleArm: s.singleArm })) })))
 	const streak = $derived(weeklyStreak(stat))
 	const totalVolume = $derived(stat.reduce((v, w) => v + workoutVolume(w), 0))
 	const allRecords = $derived(m.exercises.flatMap((e) => e.records.map((r) => ({ ...r, name: e.name }))))

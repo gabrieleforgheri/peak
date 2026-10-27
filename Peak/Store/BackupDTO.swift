@@ -58,6 +58,8 @@ struct MaxRecordDTO: Codable {
     var reps: Int
     var isEstimated: Bool
     var note: String
+    /// Opzionale: assente = a due braccia (i backup di prima restano leggibili).
+    var singleArm: Bool?
 }
 
 struct WorkoutDTO: Codable {
@@ -130,6 +132,8 @@ struct WorkoutSetDTO: Codable {
     var isPersonalRecord: Bool
     /// Opzionale: assente = la serie conta per i record. Le versioni 1.x lo ignorano.
     var excludedFromRecords: Bool?
+    /// Opzionale: assente = a due braccia.
+    var singleArm: Bool?
 }
 
 struct BodyWeightDTO: Codable {

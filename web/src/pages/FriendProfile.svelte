@@ -27,7 +27,7 @@
 	// i tuoi, per confrontare: il migliore 1RM fra i tuoi esercizi con lo stesso id
 	const mine = $derived.by(() => {
 		const out = new Map<string, number>()
-		for (const e of m.exercises) if (e.catalog && !e.isArchived && e.best) out.set(e.catalog, Math.max(out.get(e.catalog) ?? 0, ...e.records.map((r) => oneRepMax(r.weight, r.reps)), ...e.sets.filter((s) => !s.isWarmup).map((s) => oneRepMax(s.weight, s.reps))))
+		for (const e of m.exercises) if (e.catalog && !e.isArchived && e.best) out.set(e.catalog, Math.max(out.get(e.catalog) ?? 0, ...e.records.map((r) => oneRepMax(r.weight, r.reps)), ...e.sets.filter((s) => !s.isWarmup && !s.singleArm).map((s) => oneRepMax(s.weight, s.reps))))
 		return out
 	})
 	// quanto è più forte lui di te (in % sul tuo 1RM stimato)

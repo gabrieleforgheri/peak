@@ -4,7 +4,7 @@
 
 import { oneRepMax } from '../common/domain.ts'
 import { split, type LiveDoc } from '../common/docs.ts'
-import { weeklyStreak } from '../common/stats.ts'
+import { setVolume, weeklyStreak } from '../common/stats.ts'
 
 /** Il migliore di un esercizio: l'1RM stimato più alto fra le serie vere e i massimali scritti a mano. */
 export interface Best { oneRm: number; weight: number; reps: number; date: number }
@@ -24,10 +24,10 @@ function bestPerExercise(docs: LiveDoc[]): { d: ReturnType<typeof split>; best: 
     const oneRm = oneRepMax(weight, reps)
     if (exercise && oneRm > 0) best.set(exercise, better(best.get(exercise), { oneRm, weight, reps, date }))
   }
-  for (const r of d.records) add(r.data.exercise, r.data.weight, r.data.reps, Date.parse(r.data.date))
+  for (const r of d.records) if (!r.data.singleArm) add(r.data.exercise, r.data.weight, r.data.reps, Date.parse(r.data.date))
   for (const s of d.sets) {
     const x = s.data
-    if (x.isWarmup || x.noRecord || !liveWk.has(x.workout)) continue
+    if (x.isWarmup || x.noRecord || x.singleArm || !liveWk.has(x.workout)) continue
     add(x.exercise, x.weight, x.reps, Date.parse(x.createdAt))
   }
   return { d, best }
@@ -78,7 +78,7 @@ export interface Activity { volume30: number; sessions30: number; streak: number
 export function activityOf(docs: LiveDoc[], now = Date.now()): Activity {
   const d = split(docs)
   const volumeOf = new Map<string, number>()
-  for (const s of d.sets) if (!s.data.isWarmup) volumeOf.set(s.data.workout, (volumeOf.get(s.data.workout) ?? 0) + s.data.weight * s.data.reps)
+  for (const s of d.sets) if (!s.data.isWarmup) volumeOf.set(s.data.workout, (volumeOf.get(s.data.workout) ?? 0) + setVolume(s.data))
   const done = d.workouts.filter((w) => w.data.endedAt).map((w) => ({ uuid: w.uuid, date: Date.parse(w.data.date) }))
   const recent = done.filter((w) => w.date >= now - 30 * 86_400_000)
   return {

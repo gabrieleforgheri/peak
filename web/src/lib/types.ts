@@ -5,7 +5,7 @@ import type { Muscle, View } from '@common/muscle-info.ts'
 
 export interface SetItem {
 	uuid: string; workout: string; exercise: string | null; weight: number; reps: number; rpe: number | null
-	isWarmup: boolean; order: number; createdAt: number; noRecord: boolean; isPR: boolean
+	isWarmup: boolean; order: number; createdAt: number; noRecord: boolean; isPR: boolean; singleArm: boolean
 }
 export interface Ex extends ExerciseDoc {
 	uuid: string
@@ -14,6 +14,9 @@ export interface Ex extends ExerciseDoc {
 	/** Massimali manuali + automatici, dal più recente. */
 	records: AnyRecord[]
 	best: AnyRecord | null
+	/** I massimali a un braccio, una linea a parte: `records` e `best` sono solo a due braccia. */
+	armRecords: AnyRecord[]
+	armBest: AnyRecord | null
 	/** Serie degli allenamenti esistenti, dalla più recente. */
 	sets: SetItem[]
 	/** La figura dei muscoli: della voce del catalogo se è collegato, altrimenti la sua. */

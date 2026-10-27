@@ -64,5 +64,19 @@
       { "uuid": "S1", "exercise": "E1", "workout": "W1", "weight": 100, "reps": 5, "order": 0, "at": "2026-01-01T10:00:00Z" },
       { "uuid": "S2", "exercise": "E2", "workout": "W1", "weight": 50, "reps": 5, "order": 1, "at": "2026-01-01T10:10:00Z" },
       { "uuid": "S3", "exercise": null, "workout": "W1", "weight": 300, "reps": 5, "order": 2, "at": "2026-01-01T10:20:00Z" } ],
-    "pr": ["S1", "S2"] }
+    "pr": ["S1", "S2"] },
+  { "name": "a un braccio è un'altra linea: non batte né è battuta dalle serie a due braccia",
+    "workouts": ["W1"], "manual": [],
+    "sets": [
+      { "uuid": "S1", "exercise": "E1", "workout": "W1", "weight": 100, "reps": 5, "order": 0, "at": "2026-01-01T10:00:00Z" },
+      { "uuid": "S2", "exercise": "E1", "workout": "W1", "weight": 40, "reps": 8, "order": 1, "at": "2026-01-01T10:05:00Z", "singleArm": true },
+      { "uuid": "S3", "exercise": "E1", "workout": "W1", "weight": 30, "reps": 8, "order": 2, "at": "2026-01-01T10:10:00Z", "singleArm": true },
+      { "uuid": "S4", "exercise": "E1", "workout": "W1", "weight": 42, "reps": 8, "order": 3, "at": "2026-01-01T10:15:00Z", "singleArm": true } ],
+    "pr": ["S1", "S2", "S4"] },
+  { "name": "un manuale a un braccio non sostituisce quello a due braccia, e viceversa",
+    "workouts": ["W1"], "manual": [ { "uuid": "M1", "exercise": "E1", "weight": 50, "reps": 5, "at": "2025-12-01T10:00:00Z", "singleArm": true } ],
+    "sets": [
+      { "uuid": "S1", "exercise": "E1", "workout": "W1", "weight": 30, "reps": 8, "order": 0, "at": "2026-01-01T10:00:00Z", "singleArm": true },
+      { "uuid": "S2", "exercise": "E1", "workout": "W1", "weight": 30, "reps": 8, "order": 1, "at": "2026-01-01T10:05:00Z" } ],
+    "pr": ["S2"] }
 ]

@@ -99,7 +99,8 @@ final class WatchBridge: NSObject, WCSessionDelegate {
             name: exercise.name,
             weight: weight,
             step: exercise.incrementStep,
-            target: target(for: exercise, in: workout)
+            target: target(for: exercise, in: workout),
+            singleArm: workout.defaultSingleArm(for: exercise) ? true : nil
         )
     }
 
@@ -154,6 +155,8 @@ final class WatchBridge: NSObject, WCSessionDelegate {
             weight: watchSet.weight,
             reps: watchSet.reps,
             isWarmup: watchSet.isWarmup,
+            // dal Watch non si sceglie: come l'ultima serie di questo esercizio nell'allenamento
+            singleArm: workout.defaultSingleArm(for: exercise),
             context: context
         )
         if settings.restTimerEnabled {

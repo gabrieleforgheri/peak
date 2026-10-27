@@ -8,7 +8,7 @@ import { suggestedGlyph, SHAPES, GLYPH_TITLES, glyphSvg, glyphOf, isGlyph } from
 import { GLYPHS } from './docs.ts'
 import { readFileSync } from 'node:fs'
 import type { CatalogEntry } from './catalog.ts'
-import { weeklyVolume, volumeByGroup, topMovers, tickIndices, weeklyStreak, weekStart, weeklyGoal } from './stats.ts'
+import { workoutVolume, weeklyVolume, volumeByGroup, topMovers, tickIndices, weeklyStreak, weekStart, weeklyGoal } from './stats.ts'
 import * as fmt from './format.ts'
 
 const CATALOG = JSON.parse(readFileSync(new URL('./catalog.json', import.meta.url), 'utf8')) as CatalogEntry[]
@@ -223,6 +223,7 @@ test('formati', () => {
   assert.equal(fmt.delta(4.2, 'it'), '+4,2%')
   assert.equal(fmt.delta(-1, 'it'), '-1%')
   assert.equal(fmt.setLine(80, 5, 'kg', 'it'), '80 kg × 5')
+  assert.equal(fmt.setLine(40, 8, 'kg', 'it', true), '40 kg × 8 · 1 br')
 })
 
 test('obiettivo della settimana: la tua media, fra 2 e 5, 3 se non c\'è storia', () => {
@@ -243,4 +244,13 @@ test('obiettivo della settimana: la tua media, fra 2 e 5, 3 se non c\'è storia'
 test('i pittogrammi Swift sono generati da quelli del web e aggiornati', async () => {
   const { swiftSource, SWIFT_FILE } = await import('../scripts/gen-glyphs.ts')
   assert.equal(readFileSync(SWIFT_FILE, 'utf8'), swiftSource(), 'rilancia: node scripts/gen-glyphs.ts')
+})
+
+test('volume: una serie a un braccio conta il doppio, il riscaldamento zero', () => {
+  const w = { date: 0, sets: [
+    { exercise: 'E', weight: 20, reps: 10, isWarmup: true },
+    { exercise: 'E', weight: 40, reps: 8, isWarmup: false, singleArm: true },
+    { exercise: 'E', weight: 30, reps: 10, isWarmup: false },
+  ] }
+  assert.equal(workoutVolume(w), 40 * 8 * 2 + 30 * 10)
 })

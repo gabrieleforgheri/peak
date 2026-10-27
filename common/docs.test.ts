@@ -39,6 +39,8 @@ test('upgradeDoc: un allenamento salvato prima delle schede prende scheda vuota 
   assert.deepEqual(upgradeDoc('workout', old), { ...old, template: '', plan: [] })
   assert.deepEqual(upgradeDoc('exercise', old), { ...old, catalog: '', hidden: false, custom: false, muscles: [], view: '', barWeight: 0, weightDisplay: 'absolute', plateLoaded: false, perSide: false })
   assert.deepEqual(upgradeDoc('template', old), { ...old, hidden: false, icon: '', program: '', weekday: -1 })
+  assert.deepEqual(upgradeDoc('set', old), { ...old, singleArm: false })
+  assert.deepEqual(upgradeDoc('record', { ...old, singleArm: true }), { ...old, singleArm: true })
   assert.deepEqual(upgradeDoc('bodyweight', old), old)
 })
 
@@ -55,4 +57,13 @@ test('obiettivo settimanale: intero da 0 a 7', () => {
   assert.deepEqual(parseDoc('setting', 'weeklyGoal', { value: 4 }), { data: { value: 4 } })
   assert.equal(SETTING_DEFAULTS.weeklyGoal, 0)
   for (const bad of [-1, 8, 2.5, '3', null]) assert.deepEqual(parseDoc('setting', 'weeklyGoal', { value: bad }), { error: 'value' })
+})
+
+test('serie e massimali: singleArm è un booleano, assente = falso', () => {
+  const set = { workout: U(1), exercise: null, weight: 40, reps: 8, order: 0, createdAt: '2026-10-01T08:00:00Z' }
+  assert.equal((parseDoc('set', U(2), set) as { data: { singleArm: boolean } }).data.singleArm, false)
+  assert.equal((parseDoc('set', U(2), { ...set, singleArm: true }) as { data: { singleArm: boolean } }).data.singleArm, true)
+  const rec = { exercise: U(1), date: '2026-10-01T08:00:00Z', weight: 40, reps: 8 }
+  assert.equal((parseDoc('record', U(3), rec) as { data: { singleArm: boolean } }).data.singleArm, false)
+  assert.equal((parseDoc('record', U(3), { ...rec, singleArm: true }) as { data: { singleArm: boolean } }).data.singleArm, true)
 })

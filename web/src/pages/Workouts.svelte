@@ -54,7 +54,7 @@
 	const first = $derived((S.user?.nome ?? '').split(' ')[0] || S.user?.username || '')
 	let choosing = $state(false)
 	const today = $derived(todayDay(m))
-	const stat = $derived<StatWorkout[]>(history.map((w) => ({ date: w.dateMs, sets: w.sets.map((s) => ({ exercise: s.exercise, weight: s.weight, reps: s.reps, isWarmup: s.isWarmup })) })))
+	const stat = $derived<StatWorkout[]>(history.map((w) => ({ date: w.dateMs, sets: w.sets.map((s) => ({ exercise: s.exercise, weight: s.weight, reps: s.reps, isWarmup: s.isWarmup, singleArm: s.singleArm })) })))
 	const streak = $derived(weeklyStreak(stat))
 	const weekCount = $derived(history.filter((w) => w.dateMs >= weekStart(Date.now())).length)
 	const goalN = $derived(m.settings.weeklyGoal || weeklyGoal(stat))

@@ -68,11 +68,11 @@ final class Insights {
                 return points.count >= 2 ? Series(exercise: e, points: points) : nil
             }
             .sorted { ($0.exercise.bestRecord?.estimatedOneRepMax ?? 0) > ($1.exercise.bestRecord?.estimatedOneRepMax ?? 0) }
-        var latest = FetchDescriptor<MaxRecord>(sortBy: [SortDescriptor(\.date, order: .reverse)])
+        var latest = FetchDescriptor<MaxRecord>(predicate: #Predicate { !$0.singleArm }, sortBy: [SortDescriptor(\.date, order: .reverse)])
         latest.fetchLimit = 8
         latestRecords = (try? context.fetch(latest)) ?? []
         recentByExercise = exercises
-            .compactMap { e in e.recordList.max { $0.date < $1.date }.map { (exercise: e, record: $0) } }
+            .compactMap { e in e.twoArmRecords.max { $0.date < $1.date }.map { (exercise: e, record: $0) } }
             .sorted { $0.record.date > $1.record.date }
             .prefix(4).map { $0 }
     }

@@ -103,15 +103,30 @@ final class Exercise {
     var recordList: [MaxRecord] { records ?? [] }
     var setList: [WorkoutSet] { sets ?? [] }
 
-    /// Storico dei massimali dal più recente al più vecchio.
+    /// I massimali a due braccia: la linea che mostra «il» massimale in tutta l'app.
+    /// Quelli a un braccio (`singleArm`) sono una linea a parte (`singleArmRecords`).
+    var twoArmRecords: [MaxRecord] { recordList.filter { !$0.singleArm } }
+    var singleArmRecords: [MaxRecord] { recordList.filter { $0.singleArm } }
+
+    /// Storico dei massimali a due braccia dal più recente al più vecchio.
     var recordsByDateDesc: [MaxRecord] {
-        recordList.sorted { $0.date > $1.date }
+        twoArmRecords.sorted { $0.date > $1.date }
     }
 
-    /// Il massimo vero fatto sul macchinario (vedi `MaxRanking`):
+    /// Storico dei massimali a un braccio dal più recente al più vecchio.
+    var singleArmRecordsByDateDesc: [MaxRecord] {
+        singleArmRecords.sorted { $0.date > $1.date }
+    }
+
+    /// Il massimo vero fatto sul macchinario (vedi `MaxRanking`), a due braccia:
     /// più carico, poi più ripetizioni, a parità il più recente.
-    var bestRecord: MaxRecord? {
-        recordList.reduce(nil) { best, record in
+    var bestRecord: MaxRecord? { Self.best(of: twoArmRecords) }
+
+    /// Lo stesso, per la linea a un braccio.
+    var singleArmBestRecord: MaxRecord? { Self.best(of: singleArmRecords) }
+
+    private static func best(of records: [MaxRecord]) -> MaxRecord? {
+        records.reduce(nil) { best, record in
             guard let best else { return record }
             if MaxRanking.beats(weight: record.weight, reps: record.reps, than: (best.weight, best.reps)) {
                 return record
@@ -154,6 +169,6 @@ final class Exercise {
 
     /// Miglior carico registrato prima di una certa data, per i badge di variazione.
     func bestWeight(before date: Date) -> Double? {
-        recordList.filter { $0.date < date }.map(\.weight).max()
+        twoArmRecords.filter { $0.date < date }.map(\.weight).max()
     }
 }

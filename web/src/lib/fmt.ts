@@ -17,9 +17,9 @@ export const V = (kg: number): string => f.volume(kg, unit(), locale)
 /** Il peso nell'unità scelta, due decimali: quello che si legge e si digita. */
 export const toUnit = (kg: number): number => round2(toDisplay(kg, unit()))
 export const fromUnit = (v: number): number => toKg(v, unit())
-export const setLine = (kg: number, reps: number): string => f.setLine(kg, reps, unit(), locale)
+export const setLine = (kg: number, reps: number, singleArm = false): string => f.setLine(kg, reps, unit(), locale, singleArm)
 /** "71,5 kg 8·6 · 54 kg 8": la riga del taccuino. */
-export const notebookLine = (sets: { weight: number; reps: number }[]): string => f.notebookLine(sets, unit(), locale)
+export const notebookLine = (sets: { weight: number; reps: number; singleArm?: boolean }[]): string => f.notebookLine(sets, unit(), locale)
 export const delta = (p: number): string => f.delta(p, locale)
 /** "2/4 serie · 8–10 rip · 60 kg": solo i campi compilati; senza peso scritto, l'ultimo usato. */
 export function targetLine(item: TemplateItem, done: number, lastKg: number | null): string {

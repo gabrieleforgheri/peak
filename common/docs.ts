@@ -76,7 +76,8 @@ export interface ExerciseDoc {
   /** Il peso si inserisce per un lato (totale = 2 x + sbarra); le serie restano salvate come totale. */
   perSide: boolean
 }
-export interface RecordDoc { exercise: string; date: string; weight: number; reps: number; note: string }
+/** `singleArm`: massimale a un braccio, una linea di record a parte (il peso è quello sul singolo manico). */
+export interface RecordDoc { exercise: string; date: string; weight: number; reps: number; note: string; singleArm: boolean }
 /** Una riga di scheda: sets/reps 0 = non indicato; weight in kg, null = si mostra l'ultimo usato. */
 export interface TemplateItem { exercise: string; sets: number; repsMin: number; repsMax: number; weight: number | null }
 /** Le icone fra cui scegliere per una scheda ('' = manubrio); i disegni stanno in `Icon.svelte` (web) e come SF Symbols (iPhone). */
@@ -103,6 +104,8 @@ export interface WorkoutDoc {
 export interface SetDoc {
   workout: string; exercise: string | null; weight: number; reps: number; rpe: number | null
   isWarmup: boolean; order: number; createdAt: string; noRecord: boolean
+  /** Serie fatta con un braccio solo: peso sul singolo manico, ripetizioni per lato. */
+  singleArm: boolean
 }
 export interface BodyWeightDoc { date: string; weight: number; fromHealth: boolean }
 export interface SettingDoc { value: unknown }
@@ -272,7 +275,7 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
       if (weight === null) return fail('weight')
       if (reps === null) return fail('reps')
       if (note === null) return fail('note')
-      return { data: { exercise, date: isoSec(date), weight, reps, note } }
+      return { data: { exercise, date: isoSec(date), weight, reps, note, singleArm: o.singleArm === true } }
     }
     case 'workout': {
       const date = parseIso(o.date)
@@ -309,7 +312,7 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
       return {
         data: {
           workout, exercise, weight, reps, rpe, isWarmup: o.isWarmup === true, order,
-          createdAt: isoSec(createdAt), noRecord: o.noRecord === true,
+          createdAt: isoSec(createdAt), noRecord: o.noRecord === true, singleArm: o.singleArm === true,
         },
       }
     }
@@ -355,11 +358,12 @@ export function upgradeDoc<T>(kind: Kind, data: T): T {
   if (kind === 'workout') return { template: '', plan: [], ...data } as T
   if (kind === 'exercise') return { catalog: '', hidden: false, custom: false, muscles: [], view: '', barWeight: 0, weightDisplay: 'absolute' as const, plateLoaded: false, perSide: false, ...data } as T
   if (kind === 'template') return { hidden: false, icon: '', program: '', weekday: -1, ...data } as T
+  if (kind === 'set' || kind === 'record') return { singleArm: false, ...data } as T
   return data
 }
 
 /** Campi aggiunti dopo la 2.1: un client vecchio non li manda, e il server non deve cancellarli. */
-export const KEEP_IF_ABSENT: Partial<Record<Kind, readonly string[]>> = { exercise: ['catalog', 'hidden', 'custom', 'muscles', 'view', 'barWeight', 'weightDisplay', 'plateLoaded', 'perSide'], template: ['hidden', 'icon', 'program', 'weekday'] }
+export const KEEP_IF_ABSENT: Partial<Record<Kind, readonly string[]>> = { exercise: ['catalog', 'hidden', 'custom', 'muscles', 'view', 'barWeight', 'weightDisplay', 'plateLoaded', 'perSide'], template: ['hidden', 'icon', 'program', 'weekday'], set: ['singleArm'], record: ['singleArm'] }
 
 /** Chiave unica di un documento, per mappe in memoria. */
 export const docKey = (kind: Kind, uuid: string): string => `${kind}:${uuid}`

@@ -115,7 +115,8 @@ enum BackupService {
                             weight: record.weight,
                             reps: record.reps,
                             isEstimated: record.isEstimated,
-                            note: record.note
+                            note: record.note,
+                            singleArm: record.singleArm ? true : nil
                         )
                     }
                 )
@@ -141,7 +142,8 @@ enum BackupService {
                             order: set.order,
                             createdAt: set.createdAt,
                             isPersonalRecord: set.isPersonalRecord,
-                            excludedFromRecords: set.excludedFromRecords ? true : nil
+                            excludedFromRecords: set.excludedFromRecords ? true : nil,
+                            singleArm: set.singleArm ? true : nil
                         )
                     }
                 )
@@ -302,6 +304,7 @@ enum BackupService {
                     reps: setDTO.reps,
                     rpe: setDTO.rpe,
                     isWarmup: setDTO.isWarmup,
+                    singleArm: setDTO.singleArm ?? false,
                     order: setDTO.order
                 )
                 set.uuid = setDTO.uuid
@@ -368,7 +371,8 @@ enum BackupService {
                 reps: recordDTO.reps,
                 date: recordDTO.date,
                 isEstimated: recordDTO.isEstimated,
-                note: recordDTO.note
+                note: recordDTO.note,
+                singleArm: recordDTO.singleArm ?? false
             )
             record.uuid = recordDTO.uuid
             context.insert(record)

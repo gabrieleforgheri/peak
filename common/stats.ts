@@ -3,7 +3,7 @@
 import type { MuscleGroup } from './docs.ts'
 import { MUSCLE_GROUPS } from './docs.ts'
 
-export interface StatWorkout { date: number; sets: { exercise: string | null; weight: number; reps: number; isWarmup: boolean }[] }
+export interface StatWorkout { date: number; sets: { exercise: string | null; weight: number; reps: number; isWarmup: boolean; singleArm?: boolean }[] }
 
 const DAY = 86_400_000
 
@@ -15,8 +15,11 @@ export function weekStart(ms: number): number {
 }
 const weeksBefore = (ms: number, n: number): number => { const d = new Date(ms); d.setDate(d.getDate() - 7 * n); return d.getTime() }
 
+/** Carico sollevato da una serie: a un braccio il peso è quello del singolo manico e le ripetizioni sono per lato, quindi conta il doppio. */
+export const setVolume = (s: { weight: number; reps: number; singleArm?: boolean }): number => s.weight * s.reps * (s.singleArm ? 2 : 1)
+
 export const workoutVolume = (w: StatWorkout): number =>
-  w.sets.reduce((sum, s) => sum + (s.isWarmup ? 0 : s.weight * s.reps), 0)
+  w.sets.reduce((sum, s) => sum + (s.isWarmup ? 0 : setVolume(s)), 0)
 
 /** Volume per settimana nelle ultime `weeks`, solo le settimane in cui ti sei allenato. */
 export function weeklyVolume(workouts: StatWorkout[], weeks = 12, now = Date.now()): { weekStart: number; volume: number }[] {
@@ -41,7 +44,7 @@ export function volumeByGroup(
     for (const s of w.sets) {
       if (s.isWarmup || !s.exercise) continue
       const g = groupOf(s.exercise)
-      if (g) totals.set(g, (totals.get(g) ?? 0) + s.weight * s.reps)
+      if (g) totals.set(g, (totals.get(g) ?? 0) + setVolume(s))
     }
   }
   return MUSCLE_GROUPS.filter((g) => (totals.get(g) ?? 0) > 0).map((g) => ({ group: g, volume: totals.get(g)! })).sort((a, b) => b.volume - a.volume)

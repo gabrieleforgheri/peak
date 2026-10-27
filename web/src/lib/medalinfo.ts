@@ -32,13 +32,13 @@ export function medalsAt(m: Model, friends: number, until?: { ms: number; inclus
 	const cut = (ms: number) => !until || (until.inclusive ? ms <= until.ms : ms < until.ms)
 	const done = m.workouts.filter((w) => !w.isActive && cut(w.dateMs))
 	const ids = new Set(done.map((w) => w.uuid))
-	const stat: StatWorkout[] = done.map((w) => ({ date: w.dateMs, sets: w.sets.map((s) => ({ exercise: s.exercise, weight: s.weight, reps: s.reps, isWarmup: s.isWarmup })) }))
+	const stat: StatWorkout[] = done.map((w) => ({ date: w.dateMs, sets: w.sets.map((s) => ({ exercise: s.exercise, weight: s.weight, reps: s.reps, isWarmup: s.isWarmup, singleArm: s.singleArm })) }))
 	let records = 0
 	let bestOneRm = 0
 	let machines = 0
 	for (const e of m.exercises) {
 		const rs = e.records.filter((r) => cut(r.date))
-		const ss = e.sets.filter((s) => ids.has(s.workout) && !s.isWarmup)
+		const ss = e.sets.filter((s) => ids.has(s.workout) && !s.isWarmup && !s.singleArm)
 		records += rs.length
 		if (rs.length || e.sets.some((s) => ids.has(s.workout))) machines++
 		for (const r of rs) bestOneRm = Math.max(bestOneRm, oneRepMax(r.weight, r.reps))

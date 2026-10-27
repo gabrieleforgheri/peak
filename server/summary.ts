@@ -20,27 +20,29 @@ export function summarize(docs: Iterable<LiveDoc>, now = Date.now()): Summary {
   const exName = new Map(d.exercises.map((e) => [e.uuid, e.data.name]))
   const wkIds = new Set(d.workouts.map((w) => w.uuid))
   const manual = d.records.filter((r) => exName.has(r.data.exercise))
-    .map((r) => ({ uuid: r.uuid, exercise: r.data.exercise, date: Date.parse(r.data.date), weight: r.data.weight, reps: r.data.reps }))
+    .map((r) => ({ uuid: r.uuid, exercise: r.data.exercise, date: Date.parse(r.data.date), weight: r.data.weight, reps: r.data.reps, singleArm: r.data.singleArm }))
   const sets = d.sets.filter((s) => wkIds.has(s.data.workout)).map((s) => ({
     uuid: s.uuid, exercise: s.data.exercise && exName.has(s.data.exercise) ? s.data.exercise : null, workout: s.data.workout,
-    weight: s.data.weight, reps: s.data.reps, isWarmup: s.data.isWarmup, order: s.data.order, createdAt: Date.parse(s.data.createdAt), noRecord: s.data.noRecord,
+    weight: s.data.weight, reps: s.data.reps, isWarmup: s.data.isWarmup, order: s.data.order, createdAt: Date.parse(s.data.createdAt), noRecord: s.data.noRecord, singleArm: s.data.singleArm === true,
   }))
   const { prSets, auto } = deriveRecords(manual, sets, wkIds)
+  // il riepilogo conta solo la linea a due braccia: i record a un braccio restano nell'app
+  const armOf = new Set(sets.filter((s) => s.singleArm).map((s) => s.uuid))
 
   const finished = d.workouts.filter((w) => w.data.endedAt).map((w) => ({
     uuid: w.uuid, name: w.data.name, date: Date.parse(w.data.date), ended: Date.parse(w.data.endedAt!),
     sets: sets.filter((s) => s.workout === w.uuid),
   })).sort((a, b) => b.date - a.date)
-  const stat = finished.map((w) => ({ date: w.date, sets: w.sets.map((s) => ({ exercise: s.exercise, weight: s.weight, reps: s.reps, isWarmup: s.isWarmup })) }))
+  const stat = finished.map((w) => ({ date: w.date, sets: w.sets.map((s) => ({ exercise: s.exercise, weight: s.weight, reps: s.reps, isWarmup: s.isWarmup, singleArm: s.singleArm })) }))
 
-  const all = [...manual.map((r) => ({ ...r, auto: false })), ...auto.map((r) => ({ ...r, auto: true }))]
+  const all = [...manual.map((r) => ({ ...r, auto: false })), ...auto.map((r) => ({ ...r, auto: true }))].filter((r) => !r.singleArm)
   const last = finished[0]
   const unit = d.settings.find((x) => x.uuid === 'unit')?.data.value
   return {
     unita: unit === 'lb' ? 'lb' : 'kg',
     ultimo: last ? {
       data: new Date(last.date).toISOString(), durataSec: Math.max(0, Math.round((last.ended - last.date) / 1000)),
-      volumeKg: workoutVolume(stat[0]), record: last.sets.filter((s) => prSets.has(s.uuid)).length, nome: last.name,
+      volumeKg: workoutVolume(stat[0]), record: last.sets.filter((s) => prSets.has(s.uuid) && !armOf.has(s.uuid)).length, nome: last.name,
     } : null,
     trentaGiorni: {
       sessioni: sessionCount(stat, 30, now),

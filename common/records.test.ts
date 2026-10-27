@@ -5,16 +5,16 @@ import { deriveRecords, recordsByExercise, currentBest } from './records.ts'
 
 interface Vector {
   name: string; workouts: string[]; pr: string[]
-  manual: { uuid: string; exercise: string; weight: number; reps: number; at: string }[]
-  sets: { uuid: string; exercise: string | null; workout: string; weight: number; reps: number; order: number; at: string; isWarmup?: boolean; noRecord?: boolean }[]
+  manual: { uuid: string; exercise: string; weight: number; reps: number; at: string; singleArm?: boolean }[]
+  sets: { uuid: string; exercise: string | null; workout: string; weight: number; reps: number; order: number; at: string; isWarmup?: boolean; noRecord?: boolean; singleArm?: boolean }[]
 }
 const vectors: Vector[] = JSON.parse(readFileSync(new URL('./fixtures/records.json', import.meta.url), 'utf8'))
 
 for (const v of vectors) {
   test(`records: ${v.name}`, () => {
     const { prSets, auto } = deriveRecords(
-      v.manual.map((m) => ({ uuid: m.uuid, exercise: m.exercise, date: Date.parse(m.at), weight: m.weight, reps: m.reps })),
-      v.sets.map((s) => ({ uuid: s.uuid, exercise: s.exercise, workout: s.workout, weight: s.weight, reps: s.reps, isWarmup: s.isWarmup ?? false, order: s.order, createdAt: Date.parse(s.at), noRecord: s.noRecord ?? false })),
+      v.manual.map((m) => ({ uuid: m.uuid, exercise: m.exercise, date: Date.parse(m.at), weight: m.weight, reps: m.reps, singleArm: m.singleArm })),
+      v.sets.map((s) => ({ uuid: s.uuid, exercise: s.exercise, workout: s.workout, weight: s.weight, reps: s.reps, isWarmup: s.isWarmup ?? false, order: s.order, createdAt: Date.parse(s.at), noRecord: s.noRecord ?? false, singleArm: s.singleArm })),
       new Set(v.workouts),
     )
     assert.deepEqual([...prSets].sort(), [...v.pr].sort())
@@ -100,4 +100,16 @@ test('serie precedenti escludono riscaldamento e prendono il workout precedente 
   const prev = previousWorkingSets('E1', 'W_TODAY')
   assert.equal(prev.length, 2)
   assert.deepEqual(prev.map((s) => s.uuid), ['S2_1', 'S2_2'])
+})
+
+test('a un braccio: "il" massimale resta quello a due braccia, l\'altra linea è separata', () => {
+  const sets = [
+    { uuid: 'S1', exercise: 'E', workout: 'W', weight: 100, reps: 5, isWarmup: false, order: 0, createdAt: 1_000_000, noRecord: false },
+    { uuid: 'S2', exercise: 'E', workout: 'W', weight: 40, reps: 8, isWarmup: false, order: 1, createdAt: 1_060_000, noRecord: false, singleArm: true },
+  ]
+  const manual = [{ uuid: 'M', exercise: 'E', date: 500_000, weight: 35, reps: 5, singleArm: true }]
+  const { auto } = deriveRecords(manual, sets, new Set(['W']))
+  assert.deepEqual(auto.map((a) => [a.uuid, a.singleArm]).sort(), [['S1', false], ['S2', true]])
+  assert.equal(currentBest(recordsByExercise(manual, auto).get('E'))?.uuid, 'S1')
+  assert.deepEqual(recordsByExercise(manual, auto, true).get('E')?.map((r) => r.uuid).sort(), ['M', 'S2'])
 })

@@ -19,8 +19,8 @@ struct FriendProfileView: View {
     private var mine: [String: Double] {
         var out: [String: Double] = [:]
         for e in exercises where !e.catalogID.isEmpty && !e.isArchived {
-            var best = e.recordList.map(\.estimatedOneRepMax).max() ?? 0
-            best = max(best, e.setList.filter { !$0.isWarmup }.map(\.estimatedOneRepMax).max() ?? 0)
+            var best = e.twoArmRecords.map(\.estimatedOneRepMax).max() ?? 0
+            best = max(best, e.setList.filter { !$0.isWarmup && !$0.singleArm }.map(\.estimatedOneRepMax).max() ?? 0)
             if best > 0 { out[e.catalogID] = max(out[e.catalogID] ?? 0, best) }
         }
         return out

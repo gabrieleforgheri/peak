@@ -3,10 +3,10 @@
 import Foundation
 
 struct Vector: Decodable {
-    struct Manual: Decodable { let uuid: String; let exercise: String; let weight: Double; let reps: Int; let at: String }
+    struct Manual: Decodable { let uuid: String; let exercise: String; let weight: Double; let reps: Int; let at: String; let singleArm: Bool? }
     struct Set: Decodable {
         let uuid: String; let exercise: String?; let workout: String; let weight: Double; let reps: Int
-        let order: Int; let at: String; let isWarmup: Bool?; let noRecord: Bool?
+        let order: Int; let at: String; let isWarmup: Bool?; let noRecord: Bool?; let singleArm: Bool?
     }
     let name: String
     let workouts: [String]
@@ -37,10 +37,10 @@ for vector in vectors {
     var got: [String] = []
     for exercise in exercises {
         let manual = vector.manual.filter { $0.exercise == exercise }
-            .map { RecordRules.ManualRecord(uuid: $0.uuid, date: date($0.at), weight: $0.weight, reps: $0.reps) }
+            .map { RecordRules.ManualRecord(uuid: $0.uuid, date: date($0.at), weight: $0.weight, reps: $0.reps, singleArm: $0.singleArm ?? false) }
         let sets = vector.sets.filter { $0.exercise == exercise && live.contains($0.workout) }
             .map { RecordRules.SetEntry(uuid: $0.uuid, createdAt: date($0.at), order: $0.order, weight: $0.weight, reps: $0.reps,
-                                        isWarmup: $0.isWarmup ?? false, excludedFromRecords: $0.noRecord ?? false) }
+                                        isWarmup: $0.isWarmup ?? false, excludedFromRecords: $0.noRecord ?? false, singleArm: $0.singleArm ?? false) }
         got += RecordRules.personalRecordSets(manual: manual, sets: sets)
     }
     if got.sorted() == vector.pr.sorted() {

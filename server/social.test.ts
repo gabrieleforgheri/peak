@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { AddressInfo } from 'node:net'
 import { createApp } from './index.ts'
+import { sharedView } from './social.ts'
+import type { LiveDoc } from '../common/docs.ts'
 
 const U = (n: number) => `00000000-0000-0000-0000-${String(n).padStart(12, '0')}`
 const iso = (ms: number) => new Date(Math.floor(ms / 1000) * 1000).toISOString().replace('.000Z', 'Z')
@@ -42,7 +44,7 @@ async function train(who: Who, n: number, ex: { name: string; catalog: string; h
   const docs = [
     { kind: 'exercise', uuid: U(n), m: t, deleted: false, data: { name: ex.name, muscleGroup: 'petto', notes: '', incrementStep: 5, sortIndex: 0, isArchived: !!ex.archived, createdAt: iso(day), catalog: ex.catalog, hidden: !!ex.hidden } },
     { kind: 'workout', uuid: U(n + 100), m: t, deleted: false, data: { date: iso(day), endedAt: iso(day + 3600_000), note: '', name: '', focus: '' } },
-    { kind: 'set', uuid: U(n + 200), m: t, deleted: false, data: { workout: U(n + 100), exercise: U(n), weight, reps, rpe: null, isWarmup: false, order: 0, createdAt: iso(day), noRecord: false } },
+    { kind: 'set', uuid: U(n + 200), m: t, deleted: false, data: { workout: U(n + 100), exercise: U(n), weight, reps, rpe: null, isWarmup: false, order: 0, createdAt: iso(day), noRecord: false, singleArm: false } },
   ]
   const out = await (await call('/api/sync', who.h, { body: { docs } })).json() as { scartati: unknown[] }
   assert.deepEqual(out.scartati, [])
@@ -182,4 +184,15 @@ test('lega: tu e gli amici con volume, allenamenti e settimane di fila; i non am
   assert.deepEqual([him.volume30, him.sessions30, him.streak], [0, 0, 0])
   assert.ok(him.last < Date.now() - 40 * DAY)
   assert.equal((await call('/api/lega', { 'sec-fetch-site': 'same-origin' })).status, 401)
+})
+
+test('a un braccio: non entra nel massimale mostrato agli amici', () => {
+  const day = Date.now() - DAY
+  const docs = [
+    { kind: 'exercise', uuid: U(1), data: { name: 'Row', muscleGroup: 'schiena', notes: '', incrementStep: 5, sortIndex: 0, isArchived: false, createdAt: iso(day), catalog: '', hidden: false } },
+    { kind: 'workout', uuid: U(2), data: { date: iso(day), endedAt: iso(day + 3600_000), note: '', name: '', focus: '' } },
+    { kind: 'set', uuid: U(3), data: { workout: U(2), exercise: U(1), weight: 60, reps: 5, rpe: null, isWarmup: false, order: 0, createdAt: iso(day), noRecord: false, singleArm: false } },
+    { kind: 'set', uuid: U(4), data: { workout: U(2), exercise: U(1), weight: 90, reps: 8, rpe: null, isWarmup: false, order: 1, createdAt: iso(day), noRecord: false, singleArm: true } },
+  ] as unknown as LiveDoc[]
+  assert.deepEqual(sharedView(docs).maxes.map((m) => [m.weight, m.reps]), [[60, 5]])
 })

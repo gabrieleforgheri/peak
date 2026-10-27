@@ -4,8 +4,9 @@ import SwiftUI
 /// dell'ultima serie fatta su quel macchinario, in modifica da quelli della serie stessa.
 struct AddSetSheet: View {
     enum Mode {
-        /// Nuova serie, precompilata con l'ultima fatta su questo esercizio.
-        case add(lastSet: WorkoutSet?)
+        /// Nuova serie, precompilata con l'ultima fatta su questo esercizio. `singleArm`: come l'ultima serie
+        /// di questo esercizio nell'allenamento (`Workout.defaultSingleArm`), da toccare solo quando cambi.
+        case add(lastSet: WorkoutSet?, singleArm: Bool)
         /// Correzione di una serie già registrata.
         case edit(WorkoutSet)
     }
@@ -15,7 +16,8 @@ struct AddSetSheet: View {
 
     let exercise: Exercise
     let mode: Mode
-    let onSave: (Double, Int, Bool) -> Void
+    /// Peso, ripetizioni, riscaldamento, un braccio.
+    let onSave: (Double, Int, Bool, Bool) -> Void
 
     private var isEditing: Bool {
         if case .edit = mode { return true }
@@ -25,6 +27,7 @@ struct AddSetSheet: View {
     @State private var weight: Double = 0
     @State private var reps: Int = 8
     @State private var isWarmup = false
+    @State private var singleArm = false
     @State private var didPrefill = false
     @State private var isRecentSetsExpanded = false
     /// Giorni aperti nelle serie recenti: all'inizio solo il più recente.
@@ -85,7 +88,7 @@ struct AddSetSheet: View {
     }
 
     private var previousSetWeight: Double? {
-        if case let .add(lastSet) = mode, let lastSet { return lastSet.weight }
+        if case let .add(lastSet, _) = mode, let lastSet { return lastSet.weight }
         return allPreviousSets.first?.weight
     }
     private var delta: Double? {
@@ -97,7 +100,8 @@ struct AddSetSheet: View {
 
     private var referenceRecord: MaxRecord? {
         if case let .edit(set) = mode {
-            let others = exercise.recordList.filter { $0.uuid != set.uuid }
+            // il confronto è dentro la propria linea: a un braccio solo con i massimali a un braccio
+            let others = (singleArm ? exercise.singleArmRecords : exercise.twoArmRecords).filter { $0.uuid != set.uuid }
             return others.reduce(nil) { best, record in
                 guard let best else { return record }
                 if MaxRanking.beats(weight: record.weight, reps: record.reps, than: (best.weight, best.reps)) {
@@ -107,14 +111,14 @@ struct AddSetSheet: View {
                 return samePerformance && record.date > best.date ? record : best
             }
         }
-        return exercise.bestRecord
+        return singleArm ? exercise.singleArmBestRecord : exercise.bestRecord
     }
 
     /// Il carico da battere, oppure — se lo stai già battendo — quello che stai facendo.
     private var reference: String {
-        if isRecord { return Fmt.setLine(weight: weight, reps: reps, unit: settings.unit) }
+        if isRecord { return Fmt.setLine(weight: weight, reps: reps, unit: settings.unit, singleArm: singleArm) }
         guard let best = referenceRecord else { return "—" }
-        return Fmt.setLine(weight: best.weight, reps: best.reps, unit: settings.unit)
+        return Fmt.setLine(weight: best.weight, reps: best.reps, unit: settings.unit, singleArm: singleArm)
     }
 
     private var isRecord: Bool {
@@ -211,6 +215,12 @@ struct AddSetSheet: View {
                         }
                     }
 
+                    GlassCard(padding: 16) {
+                        Toggle("Un braccio", isOn: $singleArm)
+                            .font(Theme.rounded(15, .semibold))
+                            .tint(tint)
+                    }
+
                     if let plateBase {
                         GlassCard(padding: 18) {
                             VStack(alignment: .leading, spacing: 12) {
@@ -286,7 +296,7 @@ struct AddSetSheet: View {
 
                     HStack(spacing: 10) {
                         Button {
-                            onSave(weight, reps, true)
+                            onSave(weight, reps, true, singleArm)
                             dismiss()
                         } label: {
                             Label("Riscaldamento", systemImage: "flame.fill")
@@ -304,7 +314,7 @@ struct AddSetSheet: View {
                         .disabled(weight <= 0 || reps < 1)
 
                         Button {
-                            onSave(weight, reps, false)
+                            onSave(weight, reps, false, singleArm)
                             dismiss()
                         } label: {
                             Label(
@@ -345,11 +355,12 @@ struct AddSetSheet: View {
             weight = set.weight
             reps = set.reps
             isWarmup = set.isWarmup
+            singleArm = set.singleArm
             return
         }
 
         var lastSet: WorkoutSet?
-        if case let .add(previous) = mode { lastSet = previous }
+        if case let .add(previous, arm) = mode { lastSet = previous; singleArm = arm }
 
         if let lastSet {
             weight = lastSet.weight
@@ -395,12 +406,13 @@ struct AddSetSheet: View {
             weight = prev.weight
             reps = prev.reps
             isWarmup = false
+            singleArm = prev.singleArm
             Haptics.tap()
         } label: {
             HStack(spacing: 8) {
                 HStack(spacing: 6) {
                     HStack(spacing: 4) {
-                        Text(Fmt.setLine(weight: fieldKg(prev.weight), reps: prev.reps, unit: settings.unit))
+                        Text(Fmt.setLine(weight: fieldKg(prev.weight), reps: prev.reps, unit: settings.unit, singleArm: prev.singleArm))
                         if isRel || isSide {
                             Text("(tot. \(Fmt.weight(prev.weight, unit: settings.unit)))")
                                 .font(Theme.rounded(11, .medium))
@@ -454,7 +466,7 @@ struct AddSetSheet: View {
                                         .font(Theme.rounded(13, .semibold))
                                         .foregroundStyle(Theme.textPrimary)
                                     Spacer()
-                                    Text("\(group.sets.count) serie · \(Fmt.setLine(weight: fieldKg(best.weight), reps: best.reps, unit: settings.unit))")
+                                    Text("\(group.sets.count) serie · \(Fmt.setLine(weight: fieldKg(best.weight), reps: best.reps, unit: settings.unit, singleArm: best.singleArm))")
                                         .font(Theme.rounded(12, .medium))
                                         .foregroundStyle(Theme.textTertiary)
                                 }

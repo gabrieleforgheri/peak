@@ -12,6 +12,8 @@ final class MaxRecord {
     /// `true` quando il record nasce automaticamente da una serie di allenamento.
     var isEstimated: Bool = false
     var note: String = ""
+    /// Massimale a un braccio: una linea a parte, non si confronta con quella a due braccia.
+    var singleArm: Bool = false
 
     var exercise: Exercise?
 
@@ -21,6 +23,7 @@ final class MaxRecord {
         date: Date = Date(),
         isEstimated: Bool = false,
         note: String = "",
+        singleArm: Bool = false,
         exercise: Exercise? = nil
     ) {
         self.uuid = UUID()
@@ -29,6 +32,7 @@ final class MaxRecord {
         self.date = date
         self.isEstimated = isEstimated
         self.note = note
+        self.singleArm = singleArm
         self.exercise = exercise
     }
 

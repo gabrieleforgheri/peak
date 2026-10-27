@@ -123,7 +123,8 @@ enum SyncDocs {
                     "date": PeakDates.string(record.date),
                     "weight": record.weight,
                     "reps": record.reps,
-                    "note": record.note
+                    "note": record.note,
+                    "singleArm": record.singleArm
                 ]
             }
         }
@@ -148,7 +149,8 @@ enum SyncDocs {
                     "isWarmup": set.isWarmup,
                     "order": set.order,
                     "createdAt": PeakDates.string(set.createdAt),
-                    "noRecord": set.excludedFromRecords
+                    "noRecord": set.excludedFromRecords,
+                    "singleArm": set.singleArm
                 ]
             }
         }
@@ -360,6 +362,7 @@ enum SyncDocs {
                 record.date = when
                 record.isEstimated = false
                 record.note = text(d, "note") ?? ""
+                record.singleArm = flag(d, "singleArm")
                 if record.exercise !== exercise { record.exercise = exercise }
                 result.upserted.insert(key)
 
@@ -382,6 +385,7 @@ enum SyncDocs {
                 set.order = integer(d, "order") ?? 0
                 set.createdAt = created
                 set.excludedFromRecords = flag(d, "noRecord")
+                set.singleArm = flag(d, "singleArm")
                 if set.workout !== workout { set.workout = workout }
                 let exercise = text(d, "exercise").flatMap(UUID.init(uuidString:)).flatMap { exercises[$0] }
                 if set.exercise !== exercise { set.exercise = exercise }
