@@ -207,3 +207,63 @@ struct TourOverlay: View {
         Haptics.success()
     }
 }
+
+// MARK: - Suggerimenti del primo macchinario
+
+extension View {
+    /// Un suggerimento sul controllo `target` (segnato con `tourTarget`), dentro la schermata stessa: il tutorial principale sta
+    /// sotto il foglio, quindi i due non si sovrappongono mai. A differenza del tutorial non blocca i tocchi: solo l'anello
+    /// attorno al controllo e un riquadro con «Ok» (passo dopo passo) o «Fine» (ultimo), più «Salta» per spegnerli per sempre.
+    func machineTip(_ target: String, show: Bool, title: String, text: String, last: Bool = false, onNext: @escaping () -> Void) -> some View {
+        overlayPreferenceValue(TourTargetKey.self) { anchors in
+            GeometryReader { geo in
+                if show, let anchor = anchors[target] {
+                    MachineTipCard(hole: geo[anchor].insetBy(dx: -8, dy: -8), size: geo.size, title: title, text: text, last: last, onNext: onNext)
+                }
+            }
+        }
+    }
+}
+
+private struct MachineTipCard: View {
+    @Environment(AppSettings.self) private var settings
+    let hole: CGRect
+    let size: CGSize
+    let title: String
+    let text: String
+    let last: Bool
+    let onNext: () -> Void
+
+    var body: some View {
+        let below = hole.midY < size.height / 2
+        ZStack(alignment: below ? .top : .bottom) {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(settings.accentColor, lineWidth: 2)
+                .shadow(color: settings.accentColor.opacity(0.6), radius: 14)
+                .frame(width: hole.width, height: hole.height)
+                .position(x: hole.midX, y: hole.midY)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .allowsHitTesting(false)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title).font(Theme.rounded(17, .bold))
+                Text(text).font(Theme.rounded(13, .medium)).foregroundStyle(Theme.textSecondary).fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    Button("Salta") { settings.machineTipsSeen = true }
+                        .font(Theme.rounded(13, .bold)).foregroundStyle(settings.accentColor)
+                    Spacer()
+                    Button { if last { settings.machineTipsSeen = true }; onNext() } label: { Text(last ? "Fine" : "Ok").padding(.horizontal, 18) }
+                        .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor, fullWidth: false))
+                }
+                .padding(.top, 4)
+            }
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Color(hex: 0x151A28)))
+            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(settings.accentColor.opacity(0.4), lineWidth: 1))
+            .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
+            .padding(.horizontal, 16)
+            .frame(maxWidth: 440)
+            .padding(below ? .top : .bottom, below ? hole.maxY + 12 : size.height - hole.minY + 12)
+        }
+        .frame(width: size.width, height: size.height)
+    }
+}

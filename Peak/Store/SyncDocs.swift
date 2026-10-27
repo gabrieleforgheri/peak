@@ -23,7 +23,7 @@ enum SyncDocs {
     /// Le impostazioni che seguono l'account. Quelle del Watch, di Salute e dei dati interni restano del dispositivo.
     static let settingKeys = [
         "unit", "accent", "restTimerEnabled", "restSeconds", "progressionEnabled", "repRangeMin",
-        "repRangeMax", "plateCalculatorEnabled", "availablePlates", "tutorialDone", "tourSeen", "weeklyGoal", "language", "activeProgram"
+        "repRangeMax", "plateCalculatorEnabled", "availablePlates", "tutorialDone", "tourSeen", "machineTipsSeen", "weeklyGoal", "language", "activeProgram"
     ]
 
     private static func settingValue(_ name: String, _ settings: AppSettings) -> Any {
@@ -40,6 +40,7 @@ enum SyncDocs {
         case "availablePlates": return settings.availablePlates
         case "tutorialDone": return settings.tutorialDone
         case "tourSeen": return settings.tourSeen
+        case "machineTipsSeen": return settings.machineTipsSeen
         case "weeklyGoal": return settings.weeklyGoal
         case "language": return settings.language
         case "activeProgram": return settings.activeProgram
@@ -63,6 +64,7 @@ enum SyncDocs {
         case "barWeight": guard let v = number(0, 100) else { return false }; settings.barWeight = v
         case "tutorialDone": guard let v = value as? Bool else { return false }; settings.tutorialDone = v
         case "tourSeen": guard let v = number(1, 10) else { return false }; settings.tourSeen = Int(v)
+        case "machineTipsSeen": guard let v = value as? Bool else { return false }; settings.machineTipsSeen = v
         case "weeklyGoal": guard let v = number(0, 7) else { return false }; settings.weeklyGoal = Int(v)
         case "language": guard let v = value as? String, ["", "it", "en"].contains(v) else { return false }; settings.language = v
         case "activeProgram": guard let v = value as? String, v.isEmpty || UUID(uuidString: v) != nil else { return false }; settings.activeProgram = v.uppercased()

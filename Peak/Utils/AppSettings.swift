@@ -92,6 +92,7 @@ final class AppSettings {
         static let didFreezeGlyphs = "settings.didFreezeGlyphs"
         static let tutorialDone = "settings.tutorialDone"
         static let tourSeen = "settings.tourSeen"
+        static let machineTipsSeen = "settings.machineTipsSeen"
         static let weeklyGoal = "settings.weeklyGoal"
         static let language = "settings.language"
         static let watchEnabled = "settings.watchEnabled"
@@ -189,6 +190,11 @@ final class AppSettings {
         didSet { defaults.set(tourSeen, forKey: Key.tourSeen) }
     }
 
+    /// I suggerimenti del primo macchinario (gruppo, lista, incremento) li hai già visti o saltati. Segue l'account.
+    var machineTipsSeen: Bool {
+        didSet { defaults.set(machineTipsSeen, forKey: Key.machineTipsSeen) }
+    }
+
     /// Allenamenti a settimana che ti sei dato come obiettivo; 0 = non l'hai ancora scelto. Segue l'account.
     var weeklyGoal: Int {
         didSet { defaults.set(weeklyGoal, forKey: Key.weeklyGoal) }
@@ -238,6 +244,7 @@ final class AppSettings {
         self.didFreezeGlyphs = defaults.bool(forKey: Key.didFreezeGlyphs)
         self.tutorialDone = defaults.bool(forKey: Key.tutorialDone)
         self.tourSeen = defaults.object(forKey: Key.tourSeen) == nil ? 1 : defaults.integer(forKey: Key.tourSeen)
+        self.machineTipsSeen = defaults.bool(forKey: Key.machineTipsSeen)
         self.weeklyGoal = defaults.integer(forKey: Key.weeklyGoal)
         self.language = defaults.string(forKey: Key.language) ?? ""
         self.activeProgram = defaults.string(forKey: Key.activeProgram) ?? ""

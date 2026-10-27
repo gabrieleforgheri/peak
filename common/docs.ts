@@ -124,6 +124,8 @@ export const SETTING_DEFAULTS = {
   tutorialDone: false,
   /** L'ultimo giro del tutorial visto: 1 = quello di prima, 2 = con figure e medaglie. */
   tourSeen: 1,
+  /** I suggerimenti del primo macchinario (gruppo, lista, incremento) li hai già visti o saltati. */
+  machineTipsSeen: false,
   /** Allenamenti a settimana che ti sei dato come obiettivo; 0 = non l'hai ancora scelto. */
   weeklyGoal: 0,
   /** Lingua dell'interfaccia: '' = quella del dispositivo. */
@@ -150,7 +152,7 @@ function cleanSetting(key: string, v: unknown): unknown {
   switch (key) {
     case 'unit': return v === 'kg' || v === 'lb' ? v : undefined
     case 'accent': return (ACCENTS as readonly unknown[]).includes(v) ? v : undefined
-    case 'restTimerEnabled': case 'progressionEnabled': case 'plateCalculatorEnabled': case 'tutorialDone':
+    case 'restTimerEnabled': case 'progressionEnabled': case 'plateCalculatorEnabled': case 'tutorialDone': case 'machineTipsSeen':
       return typeof v === 'boolean' ? v : undefined
     case 'restSeconds': return int(v, 15, 600) ?? undefined
     case 'activeProgram': return v === '' || (typeof v === 'string' && normUuid(v) !== null) ? v : undefined
