@@ -13,6 +13,14 @@
       "tintColor": "34C759",
       "versions": [
         {
+          "version": "3.2",
+          "date": "2026-10-27T16:25:04Z",
+          "localizedDescription": "Peak 3.2: versione e build 12, web/dist ricostruito, HANDOFF",
+          "downloadURL": "https://github.com/gabrieleforgheri/peak/releases/download/v3.2/Peak.ipa",
+          "size": 2132095,
+          "minOSVersion": "17.0"
+        },
+        {
           "version": "3.1",
           "date": "2026-10-27T13:02:12Z",
           "localizedDescription": "Peak 3.1: web/dist ricostruito",
