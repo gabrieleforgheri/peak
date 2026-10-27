@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import { entryName, loadCatalog } from '../lib/catalog.ts'
-	import { V, W, relDay } from '../lib/fmt.ts'
+	import { V, W, barFraction, relDay } from '../lib/fmt.ts'
 	import { t, tn } from '../lib/i18n.ts'
 	import { go } from '../lib/router.svelte.ts'
 	import { F, getBoard, getLeague, loadFriends, loadNews, type BoardRow, type LeagueRow } from '../lib/social.svelte.ts'
@@ -24,7 +24,7 @@
 	let metric = $state<Metric>('volume30')
 	const fmt = (r: LeagueRow, k: Metric) => (k === 'volume30' ? V(r[k]) : String(r[k]))
 	const ranked = $derived([...(league ?? [])].sort((a, b) => b[metric] - a[metric] || Number(b.tu) - Number(a.tu)))
-	const podium = $derived(ranked.slice(0, 3).map((r) => ({ id: r.id, name: r.tu ? t('Tu') : '@' + r.username, value: fmt(r, metric), you: r.tu })))
+	const podium = $derived(ranked.slice(0, 3).map((r) => ({ id: r.id, name: r.tu ? t('Tu') : '@' + r.username, value: fmt(r, metric), amount: r[metric], you: r.tu })))
 	const top = $derived(Math.max(1, ...ranked.map((r) => r[metric])))
 	const myRank = $derived(ranked.findIndex((r) => r.tu) + 1)
 	const hasFriends = $derived((F.friends?.amici.length ?? 0) > 0)
@@ -67,7 +67,7 @@
 							<b class="rk num">{i + 1}</b>
 							<div class="grow" style="min-width:0">
 								<div class="row between"><b class="ellipsis">{r.tu ? t('Tu') : '@' + r.username}</b><b class="num">{fmt(r, metric)}</b></div>
-								<div class="hbar" style="margin-top:6px"><div style="width:{(r[metric] / top) * 100}%;background:{r.tu ? 'var(--accent)' : 'rgba(255,255,255,.35)'}"></div></div>
+								<div class="hbar" style="margin-top:6px"><div style="width:{barFraction(r[metric], top) * 100}%;background:{r.tu ? 'var(--accent)' : 'rgba(255,255,255,.35)'}"></div></div>
 								<div class="tiny faint" style="margin-top:4px"><Icon name="flame" size={11} /> {r.streak} · {r.last ? relDay(r.last) : t('Mai allenato')}</div>
 							</div>
 						</button>
@@ -91,7 +91,7 @@
 								{#each board as r, i (r.id)}
 									<button class="brow" onclick={() => !r.tu && go(`amici/${r.id}`)}>
 										<div class="row between"><span class="row" style="gap:10px"><b class="num" style="width:18px;color:{i === 0 ? '#ffd45e' : 'var(--text-3)'}">{i + 1}</b><span style="font-weight:{r.tu ? 800 : 600}">{r.tu ? t('Tu') : '@' + r.username}</span></span><span class="num"><b>{W(r.oneRm)}</b> <span class="small muted">{W(r.weight)} × {r.reps}</span></span></div>
-										<div class="hbar" style="margin-top:6px"><div style="width:{(r.oneRm / boardTop) * 100}%;background:{r.tu ? 'var(--accent)' : 'rgba(255,255,255,.35)'}"></div></div>
+										<div class="hbar" style="margin-top:6px"><div style="width:{barFraction(r.oneRm, boardTop) * 100}%;background:{r.tu ? 'var(--accent)' : 'rgba(255,255,255,.35)'}"></div></div>
 									</button>
 								{/each}
 							</div>
