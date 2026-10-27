@@ -58,7 +58,7 @@ struct TemplateIconView: View {
     }
 }
 
-/// La scheda in uso, i suoi giorni e quello che tocca. Stessi conti di `activeProgram`/`daysOf`/`nextDay` del web (derive.ts).
+/// La scheda in uso, i suoi giorni e quello di oggi. Stessi conti di `activeProgram`/`daysOf`/`todayDay` del web (derive.ts).
 enum Programs {
     static func active(_ programs: [WorkoutProgram], settings: AppSettings) -> WorkoutProgram? {
         programs.first { $0.uuid.uuidString == settings.activeProgram.uppercased() } ?? programs.first
@@ -67,20 +67,6 @@ enum Programs {
     /// I giorni di una scheda, nell'ordine in cui li hai messi. Senza scheda: quelli che non stanno in nessuna.
     static func days(of program: WorkoutProgram?, in templates: [WorkoutTemplate]) -> [WorkoutTemplate] {
         templates.filter { $0.programRaw == (program?.uuid.uuidString ?? "") }
-    }
-
-    /// Con giorni fissi: quello di oggi o il prossimo in calendario; senza, quello dopo l'ultimo fatto in questa scheda, a rotazione.
-    static func next(program: WorkoutProgram?, templates: [WorkoutTemplate], workouts: [Workout], now: Date = Date()) -> WorkoutTemplate? {
-        let days = days(of: program, in: templates)
-        guard !days.isEmpty else { return nil }
-        if program?.useDays == true {
-            let today = (Calendar.current.component(.weekday, from: now) + 5) % 7   // 0 = lunedì
-            let fixed = days.filter { $0.weekday >= 0 }
-            if let d = fixed.min(by: { ($0.weekday - today + 7) % 7 < ($1.weekday - today + 7) % 7 }) { return d }
-        }
-        let last = workouts.first { w in days.contains { $0.uuid.uuidString == w.templateRaw } }
-        let i = last.flatMap { l in days.firstIndex { $0.uuid.uuidString == l.templateRaw } } ?? -1
-        return days[(i + 1) % days.count]
     }
 
     /// Il giorno fisso di oggi, solo se la scheda usa i giorni della settimana; altrimenti niente (si sceglie a mano).

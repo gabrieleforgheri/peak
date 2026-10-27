@@ -12,17 +12,19 @@ final class ProgramTests: XCTestCase {
         XCTAssertEqual(TemplateIcon.resolved("star", name: "Push"), "star")
     }
 
-    func testNextDayRotatesAndSkipsOtherPrograms() {
+    func testTodayOnlyWithFixedDays() {
         let program = WorkoutProgram(name: "PPL")
-        let days = ["Push", "Pull", "Legs"].enumerated().map { i, n -> WorkoutTemplate in
+        let days = ["Push", "Pull"].enumerated().map { i, n -> WorkoutTemplate in
             let t = WorkoutTemplate(name: n, sortIndex: i)
             t.programRaw = program.uuid.uuidString
+            t.weekday = i   // lunedì, martedì
             return t
         }
-        let other = WorkoutTemplate(name: "Altro")
-        XCTAssertEqual(Programs.next(program: program, templates: days + [other], workouts: [])?.name, "Push")
-        let done = Workout(date: Date())
-        done.templateRaw = days[1].uuid.uuidString
-        XCTAssertEqual(Programs.next(program: program, templates: days + [other], workouts: [done])?.name, "Legs")
+        let monday = Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 26, hour: 12))!
+        let sunday = Calendar.current.date(from: DateComponents(year: 2026, month: 11, day: 1, hour: 12))!
+        XCTAssertNil(Programs.today(program: program, templates: days, now: monday))   // giorni non in uso
+        program.useDays = true
+        XCTAssertEqual(Programs.today(program: program, templates: days, now: monday)?.name, "Push")
+        XCTAssertNil(Programs.today(program: program, templates: days, now: sunday))   // riposo
     }
 }
