@@ -202,7 +202,7 @@ struct FriendsView: View {
                             }
                         }
                     }
-                    Podium(entries: ranked.prefix(3).map { PodiumEntry(id: $0.id, name: $0.isMe ? "Tu" : "@\($0.username)", initial: $0.username, value: text($0), isMe: $0.isMe) }) { id in
+                    Podium(entries: ranked.prefix(3).map { PodiumEntry(id: $0.id, name: $0.isMe ? "Tu" : "@\($0.username)", initial: $0.username, value: text($0), amount: value($0), isMe: $0.isMe) }) { id in
                         if let person = social.friends?.friends.first(where: { $0.id == id }) { path.append(person) }
                     }
                     if mine > 0 {
@@ -225,7 +225,7 @@ struct FriendsView: View {
                                         Spacer()
                                         Text(text(r)).font(Theme.rounded(15, .heavy))
                                     }
-                                    ProgressBar(fraction: value(r) / top, tint: r.isMe ? settings.accentColor : Color.white.opacity(0.35))
+                                    ProgressBar(fraction: Podium.barFraction(value(r), top: top), tint: r.isMe ? settings.accentColor : Color.white.opacity(0.35))
                                     HStack(spacing: 3) {
                                         Image(systemName: "flame.fill").font(.system(size: 9))
                                         Text("\(r.streak) · \(r.last.map { Fmt.relativeDay($0) } ?? "Mai allenato")")
@@ -278,7 +278,7 @@ struct FriendsView: View {
                                         Text(Fmt.weight(r.oneRm, unit: settings.unit)).font(Theme.rounded(14, .heavy))
                                         Text(Fmt.setLine(weight: r.weight, reps: r.reps, unit: settings.unit)).font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
                                     }
-                                    ProgressBar(fraction: r.oneRm / top, tint: r.isMe ? settings.accentColor : Color.white.opacity(0.35))
+                                    ProgressBar(fraction: Podium.barFraction(r.oneRm, top: top), tint: r.isMe ? settings.accentColor : Color.white.opacity(0.35))
                                 }
                             }
                             Text("1RM stimato dalle serie migliori.").font(Theme.rounded(10, .medium)).foregroundStyle(Theme.textTertiary)
@@ -334,6 +334,8 @@ struct PodiumEntry: Identifiable {
     let name: String
     let initial: String
     let value: String
+    /// Il valore numerico, per l'altezza della barra.
+    let amount: Double
     let isMe: Bool
 }
 
@@ -342,6 +344,9 @@ struct Podium: View {
     @Environment(AppSettings.self) private var settings
     let entries: [PodiumEntry]
     var onPick: (Int) -> Void
+
+    /// Quanto è lunga la barra rispetto al primo: 0...1, mai una divisione per zero.
+    static func barFraction(_ v: Double, top: Double) -> Double { top > 0 ? min(1, max(0, v / top)) : 0 }
 
     private var slots: [(entry: PodiumEntry, rank: Int)] {
         let order = [1, 0, 2]
@@ -360,7 +365,8 @@ struct Podium: View {
         HStack(alignment: .bottom, spacing: 10) {
             ForEach(slots, id: \.entry.id) { slot in
                 let c = colors(slot.rank)
-                let height: CGFloat = slot.rank == 1 ? 112 : slot.rank == 2 ? 84 : 64
+                // proporzionale al primo, con un minimo perché la barra contenga ancora il numero
+                let height = max(28, 112 * CGFloat(Self.barFraction(slot.entry.amount, top: entries.first?.amount ?? 0)))
                 Button { if !slot.entry.isMe { onPick(slot.entry.id) } } label: {
                     VStack(spacing: 6) {
                         Text(String(slot.entry.initial.prefix(1)).uppercased())

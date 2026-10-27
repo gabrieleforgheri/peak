@@ -6,6 +6,8 @@ import { toDisplay, toKg, round2 } from '@common/domain.ts'
 import { getModel } from './store.svelte.ts'
 import { locale, t } from './i18n.ts'
 
+/** Quanto è lunga la barra rispetto al primo: 0...1, mai una divisione per zero. */
+export const barFraction = (v: number, top: number): number => (top > 0 ? Math.min(1, Math.max(0, v / top)) : 0)
 export const unit = () => getModel().settings.unit
 
 /** "82,5 kg" */

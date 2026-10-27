@@ -1,18 +1,20 @@
 <script lang="ts">
+	import { barFraction } from '../lib/fmt.ts'
 	import Icon from './Icon.svelte'
 
 	/** I primi tre sul podio (di meno, se siete in pochi): il primo al centro, il più alto. `you` = la tua riga. */
-	let { rows, onpick }: { rows: { id: number; name: string; value: string; you: boolean }[]; onpick?: (id: number) => void } = $props()
+	let { rows, onpick }: { rows: { id: number; name: string; value: string; amount: number; you: boolean }[]; onpick?: (id: number) => void } = $props()
 	// ordine di disegno: secondo, primo, terzo
 	const order = $derived([rows[1], rows[0], rows[2]].map((r, i) => (r ? { r, rank: [2, 1, 3][i] as 1 | 2 | 3 } : null)).filter((x) => x !== null))
-	const H = { 1: 112, 2: 84, 3: 64 }
+	// altezza proporzionale al primo, con un minimo perché la barra contenga ancora il numero
+	const h = (amount: number) => Math.max(28, Math.round(112 * barFraction(amount, rows[0]?.amount ?? 0)))
 </script>
 
 <div class="podium">
 	{#each order as { r, rank } (r.id)}
 		<button class="slot" data-rank={rank} class:you={r.you} onclick={() => !r.you && onpick?.(r.id)}>
 			<div class="who"><div class="av">{r.name.replace(/^@/, '').slice(0, 1).toUpperCase()}</div><div class="nm">{#if r.you}<Icon name="star" size={12} />{/if} {r.name}</div><div class="val">{r.value}</div></div>
-			<div class="ped" style="height:{H[rank]}px"><span>{rank}</span></div>
+			<div class="ped" style="height:{h(r.amount)}px"><span>{rank}</span></div>
 		</button>
 	{/each}
 </div>
