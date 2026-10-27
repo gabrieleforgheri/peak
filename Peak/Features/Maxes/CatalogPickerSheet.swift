@@ -20,7 +20,7 @@ struct CatalogPickerSheet: View {
     @State private var group: MuscleGroup?
 
     private var owned: Set<String> { Set(exercises.filter { !$0.isArchived }.map(\.catalogID)) }
-    private var results: [CatalogEntry] { Catalog.search(query).filter { group == nil || $0.muscleGroup == group } }
+    private var results: [CatalogEntry] { Catalog.search(query, group: group) }
 
     var body: some View {
         NavigationStack {

@@ -114,12 +114,14 @@ enum Catalog {
 
     /// Più parole in qualsiasi ordine: ognuna deve comparire in un nome o sinonimo. Prima chi inizia con la ricerca, poi chi
     /// ha una parola che inizia così, poi il resto; a parità vale l'ordine del catalogo.
-    static func search(_ query: String, limit: Int = 40) -> [CatalogEntry] {
+    /// Con `group` si cerca solo lì, filtrando PRIMA del limite; ricerca vuota + gruppo = tutto il gruppo, senza limite.
+    static func search(_ query: String, group: MuscleGroup? = nil, limit: Int = 40) -> [CatalogEntry] {
         let q = norm(query)
-        guard !q.isEmpty else { return Array(entries.prefix(limit)) }
+        let pool = group.map { g in entries.filter { $0.muscleGroup == g } } ?? entries
+        guard !q.isEmpty else { return group == nil ? Array(pool.prefix(limit)) : pool }
         let words = q.split(separator: " ").map(String.init)
         var scored: [(entry: CatalogEntry, score: Int, index: Int)] = []
-        for (index, entry) in entries.enumerated() {
+        for (index, entry) in pool.enumerated() {
             let hay = names(of: entry)
             guard words.allSatisfy({ w in hay.contains { $0.contains(w) } }) else { continue }
             let score = hay.contains { $0.hasPrefix(q) } ? 0

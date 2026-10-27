@@ -20,7 +20,7 @@
 	loadCatalog().then((l) => (all = l), () => (failed = true))
 
 	const owned = $derived(new Set(getModel().exercises.filter((e) => !e.isArchived).map((e) => e.catalog)))
-	const results = $derived(all && grp ? searchCatalog(all, query).filter((e) => e.group === grp) : [])
+	const results = $derived(all && grp ? searchCatalog(all, query, 40, grp) : [])
 </script>
 
 <Sheet {title} {onclose}>

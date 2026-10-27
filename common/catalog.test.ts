@@ -63,4 +63,10 @@ test('searchCatalog: più parole in qualsiasi ordine, prima chi inizia con la ri
   assert.deepEqual(searchCatalog(CATALOG, 'xyzzy'), [])
   assert.equal(searchCatalog(CATALOG, '', 5).length, 5)
   assert.ok(searchCatalog(CATALOG, 'curl').length <= 40)
+  // Il gruppo filtra prima del limite: ricerca vuota + gruppo = tutto il gruppo, anche oltre le 40 voci.
+  for (const g of MUSCLE_GROUPS) {
+    const all = CATALOG.filter((e) => e.group === g)
+    assert.deepEqual(searchCatalog(CATALOG, '', 40, g).map((e) => e.id), all.map((e) => e.id), g)
+    assert.ok(searchCatalog(CATALOG, 'a', 40, g).every((e) => e.group === g))
+  }
 })

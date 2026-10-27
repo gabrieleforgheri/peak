@@ -38,9 +38,11 @@ export function matchByName(list: readonly CatalogEntry[], name: string): Catalo
  * Ricerca per più parole, in qualsiasi ordine: ognuna deve comparire in un nome o sinonimo. Prima le voci il cui nome inizia
  * con la ricerca, poi quelle con una parola che inizia così, poi il resto; a parità, l'ordine del catalogo.
  */
-export function searchCatalog(list: readonly CatalogEntry[], query: string, limit = 40): CatalogEntry[] {
+export function searchCatalog(list: readonly CatalogEntry[], query: string, limit = 40, group?: MuscleGroup | null): CatalogEntry[] {
   const q = norm(query)
-  if (!q) return list.slice(0, limit)
+  // Il gruppo filtra PRIMA del limite; ricerca vuota + gruppo = tutto il gruppo.
+  if (group) list = list.filter((e) => e.group === group)
+  if (!q) return group ? [...list] : list.slice(0, limit)
   const words = q.split(' ')
   const scored: { e: CatalogEntry; score: number; i: number }[] = []
   list.forEach((e, i) => {
