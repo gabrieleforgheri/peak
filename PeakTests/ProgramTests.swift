@@ -26,5 +26,23 @@ final class ProgramTests: XCTestCase {
         program.useDays = true
         XCTAssertEqual(Programs.today(program: program, templates: days, now: monday)?.name, "Push")
         XCTAssertNil(Programs.today(program: program, templates: days, now: sunday))   // riposo
+        XCTAssertNil(Programs.today(program: nil, templates: days, now: monday))      // nessuna scheda
+    }
+
+    /// Domenica è 6, un giorno di un'altra scheda non conta, con due giorni sullo stesso giorno vince il primo.
+    func testTodayEdgeCases() {
+        let program = WorkoutProgram(name: "A")
+        program.useDays = true
+        let other = WorkoutProgram(name: "B")
+        func day(_ name: String, _ weekday: Int, _ p: WorkoutProgram, _ i: Int) -> WorkoutTemplate {
+            let t = WorkoutTemplate(name: name, sortIndex: i)
+            t.programRaw = p.uuid.uuidString
+            t.weekday = weekday
+            return t
+        }
+        let sunday = Calendar.current.date(from: DateComponents(year: 2026, month: 11, day: 1, hour: 23, minute: 59))!
+        let templates = [day("Altra", 6, other, 0), day("Lunga", 6, program, 1), day("Doppia", 6, program, 2), day("Senza", -1, program, 3)]
+        XCTAssertEqual(Programs.today(program: program, templates: templates, now: sunday)?.name, "Lunga")
+        XCTAssertEqual(Programs.today(program: other, templates: templates, now: sunday)?.name, nil)   // B non usa i giorni
     }
 }
