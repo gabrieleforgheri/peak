@@ -89,7 +89,6 @@ const sara = seed('dev-sara', 'sara', 'Sara', 0.9, [1, 3, 5])
 for (const f of [marco, sara]) {
   try {
     store.db.prepare("INSERT OR IGNORE INTO friends (a, b, status, created_at) VALUES (?, ?, 'amici', ?)").run(dev.id, f.id, now)
-    store.db.prepare("INSERT OR IGNORE INTO friends (a, b, status, created_at) VALUES (?, ?, 'amici', ?)").run(f.id, dev.id, now)
   } catch {}
 }
 

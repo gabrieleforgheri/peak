@@ -304,7 +304,7 @@
 		<div class="stack" data-tour="tip-step">
 			{@render stepField()}
 			<details class="more">
-				<summary><b>{t('Altro')}</b> <span class="muted small">{t('Sbarra, dischi, foto, recupero, note')}</span></summary>
+				<summary><span class="grow"><b>{t('Altro')}</b><span class="muted small">{t('Sbarra, dischi, foto, recupero, note')}</span></span><Icon name="right" size={18} /></summary>
 				<div class="stack" style="margin-top:14px">
 					{#if catalog}{@render musclesField()}{/if}
 					{@render imageField()}
@@ -336,5 +336,9 @@
 {/if}
 
 <style>
-	summary { cursor: pointer; display: flex; flex-direction: column; gap: 2px; padding: 4px; }
+	summary { cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 4px; list-style: none; }
+	summary::-webkit-details-marker { display: none; }
+	summary > .grow { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+	summary > :global(svg) { color: var(--text-3); transition: transform .15s ease; }
+	details[open] > summary > :global(svg) { transform: rotate(90deg); }
 </style>
