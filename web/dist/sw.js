@@ -7,8 +7,8 @@
  * - Le foto dei macchinari (/api/foto/<sha256>) non cambiano mai: prima la cache.
  * - L'API non si tocca: i dati stanno in IndexedDB e li sincronizza l'app. */
 
-const SHELL = ["/","/assets/index-CCxBIqQU.js","/assets/catalog-LQoF-E0c.js","/assets/day1-CmerdDsK.m4a","/assets/day2-ClDcIYqc.m4a","/assets/day3-ClyWpz9_.m4a","/assets/day4-D2SDwU0m.m4a","/assets/day5-BJx2N6jx.m4a","/assets/day6-DfznrENH.m4a","/assets/day7-D7IMfGAa.m4a","/assets/finish-Cbs1SR7_.m4a","/assets/goal-Dh2wX4ZL.m4a","/assets/index-DVd_nLNO.css","/assets/medal-DLhEwGvt.m4a","/assets/record-ripQ09NX.m4a","/assets/remove-1isPNzvf.m4a","/assets/set-DQIF1Gp8.m4a","/assets/streak-BsVjrHqX.m4a","/manifest.webmanifest","/icon-192.png"]
-const VERSION = "47f97c4c36"
+const SHELL = ["/","/assets/index-yIeo3ew7.js","/assets/catalog-LQoF-E0c.js","/assets/day1-CmerdDsK.m4a","/assets/day2-ClDcIYqc.m4a","/assets/day3-ClyWpz9_.m4a","/assets/day4-D2SDwU0m.m4a","/assets/day5-BJx2N6jx.m4a","/assets/day6-DfznrENH.m4a","/assets/day7-D7IMfGAa.m4a","/assets/finish-Cbs1SR7_.m4a","/assets/goal-Dh2wX4ZL.m4a","/assets/index-CeG_kDt2.css","/assets/medal-DLhEwGvt.m4a","/assets/record-ripQ09NX.m4a","/assets/remove-1isPNzvf.m4a","/assets/set-DQIF1Gp8.m4a","/assets/streak-BsVjrHqX.m4a","/manifest.webmanifest","/icon-192.png"]
+const VERSION = "09c5262fe0"
 const SHELL_CACHE = `peak-guscio-${VERSION}`
 const PHOTOS = 'peak-foto'
 
