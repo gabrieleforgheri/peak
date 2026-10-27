@@ -30,8 +30,11 @@ targets:
     platform: iOS
     sources:
       - path: Peak
+        excludes: ["README.md", "**/README.md"]   # documentazione, non va nell'app
       - path: Shared
+        excludes: ["README.md", "**/README.md"]   # documentazione, non va nell'app
       - path: WatchShared
+        excludes: ["README.md", "**/README.md"]   # documentazione, non va nell'app
       # il catalogo degli esercizi, lo stesso file del server e del web
       - path: common/catalog.json
         buildPhase: resources
@@ -61,7 +64,9 @@ targets:
     platform: iOS
     sources:
       - path: PeakWidgets
+        excludes: ["README.md", "**/README.md"]   # documentazione, non va nell'app
       - path: Shared
+        excludes: ["README.md", "**/README.md"]   # documentazione, non va nell'app
     info:
       path: PeakWidgets/Info.plist
       properties:
@@ -88,7 +93,9 @@ targets:
     deploymentTarget: "10.0"
     sources:
       - path: PeakWatch
+        excludes: ["README.md", "**/README.md"]   # documentazione, non va nell'app
       - path: WatchShared
+        excludes: ["README.md", "**/README.md"]   # documentazione, non va nell'app
     info:
       path: PeakWatch/Info.plist
       properties:
