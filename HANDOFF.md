@@ -1,3 +1,20 @@
+# Macchinario nuovo passo per passo, barre amici in proporzione (27 ottobre 2026 — Peak 3.2, build 12)
+
+Web + iPhone in parità. Codice scritto da subagenti Sonnet, rivisto e unito a mano.
+
+| Fatto | Dove |
+|---|---|
+| Podio amici: altezza in proporzione al primo (minimo 28); le barre delle righe passano dalla stessa `barFraction` | `FriendsView.swift` (`Podium.barFraction`), `Podium.svelte`, `fmt.ts`, `Friends.svelte` |
+| Bug: scelto il gruppo, la lista del catalogo era vuota (taglio a 40 prima del filtro). Ora `search(query, group:)` filtra prima; ricerca vuota + gruppo = tutto il gruppo | `Catalog.swift`, `common/catalog.ts` (+ test) |
+| Macchinario nuovo in 3 passi: gruppo → lista (già piena, con ricerca) → nome + incremento, con «Altro» chiuso (sbarra, dischi, foto, recupero, note). La modifica resta la pagina di prima | `ExerciseEditorView.swift`, `CatalogPickerSheet.swift`, `ExerciseEditor.svelte`, `CatalogPicker.svelte` |
+| Suggerimenti della prima volta sui controlli veri (uno per passo), solo se `machineTipsSeen` è falso e non hai macchinari; setting sincronizzato | `TourOverlay.swift` (`machineTip`), `Tip.svelte`, `AppSettings`, `SyncDocs`, `common/docs.ts` |
+| `seed-dev.ts` scriveva l'amicizia nei due versi (il server ne tiene una per coppia): amici doppi nei dati di prova | `scripts/seed-dev.ts` |
+| Aperto: «Rivedi il tutorial» non azzera `machineTipsSeen` | — |
+
+Ordine di rilascio: prima il server (un server vecchio scarta `machineTipsSeen`), poi l'iPhone.
+
+---
+
 # Via la Home: montagna in Allenamento, record recenti in Me (27 ottobre 2026 — PUBBLICATO: Peak 3.1, server 3414196, AltStore v3.1, pagina studio)
 
 Web + iPhone in parità. Codice scritto da subagenti Sonnet, rivisto e unito a mano.
