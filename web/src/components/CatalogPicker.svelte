@@ -7,10 +7,11 @@
 	import { getModel } from '../lib/store.svelte.ts'
 	import Icon from './Icon.svelte'
 	import Sheet from './Sheet.svelte'
+	import Tip from './Tip.svelte'
 
 	/** Prima il gruppo muscolare, poi la ricerca in quel gruppo. `onpick(null, gruppo)` = lo aggiungi a mano, fuori dal catalogo. */
-	let { title = t('Scegli il macchinario'), custom = true, group = null, onpick, onclose }: {
-		title?: string; custom?: boolean; group?: MuscleGroup | null; onpick: (entry: CatalogEntry | null, group: MuscleGroup) => void; onclose: () => void
+	let { title = t('Scegli il macchinario'), custom = true, group = null, wizard = false, onpick, onclose }: {
+		title?: string; custom?: boolean; group?: MuscleGroup | null; wizard?: boolean; onpick: (entry: CatalogEntry | null, group: MuscleGroup) => void; onclose: () => void
 	} = $props()
 	let grp = $state<MuscleGroup | null>(group)
 
@@ -21,13 +22,18 @@
 
 	const owned = $derived(new Set(getModel().exercises.filter((e) => !e.isArchived).map((e) => e.catalog)))
 	const results = $derived(all && grp ? searchCatalog(all, query, 40, grp) : [])
+
+	// i suggerimenti della prima volta (solo nella creazione passo per passo): uno per passo, finché non hai nessun macchinario
+	let tipsDone = $state<number[]>([])
+	const tipStep = $derived(grp ? 2 : 1)
+	const tipsOn = $derived(wizard && !getModel().settings.machineTipsSeen && getModel().exercises.length === 0 && !tipsDone.includes(tipStep))
 </script>
 
 <Sheet {title} {onclose}>
 	{#if !grp}
 		<div class="stack">
-			<p class="muted small" style="margin:0 4px">{t('Che muscoli lavora?')}</p>
-			<div class="tiles">
+			<p class="muted small" style="margin:0 4px">{wizard ? t('Passo 1 di 3 · Che muscoli lavora?') : t('Che muscoli lavora?')}</p>
+			<div class="tiles" data-tour="tip-group">
 				{#each MUSCLE_GROUPS as g}
 					<button class="chip" onclick={() => (grp = g)} style="min-height:56px;border-radius:14px;color:var(--{g})">{GROUP_NAMES[g]}</button>
 				{/each}
@@ -35,6 +41,7 @@
 		</div>
 	{:else}
 	<div class="stack">
+		{#if wizard}<p class="muted small" style="margin:0 4px">{t('Passo 2 di 3 · Scegli il macchinario')}</p>{/if}
 		<div class="row between"><button class="chip" onclick={() => { grp = null; query = '' }}><span style="color:var(--{grp})">{GROUP_NAMES[grp]}</span> · {t('Cambia')}</button></div>
 		<div style="position:relative">
 			<!-- svelte-ignore a11y_autofocus -->
@@ -47,8 +54,8 @@
 			<div class="empty">…</div>
 		{:else}
 			<div class="card list">
-				{#each results as e (e.id)}
-					<button class="item" onclick={() => onpick(e, e.group)}>
+				{#each results as e, i (e.id)}
+					<button class="item" data-tour={i === 0 ? 'tip-list' : undefined} onclick={() => onpick(e, e.group)}>
 						<span style="width:10px;height:10px;border-radius:50%;flex:none;background:var(--{e.group})"></span>
 						<div class="grow ellipsis"><div style="font-weight:600">{entryName(e)}</div><div class="small muted ellipsis">{entryOther(e)}</div></div>
 						{#if owned.has(e.id)}<span class="small faint">{t('Ce l\'hai già')}</span>{/if}
@@ -62,5 +69,12 @@
 			{/if}
 		{/if}
 	</div>
+	{/if}
+	{#if tipsOn}
+		{#if tipStep === 1}
+			<Tip target='[data-tour="tip-group"]' title={t('Il gruppo')} text={t('Parti dal gruppo muscolare: tocca quello che alleni.')} onnext={() => tipsDone.push(1)} />
+		{:else}
+			<Tip target='[data-tour="tip-list"]' title={t('Scegli dalla lista')} text={t('Tocca il tuo macchinario. Solo quelli del catalogo entrano nelle classifiche con gli amici; se non c\'è, in fondo lo crei tu.')} onnext={() => tipsDone.push(2)} />
+		{/if}
 	{/if}
 </Sheet>

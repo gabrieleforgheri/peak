@@ -3,7 +3,7 @@
 	import type { Muscle, View } from '@common/muscle-info.ts'
 	import { GLYPH_TITLES, glyphOf } from '@common/glyph.ts'
 	import { PhotoFraming, defaultBarWeightFor, guessPlateLoaded, round2 } from '@common/domain.ts'
-	import { deleteExercise, saveExercise } from '../lib/actions.ts'
+	import { deleteExercise, saveExercise, setSetting } from '../lib/actions.ts'
 	import { GROUP_NAMES, fromUnit, toUnit, unit } from '../lib/fmt.ts'
 	import { t } from '../lib/i18n.ts'
 	import { getModel } from '../lib/store.svelte.ts'
@@ -16,6 +16,7 @@
 	import Icon from './Icon.svelte'
 	import Sheet from './Sheet.svelte'
 	import Stepper from './Stepper.svelte'
+	import Tip from './Tip.svelte'
 
 	let { id = null, name: startName = '', onclose, onsaved, ondeleted }: {
 		id?: string | null; name?: string; onclose: () => void; onsaved?: (id: string) => void; ondeleted?: () => void
@@ -47,15 +48,29 @@
 	// il catalogo: un macchinario nuovo parte dalla ricerca; uno esistente può essere (ri)collegato
 	let catalog = $state(existing?.catalog ?? '')
 	let picking = $state<'new' | 'link' | null>(id ? null : 'new')
+	// creazione passo per passo: tornando indietro dal passo 3 il catalogo riparte dal gruppo già scelto
+	let chosenOnce = $state(false)
+	let tipDone = $state(false)
+	const tipsOn = $derived(!m.settings.machineTipsSeen && m.exercises.length === 0 && !tipDone)
 	let linked = $state<CatalogEntry | null>(null)
 	$effect(() => { const c = catalog; if (!c) { linked = null; return } void loadCatalog().then((l) => { if (catalog === c) linked = l.find((e) => e.id === c) ?? null }) })
 
 	function chosen(e: CatalogEntry | null, g: MuscleGroup) {
 		const wasNew = picking === 'new'
 		picking = null
+		chosenOnce = true
+		const wasLinked = !!catalog
 		catalog = e?.id ?? ''
-		if (!e) { if (wasNew) { group = g; own = true } return }
+		if (!e) {
+			if (wasNew) {
+				group = g; own = true
+				// tornato indietro da una voce del catalogo: via quello che aveva messo
+				if (wasLinked) { name = startName; notes = ''; step = 2.5; barWeight = 0; plateLoaded = guessPlateLoaded('', startName) }
+			}
+			return
+		}
 		if (wasNew) {
+			own = false; muscles = []; glyph = ''
 			// precompila: il nome si può cambiare subito con uno familiare
 			name = startName.trim() || entryName(e); group = e.group; step = e.step; notes = e.notes
 			barWeight = toUnit(defaultBarWeightFor(e.glyph, entryName(e)))
@@ -103,6 +118,7 @@
 			barWeight: round2(fromUnit(Math.max(0, barWeight))),
 			weightDisplay, plateLoaded, perSide,
 		})
+		if (!id) setSetting('machineTipsSeen', true) // ha creato un macchinario: i suggerimenti hanno fatto il loro
 		onsaved?.(uuid)
 		onclose()
 	}
@@ -114,14 +130,11 @@
 	}
 </script>
 
-{#if picking}
-	<CatalogPicker title={picking === 'new' ? t('Nuovo macchinario') : t('Collega al catalogo')} custom={picking === 'new'} group={picking === 'link' ? group : null} onpick={chosen} onclose={() => { if (picking === 'new') onclose(); picking = null }} />
-{:else}
-<Sheet title={id ? t('Modifica macchinario') : t('Nuovo macchinario')} {onclose}>
-	{#snippet action()}<button class="btn primary small" onclick={save} disabled={!valid}>{t('Salva')}</button>{/snippet}
-	<div class="stack">
+{#snippet nameField()}
 		<label class="field"><span>{t('Nome')}</span><input class="input" bind:value={name} placeholder={t('es. Chest Press')} maxlength="80" /></label>
+{/snippet}
 
+{#snippet catalogField()}
 		<div class="field">
 			<span class="sec-title" style="margin:0 4px 6px">{t('Catalogo')}</span>
 			<div class="row card">
@@ -129,7 +142,9 @@
 				<button class="btn small" onclick={() => (picking = 'link')}>{catalog ? t('Cambia') : t('Collega')}</button>
 			</div>
 		</div>
+{/snippet}
 
+{#snippet imageField()}
 		<div class="field">
 			<span class="sec-title" style="margin:0 4px 6px">{t('Immagine')}</span>
 			<div class="row" style="align-items:flex-start">
@@ -153,7 +168,9 @@
 				</div>
 			</div>
 		</div>
+{/snippet}
 
+{#snippet musclesField()}
 		<div class="field">
 			<span class="sec-title" style="margin:0 4px 6px">{t('Muscoli')}</span>
 			{#if catalog}
@@ -165,7 +182,9 @@
 				<button class="chip" style="margin:8px 4px 0" onclick={flipView}>{(view || 'front') === 'front' ? t('Vedi di schiena') : t('Vedi di fronte')}</button>
 			{/if}
 		</div>
+{/snippet}
 
+{#snippet glyphField()}
 		<div class="field">
 			<span class="sec-title" style="margin:0 4px 6px">{t('Pittogramma')}</span>
 			{#if catalog}
@@ -181,7 +200,9 @@
 			</div>
 			{/if}
 		</div>
+{/snippet}
 
+{#snippet groupField()}
 		<div class="field">
 			<span class="sec-title" style="margin:0 4px 6px">{t('Gruppo muscolare')}</span>
 			<div class="tiles">
@@ -190,12 +211,16 @@
 				{/each}
 			</div>
 		</div>
+{/snippet}
 
+{#snippet stepField()}
 		<div class="field">
 			<span class="sec-title" style="margin:0 4px 6px">{t('Incremento del carico')}</span>
 			<Stepper compact bind:value={step} step={0.25} min={0.25} max={50} unit="kg" />
 		</div>
+{/snippet}
 
+{#snippet moreFields()}
 		<div class="field">
 			<span class="sec-title" style="margin:0 4px 6px">{t('Peso della sbarra')}</span>
 			<Stepper compact bind:value={barWeight} step={unit() === 'kg' ? 1 : 2.5} min={0} max={unit() === 'kg' ? 60 : 135} unit={unit()} />
@@ -254,11 +279,62 @@
 
 		{#if !catalog}<label class="row between card"><span>{t('Macchinario mio, non è nel catalogo')}</span><input class="toggle" type="checkbox" bind:checked={own} /></label>{/if}
 		<label class="row between card"><span>{t('Nascondi agli amici')}</span><input class="toggle" type="checkbox" bind:checked={hidden} /></label>
+{/snippet}
 
+{#snippet archiveFields()}
 		{#if id}
 			<label class="row between card"><span>{t('Archiviato')}</span><input class="toggle" type="checkbox" bind:checked={archived} /></label>
 			<button class="btn danger block" onclick={del}><Icon name="trash" size={18} />{t('Elimina macchinario')}</button>
 		{/if}
+{/snippet}
+
+{#if picking}
+	<CatalogPicker title={picking === 'new' ? t('Nuovo macchinario') : t('Collega al catalogo')} custom={picking === 'new'} group={picking === 'link' || chosenOnce ? group : null} wizard={picking === 'new'} onpick={chosen} onclose={() => { if (picking === 'new') onclose(); picking = null }} />
+{:else if !id}
+<!-- Creazione passo per passo: 1-2 sono il catalogo (gruppo, lista), questo è il 3; il salvataggio è lo stesso `save()` -->
+<Sheet title={t('Nuovo macchinario')} {onclose}>
+	{#snippet action()}<button class="btn primary small" onclick={save} disabled={!valid}>{t('Aggiungi')}</button>{/snippet}
+	<div class="stack">
+		<div class="row between">
+			<button class="chip" onclick={() => (picking = 'new')}><Icon name="left" size={16} />{t('Indietro')}</button>
+			<span class="muted small">{t('Passo 3 di 3')}</span>
+		</div>
+		{@render nameField()}
+		{#if !catalog}{@render musclesField()}{/if}
+		<div class="stack" data-tour="tip-step">
+			{@render stepField()}
+			<details class="more">
+				<summary><b>{t('Altro')}</b> <span class="muted small">{t('Sbarra, dischi, foto, recupero, note')}</span></summary>
+				<div class="stack" style="margin-top:14px">
+					{#if catalog}{@render musclesField()}{/if}
+					{@render imageField()}
+					{@render glyphField()}
+					{@render moreFields()}
+				</div>
+			</details>
+		</div>
+	</div>
+	{#if tipsOn}
+		<Tip target='[data-tour="tip-step"]' title={t('Incremento e Altro')} text={t('L\'incremento è il salto dei pulsanti + e −. Sotto «Altro» ci sono sbarra, dischi, foto e note: puoi lasciarli a dopo.')} last onnext={() => (tipDone = true)} />
+	{/if}
+</Sheet>
+{:else}
+<Sheet title={t('Modifica macchinario')} {onclose}>
+	{#snippet action()}<button class="btn primary small" onclick={save} disabled={!valid}>{t('Salva')}</button>{/snippet}
+	<div class="stack">
+		{@render nameField()}
+		{@render catalogField()}
+		{@render imageField()}
+		{@render musclesField()}
+		{@render glyphField()}
+		{@render groupField()}
+		{@render stepField()}
+		{@render moreFields()}
+		{@render archiveFields()}
 	</div>
 </Sheet>
 {/if}
+
+<style>
+	summary { cursor: pointer; display: flex; flex-direction: column; gap: 2px; padding: 4px; }
+</style>

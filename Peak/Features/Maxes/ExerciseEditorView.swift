@@ -45,282 +45,384 @@ struct ExerciseEditorView: View {
     /// I muscoli di un macchinario personalizzato, toccati sulla figura. Collegato, valgono quelli della voce.
     @State private var muscles: [MuscleId] = []
     @State private var figureSide: AnatomyView = .front
-    @State private var picking: CatalogPicking?
-
-    private enum CatalogPicking: String, Identifiable {
-        /// Un macchinario nuovo parte dalla ricerca; annullando si torna indietro.
-        case new
-        /// Collega (o cambia il collegamento di) un macchinario che c'è già.
-        case link
-        var id: String { rawValue }
-    }
+    /// Collega (o cambia il collegamento di) un macchinario che c'è già.
+    @State private var linking = false
+    /// Creazione passo per passo: il passo 3 (essenziale) è aperto; «Altro» è chiuso finché non lo apri.
+    @State private var showingEssentials = false
+    @State private var showMore = false
+    @State private var tipDone = false
     private var linkedEntry: CatalogEntry? { catalogID.isEmpty ? nil : Catalog.entry(id: catalogID) }
 
     private var isNew: Bool { exercise == nil }
 
     var body: some View {
+        if isNew { wizard } else { editor }
+    }
+
+    @ViewBuilder
+    private var nameCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "Nome")
+                TextField("Es. Chest Press", text: $name)
+                    .font(Theme.rounded(17, .semibold))
+                    .textInputAutocapitalization(.words)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var catalogCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "Catalogo")
+                HStack {
+                    if catalogID.isEmpty {
+                        Text(isCustom ? "Macchinario tuo: resta fuori dalle classifiche." : "Non collegato: resta fuori dalle classifiche.")
+                            .font(Theme.rounded(13, .medium))
+                            .foregroundStyle(Theme.textTertiary)
+                    } else {
+                        Text(verbatim: linkedEntry?.name ?? catalogID)
+                            .font(Theme.rounded(15, .semibold))
+                    }
+                    Spacer()
+                    Button(catalogID.isEmpty ? "Collega" : "Cambia") { linking = true }
+                        .font(Theme.rounded(14, .semibold))
+                        .foregroundStyle(settings.accentColor)
+                }
+                if catalogID.isEmpty {
+                    Toggle("È un macchinario mio", isOn: $isCustom)
+                        .font(Theme.rounded(14, .semibold))
+                        .tint(settings.accentColor)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var groupCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "Gruppo muscolare")
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 8)], spacing: 8) {
+                    ForEach(MuscleGroup.allCases) { candidate in
+                        Button {
+                            group = candidate
+                            Haptics.tap()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: candidate.symbol)
+                                    .font(.system(size: 11, weight: .semibold))
+                                Text(candidate.title)
+                                    .font(Theme.rounded(13, .semibold))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(
+                                group == candidate ? candidate.tint.opacity(0.22) : Theme.card,
+                                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .strokeBorder(group == candidate ? candidate.tint.opacity(0.6) : Theme.stroke, lineWidth: 1)
+                            )
+                            .foregroundStyle(group == candidate ? candidate.tint : Theme.textSecondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var stepCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "Incremento del carico")
+                HStack(spacing: 14) {
+                    Button { step = max(0.25, step - 0.25); Haptics.tap() } label: { Image(systemName: "minus").frame(width: 38, height: 38).background(Theme.card, in: Circle()) }
+                        .buttonStyle(.plain)
+                    // il numero si tocca e si scrive
+                    HStack(spacing: 4) {
+                        TextField("2,5", value: Binding(get: { step }, set: { if $0 >= 0.25, $0 <= 50 { step = $0 } }),
+                                  format: .number.precision(.fractionLength(0...2)))
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .font(Theme.rounded(20, .heavy))
+                            .frame(width: 70)
+                        Text("kg").font(Theme.rounded(13, .semibold)).foregroundStyle(Theme.textTertiary)
+                    }
+                    Button { step = min(50, step + 0.25); Haptics.tap() } label: { Image(systemName: "plus").frame(width: 38, height: 38).background(Theme.card, in: Circle()) }
+                        .buttonStyle(.plain)
+                    Spacer()
+                }
+                .foregroundStyle(Theme.textPrimary)
+                Text("È il salto minimo tra un carico e l'altro su questo macchinario: definisce i pulsanti + e −.")
+                    .font(Theme.rounded(11, .medium))
+                    .foregroundStyle(Theme.textTertiary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var advancedCards: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "Peso della sbarra")
+                Stepper(
+                    value: Binding(
+                        get: { settings.unit.fromKilograms(barWeight) },
+                        set: { barWeight = max(0, settings.unit.toKilograms($0)) }
+                    ),
+                    in: 0...(settings.unit == .kg ? 60 : 135),
+                    step: settings.unit == .kg ? 1 : 2.5
+                ) {
+                    Text(barWeight > 0
+                         ? Fmt.weight(barWeight, unit: settings.unit)
+                         : "Nessuna (0)")
+                        .font(Theme.rounded(15, .semibold))
+                }
+
+                HStack(spacing: 8) {
+                    ForEach(settings.unit == .kg ? [0.0, 10.0, 15.0, 20.0] : [0.0, 25.0, 35.0, 45.0], id: \.self) { p in
+                        let kg = settings.unit.toKilograms(p)
+                        let isOn = abs(barWeight - kg) < 0.1
+                        stepChip(p == 0 ? "Nessuna (0)" : "\(Int(p)) \(settings.unit.symbol)", isOn: isOn) {
+                            barWeight = kg
+                        }
+                    }
+                }
+
+                Text(barWeight > 0
+                     ? "Inclusa nel calcolo del carico totale e dei dischi."
+                     : "Nessuna sbarra: il carico inserito è solo dei dischi o del macchinario.")
+                    .font(Theme.rounded(11, .medium))
+                    .foregroundStyle(Theme.textTertiary)
+            }
+        }
+
+        if barWeight <= 0 {
+            GlassCard {
+                Toggle(isOn: $plateLoaded) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Carico a dischi")
+                            .font(Theme.rounded(15, .semibold))
+                        Text("Calcolatore dischi senza sbarra (es. macchinari plate loaded).")
+                            .font(Theme.rounded(11, .medium))
+                            .foregroundStyle(Theme.textTertiary)
+                    }
+                }
+                .tint(settings.accentColor)
+            }
+        }
+
+        GlassCard {
+            Toggle(isOn: $perSide) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Peso inserito per lato")
+                        .font(Theme.rounded(15, .semibold))
+                    Text("Inserisci il peso di un lato: il totale è il doppio (più la sbarra).")
+                        .font(Theme.rounded(11, .medium))
+                        .foregroundStyle(Theme.textTertiary)
+                }
+            }
+            .tint(settings.accentColor)
+        }
+
+        if barWeight > 0, !perSide {
+            GlassCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    SectionHeader(title: "Visualizzazione del carico")
+                    HStack(spacing: 8) {
+                        stepChip("Assoluto (totale)", isOn: weightDisplay == "absolute") {
+                            weightDisplay = "absolute"
+                        }
+                        stepChip("Relativo (dischi)", isOn: weightDisplay == "relative") {
+                            weightDisplay = "relative"
+                        }
+                    }
+                    Text(weightDisplay == "relative"
+                         ? "Nelle serie inserisci e visualizzi solo i dischi. Per classifiche e massimali vale sempre il totale con la sbarra."
+                         : "Mostra il carico totale sollevato, compreso il peso della sbarra.")
+                        .font(Theme.rounded(11, .medium))
+                        .foregroundStyle(Theme.textTertiary)
+                }
+            }
+        }
+
+        GlassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "Esecuzione")
+                HStack(spacing: 8) {
+                    stepChip(group == .gambe ? "Entrambe le gambe" : "Entrambe le braccia", isOn: !isUnilateral) {
+                        isUnilateral = false
+                    }
+                    stepChip(group == .gambe ? "Una gamba" : "Un braccio", isOn: isUnilateral) {
+                        isUnilateral = true
+                    }
+                }
+            }
+        }
+
+        if settings.restTimerEnabled {
+            GlassCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    SectionHeader(title: "Recupero")
+                    Stepper(value: $restSeconds, in: 0...600, step: 15) {
+                        Text(restSeconds == 0
+                             ? "Come le impostazioni (\(Fmt.duration(seconds: settings.restSeconds)))"
+                             : Fmt.duration(seconds: restSeconds))
+                            .font(Theme.rounded(15, .semibold))
+                    }
+                    Text("Tempo di pausa dopo ogni serie su questo macchinario.")
+                        .font(Theme.rounded(11, .medium))
+                        .foregroundStyle(Theme.textTertiary)
+                }
+            }
+        }
+
+        GlassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "Note")
+                TextField("Es. sedile al foro 4, impugnatura larga", text: $notes, axis: .vertical)
+                    .font(Theme.rounded(14, .regular))
+                    .lineLimit(2...5)
+            }
+        }
+
+        GlassCard {
+            Toggle(isOn: $isHidden) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Nascondi agli amici")
+                        .font(Theme.rounded(15, .semibold))
+                    Text("Non compare nel tuo profilo né nelle classifiche.")
+                        .font(Theme.rounded(11, .medium))
+                        .foregroundStyle(Theme.textTertiary)
+                }
+            }
+            .tint(settings.accentColor)
+        }
+    }
+
+    @ViewBuilder
+    private var archiveCard: some View {
+            GlassCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    Toggle(isOn: $isArchived) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Archivia")
+                                .font(Theme.rounded(15, .semibold))
+                            Text("Lo nasconde dalle liste senza perdere lo storico.")
+                                .font(Theme.rounded(11, .medium))
+                                .foregroundStyle(Theme.textTertiary)
+                        }
+                    }
+                    .tint(settings.accentColor)
+
+                    Divider().overlay(Theme.stroke)
+
+                    Button(role: .destructive) {
+                        showingDeleteConfirm = true
+                    } label: {
+                        Label("Elimina macchinario", systemImage: "trash")
+                            .font(Theme.rounded(15, .semibold))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+    }
+
+    // MARK: - Creazione passo per passo
+
+    /// Passi 1 e 2 sono il catalogo (gruppo, poi lista), il 3 l'essenziale. Il salvataggio è `save()`, lo stesso della modifica.
+    private var wizard: some View {
+        NavigationStack {
+            CatalogPickerSheet(title: "Nuovo macchinario", onPick: { entry, picked in
+                chosen(entry, group: picked)
+                showingEssentials = true
+            }, wizard: true)
+            .navigationDestination(isPresented: $showingEssentials) { essentials }
+        }
+        .onAppear(perform: load)
+    }
+
+    private var tipsOn: Bool { !settings.machineTipsSeen && allExercises.isEmpty && !tipDone }
+
+    private var essentials: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                Text("Passo 3 di 3")
+                    .font(Theme.rounded(12, .semibold))
+                    .foregroundStyle(Theme.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 4)
+
+                nameCard
+
+                if catalogID.isEmpty {
+                    GlassCard {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SectionHeader(title: "Muscoli")
+                            musclesContent
+                        }
+                    }
+                }
+
+                VStack(spacing: 14) {
+                    stepCard
+                    DisclosureGroup(isExpanded: $showMore) {
+                        VStack(spacing: 14) {
+                            imageCard(showMuscles: !catalogID.isEmpty)
+                            advancedCards
+                        }
+                        .padding(.top, 12)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Altro").font(Theme.rounded(15, .semibold))
+                            Text("Sbarra, dischi, foto, recupero, note")
+                                .font(Theme.rounded(11, .medium))
+                                .foregroundStyle(Theme.textTertiary)
+                        }
+                    }
+                    .tint(settings.accentColor)
+                    .padding(.horizontal, 4)
+                }
+                .tourTarget("tip-step")
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
+        }
+        .screenBackground(settings.accentColor)
+        .navigationTitle("Nuovo macchinario")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { Button("Annulla") { dismiss() } }
+        }
+        .safeAreaInset(edge: .bottom) {
+            Button { save() } label: { Text("Aggiungi") }
+                .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
+                .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+        }
+        .machineTip("tip-step", show: tipsOn, title: "Incremento e Altro",
+                    text: "L'incremento è il salto dei pulsanti + e −. Sotto «Altro» ci sono sbarra, dischi, foto e note: puoi lasciarli a dopo.",
+                    last: true) { tipDone = true }
+    }
+
+    private var editor: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    GlassCard {
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "Nome")
-                            TextField("Es. Chest Press", text: $name)
-                                .font(Theme.rounded(17, .semibold))
-                                .textInputAutocapitalization(.words)
-                        }
-                    }
+                    nameCard
+                    catalogCard
+                    imageCard(showMuscles: true)
+                    groupCard
+                    stepCard
+                    advancedCards
 
-                    GlassCard {
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "Catalogo")
-                            HStack {
-                                if catalogID.isEmpty {
-                                    Text(isCustom ? "Macchinario tuo: resta fuori dalle classifiche." : "Non collegato: resta fuori dalle classifiche.")
-                                        .font(Theme.rounded(13, .medium))
-                                        .foregroundStyle(Theme.textTertiary)
-                                } else {
-                                    Text(verbatim: linkedEntry?.name ?? catalogID)
-                                        .font(Theme.rounded(15, .semibold))
-                                }
-                                Spacer()
-                                Button(catalogID.isEmpty ? "Collega" : "Cambia") { picking = .link }
-                                    .font(Theme.rounded(14, .semibold))
-                                    .foregroundStyle(settings.accentColor)
-                            }
-                            if catalogID.isEmpty {
-                                Toggle("È un macchinario mio", isOn: $isCustom)
-                                    .font(Theme.rounded(14, .semibold))
-                                    .tint(settings.accentColor)
-                            }
-                        }
-                    }
-
-                    imageCard
-
-                    GlassCard {
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "Gruppo muscolare")
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 8)], spacing: 8) {
-                                ForEach(MuscleGroup.allCases) { candidate in
-                                    Button {
-                                        group = candidate
-                                        Haptics.tap()
-                                    } label: {
-                                        HStack(spacing: 6) {
-                                            Image(systemName: candidate.symbol)
-                                                .font(.system(size: 11, weight: .semibold))
-                                            Text(candidate.title)
-                                                .font(Theme.rounded(13, .semibold))
-                                        }
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 10)
-                                        .background(
-                                            group == candidate ? candidate.tint.opacity(0.22) : Theme.card,
-                                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        )
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                .strokeBorder(group == candidate ? candidate.tint.opacity(0.6) : Theme.stroke, lineWidth: 1)
-                                        )
-                                        .foregroundStyle(group == candidate ? candidate.tint : Theme.textSecondary)
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                        }
-                    }
-
-                    GlassCard {
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "Incremento del carico")
-                            HStack(spacing: 14) {
-                                Button { step = max(0.25, step - 0.25); Haptics.tap() } label: { Image(systemName: "minus").frame(width: 38, height: 38).background(Theme.card, in: Circle()) }
-                                    .buttonStyle(.plain)
-                                // il numero si tocca e si scrive
-                                HStack(spacing: 4) {
-                                    TextField("2,5", value: Binding(get: { step }, set: { if $0 >= 0.25, $0 <= 50 { step = $0 } }),
-                                              format: .number.precision(.fractionLength(0...2)))
-                                        .keyboardType(.decimalPad)
-                                        .multilineTextAlignment(.trailing)
-                                        .font(Theme.rounded(20, .heavy))
-                                        .frame(width: 70)
-                                    Text("kg").font(Theme.rounded(13, .semibold)).foregroundStyle(Theme.textTertiary)
-                                }
-                                Button { step = min(50, step + 0.25); Haptics.tap() } label: { Image(systemName: "plus").frame(width: 38, height: 38).background(Theme.card, in: Circle()) }
-                                    .buttonStyle(.plain)
-                                Spacer()
-                            }
-                            .foregroundStyle(Theme.textPrimary)
-                            Text("È il salto minimo tra un carico e l'altro su questo macchinario: definisce i pulsanti + e −.")
-                                .font(Theme.rounded(11, .medium))
-                                .foregroundStyle(Theme.textTertiary)
-                        }
-                    }
-
-                    GlassCard {
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "Peso della sbarra")
-                            Stepper(
-                                value: Binding(
-                                    get: { settings.unit.fromKilograms(barWeight) },
-                                    set: { barWeight = max(0, settings.unit.toKilograms($0)) }
-                                ),
-                                in: 0...(settings.unit == .kg ? 60 : 135),
-                                step: settings.unit == .kg ? 1 : 2.5
-                            ) {
-                                Text(barWeight > 0
-                                     ? Fmt.weight(barWeight, unit: settings.unit)
-                                     : "Nessuna (0)")
-                                    .font(Theme.rounded(15, .semibold))
-                            }
-
-                            HStack(spacing: 8) {
-                                ForEach(settings.unit == .kg ? [0.0, 10.0, 15.0, 20.0] : [0.0, 25.0, 35.0, 45.0], id: \.self) { p in
-                                    let kg = settings.unit.toKilograms(p)
-                                    let isOn = abs(barWeight - kg) < 0.1
-                                    stepChip(p == 0 ? "Nessuna (0)" : "\(Int(p)) \(settings.unit.symbol)", isOn: isOn) {
-                                        barWeight = kg
-                                    }
-                                }
-                            }
-
-                            Text(barWeight > 0
-                                 ? "Inclusa nel calcolo del carico totale e dei dischi."
-                                 : "Nessuna sbarra: il carico inserito è solo dei dischi o del macchinario.")
-                                .font(Theme.rounded(11, .medium))
-                                .foregroundStyle(Theme.textTertiary)
-                        }
-                    }
-
-                    if barWeight <= 0 {
-                        GlassCard {
-                            Toggle(isOn: $plateLoaded) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Carico a dischi")
-                                        .font(Theme.rounded(15, .semibold))
-                                    Text("Calcolatore dischi senza sbarra (es. macchinari plate loaded).")
-                                        .font(Theme.rounded(11, .medium))
-                                        .foregroundStyle(Theme.textTertiary)
-                                }
-                            }
-                            .tint(settings.accentColor)
-                        }
-                    }
-
-                    GlassCard {
-                        Toggle(isOn: $perSide) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Peso inserito per lato")
-                                    .font(Theme.rounded(15, .semibold))
-                                Text("Inserisci il peso di un lato: il totale è il doppio (più la sbarra).")
-                                    .font(Theme.rounded(11, .medium))
-                                    .foregroundStyle(Theme.textTertiary)
-                            }
-                        }
-                        .tint(settings.accentColor)
-                    }
-
-                    if barWeight > 0, !perSide {
-                        GlassCard {
-                            VStack(alignment: .leading, spacing: 12) {
-                                SectionHeader(title: "Visualizzazione del carico")
-                                HStack(spacing: 8) {
-                                    stepChip("Assoluto (totale)", isOn: weightDisplay == "absolute") {
-                                        weightDisplay = "absolute"
-                                    }
-                                    stepChip("Relativo (dischi)", isOn: weightDisplay == "relative") {
-                                        weightDisplay = "relative"
-                                    }
-                                }
-                                Text(weightDisplay == "relative"
-                                     ? "Nelle serie inserisci e visualizzi solo i dischi. Per classifiche e massimali vale sempre il totale con la sbarra."
-                                     : "Mostra il carico totale sollevato, compreso il peso della sbarra.")
-                                    .font(Theme.rounded(11, .medium))
-                                    .foregroundStyle(Theme.textTertiary)
-                            }
-                        }
-                    }
-
-                    GlassCard {
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "Esecuzione")
-                            HStack(spacing: 8) {
-                                stepChip(group == .gambe ? "Entrambe le gambe" : "Entrambe le braccia", isOn: !isUnilateral) {
-                                    isUnilateral = false
-                                }
-                                stepChip(group == .gambe ? "Una gamba" : "Un braccio", isOn: isUnilateral) {
-                                    isUnilateral = true
-                                }
-                            }
-                        }
-                    }
-
-                    if settings.restTimerEnabled {
-                        GlassCard {
-                            VStack(alignment: .leading, spacing: 12) {
-                                SectionHeader(title: "Recupero")
-                                Stepper(value: $restSeconds, in: 0...600, step: 15) {
-                                    Text(restSeconds == 0
-                                         ? "Come le impostazioni (\(Fmt.duration(seconds: settings.restSeconds)))"
-                                         : Fmt.duration(seconds: restSeconds))
-                                        .font(Theme.rounded(15, .semibold))
-                                }
-                                Text("Tempo di pausa dopo ogni serie su questo macchinario.")
-                                    .font(Theme.rounded(11, .medium))
-                                    .foregroundStyle(Theme.textTertiary)
-                            }
-                        }
-                    }
-
-                    GlassCard {
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "Note")
-                            TextField("Es. sedile al foro 4, impugnatura larga", text: $notes, axis: .vertical)
-                                .font(Theme.rounded(14, .regular))
-                                .lineLimit(2...5)
-                        }
-                    }
-
-                    GlassCard {
-                        Toggle(isOn: $isHidden) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Nascondi agli amici")
-                                    .font(Theme.rounded(15, .semibold))
-                                Text("Non compare nel tuo profilo né nelle classifiche.")
-                                    .font(Theme.rounded(11, .medium))
-                                    .foregroundStyle(Theme.textTertiary)
-                            }
-                        }
-                        .tint(settings.accentColor)
-                    }
-
-                    if !isNew {
-                        GlassCard {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Toggle(isOn: $isArchived) {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Archivia")
-                                            .font(Theme.rounded(15, .semibold))
-                                        Text("Lo nasconde dalle liste senza perdere lo storico.")
-                                            .font(Theme.rounded(11, .medium))
-                                            .foregroundStyle(Theme.textTertiary)
-                                    }
-                                }
-                                .tint(settings.accentColor)
-
-                                Divider().overlay(Theme.stroke)
-
-                                Button(role: .destructive) {
-                                    showingDeleteConfirm = true
-                                } label: {
-                                    Label("Elimina macchinario", systemImage: "trash")
-                                        .font(Theme.rounded(15, .semibold))
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                }
-                            }
-                        }
-                    }
+                    if !isNew { archiveCard }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)
@@ -349,22 +451,28 @@ struct ExerciseEditorView: View {
                 Text("Verranno persi anche i massimali registrati. Le serie già svolte restano negli allenamenti.")
             }
             .onAppear(perform: load)
-            .sheet(item: $picking) { mode in
-                CatalogPickerSheet(
-                    title: mode == .new ? "Nuovo macchinario" : "Collega al catalogo",
-                    allowsCustom: mode == .new,
-                    onPick: { chosen($0, group: $1, mode: mode) },
-                    onCancel: { if mode == .new, catalogID.isEmpty, name.isEmpty { dismiss() } }
-                )
+            .sheet(isPresented: $linking) {
+                CatalogPickerSheet(title: "Collega al catalogo", allowsCustom: false, onPick: { chosen($0, group: $1) })
             }
         }
     }
 
+
     /// Una voce scelta: nel macchinario nuovo precompila tutto (il nome si può cambiare subito con uno familiare).
-    private func chosen(_ entry: CatalogEntry?, group picked: MuscleGroup?, mode: CatalogPicking) {
+    /// Se si torna indietro e si sceglie altro, quello che la scelta di prima aveva messo viene sostituito.
+    private func chosen(_ entry: CatalogEntry?, group picked: MuscleGroup?) {
+        let wasLinked = !catalogID.isEmpty
         catalogID = entry?.id ?? ""
-        if entry == nil, mode == .new { isCustom = true; if let picked { group = picked } }
-        guard let entry, mode == .new else { return }
+        guard isNew else { return } // collegando uno che c'è già cambia solo il collegamento
+        guard let entry else {
+            isCustom = true
+            if let picked { group = picked }
+            if wasLinked { name = ""; notes = ""; step = 2.5; barWeight = 0; plateLoaded = false }
+            return
+        }
+        isCustom = false
+        muscles = []
+        pickedGlyph = nil
         name = entry.name
         group = entry.muscleGroup
         step = entry.step
@@ -375,7 +483,8 @@ struct ExerciseEditorView: View {
 
     // MARK: - Foto e pittogramma
 
-    private var imageCard: some View {
+    /// `showMuscles`: la figura sta qui dentro, tranne che nella creazione di un personalizzato (lì sta già nel passo 3).
+    private func imageCard(showMuscles: Bool) -> some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 14) {
                 SectionHeader(title: "Immagine")
@@ -431,23 +540,9 @@ struct ExerciseEditorView: View {
 
                 Divider().overlay(Theme.stroke)
 
-                SectionHeader(title: "Muscoli")
-                if let entry = linkedEntry {
-                    Text("Sono quelli dell'attrezzo del catalogo.")
-                        .font(Theme.rounded(13, .medium))
-                        .foregroundStyle(Theme.textTertiary)
-                    MuscleFigureView(muscles: entry.muscleIDs, view: AnatomyView(rawValue: entry.view), zoom: false)
-                        .frame(maxWidth: 220)
-                } else {
-                    Text("Tocca i muscoli che lavorano sulla figura.")
-                        .font(Theme.rounded(13, .medium))
-                        .foregroundStyle(Theme.textTertiary)
-                    MuscleFigureView(muscles: muscles, view: figureSide, zoom: false, onTap: toggleMuscle)
-                        .frame(maxWidth: 220)
-                    Button(figureSide == .front ? "Vedi di schiena" : "Vedi di fronte") {
-                        figureSide = figureSide == .front ? .back : .front
-                    }
-                    .buttonStyle(.bordered)
+                if showMuscles {
+                    SectionHeader(title: "Muscoli")
+                    musclesContent
                 }
 
                 SectionHeader(title: "Pittogramma", trailing: glyph?.title ?? "Nessuno")
@@ -526,6 +621,27 @@ struct ExerciseEditorView: View {
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var musclesContent: some View {
+        if let entry = linkedEntry {
+            Text("Sono quelli dell'attrezzo del catalogo.")
+                .font(Theme.rounded(13, .medium))
+                .foregroundStyle(Theme.textTertiary)
+            MuscleFigureView(muscles: entry.muscleIDs, view: AnatomyView(rawValue: entry.view), zoom: false)
+                .frame(maxWidth: 220)
+        } else {
+            Text("Tocca i muscoli che lavorano sulla figura.")
+                .font(Theme.rounded(13, .medium))
+                .foregroundStyle(Theme.textTertiary)
+            MuscleFigureView(muscles: muscles, view: figureSide, zoom: false, onTap: toggleMuscle)
+                .frame(maxWidth: 220)
+            Button(figureSide == .front ? "Vedi di schiena" : "Vedi di fronte") {
+                figureSide = figureSide == .front ? .back : .front
+            }
+            .buttonStyle(.bordered)
         }
     }
 
@@ -640,7 +756,6 @@ struct ExerciseEditorView: View {
         guard !didLoad else { return }
         didLoad = true
         guard let exercise else {
-            picking = .new
             barWeight = 0
             weightDisplay = "absolute"
             plateLoaded = false
@@ -717,6 +832,7 @@ struct ExerciseEditorView: View {
             new.perSide = perSide
         }
         try? context.save()
+        if isNew { settings.machineTipsSeen = true } // ha creato un macchinario: i suggerimenti hanno fatto il loro
         Haptics.commit()
         dismiss()
     }
