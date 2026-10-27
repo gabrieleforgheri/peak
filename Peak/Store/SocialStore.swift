@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// Gli amici letti dal server, tenuti in memoria per le schermate (Home, Amici, dettaglio di un macchinario). Niente di
+/// Gli amici letti dal server, tenuti in memoria per le schermate (Allenamento, Amici, dettaglio di un macchinario). Niente di
 /// tutto questo si salva sull'iPhone: senza account yG o senza rete restano vuoti e le schermate lo dicono.
 @MainActor
 @Observable

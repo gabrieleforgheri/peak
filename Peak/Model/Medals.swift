@@ -112,7 +112,7 @@ enum Medals {
     }
 }
 
-/// Le frasi della Home: una diversa ogni giorno, poi a rotazione.
+/// Le frasi dell'eroe in Allenamento: una diversa ogni giorno, poi a rotazione.
 enum Motivation {
     private static let italian = [
         "Oggi è un buon giorno per battere il tuo record.",

@@ -83,6 +83,13 @@ enum Programs {
         return days[(i + 1) % days.count]
     }
 
+    /// Il giorno fisso di oggi, solo se la scheda usa i giorni della settimana; altrimenti niente (si sceglie a mano).
+    static func today(program: WorkoutProgram?, templates: [WorkoutTemplate], now: Date = Date()) -> WorkoutTemplate? {
+        guard program?.useDays == true else { return nil }
+        let today = (Calendar.current.component(.weekday, from: now) + 5) % 7   // 0 = lunedì
+        return days(of: program, in: templates).first { $0.weekday == today }
+    }
+
     /// Le schede fuori da ogni scheda finiscono in «La mia scheda» (stesso uuid del web, una sola volta su ogni dispositivo).
     @MainActor
     static func adoptLoose(context: ModelContext, name: String) {

@@ -49,10 +49,6 @@ struct RootView: View {
     private var tabs: some View {
         @Bindable var nav = nav
         return TabView(selection: $nav.tab) {
-            HomeView()
-                .tabItem { Label("Home", systemImage: "house.fill") }
-                .tag(AppNav.Tab.home)
-
             WorkoutsListView()
                 .tabItem { Label("Allenamento", systemImage: "figure.strengthtraining.traditional") }
                 .tag(AppNav.Tab.workouts)

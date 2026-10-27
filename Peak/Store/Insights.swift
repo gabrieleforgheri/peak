@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import SwiftData
 
-/// I numeri pesanti della Home e di Me (statistiche, crescita, progressione, ultimi record), calcolati una volta sola
+/// I numeri pesanti di Allenamento e di Me (statistiche, crescita, progressione, ultimi record), calcolati una volta sola
 /// dopo ogni raffica di salvataggi invece che a ogni ridisegno delle schede. Niente di tutto questo si salva.
 @MainActor
 @Observable

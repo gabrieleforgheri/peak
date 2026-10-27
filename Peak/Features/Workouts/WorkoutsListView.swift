@@ -16,6 +16,19 @@ struct WorkoutsListView: View {
     @State private var showingNewTemplate = false
     @State private var editingProgram: WorkoutProgram?
     @State private var showingNewProgram = false
+    @State private var choosingGoal = false
+
+    private let nav = AppNav.shared
+    private let insights = Insights.shared
+    private let sync = SyncService.shared
+
+    private var displayName: String {
+        let full = sync.credentials?.name ?? ""
+        return full.split(separator: " ").first.map(String.init) ?? (full.isEmpty ? "Peak" : full)
+    }
+
+    /// Il giorno di oggi, se la scheda in uso ha i giorni fissi.
+    private var todayTemplate: WorkoutTemplate? { Programs.today(program: program, templates: templates) }
 
     private var program: WorkoutProgram? { Programs.active(programs, settings: settings) }
     private var days: [WorkoutTemplate] { Programs.days(of: program, in: templates) }
@@ -26,6 +39,14 @@ struct WorkoutsListView: View {
         let finishedWorkouts = workouts.filter { !$0.isActive }
         NavigationStack(path: $path) {
             List {
+                if let s = insights.stats {
+                    Section {
+                        WorkoutHero(name: displayName, streak: s.streak, weekSessions: s.weekSessions, goal: s.goal, onAvatar: { nav.tab = .me }, onChangeGoal: { choosingGoal = true })
+                            .plainListRow()
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 0, trailing: 16))
+                    }
+                }
+
                 Section {
                     startCard
                         .plainListRow()
@@ -153,6 +174,10 @@ struct WorkoutsListView: View {
             .navigationDestination(for: Workout.self) { workout in
                 WorkoutSessionView(workout: workout)
             }
+            .onChange(of: settings.weeklyGoal) { Insights.shared.refresh() }
+            .fullScreenCover(isPresented: $choosingGoal) {
+                GoalPickerView(current: settings.weeklyGoal, suggested: Stats.weeklyGoal(workouts: finishedWorkouts)) { choosingGoal = false }
+            }
             .sheet(isPresented: $showingFocusPicker) {
                 FocusPickerSheet(confirmTitle: "Inizia", onStartTemplate: { startWorkout(template: $0) }) { name, focus in
                     startWorkout(name: name, focus: focus)
@@ -208,28 +233,31 @@ struct WorkoutsListView: View {
                         Label("Riprendi allenamento", systemImage: "play.fill")
                     }
                     .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
-                } else {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Pronto ad allenarti?")
-                            .font(Theme.rounded(19, .bold))
-                            .foregroundStyle(Theme.textPrimary)
-                        Text("Registra le serie mentre ti alleni: i nuovi massimali scattano da soli.")
-                            .font(Theme.rounded(13, .medium))
-                            .foregroundStyle(Theme.textTertiary)
-                    }
+                } else if let today = todayTemplate {
+                    NextWorkoutBar(
+                        title: "Avvia \(today.name)",
+                        subtitle: today.items.count == 1 ? "1 esercizio" : "\(today.items.count) esercizi",
+                        symbol: TemplateIcon.symbol(TemplateIcon.resolved(today.iconRaw, name: today.name))
+                    ) { startWorkout(template: today) }
+                    .tourTarget("start")
 
+                    Button("oppure scegli tu") { showingFocusPicker = true }
+                        .font(Theme.rounded(13, .bold)).foregroundStyle(settings.accentColor).buttonStyle(.plain)
+                        .frame(maxWidth: .infinity)
+                } else {
                     Button {
                         showingFocusPicker = true
                     } label: {
-                        Label("Inizia allenamento", systemImage: "bolt.fill")
+                        Label("Avvia allenamento", systemImage: "bolt.fill")
                     }
                     .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
+                    .tourTarget("start")
                 }
             }
         }
     }
 
-    /// La Home chiede di riprendere la sessione o di avviare una scheda: si fa appena questa scheda è in vista.
+    /// Dall'esterno (il tutorial, un collegamento) possono chiedere di riprendere la sessione o di avviare un giorno: si fa appena questa scheda è in vista.
     private func consumeNavRequests() {
         let nav = AppNav.shared
         if nav.resumeActive {

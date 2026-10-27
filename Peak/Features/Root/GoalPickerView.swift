@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// La scelta dell'obiettivo, a tutto schermo: quanti allenamenti a settimana. Si apre la prima volta e dalla Home.
+/// La scelta dell'obiettivo, a tutto schermo: quanti allenamenti a settimana. Si apre la prima volta e dall'Allenamento.
 struct GoalPickerView: View {
     @Environment(AppSettings.self) private var settings
 

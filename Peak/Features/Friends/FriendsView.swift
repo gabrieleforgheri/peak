@@ -387,3 +387,24 @@ struct Podium: View {
         .frame(maxWidth: .infinity)
     }
 }
+
+/// Una riga di novità: chi, su cosa, quanto. Anche nella scheda Amici.
+struct NewsRow: View {
+    @Environment(AppSettings.self) private var settings
+    let event: NewsEvent
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("@\(event.username) · \(Catalog.entry(id: event.catalog)?.name ?? event.name)").font(Theme.rounded(14, .bold)).lineLimit(1)
+                Text(Fmt.relativeDay(event.date)).font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 1) {
+                Text(Fmt.setLine(weight: event.weight, reps: event.reps, unit: settings.unit)).font(Theme.rounded(14, .bold))
+                if event.passedYou { Text("Ti ha superato").font(Theme.rounded(11, .semibold)).foregroundStyle(Theme.negative) }
+            }
+        }
+        .padding(.horizontal, 8).padding(.vertical, 8)
+    }
+}

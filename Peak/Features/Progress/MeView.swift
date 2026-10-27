@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Il tuo profilo: tutto quello che la Home mostra in breve, per esteso. In alto a destra le impostazioni.
+/// Il tuo profilo: i numeri, l'attività e le medaglie per esteso. In alto a destra le impostazioni.
 struct MeView: View {
     @Environment(AppSettings.self) private var settings
 
@@ -106,6 +106,7 @@ struct MeView: View {
 
                 if let s = insights.stats, hasTrainingData {
                     section("Panoramica") { overview(s) }
+                    recordsSection
                     let medalList = medals(s)
                     let totals = Medals.totals(medalList)
                     section("Medaglie", trailing: "\(totals.earned) / \(totals.total)") {
@@ -172,6 +173,34 @@ struct MeView: View {
                             DeltaBadge(percent: mover.deltaPercent)
                         } else {
                             PRBadge(text: "NUOVO")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var recordsSection: some View {
+        let latest = insights.recentByExercise
+        return Group {
+            if !latest.isEmpty {
+                section("Record recenti") {
+                    GlassCard(padding: 6) {
+                        VStack(spacing: 0) {
+                            ForEach(Array(latest.enumerated()), id: \.offset) { i, pair in
+                                HStack(spacing: 12) {
+                                    Image(systemName: "trophy.fill").font(.system(size: 14)).foregroundStyle(Color(hex: 0xFFD45E))
+                                        .frame(width: 34, height: 34).background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color(hex: 0xFFD45E).opacity(0.14)))
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(pair.exercise.name).font(Theme.rounded(15, .bold)).lineLimit(1)
+                                        Text(Fmt.relativeDay(pair.record.date)).font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
+                                    }
+                                    Spacer()
+                                    Text(Fmt.setLine(weight: pair.record.weight, reps: pair.record.reps, unit: settings.unit)).font(Theme.rounded(14, .bold))
+                                }
+                                .padding(.horizontal, 8).padding(.vertical, 8)
+                                if i < latest.count - 1 { Divider().overlay(Theme.stroke) }
+                            }
                         }
                     }
                 }
