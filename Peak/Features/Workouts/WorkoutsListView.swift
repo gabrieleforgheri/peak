@@ -197,10 +197,12 @@ struct WorkoutsListView: View {
         }
     }
 
+    /// La sessione in corso in una card; altrimenti il pulsante per partire, senza cornice sotto la montagna.
+    @ViewBuilder
     private var startCard: some View {
-        GlassCard(padding: 18, tint: activeWorkout != nil ? settings.accentColor : nil) {
-            VStack(alignment: .leading, spacing: 14) {
-                if let activeWorkout {
+        if let activeWorkout {
+            GlassCard(padding: 18, tint: settings.accentColor) {
+                VStack(alignment: .leading, spacing: 14) {
                     HStack(spacing: 8) {
                         Circle()
                             .fill(settings.accentColor)
@@ -233,27 +235,28 @@ struct WorkoutsListView: View {
                         Label("Riprendi allenamento", systemImage: "play.fill")
                     }
                     .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
-                } else if let today = todayTemplate {
-                    NextWorkoutBar(
-                        title: "Avvia \(today.name)",
-                        subtitle: today.items.count == 1 ? "1 esercizio" : "\(today.items.count) esercizi",
-                        symbol: TemplateIcon.symbol(TemplateIcon.resolved(today.iconRaw, name: today.name))
-                    ) { startWorkout(template: today) }
-                    .tourTarget("start")
-
-                    Button("oppure scegli tu") { showingFocusPicker = true }
-                        .font(Theme.rounded(13, .bold)).foregroundStyle(settings.accentColor).buttonStyle(.plain)
-                        .frame(maxWidth: .infinity)
-                } else {
-                    Button {
-                        showingFocusPicker = true
-                    } label: {
-                        Label("Avvia allenamento", systemImage: "bolt.fill")
-                    }
-                    .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
-                    .tourTarget("start")
                 }
             }
+        } else if let today = todayTemplate {
+            VStack(spacing: 10) {
+                NextWorkoutBar(
+                    title: "Avvia \(today.name)",
+                    subtitle: today.items.count == 1 ? "1 esercizio" : "\(today.items.count) esercizi",
+                    symbol: TemplateIcon.symbol(TemplateIcon.resolved(today.iconRaw, name: today.name))
+                ) { startWorkout(template: today) }
+                .tourTarget("start")
+
+                Button("oppure scegli tu") { showingFocusPicker = true }
+                    .font(Theme.rounded(13, .bold)).foregroundStyle(settings.accentColor).buttonStyle(.plain)
+            }
+        } else {
+            Button {
+                showingFocusPicker = true
+            } label: {
+                Label("Avvia allenamento", systemImage: "bolt.fill")
+            }
+            .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
+            .tourTarget("start")
         }
     }
 

@@ -124,7 +124,6 @@ struct MeView: View {
 
                 if !insights.progression.isEmpty { section("Progressione") { ProgressionCard(series: insights.progression) } }
                 if !insights.movers.isEmpty { moversCard }
-                if !insights.latestRecords.isEmpty { recentRecordsCard }
 
                 if !hasTrainingData { emptyHint }
             }
@@ -202,34 +201,6 @@ struct MeView: View {
                                 if i < latest.count - 1 { Divider().overlay(Theme.stroke) }
                             }
                         }
-                    }
-                }
-            }
-        }
-    }
-
-    private var recentRecordsCard: some View {
-        GlassCard {
-            VStack(alignment: .leading, spacing: 12) {
-                SectionHeader(title: "Ultimi record")
-
-                ForEach(insights.latestRecords) { record in
-                    HStack(spacing: 12) {
-                        Text(Fmt.shortDate(record.date))
-                            .font(Theme.rounded(11, .semibold))
-                            .foregroundStyle(Theme.textTertiary)
-                            .frame(width: 52, alignment: .leading)
-
-                        Text(record.exercise?.name ?? "Esercizio rimosso")
-                            .font(Theme.rounded(14, .semibold))
-                            .foregroundStyle(Theme.textPrimary)
-                            .lineLimit(1)
-
-                        Spacer()
-
-                        Text(Fmt.setLine(weight: record.weight, reps: record.reps, unit: settings.unit))
-                            .font(Theme.rounded(14, .bold))
-                            .foregroundStyle(record.isEstimated ? Theme.textSecondary : Theme.textPrimary)
                     }
                 }
             }
