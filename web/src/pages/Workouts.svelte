@@ -95,7 +95,6 @@
 </script>
 
 <main class="screen page split">
-	<div class="bar span"><h1>{t('Allenamento')}</h1></div>
 
 	<!-- a schermo largo: a sinistra cosa fare adesso e la scheda, a destra lo storico -->
 	<div class="blk">

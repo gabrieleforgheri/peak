@@ -9,6 +9,7 @@ Web + iPhone in parità. Codice scritto da subagenti Sonnet, rivisto e unito a m
 | Macchinario nuovo in 3 passi: gruppo → lista (già piena, con ricerca) → nome + incremento, con «Altro» chiuso (sbarra, dischi, foto, recupero, note). La modifica resta la pagina di prima | `ExerciseEditorView.swift`, `CatalogPickerSheet.swift`, `ExerciseEditor.svelte`, `CatalogPicker.svelte` |
 | Suggerimenti della prima volta sui controlli veri (uno per passo), solo se `machineTipsSeen` è falso e non hai macchinari; setting sincronizzato | `TourOverlay.swift` (`machineTip`), `Tip.svelte`, `AppSettings`, `SyncDocs`, `common/docs.ts` |
 | `seed-dev.ts` scriveva l'amicizia nei due versi (il server ne tiene una per coppia): amici doppi nei dati di prova | `scripts/seed-dev.ts` |
+| 3.2.1: tolto il titolo grande «Allenamenti» in cima alla scheda Allenamento (c'è già la montagna) | `WorkoutsListView.swift`, `Workouts.svelte` |
 | Aperto: «Rivedi il tutorial» non azzera `machineTipsSeen` | — |
 
 Ordine di rilascio: prima il server (un server vecchio scarta `machineTipsSeen`), poi l'iPhone.

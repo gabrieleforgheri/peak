@@ -171,6 +171,8 @@ struct WorkoutsListView: View {
             .listStyle(.plain)
             .screenBackground(settings.accentColor)
             .navigationTitle("Allenamenti")
+            // niente titolo grande: in cima c'è già la montagna; il titolo resta per il tasto indietro
+            .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: Workout.self) { workout in
                 WorkoutSessionView(workout: workout)
             }
