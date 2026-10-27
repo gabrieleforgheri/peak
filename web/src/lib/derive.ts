@@ -44,28 +44,10 @@ export const activeProgram = (m: Model): Prg | null => m.programs.find((p) => p.
 /** I giorni di una scheda, nell'ordine in cui li hai messi. */
 export const daysOf = (m: Model, prog: Prg | null): Tpl[] => (prog ? m.templates.filter((t) => t.program === prog.uuid) : m.templates.filter((t) => !t.program))
 
-/**
- * Il giorno che tocca: con giorni fissi, quello di oggi o il prossimo in calendario; senza, quello dopo l'ultimo
- * fatto in questa scheda, a rotazione.
- */
 /** Il giorno di oggi nella scheda in uso: solo con i giorni fissi e se oggi ne cade uno (altrimenti è riposo). */
 export function todayDay(m: Model, now = new Date()): Tpl | null {
 	const prog = activeProgram(m)
 	if (!prog?.useDays) return null
 	const today = (now.getDay() + 6) % 7
 	return daysOf(m, prog).find((d) => d.weekday === today) ?? null
-}
-
-export function nextDay(m: Model, now = new Date()): Tpl | null {
-	const prog = activeProgram(m)
-	const days = daysOf(m, prog)
-	if (!days.length) return null
-	if (prog?.useDays) {
-		const today = (now.getDay() + 6) % 7
-		const fixed = days.filter((d) => d.weekday >= 0)
-		if (fixed.length) return [...fixed].sort((a, b) => ((a.weekday - today + 7) % 7) - ((b.weekday - today + 7) % 7))[0]!
-	}
-	const last = m.workouts.find((w) => days.some((d) => d.uuid === w.template))
-	const i = last ? days.findIndex((d) => d.uuid === last.template) : -1
-	return days[(i + 1) % days.length]!
 }
