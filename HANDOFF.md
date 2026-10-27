@@ -1,3 +1,18 @@
+# Via la Home: montagna in Allenamento, record recenti in Me (27 ottobre 2026 — su `main`, NON pubblicato)
+
+Web + iPhone in parità. Codice scritto da subagenti Sonnet, rivisto e unito a mano.
+
+| Fatto | Dove |
+|---|---|
+| Schede: Allenamento (si apre lì), Macchinari, Me, Amici. Il vecchio `#/home` porta ad Allenamento | `AppNav.swift`, `RootView.swift`, `App.svelte`, `router.svelte.ts` |
+| In cima ad Allenamento la montagna, ~30% più bassa (altezza minima 320 → 224), con le feste di settimana e serie | `Workouts/WorkoutHero.swift`, `SummitHero.svelte`, `Workouts.svelte` |
+| Pulsante: con i giorni fissi e un giorno oggi «Avvia X» + link «oppure scegli tu»; altrimenti (anche a riposo) «Avvia allenamento» che apre la scelta. Tolti `Programs.next`/`nextDay`, nuovi `Programs.today`/`todayDay` | `Programs.swift`, `derive.ts`, `ProgramTests.swift` |
+| Me: «Record recenti» (uno per macchinario) dopo Panoramica; tolto il vecchio «Ultimi record». Novità degli amici solo in Amici | `MeView.swift`, `Me.svelte` |
+| Tutorial: passi spostati su Allenamento e Me | `TourOverlay.swift`, `Tour.svelte` |
+| Verifiche: `swiftc -typecheck` ok, svelte-check 0, i18n 0 mancanti, `npm test` 107/107, prova in Chrome (build vera su :3016) con e senza il giorno di oggi. iPhone non provato a schermo; `web/dist` da ricostruire alla pubblicazione; clip della pagina studio da rifare (mostrano la Home) | — |
+
+---
+
 # Carico a dischi, peso per lato, storici per mese e banner Installa (24 ottobre 2026 — PUBBLICATO: PR #7, server 5708d13, AltStore v3.0, pagina studio)
 
 Web + iPhone in parità (tranne il banner, solo web). Codice scritto da subagenti Sonnet, rivisto e unito a mano. Pubblicato: server riavviato (commit 5708d13), tag `v3.0` → AltStore 3.0, clip della pagina studio rifatte e yG pubblicato. Da provare: la 3.0 sul telefono vero (migrazione SwiftData con `plateLoaded`/`perSide`).
