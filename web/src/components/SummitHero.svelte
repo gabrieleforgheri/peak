@@ -84,27 +84,27 @@
 </section>
 
 <style>
-	.peak { position: relative; overflow: hidden; border-radius: 28px; padding: 18px 18px 16px; min-height: 320px; display: flex; flex-direction: column;
+	.peak { position: relative; overflow: hidden; border-radius: 28px; padding: 13px 14px 12px; min-height: 224px; display: flex; flex-direction: column;
 		border: 1px solid rgba(var(--accent-rgb), .3);
 		background: radial-gradient(circle 260px at 76% 12%, rgba(var(--accent-rgb), .35), transparent 70%), linear-gradient(180deg, rgba(var(--accent-rgb), .1), rgba(10, 14, 24, .9) 70%); }
 	.mount { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 	.top { position: relative; display: flex; align-items: center; justify-content: space-between; }
-	.who { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
-	.avatar { width: 40px; height: 40px; border-radius: 50%; border: 0; font-weight: 800; font-size: 17px; color: var(--on-accent); background: linear-gradient(135deg, var(--accent), rgba(var(--accent-rgb), .55)); box-shadow: 0 6px 18px rgba(var(--accent-rgb), .35); }
-	.quote { position: relative; margin-top: 22px; max-width: 62%; min-height: 96px; }
-	.quote p { margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.08; white-space: pre-line; text-shadow: 0 4px 30px rgba(var(--accent-rgb), .45); animation: in .7s cubic-bezier(.22, 1, .36, 1); }
+	.who { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
+	.avatar { width: 34px; height: 34px; border-radius: 50%; border: 0; font-weight: 800; font-size: 15px; color: var(--on-accent); background: linear-gradient(135deg, var(--accent), rgba(var(--accent-rgb), .55)); box-shadow: 0 6px 18px rgba(var(--accent-rgb), .35); }
+	.quote { position: relative; margin-top: 14px; max-width: 62%; min-height: 68px; }
+	.quote p { margin: 0; font-size: 20px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.08; white-space: pre-line; text-shadow: 0 4px 30px rgba(var(--accent-rgb), .45); animation: in .7s cubic-bezier(.22, 1, .36, 1); }
 	@keyframes in { from { opacity: 0; transform: translateY(10px); } }
 	@media (prefers-reduced-motion: reduce) { .quote p { animation: none; } }
-	.goal { position: relative; margin-top: auto; padding: 14px 0 0; border: 0; background: none; color: inherit; text-align: left; width: 100%; }
-	.gl { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--text-2); margin-bottom: 8px; text-shadow: 0 1px 10px rgba(0,0,0,.7); }
-	.gl b { font-size: 15px; color: var(--text); font-variant-numeric: tabular-nums; }
+	.goal { position: relative; margin-top: auto; padding: 8px 0 0; border: 0; background: none; color: inherit; text-align: left; width: 100%; }
+	.gl { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; color: var(--text-2); margin-bottom: 6px; text-shadow: 0 1px 10px rgba(0,0,0,.7); }
+	.gl b { font-size: 13px; color: var(--text); font-variant-numeric: tabular-nums; }
 	.segs { display: flex; gap: 6px; }
-	.segs i { position: relative; flex: 1; height: 12px; border-radius: 6px; background: rgba(255,255,255,.14); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+	.segs i { position: relative; flex: 1; height: 9px; border-radius: 5px; background: rgba(255,255,255,.14); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
 	/* il riempimento è un velo che si allunga da sinistra (transform), così un segmento nuovo si riempie invece di comparire */
 	.segs i::after { content: ''; position: absolute; inset: 0; border-radius: 6px; background: linear-gradient(90deg, rgba(var(--accent-rgb), .7), rgb(var(--accent-rgb))); transform: scaleX(0); transform-origin: left; transition: transform 220ms var(--ease-out); }
 	.segs i.on::after { transform: none; }
 	.segs i.last::after { box-shadow: 0 0 14px rgba(var(--accent-rgb), .7); }
-	.foot { position: relative; padding-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
-	.pill { padding: 6px 12px; border-radius: 999px; font-size: 12px; color: var(--text-2); background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.1); backdrop-filter: blur(6px); }
-	.pill b { color: var(--accent); font-size: 14px; margin-right: 2px; }
+	.foot { position: relative; padding-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
+	.pill { padding: 4px 10px; border-radius: 999px; font-size: 11px; color: var(--text-2); background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.1); backdrop-filter: blur(6px); }
+	.pill b { color: var(--accent); font-size: 13px; margin-right: 2px; }
 </style>

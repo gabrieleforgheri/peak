@@ -14,7 +14,6 @@
 	import Summary from './pages/Summary.svelte'
 	import Me from './pages/Me.svelte'
 	import Friends from './pages/Friends.svelte'
-	import Home from './pages/Home.svelte'
 	import FriendProfile from './pages/FriendProfile.svelte'
 	import Invite from './pages/Invite.svelte'
 	import Tour from './components/Tour.svelte'
@@ -23,11 +22,10 @@
 	import Archived from './pages/Archived.svelte'
 
 	const m = $derived(getModel())
-	const TABS = ['home', 'allenamento', 'macchinari', 'me', 'amici', 'impostazioni']
-	const tab = $derived(TABS.includes(route.parts[0] ?? '') ? route.parts[0]! : route.parts[0] === 'invito' ? 'invito' : 'home')
+	const TABS = ['allenamento', 'macchinari', 'me', 'amici', 'impostazioni']
+	const tab = $derived(TABS.includes(route.parts[0] ?? '') ? route.parts[0]! : route.parts[0] === 'invito' ? 'invito' : 'allenamento')
 	const deep = $derived(route.parts.length > 1)
 	const tabs = [
-		{ id: 'home', icon: 'home', label: 'Home' },
 		{ id: 'allenamento', icon: 'dumbbell', label: 'Allenamento' },
 		{ id: 'macchinari', icon: 'machine', label: 'Macchinari' },
 		{ id: 'me', icon: 'user', label: 'Me' },
@@ -61,9 +59,7 @@
 			</div>
 		{/if}
 		{#key route.parts.join('/')}
-			{#if tab === 'home'}
-				<Home />
-			{:else if tab === 'invito'}
+			{#if tab === 'invito'}
 				<Invite code={route.parts[1] ?? ''} />
 			{:else if tab === 'macchinari'}
 				{#if route.parts[1]}<ExerciseDetail id={route.parts[1]} />{:else}<Maxes />{/if}
