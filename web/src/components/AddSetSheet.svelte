@@ -254,7 +254,7 @@
 			<button class="btn block" style="flex:1;background:rgba(255,255,255,0.06);border-color:var(--stroke)" onclick={() => save(true)} disabled={!(absWeight > 0)}>
 				<Icon name="flame" size={17} />{t('Riscaldamento')}
 			</button>
-			<button class="btn primary block" style="flex:1.4" onclick={() => save(false)} disabled={!(absWeight > 0)}>
+			<button class="btn primary block" style="flex:1.4" onclick={() => save(false)} disabled={!(absWeight > 0)} data-tour="save">
 				<Icon name="plus" size={17} />{set ? t('Salva') : t('Aggiungi serie')}
 			</button>
 		</div>

@@ -135,7 +135,7 @@
 					<div class="ob-body">
 						<div class="ob-col hero ob-mid ob-split">
 							<div class="art"><SummitDraw still={heroSeen} /></div>
-							<div>
+							<div class="words">
 								<h1 class="ob-title peak" class:late={!heroSeen} tabindex="-1" use:focusTitle>Peak</h1>
 								<p class="ob-sub tag" class:late={!heroSeen}>{t('Ogni allenamento, un po\' più in alto.')}</p>
 							</div>
@@ -242,13 +242,14 @@
 
 	/* benvenuto */
 	.art { width: 100%; max-width: 640px; }
+	.words { padding-top: 12px; }
 	.art :global(svg) { max-height: min(50dvh, 460px); }
 	@media (orientation: landscape) and (max-height: 520px) { .art :global(svg) { max-height: calc(100dvh - 140px); } }
 	.peak { font-size: clamp(44px, 13vw, 60px); letter-spacing: -0.04em; }
 	.tag { font-size: 18px; margin-top: 10px; }
-	.late { animation: rise 600ms var(--ease-out) 2100ms backwards; }
-	.ob-sub.late { animation-delay: 2250ms; }
-	.cta.late { animation-delay: 2450ms; }
+	.late { animation: rise 600ms var(--ease-out) 2500ms backwards; }
+	.ob-sub.late { animation-delay: 2650ms; }
+	.cta.late { animation-delay: 2850ms; }
 	@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
 
 	/* giorni a settimana: quattro più tre, sempre quadrati e grandi */

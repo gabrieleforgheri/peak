@@ -137,6 +137,8 @@ export type PlateMode = { bar: true } | { bar: false } | null
 export function defaultBarWeightFor(glyph: string, name = ''): number {
   const n = name.toLowerCase()
   if (n.includes('manubri') || n.includes('dumbbell')) return 0
+  // «Curl Machine», «Preacher Curl Machine»: una macchina non ha il bilanciere, qualunque sia il pittogramma (il Multipower ha il suo)
+  if (/machine|macchina/.test(n) && glyph !== 'smithMachine' && !n.includes('smith') && !n.includes('multipower')) return 0
   if (['barbell', 'benchFlat', 'benchIncline', 'squatRack', 'hipThrust', 'landmine', 'preacherBench'].includes(glyph)) return 20
   if (glyph === 'smithMachine') return 15
   if (glyph === 'ezBar') return 10

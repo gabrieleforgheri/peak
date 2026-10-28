@@ -21,6 +21,8 @@ enum Plates {
     static func defaultBar(for glyph: MachineGlyph?, name: String) -> Double {
         let n = name.lowercased()
         if n.contains("manubri") || n.contains("dumbbell") { return 0 }
+        // «Curl Machine»: una macchina non ha il bilanciere, qualunque sia il pittogramma (il Multipower ha il suo)
+        if (n.contains("machine") || n.contains("macchina")) && glyph != .smithMachine && !n.contains("smith") && !n.contains("multipower") { return 0 }
         if glyph == .plateLoaded || n.contains("plate loaded") { return 0 }
         if glyph == .ezBar || n.contains("ez") { return 10 }
         if glyph == .trapBar || n.contains("trap bar") || n.contains("quadra") { return 25 }

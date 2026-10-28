@@ -151,7 +151,7 @@
 										<rect class="meter" x="68" y={120 + i * 38} width={b.w} height="12" rx="6" fill={b.c} />
 									</g>
 								{/each}
-								<g class="crown" transform="translate(30 98)"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" transform="scale(.62)" fill="var(--spalle)" /></g>
+								<g transform="translate(30 98)"><g class="crown"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" transform="scale(.62)" fill="var(--spalle)" /></g></g>
 							</g>
 						</svg>
 					</div>
@@ -228,7 +228,7 @@
 	@keyframes snew { 0%, 36% { opacity: 0; transform: translateY(8px); } 44%, 100% { opacity: 1; transform: none; } }
 	@keyframes flash { 0%, 38% { opacity: 0; } 46% { opacity: 1; } 70%, 100% { opacity: 0; } }
 	@keyframes pop { 0%, 40% { transform: scale(0); } 50%, 100% { transform: scale(1); } }
-	@keyframes burst { 0%, 42% { transform: translate(0, 0) scale(.3); opacity: 1; } 70% { opacity: 1; } 78%, 100% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 0; } }
+	@keyframes burst { 0%, 41.9% { transform: translate(0, 0) scale(.3); opacity: 0; } 42%, 70% { transform: translate(0, 0) scale(.3); opacity: 1; } 78%, 100% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 0; } }
 
 	/* 3. medaglie: bronzo, argento, oro, uno dopo l'altro; ogni livello arriva con un'onda e il suo nome */
 	.slide:nth-child(3) { --T: 9s; }

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  oneRepMax, beats, warmupPlan, nearest, nextLoad, progressionFor, loadPlates, plateMode, toDisplay, toKg,
+  oneRepMax, beats, defaultBarWeightFor, warmupPlan, nearest, nextLoad, progressionFor, loadPlates, plateMode, toDisplay, toKg,
   displayStep, snapToGrid, switchArm, defaultPlates, defaultBar, settingsForUnitChange, PhotoFraming, KG_PER_LB,
 } from './domain.ts'
 import { suggestedGlyph, SHAPES, GLYPH_TITLES, glyphSvg, glyphOf, isGlyph } from './glyph.ts'
@@ -102,6 +102,29 @@ test('calcolatore dischi: bilanciere e plate loaded, non manubri né multipower'
   // il catalogo: nessun manubrio, kettlebell o macchina a pacco pesi riceve il calcolatore con il bilanciere
   for (const e of CATALOG) {
     if (/manubri|kettlebell|machine/i.test(e.it) && !/plate/i.test(e.it)) assert.equal(plateMode(e.glyph, e.it), null, e.it)
+  }
+})
+
+test('sbarra predefinita: le macchine non ce l\'hanno, qualunque sia il pittogramma', () => {
+  // il caso reale: «Curl Machine» ha il pittogramma della panca Scott (che col bilanciere ha 20 kg)
+  assert.equal(defaultBarWeightFor('preacherBench', 'Curl Machine'), 0)
+  assert.equal(defaultBarWeightFor('preacherBench', 'Biceps Curl Machine'), 0)
+  assert.equal(defaultBarWeightFor('preacherBench', 'Preacher Curl Machine'), 0)
+  assert.equal(defaultBarWeightFor('barbell', 'Rematore macchina'), 0)
+  assert.equal(defaultBarWeightFor('benchFlat', 'MACHINE press'), 0)
+  // il resto non cambia: bilanciere, panca Scott col bilanciere, EZ, trap bar, Multipower (anche con «machine» nel nome)
+  assert.equal(defaultBarWeightFor('barbell', 'Curl Bilanciere'), 20)
+  assert.equal(defaultBarWeightFor('preacherBench', 'Panca Scott'), 20)
+  assert.equal(defaultBarWeightFor('ezBar', 'Curl Bilanciere EZ'), 10)
+  assert.equal(defaultBarWeightFor('trapBar', 'Stacco con Trap Bar'), 25)
+  assert.equal(defaultBarWeightFor('smithMachine', 'Smith Machine Squat'), 15)
+  assert.equal(defaultBarWeightFor('smithMachine', 'Panca Piana al Multipower'), 15)
+  assert.equal(defaultBarWeightFor('dumbbell', 'Curl Manubri'), 0)
+  // il catalogo, in entrambe le lingue: nessuna voce con «machine» (salvo Smith) ha la sbarra, e la lingua non cambia il valore
+  for (const e of CATALOG) {
+    const it = defaultBarWeightFor(e.glyph, e.it), en = defaultBarWeightFor(e.glyph, e.en)
+    assert.equal(it, en, e.id)
+    if (/machine/i.test(e.en) && !/smith/i.test(e.en)) assert.equal(en, 0, e.id)
   }
 })
 

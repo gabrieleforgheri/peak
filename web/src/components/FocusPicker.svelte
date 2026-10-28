@@ -35,7 +35,7 @@
 	<div class="stack">
 		{#if !workout && days.length}
 			<div class="sec-title" style="margin:0 4px">{t('Le tue schede')}</div>
-			<div class="card list">
+			<div class="card list" data-tour="days">
 				{#each days as tpl (tpl.uuid)}
 					<button class="item" onclick={() => fromTemplate(tpl)}>
 						<div class="grow"><b class="ellipsis" style="display:block">{tpl.name}</b><span class="small muted">{tn(tpl.items.length, '1 esercizio', '{0} esercizi')}</span></div>
@@ -52,6 +52,6 @@
 			{/each}
 		</div>
 		<p class="small faint">{t('Se non scegli nulla vedi tutti i macchinari.')}</p>
-		<button class="btn primary block" onclick={go}>{workout ? t('Salva') : t('Inizia')}</button>
+		<button class="btn primary block" onclick={go} data-tour="go">{workout ? t('Salva') : t('Inizia')}</button>
 	</div>
 </Sheet>

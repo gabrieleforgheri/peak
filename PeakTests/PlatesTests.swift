@@ -22,6 +22,14 @@ final class PlatesTests: XCTestCase {
         XCTAssertEqual(load.leftover, 2.5)
     }
 
+    /// Come `defaultBarWeightFor` nel web: una macchina non ha il bilanciere, il Multipower sì.
+    func testMachinesHaveNoDefaultBar() {
+        XCTAssertEqual(Plates.defaultBar(for: .barbell, name: "Rematore macchina"), 0)
+        XCTAssertEqual(Plates.defaultBar(for: .benchFlat, name: "Curl Machine"), 0)
+        XCTAssertEqual(Plates.defaultBar(for: .barbell, name: "Curl Bilanciere"), 20)
+        XCTAssertEqual(Plates.defaultBar(for: .smithMachine, name: "Smith Machine Squat"), 15)
+    }
+
     func testOnlyTheBar() {
         XCTAssertEqual(Plates.load(total: 20, bar: 20, plates: standard).perSide, [])
         XCTAssertEqual(Plates.load(total: 15, bar: 20, plates: standard).perSide, [])
