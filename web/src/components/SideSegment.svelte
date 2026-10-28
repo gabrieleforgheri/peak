@@ -2,12 +2,14 @@
 	// «2 br | 1 br» (gambe «2 gb | 1 gb»): una pillola piccola accanto al titolo del peso; `value` è il flag singleArm
 	import { sideText } from '../lib/fmt.ts'
 
-	let { value = $bindable(false), group }: { value: boolean; group?: string | null } = $props()
+	let { value = $bindable(false), group, onchange }: { value: boolean; group?: string | null; onchange?: (v: boolean) => void } = $props()
+	// solo il tocco dell'utente passa di qui: chi lo ascolta può reagire (il peso si dimezza), chi imposta `value` da fuori no
+	const pick = (v: boolean) => { if (v === value) return; value = v; onchange?.(v) }
 </script>
 
 <div class="side-seg" role="group" aria-label={sideText(group, 'long')}>
-	<button type="button" class:on={!value} aria-pressed={!value} onclick={() => (value = false)}>{sideText(group, 'two')}</button>
-	<button type="button" class:on={value} aria-pressed={value} onclick={() => (value = true)}>{sideText(group, 'one')}</button>
+	<button type="button" class:on={!value} aria-pressed={!value} onclick={() => pick(false)}>{sideText(group, 'two')}</button>
+	<button type="button" class:on={value} aria-pressed={value} onclick={() => pick(true)}>{sideText(group, 'one')}</button>
 </div>
 
 <style>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { beats, bestOf, defaultBarWeightFor, oneRepMax, plateMode, round2, toDisplay } from '@common/domain.ts'
+	import { type ArmMemo, beats, bestOf, defaultBarWeightFor, oneRepMax, plateMode, round2, switchArm, toDisplay } from '@common/domain.ts'
 	import { addSet, deleteSet, patchSet } from '../lib/actions.ts'
 	import { stepOf, warmupFor } from '../lib/derive.ts'
 	import { W, fromUnit, hasSides, relDay, setLine, toUnit, unit } from '../lib/fmt.ts'
@@ -51,6 +51,8 @@
 	let warm = $state(set?.isWarmup ?? false)
 	// a un braccio (o una gamba): la serie stessa; una serie nuova parte sempre a due
 	let arm = $state(set ? set.singleArm : false)
+	// il peso di prima del dimezzamento (totale, unità scelta): se non lo si tocca, tornando a due bracci si rimette identico
+	let armMemo: ArmMemo | null = null
 	let showRecent = $state(false)
 	const prevSets = $derived((set ? ex.sets.filter((s) => s.uuid !== set.uuid) : ex.sets).filter((s) => !s.isWarmup))
 	// le serie recenti per giorno di calendario (locale), gli ultimi 5 giorni; prevSets è già dal più recente
@@ -82,6 +84,15 @@
 	const isRecord = $derived(!warm && beats(kg, reps, reference))
 	const warmSteps = $derived(warmupFor(ex, m))
 
+	// solo il tocco sul selettore (non il caricamento di una serie): metà o doppio, sulla griglia sbarra + k × passo
+	// (per lato il totale sale di due passi alla volta)
+	function onArm(toSingle: boolean) {
+		const grid = side || isRel || mode?.bar ? bar : 0
+		const r = switchArm(toSingle, absWeight, armMemo, grid, side ? step * 2 : step)
+		armMemo = r.memo
+		weight = fromTotal(r.weight)
+	}
+
 	function save(isWarm: boolean = warm) {
 		if (!(absWeight > 0) || reps < 1) return
 		if (set) { const isPR = patchSet(set.uuid, { weight: kg, reps, isWarmup: isWarm, singleArm: arm }); onadded?.({ isPR, isWarmup: isWarm, uuid: set.uuid }) }
@@ -106,7 +117,7 @@
 					{#if mode?.bar && bar > 0}
 						<span class="small badge muted">{t('Sbarra')} {nf(bar)} {unit()}</span>
 					{/if}
-					{#if hasSides(ex.muscleGroup)}<SideSegment bind:value={arm} group={ex.muscleGroup} />{/if}
+					{#if hasSides(ex.muscleGroup)}<SideSegment bind:value={arm} group={ex.muscleGroup} onchange={onArm} />{/if}
 				</div>
 			</div>
 			<Stepper bind:value={weight} {step} min={0} max={5000} unit={unit()} />
@@ -208,7 +219,7 @@
 								</summary>
 								<div class="list">
 									{#each d.sets as s (s.uuid)}
-										<button class="item" style="background:none;border:0;width:100%;text-align:left;cursor:pointer" onclick={() => { weight = toDisplayWeight(s.weight); reps = s.reps; warm = false; arm = s.singleArm }}>
+										<button class="item" style="background:none;border:0;width:100%;text-align:left;cursor:pointer" onclick={() => { weight = toDisplayWeight(s.weight); reps = s.reps; warm = false; arm = s.singleArm; armMemo = null }}>
 											<div class="grow num" style="font-weight:700">
 												{setLine(listKg(s.weight), s.reps, s.singleArm, ex.muscleGroup)}
 												{#if isRel || side}<span class="tiny muted" style="font-weight:500">({t('tot.')} {W(s.weight)})</span>{/if}

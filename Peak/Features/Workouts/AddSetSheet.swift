@@ -27,6 +27,8 @@ struct AddSetSheet: View {
     @State private var reps: Int = 8
     @State private var isWarmup = false
     @State private var singleArm = false
+    /// Il peso di prima del dimezzamento (in unità mostrata), per rimetterlo identico tornando a due bracci.
+    @State private var armMemo: ArmSwitch.Memo?
     @State private var didPrefill = false
     @State private var isRecentSetsExpanded = false
     /// Giorni aperti nelle serie recenti: all'inizio solo il più recente.
@@ -83,6 +85,26 @@ struct AddSetSheet: View {
         Binding(
             get: { fieldKg(weight) },
             set: { weight = totalKg($0) }
+        )
+    }
+
+    /// Solo il tocco sul selettore (non il caricamento di una serie): metà o doppio, sulla griglia sbarra + k x passo.
+    /// Si lavora nell'unità mostrata, dove il passo è quello nativo; per lato il totale sale di due passi alla volta.
+    private var armBinding: Binding<Bool> {
+        Binding(
+            get: { singleArm },
+            set: { newValue in
+                let unit = settings.unit
+                let barKg = isSide ? exercise.barWeight : barWeightKg
+                let step = unit.displayStep(forKilograms: exercise.incrementStep) * (isSide ? 2 : 1)
+                let result = ArmSwitch.weight(
+                    toSingle: newValue, from: unit.fromKilograms(weight), memo: armMemo,
+                    bar: unit.fromKilograms(barKg), step: step
+                )
+                armMemo = result.memo
+                weight = unit.toKilograms(result.weight)
+                singleArm = newValue
+            }
         )
     }
 
@@ -144,7 +166,7 @@ struct AddSetSheet: View {
                                         .foregroundStyle(Theme.textTertiary)
                                 }
                                 if exercise.muscleGroup.hasSides {
-                                    SideSegment(singleArm: $singleArm, group: exercise.muscleGroup)
+                                    SideSegment(singleArm: armBinding, group: exercise.muscleGroup)
                                 }
                             }
                             WeightStepper(kilograms: stepperWeight, step: exercise.incrementStep, unit: settings.unit, tint: tint)
@@ -403,6 +425,7 @@ struct AddSetSheet: View {
             reps = prev.reps
             isWarmup = false
             singleArm = prev.singleArm
+            armMemo = nil
             Haptics.tap()
         } label: {
             HStack(spacing: 8) {

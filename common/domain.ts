@@ -53,6 +53,35 @@ export function nearest(weight: number, anchor: number, step: number): number {
   return roundHalfAway(candidate * 100) / 100
 }
 
+// ---- un braccio / due bracci ---------------------------------------------------------------------
+
+/** Il peso della griglia `bar + k·step` più vicino a `weight`; a pari distanza il più basso. Mai sotto `bar`
+ *  (né sotto un passo se `bar` è 0 e `weight` > 0). Pesi nell'unità mostrata: in lb il passo è quello nativo (5 lb). */
+export function snapToGrid(weight: number, bar: number, step: number): number {
+  if (!(weight > 0)) return weight
+  if (!(step > 0)) return round2(Math.max(weight, bar))
+  const k = (weight - bar) / step
+  let n = Math.floor(k + 1e-6)
+  if (k - n > 0.5 + 1e-6) n += 1
+  return round2(bar + Math.max(n, bar > 0 ? 0 : 1) * step)
+}
+
+/** Passando da due bracci a uno: ricordo il peso di prima (`before`) e quello dopo la metà (`after`). */
+export interface ArmMemo { before: number; after: number }
+
+/** Il peso dopo un tocco sul selettore «2 | 1». A uno: metà, sulla griglia. Di nuovo a due: se il peso è ancora
+ *  quello dimezzato torna esattamente il precedente, altrimenti il doppio sulla griglia. */
+export function switchArm(
+  toSingle: boolean, weight: number, memo: ArmMemo | null, bar: number, step: number,
+): { weight: number; memo: ArmMemo | null } {
+  if (toSingle) {
+    const after = snapToGrid(weight / 2, bar, step)
+    return { weight: after, memo: weight > 0 ? { before: weight, after } : null }
+  }
+  if (memo && Math.abs(weight - memo.after) < 0.005) return { weight: memo.before, memo: null }
+  return { weight: snapToGrid(weight * 2, bar, step), memo: null }
+}
+
 export interface WarmupStep { percent: number; reps: number; weight: number }
 
 export function warmupPlan(base: number | null | undefined, step: number): WarmupStep[] {

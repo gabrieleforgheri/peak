@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   oneRepMax, beats, warmupPlan, nearest, nextLoad, progressionFor, loadPlates, plateMode, toDisplay, toKg,
-  displayStep, defaultPlates, defaultBar, settingsForUnitChange, PhotoFraming, KG_PER_LB,
+  displayStep, snapToGrid, switchArm, defaultPlates, defaultBar, settingsForUnitChange, PhotoFraming, KG_PER_LB,
 } from './domain.ts'
 import { suggestedGlyph, SHAPES, GLYPH_TITLES, glyphSvg, glyphOf, isGlyph } from './glyph.ts'
 import { GLYPHS } from './docs.ts'
@@ -266,4 +266,45 @@ test('volume: una serie a un braccio conta il doppio, il riscaldamento zero', ()
     { exercise: 'E', weight: 30, reps: 10, isWarmup: false },
   ] }
   assert.equal(workoutVolume(w), 40 * 8 * 2 + 30 * 10)
+})
+
+test('da due bracci a uno: metà sulla griglia, pari verso il basso', () => {
+  const half = (w: number, bar = 0, step = 5) => switchArm(true, w, null, bar, step).weight
+  assert.equal(half(55), 25)   // 27,5: pari tra 25 e 30
+  assert.equal(half(50), 25)
+  assert.equal(half(60), 30)
+  assert.equal(half(65), 30)   // 32,5: pari tra 30 e 35
+  assert.equal(half(70), 35)
+  assert.equal(half(5), 5)     // mai sotto un passo
+  assert.equal(half(10, 0, 2.5), 5)
+  assert.equal(half(0), 0)
+  // con la sbarra: 20 + k·2,5
+  assert.equal(half(50, 20, 2.5), 25)
+  assert.equal(half(45, 20, 2.5), 22.5)
+  assert.equal(half(30, 20, 2.5), 20)  // 15 sotto la sbarra: la sbarra
+  assert.equal(half(23.5, 20, 5), 20)
+  assert.equal(snapToGrid(26, 20, 5), 25)
+  assert.equal(snapToGrid(27.5, 20, 5), 25)
+})
+
+test('da uno a due bracci: ripristino se il peso non è cambiato, altrimenti doppio', () => {
+  const down = switchArm(true, 55, null, 0, 5)
+  assert.deepEqual(down, { weight: 25, memo: { before: 55, after: 25 } })
+  assert.equal(switchArm(false, 25, down.memo, 0, 5).weight, 55)          // non toccato: 55, non 50
+  assert.deepEqual(switchArm(false, 30, down.memo, 0, 5), { weight: 60, memo: null }) // cambiato: il doppio
+  assert.equal(switchArm(false, 27, null, 0, 5).weight, 55)                // 54 -> 55
+  assert.equal(switchArm(false, 32.5, null, 0, 5).weight, 65)
+  assert.equal(switchArm(false, 12.5, null, 0, 5).weight, 25)
+})
+
+test('un braccio in lb: griglia nel passo nativo', () => {
+  const lb = (kg: number) => toDisplay(kg, 'lb')
+  const step = displayStep(2.5, 'lb')                                       // 5 lb
+  // 55 kg = 121,25 lb -> 60,625 lb -> 60 lb su macchina (sbarra 0)
+  const d = switchArm(true, lb(55), null, 0, step)
+  assert.equal(d.weight, 60)
+  assert.equal(switchArm(false, d.weight, d.memo, 0, step).weight, lb(55))
+  // con la sbarra da 20 kg (44,09 lb): griglia 44,09 + 5k; 100 kg = 220,46 lb -> 110,23 -> k = 13
+  const bar = lb(20)
+  near(switchArm(true, lb(100), null, bar, step).weight, bar + 13 * step)
 })

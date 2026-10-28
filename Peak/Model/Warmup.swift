@@ -53,3 +53,36 @@ enum Warmup {
         }
     }
 }
+
+/// Il peso quando si passa da due bracci a uno e viceversa (gemello di `snapToGrid` / `switchArm` in common/domain.ts).
+/// I pesi sono nell'unità mostrata: in lb il passo è quello nativo (5 lb), non i 2,5 kg convertiti.
+enum ArmSwitch {
+
+    /// Il peso prima e dopo il dimezzamento: se non lo si tocca, tornando a due bracci si rimette identico.
+    struct Memo {
+        var before: Double
+        var after: Double
+    }
+
+    /// Il peso della griglia `bar + k·step` più vicino a `weight`; a pari distanza il più basso. Mai sotto `bar`
+    /// (né sotto un passo se `bar` è 0 e `weight` > 0).
+    static func snapToGrid(_ weight: Double, bar: Double, step: Double) -> Double {
+        guard weight > 0 else { return weight }
+        guard step > 0 else { return (max(weight, bar) * 100).rounded() / 100 }
+        let k = (weight - bar) / step
+        var n = (k + 1e-6).rounded(.down)
+        if k - n > 0.5 + 1e-6 { n += 1 }
+        return ((bar + max(n, bar > 0 ? 0 : 1) * step) * 100).rounded() / 100
+    }
+
+    /// Il peso dopo un tocco sul selettore «2 | 1»: a uno la metà sulla griglia; di nuovo a due il precedente
+    /// se il peso è ancora quello dimezzato, altrimenti il doppio sulla griglia.
+    static func weight(toSingle: Bool, from weight: Double, memo: Memo?, bar: Double, step: Double) -> (weight: Double, memo: Memo?) {
+        if toSingle {
+            let after = snapToGrid(weight / 2, bar: bar, step: step)
+            return (after, weight > 0 ? Memo(before: weight, after: after) : nil)
+        }
+        if let memo, abs(weight - memo.after) < 0.005 { return (memo.before, nil) }
+        return (snapToGrid(weight * 2, bar: bar, step: step), nil)
+    }
+}
