@@ -1,65 +1,93 @@
 <script lang="ts">
-	import { tick } from 'svelte'
+	import { onDestroy, tick } from 'svelte'
 	import { setSetting } from '../lib/actions.ts'
+	import { reduced } from '../lib/fx.ts'
 	import { t } from '../lib/i18n.ts'
-	import { go } from '../lib/router.svelte.ts'
-	import { getModel } from '../lib/store.svelte.ts'
+	import { go, route } from '../lib/router.svelte.ts'
+	import { batch, getModel } from '../lib/store.svelte.ts'
+	import Ideas from './Ideas.svelte'
+	import Icon from './Icon.svelte'
 
 	/**
-	 * Il tutorial sulle schermate vere: un riquadro luminoso su un controllo alla volta. I passi «da fare» (aggiungi un
-	 * macchinario, crea una scheda) aspettano che lo fai davvero e si saltano da soli se l'hai già fatto.
+	 * Il tutorial: prima quattro schermi con le idee di Peak (Ideas), poi un giro sulle schermate vere con un riquadro luminoso che
+	 * vola da un controllo all'altro: le quattro schede, «Avvia allenamento», «+ Serie». Gli ultimi due si fanno davvero:
+	 * parte un allenamento vero e la prima serie salvata chiude il giro. Si salta da ogni schermo e da ogni passo.
 	 */
+	let { onend }: { onend: () => void } = $props()
 	const m = $derived(getModel())
 
-	interface Step { id: string; route?: string; target?: string; title: string; text: string; done?: () => boolean; optional?: boolean; since?: number }
-	const hasMachine = () => m.exercises.some((e) => !e.isArchived)
-	const hasTemplate = () => m.templates.length > 0
-	const all = $derived<Step[]>([
-		{ id: 'welcome', route: 'allenamento', title: t('Benvenuto in Peak'), text: t('Un minuto per fare il giro: ti mostro dove sta ogni cosa e ti faccio creare il primo macchinario e il primo giorno.') },
-		{ id: 'home', route: 'allenamento', target: '[data-tour="hero"]', title: t('La tua settimana'), text: t('Qui vedi la tua settimana e l\'obiettivo: tocca la barra per cambiarlo. Sotto, il pulsante ti fa partire con il giorno di oggi.') },
-		{ id: 'settings', route: 'allenamento', target: '[data-tour="avatar"]', title: t('Profilo'), text: t('Toccando la tua iniziale in alto a destra apri il tuo profilo: i tuoi numeri e le medaglie. Le impostazioni (unità, lingua, colore, timer di recupero, backup, account yG) sono lì, con l\'ingranaggio. Il tutorial lo rivedi da Generale.') },
-		{ id: 'workout', route: 'allenamento', target: '[data-tour="tab-allenamento"]', title: t('Allenamento'), text: t('Qui alleni: scegli un giorno o parti a mano e registra le serie una per una.') },
-		{ id: 'template', route: 'allenamento', target: '[data-tour="new-template"]', title: t('Crea il tuo primo giorno'), text: t('Un giorno è una lista di esercizi con serie e ripetizioni: lo scegli quando inizi e li trovi già pronti. Le schede raccolgono i giorni.'), done: hasTemplate },
-		{ id: 'machines', route: 'macchinari', target: '[data-tour="tab-macchinari"]', title: t('Macchinari'), text: t('Qui tieni i tuoi macchinari e i loro massimali. Si aggiungono cercando in un catalogo: così il tuo «Chest Press» è lo stesso dei tuoi amici e potete fare la classifica.') },
-		{ id: 'add-machine', route: 'macchinari', target: '[data-tour="add-machine"]', title: t('Aggiungi il primo macchinario'), text: t('Tocca + e cerca nel catalogo. Poi gli puoi dare un nome tuo.'), done: hasMachine },
-		{ id: 'figures', route: 'macchinari', target: '[data-tour="tab-macchinari"]', since: 2, title: t('Figure dei muscoli'), text: t('Ogni macchinario mostra i muscoli che lavorano: la figura si ritaglia sulla zona. Nel riepilogo di una seduta vedi tutti i muscoli lavorati.') },
-		{ id: 'medals', route: 'me', target: '[data-tour="medals"]', since: 2, title: t('Medaglie'), text: t('Le medaglie hanno tre livelli e ti dicono cosa manca per il prossimo.') },
-		{ id: 'progress', route: 'me', target: '[data-tour="tab-me"]', title: t('Me'), text: t('Il tuo profilo con tutta la tua storia: medaglie, attività, volume, record e peso corporeo.') },
-		{ id: 'friends', route: 'amici', target: '[data-tour="tab-amici"]', title: t('Amici'), text: t('Invita gli amici con un link o un QR: vedete i massimali e le schede l\'uno dell\'altro e fate la classifica.') },
-		{ id: 'invite', route: 'amici', target: '[data-tour="invite"]', title: t('Invita un amico'), text: t('Quando vuoi. Il link vale una volta sola.'), optional: true },
-	])
-	// chi ha già finito il tutorial vede solo i passi nuovi
-	const steps = $derived(all.filter((s) => !m.settings.tutorialDone || (s.since ?? 1) > m.settings.tourSeen))
+	type StepId = 'tabs' | 'start' | 'set'
+	let phase = $state<'ideas' | 'marks'>('ideas')
+	let stepId = $state<StepId>('tabs')
+	let cheer = $state(false)
+	let cheerTimer: ReturnType<typeof setTimeout> | undefined
+	onDestroy(() => clearTimeout(cheerTimer))
 
-	// si parte dal primo passo che non è già soddisfatto
-	let at = $state(0)
+	const STEPS = $derived<Record<StepId, { target: string; title: string; text: string; next?: boolean }>>({
+		tabs: { target: '[data-tour="tabs"]', title: t('Quattro sezioni'), text: t('Allenamento, Macchinari, Me, Amici.'), next: true },
+		start: { target: '[data-tour="start"]', title: t('Inizia da qui'), text: t('Tocca il pulsante per iniziare.') },
+		set: { target: '[data-tour="add-set"]', title: t('Aggiungi una serie'), text: t('Tocca + Serie e salvala.') },
+	})
+	const step = $derived(phase === 'marks' ? STEPS[stepId] : null)
+
+	function finish() { batch(() => { setSetting('tutorialDone', true); setSetting('tourSeen', 3) }) }
+	function skip() { finish(); onend() }
+
+	// ---- dove siamo: l'allenamento aperto e se se ne sta guardando la pagina ----
+	const active = $derived(m.workouts.find((w) => w.isActive))
+	const inSession = $derived(!!active && route.parts[0] === 'allenamento' && route.parts[1] === active.uuid && route.parts[2] !== 'riepilogo')
+	const onMain = $derived(route.parts.length <= 1 && route.parts[0] !== 'impostazioni')
+	const onWorkouts = $derived(route.parts.length === 0 || route.parts[0] === 'allenamento')
+
+	// porta alla schermata del passo (dopo «Rivedi il tutorial» si parte da Impostazioni); chi ha già un allenamento aperto riprende da lì
+	$effect(() => {
+		if (phase !== 'marks' || cheer) return
+		if (stepId === 'tabs') { if (!onMain) go('allenamento', true) }
+		else if (stepId === 'start') {
+			if (inSession) stepId = 'set'
+			else if (active) go(`allenamento/${active.uuid}`, true)
+			else if (!onWorkouts || route.parts.length > 1) go('allenamento', true)
+		} else if (!active) stepId = 'start'
+		else if (!inSession) go(`allenamento/${active.uuid}`, true)
+	})
+
+	// l'ultimo passo si chiude da solo quando nell'allenamento compare una serie in più
+	let base = -1
+	$effect(() => {
+		if (phase !== 'marks' || stepId !== 'set' || !active || cheer) { base = -1; return }
+		const n = active.sets.length
+		if (base < 0 || n < base) base = n
+		else if (n > base) {
+			finish()
+			cheer = true
+			cheerTimer = setTimeout(onend, 3600)
+		}
+	})
+
+	// ---- il riquadro: segue il controllo e vola da un passo all'altro ----
 	let rect = $state<{ x: number; y: number; w: number; h: number } | null>(null)
 	let hidden = $state(false)
-	const step = $derived(steps[at])
-	const last = $derived(at === steps.length - 1)
-
-	function finish() { setSetting('tutorialDone', true); setSetting('tourSeen', 2) }
-	function advance() {
-		let n = at + 1
-		while (n < steps.length && steps[n]!.done?.()) n++ // chi l'ha già fatto salta il passo
-		if (n >= steps.length) return finish()
-		at = n
-	}
-	// un passo «da fare» si chiude quando l'hai fatto
-	$effect(() => { if (step?.done?.()) { const id = step.id; setTimeout(() => { if (steps[at]?.id === id) advance() }, 700) } })
-
-	// porta alla schermata del passo e segue il controllo (si sposta, si apre un foglio…)
+	let fly = $state(false)
+	let flyTimer: ReturnType<typeof setTimeout> | undefined
+	onDestroy(() => clearTimeout(flyTimer))
 	$effect(() => {
 		const s = step
 		if (!s) return
-		if (s.route) go(s.route, true)
+		fly = true
+		clearTimeout(flyTimer)
+		flyTimer = setTimeout(() => (fly = false), 520) // la scia vale solo per il cambio di passo, non mentre la pagina scorre
 		let alive = true
+		let scrolledAt = 0
 		const measure = () => {
 			if (!alive) return
-			hidden = !!document.querySelector('.backdrop') // un foglio aperto (il catalogo, l'editor) passa davanti
-			const el = s.target ? (document.querySelector(s.target) as HTMLElement | null) : null
+			hidden = !!document.querySelector('.backdrop') // un foglio aperto (il catalogo, la serie) passa davanti
+			const el = document.querySelector(s.target) as HTMLElement | null
 			const r = el?.getBoundingClientRect()
-			rect = r && r.width > 0 ? { x: r.left, y: r.top, w: r.width, h: r.height } : null
+			if (el && r && r.width > 0) {
+				// fuori dallo schermo: si porta al centro (il velo non lascia scorrere a mano)
+				if ((r.top < 70 || r.bottom > innerHeight - 90) && Date.now() - scrolledAt > 900) { scrolledAt = Date.now(); el.scrollIntoView({ block: 'center', behavior: reduced() ? 'auto' : 'smooth' }) }
+				rect = { x: r.left, y: r.top, w: r.width, h: r.height }
+			} else rect = null
 		}
 		void tick().then(measure)
 		const id = setInterval(measure, 250)
@@ -67,39 +95,76 @@
 		return () => { alive = false; clearInterval(id); removeEventListener('resize', measure); removeEventListener('scroll', measure, true) }
 	})
 
-	const PAD = 8
-	const hole = $derived(rect ? { x: Math.max(0, rect.x - PAD), y: Math.max(0, rect.y - PAD), w: rect.w + PAD * 2, h: rect.h + PAD * 2 } : null)
-	// il riquadro sta fuori dal buco: sotto se c'è posto, sopra altrimenti
+	const PAD = 6
+	const hole = $derived.by(() => {
+		if (!rect) return null
+		const x = Math.max(3, rect.x - PAD), y = Math.max(3, rect.y - PAD)
+		return { x, y, w: Math.min(innerWidth - 3, rect.x + rect.w + PAD) - x, h: Math.min(innerHeight - 3, rect.y + rect.h + PAD) - y }
+	})
+	// la carta sta fuori dal buco: sotto se c'è posto, sopra altrimenti; senza controllo (non c'è ancora) in basso, senza velo
 	const cardStyle = $derived.by(() => {
-		if (!hole) return 'top:50%;transform:translateY(-50%)'
-		// schermo largo, controllo nel binario a sinistra: il riquadro gli sta accanto
-		if (innerWidth >= 900 && hole.x + hole.w < 260) return `left:${hole.x + hole.w + 18}px;right:auto;margin:0;top:${Math.max(16, Math.min(hole.y, innerHeight - 230))}px`
+		if (!hole) return 'bottom:calc(env(safe-area-inset-bottom, 0px) + 24px)'
+		// schermo largo, controllo nel binario a sinistra: la carta gli sta accanto
+		if (innerWidth >= 900 && hole.x + hole.w < 260) return `left:${hole.x + hole.w + 18}px;right:auto;margin:0;top:${Math.max(16, Math.min(hole.y, innerHeight - 200))}px`
 		const below = hole.y + hole.h + 14
-		return innerHeight - below > 190 ? `top:${below}px` : `bottom:${innerHeight - hole.y + 14}px`
+		return innerHeight - below > 170 ? `top:${below}px` : `bottom:${innerHeight - hole.y + 14}px`
 	})
 	// dentro il buco i tocchi arrivano al controllo vero; fuori, il resto è bloccato
 	const clip = $derived(hole ? `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${hole.x}px ${hole.y}px, ${hole.x}px ${hole.y + hole.h}px, ${hole.x + hole.w}px ${hole.y + hole.h}px, ${hole.x + hole.w}px ${hole.y}px, ${hole.x}px ${hole.y}px)` : 'none')
 </script>
 
-{#if step && !hidden}
-	<div class="veil" style="clip-path:{clip}"></div>
-	{#if hole}<div class="ring" style="left:{hole.x}px;top:{hole.y}px;width:{hole.w}px;height:{hole.h}px"></div>{/if}
-	<div class="card tour" style={cardStyle} role="dialog" aria-label={step.title}>
-		<div class="tiny faint" style="margin-bottom:4px">{at + 1} / {steps.length}</div>
-		<div class="mid">{step.title}</div>
-		<p class="muted small" style="margin:6px 0 14px">{step.text}</p>
-		<div class="row between">
-			<button class="link small" onclick={finish}>{t('Salta il tutorial')}</button>
-			{#if !step.done || step.optional}<button class="btn primary small" onclick={advance}>{last ? t('Fine') : t('Avanti')}</button>
-			{:else}<span class="small faint">{t('Fallo per continuare')}</span>{/if}
-		</div>
+{#if phase === 'ideas'}
+	<Ideas onnext={() => (phase = 'marks')} onskip={skip} />
+{:else if cheer}
+	<div class="card coach cheer" role="status">
+		<svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true"><circle cx="24" cy="24" r="21" /><path d="M14 25l7 7 13-15" /></svg>
+		<div class="mid">{t('Prima serie fatta')}</div>
+		<p class="muted small">{t('Ora sai come si fa.')}</p>
+		<button class="btn primary block" onclick={onend}>{t('Fine')}</button>
 	</div>
+{:else if step && !hidden}
+	{#if hole}
+		<div class="shield" style="clip-path:{clip}"></div>
+		<div class="spot" class:fly style="left:{hole.x}px;top:{hole.y}px;width:{hole.w}px;height:{hole.h}px"><i class="dim"></i><i class="ring"></i></div>
+	{/if}
+	{#key stepId}
+		<div class="card coach" style={cardStyle} role="dialog" aria-label={step.title}>
+			<div class="mid">{step.title}</div>
+			<p class="muted small">{step.text}</p>
+			<div class="row between">
+				<button class="skip" onclick={skip}>{t('Salta')}</button>
+				{#if step.next}<button class="btn primary" onclick={() => (stepId = 'start')}>{t('Avanti')}<Icon name="right" size={18} /></button>
+				{:else}<span class="small faint">{t('Fallo per continuare')}</span>{/if}
+			</div>
+		</div>
+	{/key}
 {/if}
 
 <style>
-	.veil { position: fixed; inset: 0; z-index: 30; background: rgba(4, 7, 14, .78); }
-	.ring { position: fixed; z-index: 31; border-radius: 16px; pointer-events: none; border: 2px solid var(--accent); box-shadow: 0 0 0 4px rgba(var(--accent-rgb), .25), 0 0 24px rgba(var(--accent-rgb), .5); animation: glow 1.6s ease-in-out infinite; }
-	@keyframes glow { 50% { box-shadow: 0 0 0 8px rgba(var(--accent-rgb), .12), 0 0 34px rgba(var(--accent-rgb), .7); } }
-	.tour { position: fixed; z-index: 32; left: 16px; right: 16px; max-width: 420px; margin: 0 auto; background: #151a28; border-color: rgba(var(--accent-rgb), .4); box-shadow: 0 20px 50px rgba(0,0,0,.6); }
-	@media (prefers-reduced-motion: reduce) { .ring { animation: none; } }
+	.shield { position: fixed; inset: 0; z-index: 30; }
+	/* il buco: l'alone scuro è l'ombra enorme del riquadro; si sposta (left/top/width/height) da un controllo all'altro */
+	.spot { position: fixed; z-index: 31; pointer-events: none; }
+	.spot.fly { transition: left 450ms var(--ease-out), top 450ms var(--ease-out), width 450ms var(--ease-out), height 450ms var(--ease-out); }
+	.spot i { position: absolute; inset: 0; border-radius: 16px; }
+	.dim { box-shadow: 0 0 0 150vmax rgba(4, 7, 14, .78); }
+	.ring { border: 2px solid var(--accent); animation: ping 1.8s ease-out infinite; }
+	@keyframes ping {
+		0% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), .55), 0 0 24px rgba(var(--accent-rgb), .45); }
+		100% { box-shadow: 0 0 0 16px rgba(var(--accent-rgb), 0), 0 0 24px rgba(var(--accent-rgb), .45); }
+	}
+	.coach { position: fixed; z-index: 32; left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); max-width: 380px; max-height: calc(100dvh - 32px); overflow-y: auto; margin: 0 auto; background: #151a28; border-color: rgba(var(--accent-rgb), .4); box-shadow: 0 20px 50px rgba(0, 0, 0, .6);
+		animation: cardin 350ms var(--ease-out); }
+	.coach .mid { font-size: 18px; letter-spacing: -0.01em; }
+	.coach p { margin: 4px 0 12px; text-wrap: balance; }
+	.coach .btn { min-height: 44px; }
+	.coach :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+	.skip { min-height: 44px; margin-left: -8px; padding: 0 8px; border: 0; background: none; color: var(--text-2); font-weight: 600; font-size: 15px; border-radius: 10px; }
+	@keyframes cardin { from { opacity: 0; transform: translateY(8px); } }
+	/* la prima serie fatta */
+	.cheer { top: calc(env(safe-area-inset-top, 0px) + 16px); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+	.cheer p { margin-bottom: 10px; }
+	.cheer svg { margin-bottom: 4px; }
+	.cheer circle { fill: rgba(95, 217, 138, .16); stroke: var(--pos); stroke-width: 2.5; }
+	.cheer path { fill: none; stroke: var(--pos); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 30; animation: draw 500ms var(--ease-out) 200ms backwards; }
+	@keyframes draw { from { stroke-dashoffset: 30; } }
 </style>

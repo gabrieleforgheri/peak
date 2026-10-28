@@ -6,7 +6,7 @@
 	import { T } from './lib/toast.svelte.ts'
 	import { adoptLooseTemplates } from './lib/actions.ts'
 	import Icon from './components/Icon.svelte'
-	import FirstRun from './pages/FirstRun.svelte'
+	import Onboarding from './pages/Onboarding.svelte'
 	import Maxes from './pages/Maxes.svelte'
 	import ExerciseDetail from './pages/ExerciseDetail.svelte'
 	import Workouts from './pages/Workouts.svelte'
@@ -37,21 +37,28 @@
 	$effect(() => { const l = m.settings.language; if (l && l !== lang) applyLang(l) })
 	// i giorni di prima delle schede generali vanno in «La mia scheda»
 	$effect(() => { if (S.ready && S.synced) adoptLooseTemplates(t('La mia scheda')) })
-	let started = $state(false)
-	const showFirstRun = $derived(S.ready && S.synced && !m.hasData && !started)
+	// il primo avvio di un account vuoto: resta finché non finisce, anche se nel frattempo i dati ci sono (li crea lui)
+	let onboardHeld = $state(false)
+	let onboarded = $state(false)
+	const onboarding = $derived(!onboarded && (onboardHeld || (S.ready && S.synced && !m.hasData)))
+	$effect(() => { if (onboarding) onboardHeld = true })
+	// il tutorial parte da solo (dopo il primo avvio, o da «Rivedi il tutorial») e resta finché non lo chiudi, anche se intanto le impostazioni cambiano
+	let tutorialHeld = $state(false)
+	const wantTutorial = $derived(S.ready && S.synced && !onboarding && m.settings.weeklyGoal > 0 && (!m.settings.tutorialDone || m.settings.tourSeen < 2))
+	$effect(() => { if (wantTutorial) tutorialHeld = true })
 	const loading = $derived(!S.ready || (!S.synced && !m.hasData && S.auth !== 'expired'))
 	// le schede (barra in basso o binario a sinistra) si vedono solo nelle pagine principali
 	const showNav = $derived(!deep && tab !== 'impostazioni')
 	const offline = $derived(S.error === 'offline' && !S.user)
 </script>
 
-<div class="app" class:rail={showNav && !offline && !loading && !showFirstRun}>
+<div class="app" class:rail={showNav && !offline && !loading && !onboarding}>
 	{#if offline}
 		<main class="screen no-tabs"><div class="empty"><div class="mid">{t('Senza rete')}</div>{t('Apri Peak una volta con la connessione, poi funzionerà anche offline.')}</div></main>
 	{:else if loading}
 		<main class="screen no-tabs"><div class="empty">{t('Carico i tuoi dati…')}</div></main>
-	{:else if showFirstRun}
-		<FirstRun onstart={() => (started = true)} />
+	{:else if onboarding}
+		<Onboarding onfinish={() => (onboarded = true)} />
 	{:else}
 		{#if S.auth === 'expired'}
 			<div class="screen" style="padding-bottom:0;padding-top:calc(env(safe-area-inset-top) + 8px);margin-bottom:-4px">
@@ -78,15 +85,15 @@
 			{/if}
 		{/key}
 		{#if showNav}
-			<nav class="tabbar"><div class="tabbar-in">
+			<nav class="tabbar"><div class="tabbar-in" data-tour="tabs">
 				{#each tabs as x}
-					<button class="tab" class:on={tab === x.id} onclick={() => go(x.id)} data-tour="tab-{x.id}"><Icon name={x.icon} />{t(x.label)}</button>
+					<button class="tab" class:on={tab === x.id} onclick={() => go(x.id)}><Icon name={x.icon} />{t(x.label)}</button>
 				{/each}
 			</div></nav>
 		{/if}
 	{/if}
-	<!-- la prima volta: prima l'obiettivo, poi il tutorial -->
-	{#if !loading && !showFirstRun && S.synced && !m.settings.weeklyGoal}<GoalPicker onclose={() => {}} />
-	{:else if !loading && !showFirstRun && S.synced && (!m.settings.tutorialDone || m.settings.tourSeen < 2)}<Tour />{/if}
+	<!-- la prima volta: prima l'obiettivo (nel primo avvio l'ha già scelto), poi il tutorial -->
+	{#if !loading && !onboarding && S.synced && !m.settings.weeklyGoal}<GoalPicker onclose={() => {}} />
+	{:else if !loading && !onboarding && (tutorialHeld || wantTutorial)}<Tour onend={() => (tutorialHeld = false)} />{/if}
 	{#if T.msg}<div class="toast" role="status">{#if T.icon}<Icon name={T.icon} size={18} />{/if}{T.msg}</div>{/if}
 </div>

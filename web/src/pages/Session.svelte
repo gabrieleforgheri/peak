@@ -174,7 +174,7 @@
 			{/if}
 		</div>
 
-		{#each items as it (it.exercise)}
+		{#each items as it, idx (it.exercise)}
 			{@const ex = m.exById.get(it.exercise)!}
 			{@const sets = wk.sets.filter((s) => s.exercise === ex.uuid)}
 			{@const goal = targetLine(it, sets.filter((s) => !s.isWarmup).length, null)}
@@ -268,7 +268,7 @@
 					</div>
 
 					<div class="row" style="margin-top:12px">
-						<button class="btn small grow" onclick={() => (adding = { ex, set: null })}><Icon name="plus" size={18} />{t('Serie')}</button>
+						<button class="btn small grow" onclick={() => (adding = { ex, set: null })} data-tour={idx === 0 ? 'add-set' : undefined}><Icon name="plus" size={18} />{t('Serie')}</button>
 						{#if sets.length}<button class="btn small" onclick={() => repeat(ex)} aria-label={t('Ripeti l\'ultima serie')}><Icon name="repeat" size={18} /></button>{/if}
 					</div>
 				</div>

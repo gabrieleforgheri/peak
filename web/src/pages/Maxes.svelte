@@ -47,7 +47,7 @@
 <main class="screen">
 	<div class="bar">
 		<h1>{t('Macchinari')}</h1>
-		<button class="icon-btn" onclick={() => (creating = true)} aria-label={t('Nuovo macchinario')} data-tour="add-machine"><Icon name="plus" /></button>
+		<button class="icon-btn" onclick={() => (creating = true)} aria-label={t('Nuovo macchinario')}><Icon name="plus" /></button>
 	</div>
 
 	{#if unlinked.length > 0}

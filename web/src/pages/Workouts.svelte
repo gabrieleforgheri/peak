@@ -143,7 +143,7 @@
 				{/each}
 			</div>
 		{/if}
-		<button class="btn block" style="margin-top:10px" onclick={() => (editing = 'new')} data-tour="new-template"><Icon name="plus" size={20} />{t('Nuovo giorno')}</button>
+		<button class="btn block" style="margin-top:10px" onclick={() => (editing = 'new')}><Icon name="plus" size={20} />{t('Nuovo giorno')}</button>
 	</div>
 
 	<div class="blk">

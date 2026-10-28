@@ -9,7 +9,7 @@
 	import { getModel } from '../lib/store.svelte.ts'
 	import { photoUrl, preparePhoto } from '../lib/photo.ts'
 	import type { CatalogEntry } from '@common/catalog.ts'
-	import { entryName, loadCatalog } from '../lib/catalog.ts'
+	import { catalogDefaults, entryName, loadCatalog } from '../lib/catalog.ts'
 	import CatalogPicker from './CatalogPicker.svelte'
 	import Glyph from './Glyph.svelte'
 	import MuscleFigure from './MuscleFigure.svelte'
@@ -72,9 +72,10 @@
 		if (wasNew) {
 			own = false; muscles = []; glyph = ''
 			// precompila: il nome si può cambiare subito con uno familiare
-			name = startName.trim() || entryName(e); group = e.group; step = e.step; notes = e.notes
-			barWeight = toUnit(defaultBarWeightFor(e.glyph, entryName(e)))
-			plateLoaded = guessPlateLoaded(e.glyph, entryName(e))
+			const d = catalogDefaults(e)
+			name = startName.trim() || d.name; group = d.group; step = d.step; notes = d.notes
+			barWeight = toUnit(d.barWeight)
+			plateLoaded = d.plateLoaded
 		}
 	}
 

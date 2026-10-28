@@ -2,13 +2,13 @@
 // derivano dalle serie (common/records.ts), quindi cancellare o modificare una serie basta a tenerli giusti.
 
 import { isoSec, newUuid, MUSCLE_GROUPS, type DocDataMap, type ExerciseDoc, type Kind, type MuscleGroup, type SetDoc, type TemplateDoc, type TemplateItem, type WorkoutDoc } from '@common/docs.ts'
-import { defaultBarWeightFor, guessPlateLoaded, settingsForUnitChange, type Unit } from '@common/domain.ts'
+import { settingsForUnitChange, type Unit } from '@common/domain.ts'
 import { addItem, differsFromTemplate, moveItem, removeItem, replaceItem, sessionItems, type PlanSet } from '@common/plan.ts'
 import type { AnyRecord } from '@common/records.ts'
 import { activeProgram } from './derive.ts'
 import { batch, getModel, put, remove, rows } from './store.svelte.ts'
-import { norm } from '@common/catalog.ts'
-import { entryName, loadCatalog } from './catalog.ts'
+import { norm, type CatalogEntry } from '@common/catalog.ts'
+import { catalogDefaults, loadCatalog } from './catalog.ts'
 import type { Ex, Tpl, Wk } from './types.ts'
 
 const docOf = <K extends Kind>(kind: K, uuid: string): DocDataMap[K] | undefined => {
@@ -101,11 +101,11 @@ export function updateTemplateFromWorkout(tpl: Tpl, wk: Wk) {
 	saveTemplate(tpl.uuid, tpl.name, sessionItems(wk.plan, planSets(wk), exists, 'targets'))
 }
 
-export function saveTemplate(id: string | null, name: string, items: TemplateItem[], hidden?: boolean, icon?: TemplateDoc['icon'], where?: { program: string; weekday: number }): string {
+export function saveTemplate(id: string | null, name: string, items: TemplateItem[], hidden?: boolean, icon?: TemplateDoc['icon'], where?: { program: string; weekday: number; sortIndex?: number }): string {
 	const uuid = id ?? newUuid()
 	const prev = getModel().tplById.get(uuid)
 	const top = getModel().templates.reduce((m, x) => Math.max(m, x.sortIndex), -1)
-	put('template', uuid, { name: name.trim(), items, sortIndex: prev?.sortIndex ?? top + 1, createdAt: prev?.createdAt ?? now(), hidden: hidden ?? prev?.hidden ?? false, icon: icon ?? prev?.icon ?? '',
+	put('template', uuid, { name: name.trim(), items, sortIndex: where?.sortIndex ?? prev?.sortIndex ?? top + 1, createdAt: prev?.createdAt ?? now(), hidden: hidden ?? prev?.hidden ?? false, icon: icon ?? prev?.icon ?? '',
 		// un giorno nuovo finisce nella scheda in uso
 		program: where?.program ?? prev?.program ?? activeProgram(getModel())?.uuid ?? '', weekday: where?.weekday ?? prev?.weekday ?? -1 })
 	return uuid
@@ -136,6 +136,41 @@ export function deleteProgram(id: string) {
 
 export const setActiveProgram = (id: string) => setSetting('activeProgram', id)
 
+/** Un giorno del primo avvio: `machines` sono voci del catalogo o uuid di macchinari già creati. */
+export interface StarterDay { group: MuscleGroup; name: string; machines: (CatalogEntry | string)[] }
+
+/**
+ * Il primo avvio: una scheda in uso con un giorno per gruppo, nell'ordine dato, righe senza serie né ripetizioni né peso.
+ * Dalle voci del catalogo si crea il macchinario solo se non ce l'hai già. Restituisce cosa serve a `undoStarterPlan`.
+ */
+export function createStarterPlan(planName: string, days: StarterDay[]): { program: string; exercises: string[] } {
+	const m = getModel()
+	const made = new Map<string, string>()
+	const exercises: string[] = []
+	let top = m.exercises.reduce((n, e) => Math.max(n, e.sortIndex), -1)
+	const dayTop = m.templates.reduce((n, x) => Math.max(n, x.sortIndex), -1)
+	let program = ''
+	batch(() => {
+		program = saveProgram(null, planName, false)
+		setActiveProgram(program)
+		days.forEach((d, i) => {
+			const items: TemplateItem[] = []
+			for (const x of d.machines) {
+				const uuid = typeof x === 'string' ? x
+					: made.get(x.id) ?? m.exercises.find((e) => e.catalog === x.id && !e.isArchived)?.uuid ?? (() => { const u = addCatalogExercise(x, ++top); exercises.push(u); made.set(x.id, u); return u })()
+				if (!items.some((it) => it.exercise === uuid)) items.push({ exercise: uuid, sets: 0, repsMin: 0, repsMax: 0, weight: null })
+			}
+			saveTemplate(null, d.name, items, false, `muscle:${d.group}`, { program, weekday: -1, sortIndex: dayTop + 1 + i })
+		})
+	})
+	return { program, exercises }
+}
+
+/** Toglie quello che ha fatto `createStarterPlan` (si torna indietro dalla schermata finale del primo avvio). */
+export function undoStarterPlan(p: { program: string; exercises: string[] }) {
+	batch(() => { deleteProgram(p.program); for (const id of p.exercises) deleteExercise(id) })
+}
+
 /** I giorni di prima delle schede generali finiscono in «La mia scheda». Una volta sola, e solo se ce ne sono. */
 export function adoptLooseTemplates(name: string) {
 	const loose = getModel().templates.filter((t) => !t.program)
@@ -161,14 +196,9 @@ export async function copyTemplate(src: { name: string; rows: { catalog: string;
 			let ex = r.catalog ? mine.find((e) => e.catalog === r.catalog) : mine.find((e) => !e.catalog && norm(e.name) === norm(r.name))
 			let uuid = ex?.uuid
 			if (!uuid) {
-				uuid = newUuid()
-				put('exercise', uuid, {
-					name: entry ? entryName(entry) : r.name, muscleGroup: entry?.group ?? 'petto', notes: entry?.notes ?? '', incrementStep: entry?.step ?? 2.5,
-					sortIndex: ++top, isArchived: false, createdAt: now(), glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0,
-					catalog: entry?.id ?? '', hidden: false, custom: !entry, muscles: [], view: '',
-					barWeight: entry ? defaultBarWeightFor(entry.glyph, entryName(entry)) : 0,
-					weightDisplay: 'absolute',
-					plateLoaded: entry ? guessPlateLoaded(entry.glyph, entryName(entry)) : false, perSide: false,
+				uuid = entry ? addCatalogExercise(entry, ++top) : saveExercise(null, {
+					name: r.name, muscleGroup: 'petto', notes: '', incrementStep: 2.5, sortIndex: ++top, isArchived: false, glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0,
+					catalog: '', hidden: false, custom: true, muscles: [], view: '', barWeight: 0, weightDisplay: 'absolute', plateLoaded: false, perSide: false,
 				})
 				ex = { uuid, catalog: entry?.id ?? '', name: r.name } as Ex
 				mine.push(ex)
@@ -187,6 +217,16 @@ export function saveExercise(id: string | null, d: Omit<ExerciseDoc, 'createdAt'
 	const top = getModel().exercises.reduce((m, e) => Math.max(m, e.sortIndex), -1)
 	put('exercise', uuid, { ...d, createdAt: d.createdAt ?? prev?.createdAt ?? now(), sortIndex: d.sortIndex ?? prev?.sortIndex ?? top + 1 })
 	return uuid
+}
+
+/** Un macchinario preso dal catalogo, con i valori che gli dà l'aggiunta guidata. `sortIndex` va dato dentro un batch(), dove il modello non è ancora aggiornato. */
+export function addCatalogExercise(entry: CatalogEntry, sortIndex?: number): string {
+	const d = catalogDefaults(entry)
+	return saveExercise(null, {
+		name: d.name, muscleGroup: d.group, notes: d.notes, incrementStep: d.step, isArchived: false, glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0,
+		catalog: entry.id, hidden: false, custom: false, muscles: [], view: '', barWeight: d.barWeight, weightDisplay: 'absolute', plateLoaded: d.plateLoaded, perSide: false,
+		...(sortIndex === undefined ? {} : { sortIndex }),
+	})
 }
 
 export function patchExercise(id: string, patch: Partial<ExerciseDoc>) {

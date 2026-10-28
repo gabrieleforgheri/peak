@@ -113,7 +113,7 @@
 			<h1 class="ellipsis">{name}</h1>
 			{#if S.user?.username}<div class="small muted">@{S.user.username}</div>{/if}
 		</div>
-		<button class="icon-btn" onclick={() => go('impostazioni')} aria-label={t('Impostazioni')} data-tour="settings"><Icon name="settings" /></button>
+		<button class="icon-btn" onclick={() => go('impostazioni')} aria-label={t('Impostazioni')}><Icon name="settings" /></button>
 	</header>
 
 	<div class="row friends span">
@@ -146,7 +146,7 @@
 		<div class="medals">
 			{#each medalList as md (md.id)}<Medal medal={md} icon={MEDAL[md.id].icon} title={MEDAL[md.id].title} sub={medalSub(md)} />{/each}
 		</div>
-		<div class="card list cells" data-tour="medals" style="margin-top:8px">
+		<div class="card list cells" style="margin-top:8px">
 			{#each medalList as md (md.id)}
 				<div class="item" style="flex-direction:column;align-items:stretch;gap:6px">
 					<div class="row between"><span class="row" style="gap:10px"><Icon name={MEDAL[md.id].icon} size={20} /><b>{MEDAL[md.id].title}</b></span><span class="small" style="color:var(--accent);font-weight:700">{TIERS[md.tier]}</span></div>

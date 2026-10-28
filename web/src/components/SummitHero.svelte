@@ -52,7 +52,7 @@
 	})
 </script>
 
-<section class="peak" data-tour="hero">
+<section class="peak">
 	<svg class="mount" viewBox="0 0 360 220" overflow="visible" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
 		<defs>
 			<linearGradient id="ridge" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgb(var(--accent-rgb))" stop-opacity=".38" /><stop offset="1" stop-color="rgb(var(--accent-rgb))" stop-opacity=".04" /></linearGradient>
@@ -66,7 +66,7 @@
 
 	<div class="top">
 		<div><div class="small muted">{greeting}</div><div class="who">{name}</div></div>
-		<button class="avatar" onclick={onavatar} aria-label={t('Impostazioni')} data-tour="avatar">{name.slice(0, 1).toUpperCase()}</button>
+		<button class="avatar" onclick={onavatar} aria-label={t('Impostazioni')}>{name.slice(0, 1).toUpperCase()}</button>
 	</div>
 
 	<div class="quote">{#key i}<p>{PHRASES[i].replace(', ', ',\n')}</p>{/key}</div>

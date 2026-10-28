@@ -39,7 +39,7 @@
 </script>
 
 <div class="stack">
-	<button class="btn primary block" onclick={makeInvite} data-tour="invite"><Icon name="upload" size={20} />{t('Invita un amico')}</button>
+	<button class="btn primary block" onclick={makeInvite}><Icon name="upload" size={20} />{t('Invita un amico')}</button>
 
 	<div style="position:relative">
 		<input class="input" style="padding-left:40px" type="search" placeholder={t('Cerca un username')} bind:value={query} oninput={typing} autocapitalize="none" autocomplete="off" />
