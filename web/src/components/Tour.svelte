@@ -12,12 +12,12 @@
 	 * Il tutorial: prima quattro schermi con le idee di Peak (Ideas), poi un giro sulle schermate vere con un riquadro luminoso che
 	 * vola da un controllo all'altro: le quattro schede, «Avvia allenamento», il giorno da scegliere, «+ Serie», il tasto che salva.
 	 * Si fanno davvero: parte un allenamento vero e la prima serie salvata chiude il giro. Ogni schermata che un passo apre (la scelta
-	 * del giorno, la serie) ha il suo passo, sopra il foglio: l'utente non resta mai solo. Si salta da ogni schermo e da ogni passo.
+	 * del giorno, la serie: prima peso e ripetizioni, poi il tasto che salva) ha il suo passo, sopra il foglio: l'utente non resta mai solo. Si salta da ogni schermo e da ogni passo.
 	 */
 	let { onend }: { onend: () => void } = $props()
 	const m = $derived(getModel())
 
-	type StepId = 'tabs' | 'start' | 'pick' | 'set' | 'save'
+	type StepId = 'tabs' | 'start' | 'pick' | 'set' | 'load' | 'save'
 	let phase = $state<'ideas' | 'marks'>('ideas')
 	let stepId = $state<StepId>('tabs')
 	let cheer = $state(false)
@@ -40,12 +40,13 @@
 	// senza giorni nella scheda la scelta è per gruppi: il riquadro punta a «Inizia»
 	let hasDays = $state(true)
 
-	const STEPS = $derived<Record<StepId, { target: string; title: string; text?: string; next?: boolean; up?: boolean }>>({
-		tabs: { target: '[data-tour="tabs"]', title: t('Quattro sezioni'), text: t('Allenamento, Macchinari, Me, Amici.'), next: true },
+	const STEPS = $derived<Record<StepId, { target: string; title: string; text?: string; next?: StepId; up?: boolean }>>({
+		tabs: { target: '[data-tour="tabs"]', title: t('Quattro sezioni'), text: t('Allenamento, Macchinari, Me, Amici.'), next: 'start' },
 		start: { target: '[data-tour="start"]', title: t('Inizia da qui'), text: t('Tocca il pulsante per iniziare.') },
 		pick: { target: '.backdrop [data-tour="days"], .backdrop [data-tour="go"]', title: hasDays ? t('Scegli un giorno') : t('Scegli i gruppi, poi Inizia'), up: true },
 		set: { target: '[data-tour="add-set"]', title: t('Aggiungi una serie'), text: t('Tocca + Serie e salvala.') },
-		save: { target: '.backdrop [data-tour="save"]', title: t('Scegli peso e ripetizioni, poi salva'), up: true },
+		load: { target: '.backdrop [data-tour="load"]', title: t('Peso e ripetizioni'), text: t('Usa − e + per scegliere.'), next: 'save', up: true },
+		save: { target: '.backdrop [data-tour="save"]', title: t('Salva la serie'), up: true },
 	})
 	const step = $derived(phase === 'marks' ? STEPS[stepId] : null)
 
@@ -71,14 +72,14 @@
 			else if (!onWorkouts || route.parts.length > 1) go('allenamento', true)
 		} else if (!active) stepId = 'start'
 		else if (!inSession) go(`allenamento/${active.uuid}`, true)
-		else if (sheetKind === 'save') stepId = 'save'
-		else if (stepId === 'save') stepId = 'set'
+		else if (sheetKind === 'save') { if (stepId !== 'load' && stepId !== 'save') stepId = 'load' }
+		else if (stepId === 'load' || stepId === 'save') stepId = 'set'
 	})
 
 	// l'ultimo passo si chiude da solo quando nell'allenamento compare una serie in più
 	let base = -1
 	$effect(() => {
-		if (phase !== 'marks' || (stepId !== 'set' && stepId !== 'save') || !active || cheer) { base = -1; return }
+		if (phase !== 'marks' || (stepId !== 'set' && stepId !== 'load' && stepId !== 'save') || !active || cheer) { base = -1; return }
 		const n = active.sets.length
 		if (base < 0 || n < base) base = n
 		else if (n > base) {
@@ -134,15 +135,20 @@
 		return { x, y, w: Math.min(innerWidth - 3, rect.x + rect.w + PAD) - x, h: Math.min(innerHeight - 3, rect.y + rect.h + PAD) - y }
 	})
 	// la carta sta fuori dal buco: sotto se c'è posto, sopra altrimenti, centrata sul controllo; senza controllo (non c'è ancora) in basso, senza velo
-	const cardStyle = $derived.by(() => {
-		if (!hole) return 'bottom:calc(env(safe-area-inset-bottom, 0px) + 24px)'
+	const place = $derived.by((): { style: string; tight: boolean } => {
+		if (!hole) return { style: 'bottom:calc(env(safe-area-inset-bottom, 0px) + 24px)', tight: false }
 		// schermo largo, controllo nel binario a sinistra: la carta gli sta accanto
-		if (innerWidth >= 900 && hole.x + hole.w < 260) return `left:${hole.x + hole.w + 18}px;right:auto;margin:0;top:${Math.max(16, Math.min(hole.y, innerHeight - 200))}px`
+		if (innerWidth >= 900 && hole.x + hole.w < 260) return { tight: false, style: `left:${hole.x + hole.w + 18}px;right:auto;margin:0;top:${Math.max(16, Math.min(hole.y, innerHeight - 200))}px` }
 		const w = Math.min(380, innerWidth - 32)
 		const left = Math.max(16, Math.min(hole.x + hole.w / 2 - w / 2, innerWidth - 16 - w))
-		const below = hole.y + hole.h + 14
-		return `left:${left}px;right:auto;margin:0;width:${w}px;` + (innerHeight - below > 170 ? `top:${below}px` : `bottom:${innerHeight - hole.y + 14}px`)
+		// sotto se c'è posto, sopra altrimenti; se non ce n'è da nessuna parte, dal lato più ampio (la carta scorre da sé): non copre mai il riquadro
+		const below = hole.y + hole.h + 14, roomBelow = innerHeight - below - 8, roomAbove = hole.y - 14 - 8
+		const under = roomBelow >= 170 || (roomAbove < 170 && roomBelow >= roomAbove)
+		// poco posto (320 px): la carta lascia la riga di spiegazione e si stringe, così sta comunque fuori dal riquadro
+		const room = Math.max(80, Math.min(under ? roomBelow : roomAbove, innerHeight - 32))
+		return { tight: room < 150, style: `left:${left}px;right:auto;margin:0;width:${w}px;max-height:${room}px;` + (under ? `top:${below}px` : `bottom:${innerHeight - hole.y + 14}px`) }
 	})
+	const cardStyle = $derived(place.style), cardTight = $derived(place.tight)
 	// dentro il buco i tocchi arrivano al controllo vero; fuori, il resto è bloccato (non sui fogli: lì si può anche chiudere)
 	const clip = $derived(hole ? `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${hole.x}px ${hole.y}px, ${hole.x}px ${hole.y + hole.h}px, ${hole.x + hole.w}px ${hole.y + hole.h}px, ${hole.x + hole.w}px ${hole.y}px, ${hole.x}px ${hole.y}px)` : 'none')
 </script>
@@ -162,12 +168,12 @@
 		<div class="spot" class:fly class:up={step.up} style="left:{hole.x}px;top:{hole.y}px;width:{hole.w}px;height:{hole.h}px"><i class="dim"></i><i class="ring"></i></div>
 	{/if}
 	{#key stepId}
-		<div class="card coach" class:up={step.up} style={cardStyle} role="dialog" aria-label={step.title}>
+		<div class="card coach" class:up={step.up} class:tight={cardTight} style={cardStyle} role="dialog" aria-label={step.title}>
 			<div class="mid">{step.title}</div>
-			{#if step.text}<p class="muted small">{step.text}</p>{/if}
-			<div class="row between" class:solo={!step.text}>
+			{#if step.text && !cardTight}<p class="muted small">{step.text}</p>{/if}
+			<div class="row between" class:solo={!step.text || cardTight}>
 				<button class="skip" onclick={skip}>{t('Salta')}</button>
-				{#if step.next}<button class="btn primary" onclick={() => (stepId = 'start')}>{t('Avanti')}<Icon name="right" size={18} /></button>
+				{#if step.next}{@const to = step.next}<button class="btn primary" onclick={() => (stepId = to)}>{t('Avanti')}<Icon name="right" size={18} /></button>
 				{:else if !step.up}<span class="small faint">{t('Fallo per continuare')}</span>{/if}
 			</div>
 		</div>
@@ -194,6 +200,8 @@
 	.coach .mid { font-size: 18px; letter-spacing: -0.01em; text-wrap: balance; }
 	.coach p { margin: 4px 0 12px; text-wrap: balance; }
 	.coach .row.solo { margin-top: 6px; }
+	.coach.tight { padding-block: 10px; }
+	.coach.tight .mid { font-size: 16px; }
 	.coach .btn { min-height: 44px; }
 	.coach :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 	.skip { min-height: 44px; margin-left: -8px; padding: 0 8px; border: 0; background: none; color: var(--text-2); font-weight: 600; font-size: 15px; border-radius: 10px; }

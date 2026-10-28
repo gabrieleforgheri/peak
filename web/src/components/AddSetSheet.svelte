@@ -109,6 +109,8 @@
 
 <Sheet title={ex.name} {onclose}>
 	<div class="stack">
+		<!-- CARICO E RIPETIZIONI (insieme, per il riquadro del tutorial) -->
+		<div class="stack" data-tour="load">
 		<!-- CARD CARICO -->
 		<div class="card">
 			<div class="row between" style="align-items:baseline">
@@ -172,6 +174,7 @@
 			<div class="chips" style="margin-top:8px">
 				{#each [1, 3, 5, 8, 10, 12] as q}<button class="chip" class:on={reps === q} onclick={() => (reps = q)}>{q}</button>{/each}
 			</div>
+		</div>
 		</div>
 
 		{#if mode && absWeight > 0}<PlateBar total={absWeight} bar={mode.bar ? bar : 0} {plates} unit={unit()} {delta} />{/if}
@@ -250,11 +253,11 @@
 		{/if}
 
 		<!-- PULSANTI AZIONE: RISCALDAMENTO DIRETTO E AGGIUNGI SERIE -->
-		<div class="row" style="gap:10px;margin-top:6px">
-			<button class="btn block" style="flex:1;background:rgba(255,255,255,0.06);border-color:var(--stroke)" onclick={() => save(true)} disabled={!(absWeight > 0)}>
+		<div class="actions">
+			<button class="btn block" style="background:rgba(255,255,255,0.06);border-color:var(--stroke)" onclick={() => save(true)} disabled={!(absWeight > 0)}>
 				<Icon name="flame" size={17} />{t('Riscaldamento')}
 			</button>
-			<button class="btn primary block" style="flex:1.4" onclick={() => save(false)} disabled={!(absWeight > 0)} data-tour="save">
+			<button class="btn primary block" onclick={() => save(false)} disabled={!(absWeight > 0)} data-tour="save">
 				<Icon name="plus" size={17} />{set ? t('Salva') : t('Aggiungi serie')}
 			</button>
 		</div>
@@ -264,6 +267,10 @@
 </Sheet>
 
 <style>
+	/* i due tasti non vanno mai a capo (320 px, inglese compreso): «Riscaldamento» prende il suo, il principale tutto il resto; sotto i 340 px via le icone */
+	.actions { display: grid; grid-template-columns: auto 1fr; gap: 8px; margin-top: 6px; }
+	.actions .btn { width: auto; white-space: nowrap; padding: 0 12px; gap: 6px; min-width: 0; }
+	@media (max-width: 340px) { .actions .btn :global(svg) { display: none; } }
 	.day > summary { cursor: pointer; padding: 6px 0; list-style: none; }
 	.day > summary::-webkit-details-marker { display: none; }
 	.day > summary :global(svg) { transition: transform .15s ease; }
