@@ -5,6 +5,8 @@ struct MuscleDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let exercise: Exercise
+    /// La figura aperta a tutto schermo, se c'è.
+    @State private var zoomSide: AnatomyView?
 
     private var muscles: [MuscleId] {
         exercise.figureMuscles
@@ -43,8 +45,13 @@ struct MuscleDetailSheet: View {
 
                             HStack(alignment: .top, spacing: 14) {
                                 VStack(spacing: 6) {
-                                    MuscleFigureView(muscles: muscles, view: .front, zoom: false)
-                                        .frame(height: 220)
+                                    Button { zoomSide = .front } label: {
+                                        MuscleFigureView(muscles: muscles, view: .front, zoom: false)
+                                            .frame(height: 220)
+                                            .overlay(alignment: .bottomTrailing) { ZoomLens() }
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel("Ingrandisci".tr)
                                     Text("Fronte".tr)
                                         .font(Theme.rounded(11, .semibold))
                                         .foregroundStyle(Theme.textTertiary)
@@ -52,8 +59,13 @@ struct MuscleDetailSheet: View {
                                 .frame(maxWidth: .infinity)
 
                                 VStack(spacing: 6) {
-                                    MuscleFigureView(muscles: muscles, view: .back, zoom: false)
-                                        .frame(height: 220)
+                                    Button { zoomSide = .back } label: {
+                                        MuscleFigureView(muscles: muscles, view: .back, zoom: false)
+                                            .frame(height: 220)
+                                            .overlay(alignment: .bottomTrailing) { ZoomLens() }
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel("Ingrandisci".tr)
                                     Text("Retro".tr)
                                         .font(Theme.rounded(11, .semibold))
                                         .foregroundStyle(Theme.textTertiary)
@@ -71,23 +83,7 @@ struct MuscleDetailSheet: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 SectionHeader(title: "Muscoli coinvolti")
 
-                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 8)], spacing: 8) {
-                                    ForEach(muscles, id: \.self) { muscle in
-                                        HStack(spacing: 6) {
-                                            Circle()
-                                                .fill(muscle.group.tint)
-                                                .frame(width: 8, height: 8)
-                                            Text(muscle.title.tr)
-                                                .font(Theme.rounded(13, .semibold))
-                                                .foregroundStyle(Theme.textPrimary)
-                                                .lineLimit(1)
-                                        }
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 7)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .background(muscle.group.tint.opacity(0.18), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                                    }
-                                }
+                                MuscleChipGrid(muscles: muscles)
                             }
                         }
                     }
@@ -119,5 +115,44 @@ struct MuscleDetailSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+        .fullScreenCover(item: $zoomSide) { side in
+            MuscleZoomView(muscles: muscles, side: side)
+        }
+    }
+}
+
+/// I muscoli come targhette col colore del loro gruppo.
+struct MuscleChipGrid: View {
+    let muscles: [MuscleId]
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 8)], spacing: 8) {
+            ForEach(muscles, id: \.self) { muscle in
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(muscle.group.tint)
+                        .frame(width: 8, height: 8)
+                    Text(muscle.title.tr)
+                        .font(Theme.rounded(13, .semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(muscle.group.tint.opacity(0.18), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            }
+        }
+    }
+}
+
+/// La lente nell'angolo della figura: dice che si può toccare per ingrandirla.
+struct ZoomLens: View {
+    var body: some View {
+        Image(systemName: "plus.magnifyingglass")
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(Theme.textPrimary)
+            .frame(width: 26, height: 26)
+            .background(Theme.cardStrong, in: Circle())
     }
 }

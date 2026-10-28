@@ -8,12 +8,14 @@ struct MuscleFigureView: View {
     var view: AnatomyView? = nil
     /// Solo la zona che lavora (come nelle foto), o tutto il corpo.
     var zoom: Bool = true
+    /// La zona visibile scelta da chi la usa (il visore con lo zoom): vince su `zoom`.
+    var box: CGRect? = nil
     /// Con un gesto, si toccano i muscoli (per il macchinario personalizzato).
     var onTap: ((MuscleId) -> Void)? = nil
 
     var body: some View {
         let side = view ?? anatomyView(for: muscles)
-        let box = zoom ? AnatomyZoom.rect(for: muscles, view: side) : CGRect(origin: .zero, size: AnatomyShapes.size)
+        let box = self.box ?? (zoom ? AnatomyZoom.rect(for: muscles, view: side) : CGRect(origin: .zero, size: AnatomyShapes.size))
         let hot = Set(muscles)
         let figure = ZStack {
             ForEach(Array(AnatomyCache.pieces(side).enumerated()), id: \.offset) { _, piece in

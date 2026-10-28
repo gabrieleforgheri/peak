@@ -18,6 +18,7 @@
 		x: '<path d="M6 6l12 12M18 6L6 18"/>',
 		check: '<path d="M5 12l5 5L20 7"/>',
 		search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+		'zoom-in': '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M11 8v6M8 11h6"/>',
 		trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
 		edit: '<path d="M4 20h4L19 9l-4-4L4 16v4z"/>',
 		camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="4"/>',
