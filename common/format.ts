@@ -31,18 +31,29 @@ export function duration(seconds: number): string {
 /** "+4,2%". */
 export const delta = (percent: number, locale = 'it'): string => `${percent > 0 ? '+' : ''}${nf(locale, 0, 1).format(percent)}%`
 
-/** Il segno di una serie a un braccio: "1 br" (italiano), "1 arm". */
-export const armMarker = (locale = 'it'): string => (locale.startsWith('en') ? '1 arm' : '1 br')
+/** Il lato di una serie: le gambe parlano di gambe, il resto di braccia. */
+export type SideKind = 'long' | 'one' | 'two'
+const SIDE_WORDS = {
+  it: { arm: ['Un braccio', '1 br', '2 br'], leg: ['Una gamba', '1 gb', '2 gb'] },
+  en: { arm: ['One arm', '1 arm', '2 arms'], leg: ['One leg', '1 leg', '2 legs'] },
+}
+/** "Un braccio" / "1 br" / "2 br" per petto, schiena, spalle, braccia, core (e senza gruppo); "Una gamba" / "1 gb" / "2 gb" per le gambe; in inglese "One arm" / "1 arm" / "2 arms", "One leg" / "1 leg" / "2 legs". */
+export function sideText(group: string | null | undefined, kind: SideKind, locale = 'it'): string {
+  const w = SIDE_WORDS[locale.startsWith('en') ? 'en' : 'it'][group === 'gambe' ? 'leg' : 'arm']
+  return w[kind === 'long' ? 0 : kind === 'one' ? 1 : 2]
+}
+/** Al core non si offre la scelta di lato; una serie già segnata mostra comunque il segno braccio. */
+export const hasSides = (group: string | null | undefined): boolean => group !== 'core'
 
-/** "80 kg × 5", a un braccio "80 kg × 5 · 1 br". */
-export const setLine = (kg: number, reps: number, unit: Unit, locale = 'it', singleArm = false): string =>
-  `${weight(kg, unit, locale)} × ${reps}${singleArm ? ` · ${armMarker(locale)}` : ''}`
+/** "80 kg × 5", a un lato "80 kg × 5 · 1 br" (o "1 gb" per le gambe). */
+export const setLine = (kg: number, reps: number, unit: Unit, locale = 'it', singleArm = false, group?: string | null): string =>
+  `${weight(kg, unit, locale)} × ${reps}${singleArm ? ` · ${sideText(group, 'one', locale)}` : ''}`
 
 /**
  * Riga da taccuino: serie consecutive con lo stesso peso (e lo stesso numero di bracci) raggruppate, ripetizioni unite
- * da "·", gruppi separati da " · ". "71,5 kg 8·6 · 54 kg 8"; un gruppo a un braccio comincia con "1 br ".
+ * da "·", gruppi separati da " · ". "71,5 kg 8·6 · 54 kg 8"; un gruppo a un lato comincia con "1 br " ("1 gb " per le gambe, secondo `group`).
  */
-export function notebookLine(sets: readonly { weight: number; reps: number; singleArm?: boolean }[], unit: Unit, locale = 'it'): string {
+export function notebookLine(sets: readonly { weight: number; reps: number; singleArm?: boolean }[], unit: Unit, locale = 'it', group?: string | null): string {
   const groups: { weight: number; singleArm: boolean; reps: number[] }[] = []
   for (const s of sets) {
     const g = groups[groups.length - 1]
@@ -50,7 +61,7 @@ export function notebookLine(sets: readonly { weight: number; reps: number; sing
     if (g && g.weight === s.weight && g.singleArm === one) g.reps.push(s.reps)
     else groups.push({ weight: s.weight, singleArm: one, reps: [s.reps] })
   }
-  return groups.map((g) => `${g.singleArm ? `${armMarker(locale)} ` : ''}${weight(g.weight, unit, locale)} ${g.reps.join('·')}`).join(' · ')
+  return groups.map((g) => `${g.singleArm ? `${sideText(group, 'one', locale)} ` : ''}${weight(g.weight, unit, locale)} ${g.reps.join('·')}`).join(' · ')
 }
 
 /** Raggruppa per mese di calendario (ora locale) mantenendo l'ordine in ingresso: con elementi dal più recente, i mesi vengono dal più recente. `ms` è la data del primo elemento. */

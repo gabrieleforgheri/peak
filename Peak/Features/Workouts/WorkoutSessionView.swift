@@ -184,7 +184,7 @@ struct WorkoutSessionView: View {
         .sheet(item: $addSetTarget) { exercise in
             AddSetSheet(
                 exercise: exercise,
-                mode: .add(lastSet: lastSet(for: exercise), singleArm: workout.defaultSingleArm(for: exercise))
+                mode: .add(lastSet: lastSet(for: exercise))
             ) { weight, reps, isWarmup, singleArm in
                 addSet(to: exercise, weight: weight, reps: reps, isWarmup: isWarmup, singleArm: singleArm)
             }
@@ -644,11 +644,11 @@ private struct ExerciseSessionCard: View {
                                                         .frame(width: 16, alignment: .leading)
                                                     if exercise.weightDisplay == "relative", !exercise.perSide, exercise.barWeight > 0 {
                                                         let relWeight = max(0, prev.weight - exercise.barWeight)
-                                                        Text(Fmt.setLine(weight: relWeight, reps: prev.reps, unit: settings.unit, singleArm: prev.singleArm))
+                                                        Text(Fmt.setLine(weight: relWeight, reps: prev.reps, unit: settings.unit, singleArm: prev.singleArm, group: exercise.muscleGroup))
                                                             .font(Theme.rounded(12, .medium))
                                                             .foregroundStyle(Theme.textSecondary)
                                                     } else {
-                                                        Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit, singleArm: prev.singleArm))
+                                                        Text(Fmt.setLine(weight: prev.weight, reps: prev.reps, unit: settings.unit, singleArm: prev.singleArm, group: exercise.muscleGroup))
                                                             .font(Theme.rounded(12, .medium))
                                                             .foregroundStyle(Theme.textSecondary)
                                                     }
@@ -663,7 +663,8 @@ private struct ExerciseSessionCard: View {
                                                 let relative = exercise.weightDisplay == "relative" && !exercise.perSide && exercise.barWeight > 0
                                                 let line = Fmt.notebookLine(
                                                     day.sets.map { (weight: relative ? max(0, $0.weight - exercise.barWeight) : $0.weight, reps: $0.reps, singleArm: $0.singleArm) },
-                                                    unit: settings.unit
+                                                    unit: settings.unit,
+                                                    group: exercise.muscleGroup
                                                 )
                                                 (Text(Fmt.shortDate(day.date)).foregroundStyle(Theme.textTertiary) + Text("  \(line)"))
                                                     .font(Theme.rounded(12, .medium))
@@ -819,9 +820,9 @@ private struct ExerciseSessionCard: View {
                             let repeatText: String = {
                                 if exercise.weightDisplay == "relative", !exercise.perSide, exercise.barWeight > 0 {
                                     let relWeight = max(0, last.weight - exercise.barWeight)
-                                    return Fmt.setLine(weight: relWeight, reps: last.reps, unit: settings.unit, singleArm: last.singleArm)
+                                    return Fmt.setLine(weight: relWeight, reps: last.reps, unit: settings.unit, singleArm: last.singleArm, group: exercise.muscleGroup)
                                 }
-                                return Fmt.setLine(weight: last.weight, reps: last.reps, unit: settings.unit, singleArm: last.singleArm)
+                                return Fmt.setLine(weight: last.weight, reps: last.reps, unit: settings.unit, singleArm: last.singleArm, group: exercise.muscleGroup)
                             }()
                             Label(repeatText, systemImage: "arrow.counterclockwise")
                                 .font(Theme.rounded(13, .semibold))
@@ -865,7 +866,7 @@ private struct SetRow: View {
             if let ex = set.exercise, ex.weightDisplay == "relative", !ex.perSide, ex.barWeight > 0 {
                 let relWeight = max(0, set.weight - ex.barWeight)
                 HStack(spacing: 4) {
-                    Text(Fmt.setLine(weight: relWeight, reps: set.reps, unit: settings.unit, singleArm: set.singleArm))
+                    Text(Fmt.setLine(weight: relWeight, reps: set.reps, unit: settings.unit, singleArm: set.singleArm, group: set.exercise?.muscleGroup))
                         .font(Theme.rounded(15, .semibold))
                         .foregroundStyle(set.isWarmup ? Theme.textSecondary : Theme.textPrimary)
                     Text("(tot. \(Fmt.weight(set.weight, unit: settings.unit)))")
@@ -873,7 +874,7 @@ private struct SetRow: View {
                         .foregroundStyle(Theme.textTertiary)
                 }
             } else {
-                Text(Fmt.setLine(weight: set.weight, reps: set.reps, unit: settings.unit, singleArm: set.singleArm))
+                Text(Fmt.setLine(weight: set.weight, reps: set.reps, unit: settings.unit, singleArm: set.singleArm, group: set.exercise?.muscleGroup))
                     .font(Theme.rounded(15, .semibold))
                     .foregroundStyle(set.isWarmup ? Theme.textSecondary : Theme.textPrimary)
             }

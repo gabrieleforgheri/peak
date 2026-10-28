@@ -224,6 +224,19 @@ test('formati', () => {
   assert.equal(fmt.delta(-1, 'it'), '-1%')
   assert.equal(fmt.setLine(80, 5, 'kg', 'it'), '80 kg × 5')
   assert.equal(fmt.setLine(40, 8, 'kg', 'it', true), '40 kg × 8 · 1 br')
+  assert.equal(fmt.setLine(40, 8, 'kg', 'it', true, 'gambe'), '40 kg × 8 · 1 gb')
+  assert.equal(fmt.setLine(40, 8, 'kg', 'en', true, 'gambe'), '40 kg × 8 · 1 leg')
+})
+
+test('sideText: parole per lato secondo il gruppo, core ricade sulle braccia', () => {
+  assert.deepEqual(['long', 'one', 'two'].map((k) => fmt.sideText('gambe', k as fmt.SideKind)), ['Una gamba', '1 gb', '2 gb'])
+  assert.deepEqual(['long', 'one', 'two'].map((k) => fmt.sideText('gambe', k as fmt.SideKind, 'en')), ['One leg', '1 leg', '2 legs'])
+  for (const g of ['petto', 'schiena', 'spalle', 'braccia', 'core', undefined]) {
+    assert.deepEqual(['long', 'one', 'two'].map((k) => fmt.sideText(g, k as fmt.SideKind)), ['Un braccio', '1 br', '2 br'])
+  }
+  assert.deepEqual(['long', 'one', 'two'].map((k) => fmt.sideText('core', k as fmt.SideKind, 'en')), ['One arm', '1 arm', '2 arms'])
+  assert.equal(fmt.hasSides('core'), false)
+  assert.equal(fmt.hasSides('gambe'), true)
 })
 
 test('obiettivo della settimana: la tua media, fra 2 e 5, 3 se non c\'è storia', () => {

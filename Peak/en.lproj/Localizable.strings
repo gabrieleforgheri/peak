@@ -58,6 +58,7 @@
 "1 barra = 1 settimana" = "1 bar = 1 week";
 "1 br" = "1 arm";
 "1 esercizio" = "1 exercise";
+"1 gb" = "1 leg";
 "1 macchinario fuori catalogo" = "1 machine outside the catalog";
 "1 massimale" = "1 max";
 "1 massimale automatico senza serie è stato scartato." = "1 automatic max without a set was discarded.";
@@ -70,6 +71,8 @@
 "1RM stimato" = "Estimated 1RM";
 "1RM stimato dalle serie migliori." = "1RM estimated from the best sets.";
 "1RM stimato · un punto per allenamento" = "Estimated 1RM · one point per workout";
+"2 br" = "2 arms";
+"2 gb" = "2 legs";
 "3 esercizi" = "3 exercises";
 "3 mesi" = "3 months";
 "A terra" = "On the floor";
@@ -430,6 +433,7 @@
 "Manubri" = "Dumbbells";
 "Massimale" = "Max";
 "Massimale a un braccio" = "One-arm max";
+"Massimale a una gamba" = "One-leg max";
 "Massimale attuale · %@" = "Current max · %@";
 "Massimale attuale · %lld" = "Current max · %lld";
 "Massimali" = "Maxes";

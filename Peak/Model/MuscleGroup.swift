@@ -48,4 +48,21 @@ enum MuscleGroup: String, Codable, CaseIterable, Identifiable, Hashable {
 
     /// Ordine di visualizzazione nelle liste.
     var order: Int { MuscleGroup.allCases.firstIndex(of: self) ?? 0 }
+
+    /// Le parole del lato di una serie: «Un braccio» / «1 br» / «2 br»; per le gambe «Una gamba» / «1 gb» / «2 gb»
+    /// (in inglese «One arm» / «1 arm» / «2 arms», «One leg» / «1 leg» / «2 legs»). Come `sideText` in common/format.ts.
+    enum SideKind { case long, one, two }
+    func side(_ kind: SideKind) -> String {
+        switch (self == .gambe, kind) {
+        case (false, .long): return "Un braccio".tr
+        case (false, .one): return "1 br".tr
+        case (false, .two): return "2 br".tr
+        case (true, .long): return "Una gamba".tr
+        case (true, .one): return "1 gb".tr
+        case (true, .two): return "2 gb".tr
+        }
+    }
+
+    /// Al core non si offre la scelta del lato; una serie già segnata mostra comunque il segno braccio.
+    var hasSides: Bool { self != .core }
 }

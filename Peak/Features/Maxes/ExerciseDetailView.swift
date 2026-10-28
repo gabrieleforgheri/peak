@@ -99,7 +99,7 @@ struct ExerciseDetailView: View {
                 if records.count >= 2 { chartCard }
                 if !records.isEmpty { recordsCard(title: "Storico massimali", records: records) }
                 // una linea a parte, solo se ci sono massimali a un braccio
-                if !exercise.singleArmRecords.isEmpty { recordsCard(title: "Massimale a un braccio", records: exercise.singleArmRecordsByDateDesc) }
+                if !exercise.singleArmRecords.isEmpty { recordsCard(title: exercise.worksLegs ? "Massimale a una gamba" : "Massimale a un braccio", records: exercise.singleArmRecordsByDateDesc) }
                 if !recentSets.isEmpty { setsCard }
                 if !exercise.notes.isEmpty { notesCard }
             }
@@ -412,7 +412,7 @@ struct ExerciseDetailView: View {
                             .frame(width: 8, height: 8)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(Fmt.setLine(weight: record.weight, reps: record.reps, unit: settings.unit, singleArm: record.singleArm))
+                            Text(Fmt.setLine(weight: record.weight, reps: record.reps, unit: settings.unit, singleArm: record.singleArm, group: exercise.muscleGroup))
                                 .font(Theme.rounded(14, .semibold))
                                 .foregroundStyle(Theme.textPrimary)
                             Text(Fmt.date(record.date) + (record.isEstimated ? " · da allenamento" : ""))
@@ -459,7 +459,7 @@ struct ExerciseDetailView: View {
                         if exercise.weightDisplay == "relative", !exercise.perSide, exercise.barWeight > 0 {
                             let relWeight = max(0, set.weight - exercise.barWeight)
                             HStack(spacing: 4) {
-                                Text(Fmt.setLine(weight: relWeight, reps: set.reps, unit: settings.unit, singleArm: set.singleArm))
+                                Text(Fmt.setLine(weight: relWeight, reps: set.reps, unit: settings.unit, singleArm: set.singleArm, group: exercise.muscleGroup))
                                 Text("(tot. \(Fmt.weight(set.weight, unit: settings.unit)))")
                                     .font(Theme.rounded(11, .medium))
                                     .foregroundStyle(Theme.textTertiary)
@@ -467,7 +467,7 @@ struct ExerciseDetailView: View {
                             .font(Theme.rounded(14, .semibold))
                             .foregroundStyle(Theme.textPrimary)
                         } else {
-                            Text(Fmt.setLine(weight: set.weight, reps: set.reps, unit: settings.unit, singleArm: set.singleArm))
+                            Text(Fmt.setLine(weight: set.weight, reps: set.reps, unit: settings.unit, singleArm: set.singleArm, group: exercise.muscleGroup))
                                 .font(Theme.rounded(14, .semibold))
                                 .foregroundStyle(Theme.textPrimary)
                         }

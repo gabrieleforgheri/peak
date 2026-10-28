@@ -194,7 +194,7 @@
 			<div class="sec-title">{t('Record di oggi')}</div>
 			<div class="card list" bind:this={recList}>
 				{#each prs as s (s.uuid)}
-					<div class="item"><div class="grow"><b>{m.exById.get(s.exercise ?? '')?.name ?? t('Esercizio rimosso')}</b></div><span class="num">{setLine(s.weight, s.reps, s.singleArm)}</span><span class="badge pos">PR</span></div>
+					<div class="item"><div class="grow"><b>{m.exById.get(s.exercise ?? '')?.name ?? t('Esercizio rimosso')}</b></div><span class="num">{setLine(s.weight, s.reps, s.singleArm, m.exById.get(s.exercise ?? '')?.muscleGroup)}</span><span class="badge pos">PR</span></div>
 				{/each}
 			</div>
 			</div>

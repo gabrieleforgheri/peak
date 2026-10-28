@@ -84,14 +84,6 @@ final class Workout {
         orderedSets.filter { $0.exercise?.persistentModelID == exercise.persistentModelID }
     }
 
-    /// Se una serie nuova di questo esercizio parte «a un braccio»: come l'ultima fatta qui in allenamento
-    /// (riscaldamento compreso, così la tocchi solo quando cambi); la prima della sessione, come l'ultima di sempre.
-    func defaultSingleArm(for exercise: Exercise) -> Bool {
-        sets(for: exercise).last?.singleArm
-            ?? exercise.setList.max { $0.createdAt < $1.createdAt }?.singleArm
-            ?? false
-    }
-
     var duration: TimeInterval? {
         guard let endedAt else { return nil }
         return endedAt.timeIntervalSince(date)

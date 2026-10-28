@@ -17,9 +17,13 @@ export const V = (kg: number): string => f.volume(kg, unit(), locale)
 /** Il peso nell'unità scelta, due decimali: quello che si legge e si digita. */
 export const toUnit = (kg: number): number => round2(toDisplay(kg, unit()))
 export const fromUnit = (v: number): number => toKg(v, unit())
-export const setLine = (kg: number, reps: number, singleArm = false): string => f.setLine(kg, reps, unit(), locale, singleArm)
+/** `group` è il gruppo muscolare dell'esercizio: decide se il segno è «1 br» o «1 gb». */
+export const setLine = (kg: number, reps: number, singleArm = false, group?: string | null): string => f.setLine(kg, reps, unit(), locale, singleArm, group)
+/** «Un braccio» / «1 br» / «2 br», «Una gamba» / «1 gb» / «2 gb» secondo il gruppo. */
+export const sideText = (group: string | null | undefined, kind: f.SideKind): string => f.sideText(group, kind, locale)
+export const hasSides = f.hasSides
 /** "71,5 kg 8·6 · 54 kg 8": la riga del taccuino. */
-export const notebookLine = (sets: { weight: number; reps: number; singleArm?: boolean }[]): string => f.notebookLine(sets, unit(), locale)
+export const notebookLine = (sets: { weight: number; reps: number; singleArm?: boolean }[], group?: string | null): string => f.notebookLine(sets, unit(), locale, group)
 export const delta = (p: number): string => f.delta(p, locale)
 /** "2/4 serie · 8–10 rip · 60 kg": solo i campi compilati; senza peso scritto, l'ultimo usato. */
 export function targetLine(item: TemplateItem, done: number, lastKg: number | null): string {

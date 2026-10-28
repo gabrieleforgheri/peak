@@ -4,9 +4,8 @@ import SwiftUI
 /// dell'ultima serie fatta su quel macchinario, in modifica da quelli della serie stessa.
 struct AddSetSheet: View {
     enum Mode {
-        /// Nuova serie, precompilata con l'ultima fatta su questo esercizio. `singleArm`: come l'ultima serie
-        /// di questo esercizio nell'allenamento (`Workout.defaultSingleArm`), da toccare solo quando cambi.
-        case add(lastSet: WorkoutSet?, singleArm: Bool)
+        /// Nuova serie, precompilata con l'ultima fatta su questo esercizio; parte sempre a due bracci (o gambe).
+        case add(lastSet: WorkoutSet?)
         /// Correzione di una serie già registrata.
         case edit(WorkoutSet)
     }
@@ -16,7 +15,7 @@ struct AddSetSheet: View {
 
     let exercise: Exercise
     let mode: Mode
-    /// Peso, ripetizioni, riscaldamento, un braccio.
+    /// Peso, ripetizioni, riscaldamento, un braccio (o una gamba).
     let onSave: (Double, Int, Bool, Bool) -> Void
 
     private var isEditing: Bool {
@@ -88,7 +87,7 @@ struct AddSetSheet: View {
     }
 
     private var previousSetWeight: Double? {
-        if case let .add(lastSet, _) = mode, let lastSet { return lastSet.weight }
+        if case let .add(lastSet) = mode, let lastSet { return lastSet.weight }
         return allPreviousSets.first?.weight
     }
     private var delta: Double? {
@@ -116,9 +115,9 @@ struct AddSetSheet: View {
 
     /// Il carico da battere, oppure — se lo stai già battendo — quello che stai facendo.
     private var reference: String {
-        if isRecord { return Fmt.setLine(weight: weight, reps: reps, unit: settings.unit, singleArm: singleArm) }
+        if isRecord { return Fmt.setLine(weight: weight, reps: reps, unit: settings.unit, singleArm: singleArm, group: exercise.muscleGroup) }
         guard let best = referenceRecord else { return "—" }
-        return Fmt.setLine(weight: best.weight, reps: best.reps, unit: settings.unit, singleArm: singleArm)
+        return Fmt.setLine(weight: best.weight, reps: best.reps, unit: settings.unit, singleArm: singleArm, group: exercise.muscleGroup)
     }
 
     private var isRecord: Bool {
@@ -143,6 +142,9 @@ struct AddSetSheet: View {
                                     Text("Sbarra \(Fmt.weight(plateBase, unit: settings.unit))")
                                         .font(Theme.rounded(12, .semibold))
                                         .foregroundStyle(Theme.textTertiary)
+                                }
+                                if exercise.muscleGroup.hasSides {
+                                    SideSegment(singleArm: $singleArm, group: exercise.muscleGroup)
                                 }
                             }
                             WeightStepper(kilograms: stepperWeight, step: exercise.incrementStep, unit: settings.unit, tint: tint)
@@ -213,12 +215,6 @@ struct AddSetSheet: View {
                             SectionHeader(title: "Ripetizioni")
                             RepsStepper(reps: $reps, tint: tint)
                         }
-                    }
-
-                    GlassCard(padding: 16) {
-                        Toggle("Un braccio", isOn: $singleArm)
-                            .font(Theme.rounded(15, .semibold))
-                            .tint(tint)
                     }
 
                     if let plateBase {
@@ -360,7 +356,7 @@ struct AddSetSheet: View {
         }
 
         var lastSet: WorkoutSet?
-        if case let .add(previous, arm) = mode { lastSet = previous; singleArm = arm }
+        if case let .add(previous) = mode { lastSet = previous }
 
         if let lastSet {
             weight = lastSet.weight
@@ -412,7 +408,7 @@ struct AddSetSheet: View {
             HStack(spacing: 8) {
                 HStack(spacing: 6) {
                     HStack(spacing: 4) {
-                        Text(Fmt.setLine(weight: fieldKg(prev.weight), reps: prev.reps, unit: settings.unit, singleArm: prev.singleArm))
+                        Text(Fmt.setLine(weight: fieldKg(prev.weight), reps: prev.reps, unit: settings.unit, singleArm: prev.singleArm, group: exercise.muscleGroup))
                         if isRel || isSide {
                             Text("(tot. \(Fmt.weight(prev.weight, unit: settings.unit)))")
                                 .font(Theme.rounded(11, .medium))
@@ -466,7 +462,7 @@ struct AddSetSheet: View {
                                         .font(Theme.rounded(13, .semibold))
                                         .foregroundStyle(Theme.textPrimary)
                                     Spacer()
-                                    Text("\(group.sets.count) serie · \(Fmt.setLine(weight: fieldKg(best.weight), reps: best.reps, unit: settings.unit, singleArm: best.singleArm))")
+                                    Text("\(group.sets.count) serie · \(Fmt.setLine(weight: fieldKg(best.weight), reps: best.reps, unit: settings.unit, singleArm: best.singleArm, group: exercise.muscleGroup))")
                                         .font(Theme.rounded(12, .medium))
                                         .foregroundStyle(Theme.textTertiary)
                                 }

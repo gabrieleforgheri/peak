@@ -28,7 +28,7 @@ private struct ExerciseView: View {
         @Bindable var model = model
         // una sola schermata, senza scorrere: peso, ripetizioni, riscaldamento e salva
         VStack(spacing: 6) {
-            stepper(model.displayWeight(model.weight) + (exercise.singleArm == true ? " · 1 br" : ""), size: 22,
+            stepper(model.displayWeight(model.weight), size: 22,
                     minus: { model.weightSteps = max(model.weightSteps - 1, model.weightStepRange.lowerBound) },
                     plus: { model.weightSteps = min(model.weightSteps + 1, model.weightStepRange.upperBound) })
             stepper("\(model.reps)", size: 34,

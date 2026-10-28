@@ -92,6 +92,7 @@
 						.filter((s) => s.workout === w.uuid && !s.isWarmup)
 						.sort((a, b) => a.order - b.order || a.createdAt - b.createdAt)
 						.map((s) => ({ weight: rel ? Math.max(0, s.weight - exercise.barWeight) : s.weight, reps: s.reps, singleArm: s.singleArm })),
+					exercise.muscleGroup,
 				),
 			}))
 	}
@@ -102,11 +103,11 @@
 		if (ex.weightDisplay === 'relative' && !ex.perSide && (ex.barWeight ?? 0) > 0) {
 			const relKg = Math.max(0, weightKg - ex.barWeight)
 			return {
-				main: setLine(relKg, reps, singleArm),
+				main: setLine(relKg, reps, singleArm, ex.muscleGroup),
 				sub: `${t('tot.')} ${W(weightKg)}`,
 			}
 		}
-		return { main: setLine(weightKg, reps, singleArm) }
+		return { main: setLine(weightKg, reps, singleArm, ex.muscleGroup) }
 	}
 
 	function repeat(ex: Ex) {

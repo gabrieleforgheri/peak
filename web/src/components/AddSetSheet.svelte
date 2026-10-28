@@ -2,13 +2,14 @@
 	import { beats, bestOf, defaultBarWeightFor, oneRepMax, plateMode, round2, toDisplay } from '@common/domain.ts'
 	import { addSet, deleteSet, patchSet } from '../lib/actions.ts'
 	import { stepOf, warmupFor } from '../lib/derive.ts'
-	import { W, fromUnit, relDay, setLine, toUnit, unit } from '../lib/fmt.ts'
+	import { W, fromUnit, hasSides, relDay, setLine, toUnit, unit } from '../lib/fmt.ts'
 	import { locale, t } from '../lib/i18n.ts'
 	import { getModel } from '../lib/store.svelte.ts'
 	import { play } from '../lib/sound.ts'
 	import type { Ex, SetItem, Wk } from '../lib/types.ts'
 	import { suggestedGlyph } from '@common/glyph.ts'
 	import Icon from './Icon.svelte'
+	import SideSegment from './SideSegment.svelte'
 	import PlateBar from './PlateBar.svelte'
 	import Sheet from './Sheet.svelte'
 	import Stepper from './Stepper.svelte'
@@ -48,8 +49,8 @@
 	let weight = $state(init.w)
 	let reps = $state(init.r)
 	let warm = $state(set?.isWarmup ?? false)
-	// a un braccio: la serie stessa; altrimenti come l'ultima di questo esercizio nell'allenamento (la tocchi solo quando cambi), poi come l'ultima di sempre
-	let arm = $state(set ? set.singleArm : ([...workout.sets].reverse().find((s) => s.exercise === ex.uuid) ?? ex.sets[0])?.singleArm ?? false)
+	// a un braccio (o una gamba): la serie stessa; una serie nuova parte sempre a due
+	let arm = $state(set ? set.singleArm : false)
 	let showRecent = $state(false)
 	const prevSets = $derived((set ? ex.sets.filter((s) => s.uuid !== set.uuid) : ex.sets).filter((s) => !s.isWarmup))
 	// le serie recenti per giorno di calendario (locale), gli ultimi 5 giorni; prevSets è già dal più recente
@@ -101,9 +102,12 @@
 		<div class="card">
 			<div class="row between" style="align-items:baseline">
 				<div class="sec-title" style="margin-top:0">{side ? t('Per lato') : isRel ? t('Carico dischi') : t('Carico')}</div>
-				{#if mode?.bar && bar > 0}
-					<span class="small badge muted">{t('Sbarra')} {nf(bar)} {unit()}</span>
-				{/if}
+				<div class="row" style="gap:8px">
+					{#if mode?.bar && bar > 0}
+						<span class="small badge muted">{t('Sbarra')} {nf(bar)} {unit()}</span>
+					{/if}
+					{#if hasSides(ex.muscleGroup)}<SideSegment bind:value={arm} group={ex.muscleGroup} />{/if}
+				</div>
 			</div>
 			<Stepper bind:value={weight} {step} min={0} max={5000} unit={unit()} />
 			{#if side}<div class="small muted" style="margin-top:6px">{t('Totale')} <b class="num">{nf(absWeight)} {unit()}</b></div>{/if}
@@ -159,11 +163,6 @@
 			</div>
 		</div>
 
-		<label class="card row between">
-			<span>{t('Un braccio')}</span>
-			<input class="toggle" type="checkbox" bind:checked={arm} />
-		</label>
-
 		{#if mode && absWeight > 0}<PlateBar total={absWeight} bar={mode.bar ? bar : 0} {plates} unit={unit()} {delta} />{/if}
 
 		<div class="card" style={isRecord ? 'border-color:rgba(var(--accent-rgb),.5)' : ''}>
@@ -172,11 +171,11 @@
 				{#if isRecord}<span class="badge accent">{t('NUOVO RECORD')}</span>{/if}
 			</div>
 			{#if isRecord}
-				<div class="mid num">{setLine(kg, reps, arm)}</div>
+				<div class="mid num">{setLine(kg, reps, arm, ex.muscleGroup)}</div>
 				{#if reps > 1}<div class="small muted">≈ {W(oneRepMax(kg, reps))} {t('di 1RM stimato')}</div>{/if}
-				{#if reference}<div class="small muted">{t('Precedente')}: {setLine(reference.weight, reference.reps, arm)}</div>{/if}
+				{#if reference}<div class="small muted">{t('Precedente')}: {setLine(reference.weight, reference.reps, arm, ex.muscleGroup)}</div>{/if}
 			{:else if reference}
-				<div class="mid num">{setLine(reference.weight, reference.reps, arm)}</div>
+				<div class="mid num">{setLine(reference.weight, reference.reps, arm, ex.muscleGroup)}</div>
 			{:else}
 				<div class="muted">{t('Nessun massimale: la prima serie lo stabilisce.')}</div>
 			{/if}
@@ -205,13 +204,13 @@
 							<details class="day" open={i === 0}>
 								<summary class="row between">
 									<span class="row" style="gap:6px"><Icon name="right" size={14} /><b>{relDay(d.at)}</b></span>
-									<span class="small muted num">{t('{0} serie', d.sets.length)} · {setLine(listKg(best.weight), best.reps, best.singleArm)}</span>
+									<span class="small muted num">{t('{0} serie', d.sets.length)} · {setLine(listKg(best.weight), best.reps, best.singleArm, ex.muscleGroup)}</span>
 								</summary>
 								<div class="list">
 									{#each d.sets as s (s.uuid)}
 										<button class="item" style="background:none;border:0;width:100%;text-align:left;cursor:pointer" onclick={() => { weight = toDisplayWeight(s.weight); reps = s.reps; warm = false; arm = s.singleArm }}>
 											<div class="grow num" style="font-weight:700">
-												{setLine(listKg(s.weight), s.reps, s.singleArm)}
+												{setLine(listKg(s.weight), s.reps, s.singleArm, ex.muscleGroup)}
 												{#if isRel || side}<span class="tiny muted" style="font-weight:500">({t('tot.')} {W(s.weight)})</span>{/if}
 											</div>
 											{#if s.isPR}<span class="badge pos">PR</span>{/if}

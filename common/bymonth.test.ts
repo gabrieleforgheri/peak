@@ -20,4 +20,7 @@ test('notebookLine: raggruppa per peso consecutivo, non per peso uguale ma separ
   const a = (w: number, r: number) => ({ weight: w, reps: r, singleArm: true })
   assert.equal(notebookLine([s(40, 8), a(40, 8), a(40, 7), s(70, 10)], 'kg'), '40 kg 8 · 1 br 40 kg 8·7 · 70 kg 10')
   assert.equal(notebookLine([a(40, 8)], 'kg', 'en'), '1 arm 40 kg 8')
+  // gambe: il prefisso è «1 gb» / «1 leg»
+  assert.equal(notebookLine([a(40, 8)], 'kg', 'it', 'gambe'), '1 gb 40 kg 8')
+  assert.equal(notebookLine([a(40, 8)], 'kg', 'en', 'gambe'), '1 leg 40 kg 8')
 })

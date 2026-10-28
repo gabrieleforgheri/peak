@@ -40,7 +40,12 @@ struct EditMaxSheet: View {
                 VStack(spacing: 14) {
                     GlassCard(padding: 18, tint: tint) {
                         VStack(spacing: 18) {
-                            SectionHeader(title: "Carico")
+                            HStack(alignment: .firstTextBaseline) {
+                                SectionHeader(title: "Carico")
+                                if exercise.muscleGroup.hasSides {
+                                    SideSegment(singleArm: $singleArm, group: exercise.muscleGroup)
+                                }
+                            }
                             WeightStepper(kilograms: $weight, step: exercise.incrementStep, unit: settings.unit, tint: tint)
                         }
                     }
@@ -50,12 +55,6 @@ struct EditMaxSheet: View {
                             SectionHeader(title: "Ripetizioni")
                             RepsStepper(reps: $reps, tint: tint)
                         }
-                    }
-
-                    GlassCard(padding: 16) {
-                        Toggle("Un braccio", isOn: $singleArm)
-                            .font(Theme.rounded(15, .semibold))
-                            .tint(tint)
                     }
 
                     estimateCard
@@ -119,7 +118,7 @@ struct EditMaxSheet: View {
                 }
 
                 if let previousBest {
-                    Text("Precedente: \(Fmt.setLine(weight: previousBest.weight, reps: previousBest.reps, unit: settings.unit, singleArm: singleArm))")
+                    Text("Precedente: \(Fmt.setLine(weight: previousBest.weight, reps: previousBest.reps, unit: settings.unit, singleArm: singleArm, group: exercise.muscleGroup))")
                         .font(Theme.rounded(12, .medium))
                         .foregroundStyle(Theme.textTertiary)
                 }
