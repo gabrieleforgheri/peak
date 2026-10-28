@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tickIndices } from '@common/stats.ts'
+	import { inview } from '../lib/fx.ts'
 
 	/** Un punto per misurazione, a passo fisso: saltare due settimane non disegna una riga piatta (come l'app iPhone). */
 	let { points, domain, accent = 'var(--accent)', height = 160 }: {
@@ -16,17 +17,28 @@
 	const ticks = $derived(tickIndices(points.length, 4))
 </script>
 
-<div bind:clientWidth={box}>
+<div bind:clientWidth={box} use:inview>
 <svg class="chart" viewBox="0 0 {W} {height}" role="img">
 	{#each [0, 0.5, 1] as g}
 		<line x1={padL} x2={W - padR} y1={padT + g * (height - padT - padB)} y2={padT + g * (height - padT - padB)} stroke="var(--stroke)" stroke-width="1" />
 	{/each}
-	<path d={path} fill="none" stroke={accent} stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+	<path class="line" d={path} pathLength="1" fill="none" stroke={accent} stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+	<g class="dots">
 	{#each points as p, i}
 		<circle cx={x(i)} cy={y(p.y)} r={p.faded ? 3 : 4.5} fill={accent} opacity={p.faded ? 0.5 : 1} />
 	{/each}
+	</g>
 	{#each ticks as i}
 		<text x={Math.min(W - padR - 14, Math.max(padL + 14, x(i)))} y={height - 4} text-anchor="middle" font-size="10" fill="var(--text-3)">{points[i].label}</text>
 	{/each}
 </svg>
 </div>
+
+<style>
+	/* la linea si disegna da sinistra (tratteggio lungo quanto tutto il percorso, pathLength=1) la prima volta che il grafico si vede, poi compaiono i punti;
+	   se il dato cambia a grafico già visto, la linea resta intera e si aggiorna */
+	.line { stroke-dasharray: 1 2; transition: stroke-dashoffset var(--dur-4) var(--ease-out); }
+	.dots { transition: opacity var(--dur-2) var(--ease-out) 380ms; }
+	:global([data-in='0']) .line { stroke-dashoffset: 1.02; }
+	:global([data-in='0']) .dots { opacity: 0; }
+</style>

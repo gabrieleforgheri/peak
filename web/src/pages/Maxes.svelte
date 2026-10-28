@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { MUSCLE_GROUPS, type MuscleGroup } from '@common/docs.ts'
+	import { flip } from 'svelte/animate'
 		import { patchExercise } from '../lib/actions.ts'
 	import { deltaOf, warmupFor } from '../lib/derive.ts'
 	import { GROUP_NAMES, W, delta, relDay, unit } from '../lib/fmt.ts'
@@ -7,6 +8,7 @@
 	import { go } from '../lib/router.svelte.ts'
 	import { getModel } from '../lib/store.svelte.ts'
 	import type { Ex } from '../lib/types.ts'
+	import { move, rowIn, stagger } from '../lib/fx.ts'
 	import ExerciseEditor from '../components/ExerciseEditor.svelte'
 	import Icon from '../components/Icon.svelte'
 	import Sheet from '../components/Sheet.svelte'
@@ -44,7 +46,7 @@
 	}
 </script>
 
-<main class="screen">
+<main class="screen" use:stagger>
 	<div class="bar">
 		<h1>{t('Macchinari')}</h1>
 		<button class="icon-btn" onclick={() => (creating = true)} aria-label={t('Nuovo macchinario')}><Icon name="plus" /></button>
@@ -74,7 +76,7 @@
 			<div class="sec-title" style="display:flex;justify-content:space-between"><span style="color:var(--{g})">{GROUP_NAMES[g]}</span><span>{items.length}</span></div>
 			<div class="card list cells">
 				{#each items as ex (ex.uuid)}
-					<button class="item" onclick={() => open(ex)} onpointerdown={(e) => press(e, ex)} onpointerup={release} onpointerleave={release} onpointercancel={release}
+					<button class="item" animate:flip={move()} in:rowIn onclick={() => open(ex)} onpointerdown={(e) => press(e, ex)} onpointerup={release} onpointerleave={release} onpointercancel={release}
 						oncontextmenu={(e) => { e.preventDefault(); menu = ex }}>
 						<Thumb {ex} />
 						<div class="grow">

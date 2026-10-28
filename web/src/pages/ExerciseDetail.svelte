@@ -10,6 +10,7 @@
 	import { getModel } from '../lib/store.svelte.ts'
 	import EditMaxSheet from '../components/EditMaxSheet.svelte'
 	import ExerciseEditor from '../components/ExerciseEditor.svelte'
+	import { stagger } from '../lib/fx.ts'
 	import Icon from '../components/Icon.svelte'
 	import LineChart from '../components/LineChart.svelte'
 	import MonthGroups from '../components/MonthGroups.svelte'
@@ -69,7 +70,7 @@
 	})
 </script>
 
-<main class="screen no-tabs wide page two">
+<main class="screen no-tabs wide page two" use:stagger>
 	{#if !ex}
 		<div class="bar span"><button class="icon-btn" onclick={() => back('macchinari')} aria-label={t('Indietro')}><Icon name="left" /></button></div>
 		<div class="empty span">{t('Macchinario non trovato.')}</div>
@@ -257,7 +258,9 @@
 		align-items: center;
 		gap: 5px;
 		flex-shrink: 0;
+		transition: transform var(--dur-1) var(--ease-out);
 	}
+	.muscle-btn:active { transform: scale(0.96); }
 	.muscle-sub-label {
 		font-size: 11px;
 		font-weight: 700;

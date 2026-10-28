@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { round2, toDisplay } from '@common/domain.ts'
+	import { slide } from 'svelte/transition'
+	import { fold } from '../lib/fx.ts'
 	import { W, dateLong, dateShort, unit } from '../lib/fmt.ts'
 	import { locale, t, tn } from '../lib/i18n.ts'
 	import { getModel } from '../lib/store.svelte.ts'
@@ -100,15 +102,17 @@
 		</div>
 		{#if newest.length > 5}
 			<button class="item small muted" style="margin-top:10px;font-weight:700;gap:8px" aria-expanded={showAll} onclick={() => (showAll = !showAll)}>
-				<span style="display:inline-flex;transition:transform .15s ease;transform:rotate({showAll ? 90 : 0}deg)"><Icon name="right" size={16} /></span>
+				<span style="display:inline-flex;transition:transform var(--dur-2) var(--ease-out);transform:rotate({showAll ? 90 : 0}deg)"><Icon name="right" size={16} /></span>
 				<span class="grow">{t('Tutte le pesate')}</span><span class="num">{newest.length}</span>
 			</button>
 			{#if showAll}
+				<div transition:slide={fold()}>
 				<MonthGroups items={newest} dateOf={(b) => b.dateMs} open={0} count={(n) => tn(n, '1 pesata', '{0} pesate')}>
 					{#snippet row(b)}
 						<button class="item" onclick={() => (sheet = b)}><div class="grow small muted">{dateLong(b.dateMs)}</div><b class="num">{W(b.weight)}</b></button>
 					{/snippet}
 				</MonthGroups>
+				</div>
 			{/if}
 		{/if}
 	{:else}

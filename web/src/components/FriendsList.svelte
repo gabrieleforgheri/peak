@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import { qrSvg } from '@common/qr.ts'
+	import { flip } from 'svelte/animate'
+	import { move, rowIn, rowOut } from '../lib/fx.ts'
 	import { t, tn } from '../lib/i18n.ts'
 	import { F, acceptFriend, createInvite, inviteLink, loadFriends, removeFriend, requestFriend, searchUsers, type FriendState, type Person } from '../lib/social.svelte.ts'
 	import { toast } from '../lib/toast.svelte.ts'
@@ -49,7 +51,7 @@
 		{#if found.length}
 			<div class="card list">
 				{#each found as p (p.id)}
-					<div class="item">
+					<div class="item" animate:flip={move()} in:rowIn>
 						<div class="grow"><b>@{p.username}</b></div>
 						{#if p.stato === 'nessuno'}<button class="btn small" onclick={() => ask(p)}>{t('Aggiungi')}</button>
 						{:else if p.stato === 'amici'}<span class="small muted">{t('Amici')}</span>
@@ -65,7 +67,7 @@
 		<div class="sec-title" style="margin:8px 0 0">{t('Richieste')}</div>
 		<div class="card list">
 			{#each F.friends.ricevute as p (p.id)}
-				<div class="item">
+				<div class="item" animate:flip={move()} in:rowIn out:rowOut>
 					<div class="grow"><b>@{p.username}</b></div>
 					<button class="btn small primary" onclick={() => acceptFriend(p.id)}>{t('Accetta')}</button>
 					<button class="icon-btn" onclick={() => removeFriend(p.id)} aria-label={t('Rifiuta')}><Icon name="x" size={20} /></button>

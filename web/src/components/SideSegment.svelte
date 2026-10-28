@@ -14,6 +14,7 @@
 
 <style>
 	.side-seg { display: inline-flex; padding: 2px; border-radius: 9px; background: var(--card-strong); }
-	button { border: 0; border-radius: 7px; padding: 4px 9px; background: none; color: var(--text-3); font: 700 12px var(--font); }
+	button { border: 0; border-radius: 7px; padding: 4px 9px; background: none; color: var(--text-3); font: 700 12px var(--font); transition: background-color var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+	button:active { transform: scale(0.96); }
 	button.on { background: rgba(255, 255, 255, 0.16); color: var(--text); }
 </style>

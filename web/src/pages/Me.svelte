@@ -12,6 +12,7 @@
 	import BodyWeightCard from '../components/BodyWeightCard.svelte'
 	import Donut from '../components/Donut.svelte'
 	import Heatmap from '../components/Heatmap.svelte'
+	import { countUp, stagger } from '../lib/fx.ts'
 	import Icon from '../components/Icon.svelte'
 	import Medal from '../components/Medal.svelte'
 	import MedalSheet from '../components/MedalSheet.svelte'
@@ -111,7 +112,7 @@
 	const latest = $derived([...allRecords].sort((a, b) => b.date - a.date).slice(0, 4))
 </script>
 
-<main class="screen page">
+<main class="screen page" use:stagger>
 	<header class="head span">
 		<div class="av">{name.slice(0, 1).toUpperCase()}</div>
 		<div class="grow">
@@ -128,10 +129,10 @@
 	<div class="blk">
 		<div class="sec-title">{t('Panoramica')}</div>
 		<div class="card ov">
-			<div><Icon name="flame" size={22} /><div><b class="num">{streak}</b><span class="small muted">{t('Settimane di fila')}</span></div></div>
-			<div><Icon name="dumbbell" size={22} /><div><b class="num">{finished.length}</b><span class="small muted">{t('Allenamenti')}</span></div></div>
-			<div><Icon name="scale" size={22} /><div><b class="num">{V(totalVolume)}</b><span class="small muted">{t('Sollevati')}</span></div></div>
-			<div><Icon name="trophy" size={22} /><div><b class="num">{allRecords.length}</b><span class="small muted">{t('Record')}</span></div></div>
+			<div><Icon name="flame" size={22} /><div><b class="num" use:countUp={{ value: streak, from: 0, follow: true, delay: 200, ms: 600 }}></b><span class="small muted">{t('Settimane di fila')}</span></div></div>
+			<div><Icon name="dumbbell" size={22} /><div><b class="num" use:countUp={{ value: finished.length, from: 0, follow: true, delay: 260, ms: 600 }}></b><span class="small muted">{t('Allenamenti')}</span></div></div>
+			<div><Icon name="scale" size={22} /><div><b class="num" use:countUp={{ value: totalVolume, format: V, from: 0, follow: true, delay: 320, ms: 600 }}></b><span class="small muted">{t('Sollevati')}</span></div></div>
+			<div><Icon name="trophy" size={22} /><div><b class="num" use:countUp={{ value: allRecords.length, from: 0, follow: true, delay: 380, ms: 600 }}></b><span class="small muted">{t('Record')}</span></div></div>
 		</div>
 	</div>
 
@@ -280,6 +281,7 @@
 	.mbar { display: block; height: 4px; border-radius: 2px; background: var(--stroke); overflow: hidden; }
 	.mbar i { display: block; height: 100%; background: var(--accent); transform-origin: left; animation: mfill 500ms var(--ease-out) backwards; }
 	.mtoggle { display: block; width: 100%; min-height: 44px; border: 0; border-top: 1px solid var(--stroke); background: none; color: var(--text-2); font: inherit; font-size: 14px; font-weight: 600; touch-action: manipulation; }
+	.mtoggle:active { opacity: 0.6; }
 	.more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 300ms var(--ease-out); }
 	.more.open { grid-template-rows: 1fr; }
 	.more-in { min-height: 0; overflow: hidden; }

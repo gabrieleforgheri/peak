@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onDestroy, untrack } from 'svelte'
+	import { flip } from 'svelte/animate'
 	import type { MuscleGroup } from '@common/docs.ts'
 	import { weekStart, weeklyGoal, weeklyStreak, type StatWorkout } from '@common/stats.ts'
 	import { deleteWorkout, setActiveProgram, startWorkout } from '../lib/actions.ts'
@@ -9,7 +10,7 @@
 	import { go } from '../lib/router.svelte.ts'
 	import { stopRest } from '../lib/timer.svelte.ts'
 	import { S, getModel } from '../lib/store.svelte.ts'
-	import { celebrated, confetti, sequence } from '../lib/fx.ts'
+	import { celebrated, confetti, move, rowIn, sequence, stagger } from '../lib/fx.ts'
 	import { play, playDay } from '../lib/sound.ts'
 	import type { Prg, Tpl, Wk } from '../lib/types.ts'
 	import GoalPicker from '../components/GoalPicker.svelte'
@@ -94,7 +95,7 @@
 	})
 </script>
 
-<main class="screen page split">
+<main class="screen page split" use:stagger>
 
 	<!-- a schermo largo: a sinistra cosa fare adesso e la scheda, a destra lo storico -->
 	<div class="blk">
@@ -134,7 +135,7 @@
 		{:else}
 			<div class="card list">
 				{#each days as tpl (tpl.uuid)}
-					<button class="item" onclick={() => (editing = tpl)}>
+					<button class="item" onclick={() => (editing = tpl)} animate:flip={move()} in:rowIn>
 						<span class="ti"><TemplateIconView icon={tpl.icon} name={tpl.name} size={22} /></span>
 						<div class="grow"><b class="ellipsis" style="display:block">{tpl.name}</b><span class="small muted">{tn(tpl.items.length, '1 esercizio', '{0} esercizi')}</span></div>
 						{#if prog?.useDays}{#if tpl.weekday >= 0}<span class="badge accent">{weekdayName(tpl.weekday)}</span>{:else}<span class="small faint">{t('Nessuno')}</span>{/if}{/if}
@@ -186,7 +187,8 @@
 
 <style>
 	.next { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 12px; padding: 12px 14px; border-radius: 18px; text-align: left; color: inherit;
-		background: var(--card); border: 1px solid var(--stroke); }
+		background: var(--card); border: 1px solid var(--stroke); transition: transform var(--dur-1) var(--ease-out); }
+	.next:active { transform: scale(0.98); }
 	.next .ni { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); flex: none; }
 	.next .nt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 	.next .nt b { font-size: 16px; }

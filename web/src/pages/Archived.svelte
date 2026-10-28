@@ -5,6 +5,8 @@
 	import { GROUP_NAMES } from '../lib/fmt.ts'
 	import { t } from '../lib/i18n.ts'
 	import { back } from '../lib/router.svelte.ts'
+	import { flip } from 'svelte/animate'
+	import { move, rowIn, rowOut, stagger } from '../lib/fx.ts'
 	import Icon from '../components/Icon.svelte'
 	import Thumb from '../components/Thumb.svelte'
 
@@ -17,7 +19,7 @@
 
 </script>
 
-<main class="screen no-tabs wide">
+<main class="screen no-tabs wide" use:stagger>
 	<div class="bar">
 		<button class="icon-btn" onclick={() => back('impostazioni')} aria-label={t('Indietro')}><Icon name="left" /></button>
 		<h1 class="small">{t('Archiviati')}</h1>
@@ -29,7 +31,7 @@
 		<div class="sec-title" style="color:var(--{g})">{GROUP_NAMES[g]}</div>
 		<div class="card list cells">
 			{#each items as ex (ex.uuid)}
-				<div class="item">
+				<div class="item" animate:flip={move()} in:rowIn out:rowOut>
 					<Thumb {ex} />
 					<div class="grow ellipsis" style="font-weight:600">{ex.name}</div>
 					<button class="btn small" onclick={() => patchExercise(ex.uuid, { isArchived: false })}>{t('Ripristina')}</button>

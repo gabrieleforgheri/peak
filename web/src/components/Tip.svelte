@@ -45,6 +45,7 @@
 <style>
 	.ring { position: fixed; z-index: 50; border-radius: 16px; pointer-events: none; border: 2px solid var(--accent); box-shadow: 0 0 0 4px rgba(var(--accent-rgb), .25), 0 0 24px rgba(var(--accent-rgb), .5); animation: glow 1.6s ease-in-out infinite; }
 	@keyframes glow { 50% { box-shadow: 0 0 0 8px rgba(var(--accent-rgb), .12), 0 0 34px rgba(var(--accent-rgb), .7); } }
-	.tip { position: fixed; z-index: 51; left: 16px; right: 16px; max-width: 420px; margin: 0 auto; background: #151a28; border-color: rgba(var(--accent-rgb), .4); box-shadow: 0 20px 50px rgba(0,0,0,.6); }
+	.tip { position: fixed; z-index: 51; left: 16px; right: 16px; max-width: 420px; margin: 0 auto; background: #151a28; border-color: rgba(var(--accent-rgb), .4); box-shadow: 0 20px 50px rgba(0,0,0,.6); animation: tip-in var(--dur-2) var(--ease-out) backwards; }
+	@keyframes tip-in { from { opacity: 0; transform: scale(0.98); } }
 	@media (prefers-reduced-motion: reduce) { .ring { animation: none; } }
 </style>

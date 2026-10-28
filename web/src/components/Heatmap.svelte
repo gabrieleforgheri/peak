@@ -2,6 +2,7 @@
 	import { weekStart } from '@common/stats.ts'
 	import { dateShort } from '../lib/fmt.ts'
 	import { locale, t } from '../lib/i18n.ts'
+	import { inview } from '../lib/fx.ts'
 
 	/** Una cella per giorno, le ultime `weeks` settimane (colonne) da lunedì a domenica (righe): più serie, più colore. */
 	let { sets, weeks = 14 }: { sets: Map<string, number>; weeks?: number } = $props()
@@ -23,13 +24,13 @@
 	const level = (n: number) => (n <= 0 ? 0 : n < 8 ? 1 : n < 16 ? 2 : n < 24 ? 3 : 4)
 </script>
 
-<div class="map" role="img" aria-label={t('Giorni in cui ti sei allenato')}>
+<div class="map" role="img" aria-label={t('Giorni in cui ti sei allenato')} use:inview>
 	<div class="days">{#each dayNames as d}<span>{d}</span>{/each}</div>
 	<div class="main">
 		<div class="mo" style="--cols:{weeks}">{#each months as m}<span>{m}</span>{/each}</div>
 		<div class="grid" style="--cols:{weeks}">
-			{#each cells as col}
-				<div class="col">
+			{#each cells as col, c}
+				<div class="col" style="--c:{c}">
 					{#each col as c}
 						<div class="cell" class:future={c.n < 0} class:first={c.d.getDate() === 1} data-l={level(c.n)} title="{dateShort(c.d.getTime())}{c.n > 0 ? ' · ' + c.n : ''}"></div>
 					{/each}
@@ -48,6 +49,9 @@
 	.mo span { white-space: nowrap; overflow: visible; }
 	.grid { display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: 4px; }
 	.col { display: grid; grid-template-rows: repeat(7, 1fr); gap: 4px; }
+	/* le colonne appaiono da sinistra a destra la prima volta che la mappa si vede */
+	.col { transition: opacity var(--dur-2) var(--ease-out) calc(var(--c) * 24ms); }
+	.map:global([data-in='0']) .col { opacity: 0; }
 	.cell { aspect-ratio: 1; border-radius: 4px; background: rgba(255,255,255,.06); }
 	.cell.future { background: transparent; }
 	/* il giorno 1 del mese è bordato: si vede dove inizia il mese dentro la settimana */

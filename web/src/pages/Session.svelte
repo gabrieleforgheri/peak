@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
+	import { flip } from 'svelte/animate'
 	import type { MuscleGroup } from '@common/docs.ts'
 	import { oneRepMax } from '@common/domain.ts'
 	import { addSet, addToPlan, deleteWorkout, endWorkout, itemsFromWorkout, moveInPlan, patchWorkout, removeFromPlan, replaceInPlan, templateChanged, todayItems, updateTemplateFromWorkout } from '../lib/actions.ts'
@@ -9,7 +10,7 @@
 	import { getModel } from '../lib/store.svelte.ts'
 	import { R, shiftRest, startRest, stopRest } from '../lib/timer.svelte.ts'
 	import { toast } from '../lib/toast.svelte.ts'
-	import { confetti, rowIn, rowOut } from '../lib/fx.ts'
+	import { confetti, countUp, move, rowIn, rowOut, stagger } from '../lib/fx.ts'
 	import { play } from '../lib/sound.ts'
 	import type { Ex, SetItem, Wk } from '../lib/types.ts'
 	import AddSetSheet from '../components/AddSetSheet.svelte'
@@ -133,7 +134,7 @@
 	}
 </script>
 
-<main class="screen no-tabs">
+<main class="screen no-tabs" use:stagger>
 	{#if !wk}
 		<div class="bar"><button class="icon-btn" onclick={() => back('allenamenti')} aria-label={t('Indietro')}><Icon name="left" /></button></div>
 		<div class="empty">{t('Allenamento non trovato.')}</div>
@@ -162,9 +163,9 @@
 				<span class="small muted num">{dateTime(wk.dateMs)} · {duration(seconds)}</span>
 			</div>
 			<div class="row between" style="margin-top:10px;text-align:center">
-				<div><div class="mid num">{wk.workingSets}</div><div class="tiny muted">{t('serie')}</div></div>
-				<div><div class="mid num">{V(wk.volume)}</div><div class="tiny muted">{t('volume')}</div></div>
-				<div><div class="mid num">{wk.prCount}</div><div class="tiny muted">{t('record')}</div></div>
+				<div><div class="mid num" use:countUp={{ value: wk.workingSets, from: 0, follow: true, delay: 150, ms: 600 }}></div><div class="tiny muted">{t('serie')}</div></div>
+				<div><div class="mid num" use:countUp={{ value: wk.volume, format: V, from: 0, follow: true, delay: 210, ms: 600 }}></div><div class="tiny muted">{t('volume')}</div></div>
+				<div><div class="mid num" use:countUp={{ value: wk.prCount, from: 0, follow: true, delay: 270, ms: 600 }}></div><div class="tiny muted">{t('record')}</div></div>
 			</div>
 			{#if focus.size || wk.isActive}
 				<div class="row wrap" style="margin-top:10px;gap:6px">
@@ -180,7 +181,7 @@
 			{@const goal = targetLine(it, sets.filter((s) => !s.isWarmup).length, null)}
 			{@const prevSets = previousWorkingSets(ex, wk).slice(0, 3)}
 			{@const prevDays = previousDays(ex, wk)}
-			<div class="card session-ex-card" style={current === ex.uuid && wk.isActive ? 'border-color:rgba(var(--accent-rgb),.45)' : ''}>
+			<div class="card session-ex-card" style={current === ex.uuid && wk.isActive ? 'border-color:rgba(var(--accent-rgb),.45)' : ''} in:rowIn animate:flip={move()}>
 				<CardBackground {ex} />
 
 				<div class="card-content-wrap">
@@ -255,7 +256,7 @@
 					<div class="list" style:margin-top={sets.length ? '12px' : '0'}>
 						{#each sets as s, i (s.uuid)}
 							{@const fmt = formatSetLine(s.weight, s.reps, ex, s.singleArm)}
-							<button class="item" class:flash={s.isPR && s.uuid === fresh} onclick={() => (adding = { ex, set: s })} in:rowIn out:rowOut>
+							<button class="item" class:flash={s.isPR && s.uuid === fresh} onclick={() => (adding = { ex, set: s })} in:rowIn out:rowOut animate:flip={move()}>
 								<span class="muted num" style="width:20px">{i + 1}</span>
 								<div class="grow num" style="font-weight:700">
 									{fmt.main}{#if fmt.sub} <span class="tiny muted" style="font-weight:500">({fmt.sub})</span>{/if}
@@ -349,7 +350,9 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 5px;
+		transition: transform var(--dur-1) var(--ease-out);
 	}
+	.muscle-btn:active { transform: scale(0.96); }
 	.muscle-sub-label {
 		font-size: 11px;
 		font-weight: 700;

@@ -6,6 +6,8 @@
 	import { go } from '../lib/router.svelte.ts'
 	import { F, getBoard, getLeague, loadFriends, loadNews, type BoardRow, type LeagueRow } from '../lib/social.svelte.ts'
 	import { getModel } from '../lib/store.svelte.ts'
+	import { flip } from 'svelte/animate'
+	import { inview, move, rowIn, rowOut, stagger } from '../lib/fx.ts'
 	import FriendsList from '../components/FriendsList.svelte'
 	import Icon from '../components/Icon.svelte'
 	import Podium from '../components/Podium.svelte'
@@ -40,7 +42,7 @@
 	const news = $derived((F.news ?? []).slice(0, 6))
 </script>
 
-<main class="screen page">
+<main class="screen page" use:stagger={league}>
 	<div class="bar span"><h1>{t('Amici')}</h1></div>
 
 	<!-- a schermo largo: a sinistra cerca e lega, a destra esercizio per esercizio e novità; a tre colonne la sinistra si divide in due -->
@@ -61,9 +63,9 @@
 					<Podium rows={podium} onpick={(id) => go(`amici/${id}`)} />
 					{#if myRank}<p class="small muted" style="text-align:center;margin:14px 0 4px">{myRank === 1 ? t('Sei in testa. Tienila stretta.') : t('Sei {0}° su {1}.', myRank, ranked.length)}</p>{/if}
 				</div>
-				<div class="card list">
+				<div class="card list" use:inview>
 					{#each ranked as r, i (r.id)}
-						<button class="item" class:me={r.tu} onclick={() => !r.tu && go(`amici/${r.id}`)}>
+						<button class="item" class:me={r.tu} onclick={() => !r.tu && go(`amici/${r.id}`)} animate:flip={move()} in:rowIn out:rowOut>
 							<b class="rk num">{i + 1}</b>
 							<div class="grow" style="min-width:0">
 								<div class="row between"><b class="ellipsis">{r.tu ? t('Tu') : '@' + r.username}</b><b class="num">{fmt(r, metric)}</b></div>
@@ -87,9 +89,9 @@
 						{#if !board}<div class="empty">…</div>
 						{:else if board.length < 2}<p class="small muted">{t('Nessun amico ha ancora questo esercizio.')}</p>
 						{:else}
-							<div class="stack" style="gap:10px">
+							<div class="stack" style="gap:10px" use:inview>
 								{#each board as r, i (r.id)}
-									<button class="brow" onclick={() => !r.tu && go(`amici/${r.id}`)}>
+									<button class="brow" onclick={() => !r.tu && go(`amici/${r.id}`)} animate:flip={move()} in:rowIn out:rowOut>
 										<div class="row between"><span class="row" style="gap:10px"><b class="num" style="width:18px;color:{i === 0 ? '#ffd45e' : 'var(--text-3)'}">{i + 1}</b><span style="font-weight:{r.tu ? 800 : 600}">{r.tu ? t('Tu') : '@' + r.username}</span></span><span class="num"><b>{W(r.oneRm)}</b> <span class="small muted">{W(r.weight)} × {r.reps}</span></span></div>
 										<div class="hbar" style="margin-top:6px"><div style="width:{barFraction(r.oneRm, boardTop) * 100}%;background:{r.tu ? 'var(--accent)' : 'rgba(255,255,255,.35)'}"></div></div>
 									</button>
@@ -106,7 +108,7 @@
 				{#if news.length}
 					<div class="card list">
 						{#each news as e, i (e.id + e.catalog + e.date + i)}
-							<button class="item" onclick={() => go(`amici/${e.id}`)}>
+							<button class="item" onclick={() => go(`amici/${e.id}`)} animate:flip={move()} in:rowIn>
 								<div class="grow ellipsis"><b>@{e.username}</b> · {names.get(e.catalog) ?? e.name}<div class="small muted">{relDay(e.date)}</div></div>
 								<div style="text-align:right"><b class="num">{W(e.weight)} × {e.reps}</b>{#if e.sorpasso}<div class="small" style="color:var(--neg)">{t('Ti ha superato')}</div>{/if}</div>
 							</button>
@@ -130,5 +132,6 @@
 	.item.me { background: rgba(var(--accent-rgb), .08); }
 	.item.me .rk { color: var(--accent); }
 	.chips.scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -4px 12px; padding: 0 4px; }
-	.brow { border: 0; background: none; color: inherit; text-align: left; padding: 0; width: 100%; }
+	.brow { border: 0; background: none; color: inherit; text-align: left; padding: 0; width: 100%; transition: transform var(--dur-1) var(--ease-out); }
+	.brow:active { transform: scale(0.985); }
 </style>

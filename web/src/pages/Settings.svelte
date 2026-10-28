@@ -11,6 +11,7 @@
 	import { disablePush, enablePush, pushState, type PushState } from '../lib/push.ts'
 	import { call, resync, syncNow } from '../lib/sync.ts'
 	import { toast } from '../lib/toast.svelte.ts'
+	import { stagger } from '../lib/fx.ts'
 	import Icon from '../components/Icon.svelte'
 	import Sheet from '../components/Sheet.svelte'
 	import Stepper from '../components/Stepper.svelte'
@@ -107,7 +108,7 @@
 	const cat = $derived(CATS.find((c) => c.id === route.parts[1]))
 </script>
 
-<main class="screen no-tabs">
+<main class="screen no-tabs" use:stagger>
 {#if !cat}
 	<div class="bar">
 		<button class="icon-btn" onclick={() => go('me')} aria-label={t('Indietro')}><Icon name="left" /></button>

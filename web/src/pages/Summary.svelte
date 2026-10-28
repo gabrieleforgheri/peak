@@ -8,7 +8,7 @@
 	import { go } from '../lib/router.svelte.ts'
 	import { getModel } from '../lib/store.svelte.ts'
 	import { toast } from '../lib/toast.svelte.ts'
-	import { celebrated, confetti, countUp, firstTime, grow, pop, pulse, rise, sequence, wiggle } from '../lib/fx.ts'
+	import { celebrated, confetti, countUp, firstTime, grow, pop, pulse, rise, sequence, stagger, wiggle } from '../lib/fx.ts'
 	import { play, playDay } from '../lib/sound.ts'
 	import Icon from '../components/Icon.svelte'
 	import TemplateEditor from '../components/TemplateEditor.svelte'
@@ -69,6 +69,7 @@
 	let reveal = $state(P.playing && P.goalNow) // «Obiettivo raggiunto!» compare al suo momento
 	const segShown = $derived(seg ?? thisWeek.length)
 
+	let mainEl = $state<HTMLElement>()
 	let heroEl = $state<HTMLElement>()
 	let titleEl = $state<HTMLElement>()
 	let tilesEl = $state<HTMLElement>()
@@ -90,7 +91,7 @@
 			celebrated.setWeek(ws, w?.ws === ws ? Math.max(w.n, thisWeek.length) : thisWeek.length)
 			celebrated.setStreak(Math.max(celebrated.streak() ?? 0, streakNow))
 		}
-		if (!P.playing) return
+		if (!P.playing) { if (mainEl) stagger(mainEl); return } // riaperto più tardi: tutto fermo e già finale, solo i blocchi che salgono piano
 		const tl = sequence()
 		const circle = (d: number) => daysEl?.children[d]?.querySelector('.c')
 
@@ -133,7 +134,7 @@
 	})
 </script>
 
-<main class="screen no-tabs">
+<main class="screen no-tabs" bind:this={mainEl}>
 	{#if !wk}
 		<div class="empty">{t('Allenamento non trovato.')}</div>
 		<button class="btn block" onclick={() => go('allenamenti', true)}>{t('Fine')}</button>
@@ -144,9 +145,9 @@
 		</div>
 		<div class="tiles" bind:this={tilesEl}>
 			<div class="card tile"><div class="tiny muted">{t('Durata')}</div><div class="big num">{wk.endedMs ? duration((wk.endedMs - wk.dateMs) / 1000) : '—'}</div></div>
-			<div class="card tile"><div class="tiny muted">{t('Volume')}</div><div class="big num" use:countUp={{ value: wk.volume, format: V, from: P.playing ? 0 : undefined, delay: 400 }}></div></div>
-			<div class="card tile"><div class="tiny muted">{t('Serie')}</div><div class="big num" use:countUp={{ value: wk.workingSets, from: P.playing ? 0 : undefined, delay: 460 }}></div></div>
-			<div class="card tile"><div class="tiny muted">{t('Esercizi')}</div><div class="big num" use:countUp={{ value: exCount, from: P.playing ? 0 : undefined, delay: 520 }}></div></div>
+			<div class="card tile"><div class="tiny muted">{t('Volume')}</div><div class="big num" use:countUp={{ value: wk.volume, format: V, from: 0, delay: P.playing ? 400 : 150, ms: P.playing ? 800 : 600 }}></div></div>
+			<div class="card tile"><div class="tiny muted">{t('Serie')}</div><div class="big num" use:countUp={{ value: wk.workingSets, from: 0, delay: P.playing ? 460 : 210, ms: P.playing ? 800 : 600 }}></div></div>
+			<div class="card tile"><div class="tiny muted">{t('Esercizi')}</div><div class="big num" use:countUp={{ value: exCount, from: 0, delay: P.playing ? 520 : 270, ms: P.playing ? 800 : 600 }}></div></div>
 		</div>
 		<div class="sec-title">{t('La tua settimana')}</div>
 		<div class="card stack" bind:this={weekEl}>

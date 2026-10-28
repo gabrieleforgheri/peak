@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { barFraction } from '../lib/fmt.ts'
+	import { inview } from '../lib/fx.ts'
 	import Icon from './Icon.svelte'
 
 	/** I primi tre sul podio (di meno, se siete in pochi): il primo al centro, il più alto. `you` = la tua riga. */
@@ -10,7 +11,7 @@
 	const h = (amount: number) => Math.max(28, Math.round(112 * barFraction(amount, rows[0]?.amount ?? 0)))
 </script>
 
-<div class="podium">
+<div class="podium" use:inview>
 	{#each order as { r, rank } (r.id)}
 		<button class="slot" data-rank={rank} class:you={r.you} onclick={() => !r.you && onpick?.(r.id)}>
 			<div class="who"><div class="av">{r.name.replace(/^@/, '').slice(0, 1).toUpperCase()}</div><div class="nm">{#if r.you}<Icon name="star" size={12} />{/if} {r.name}</div><div class="val">{r.value}</div></div>
@@ -22,6 +23,8 @@
 <style>
 	.podium { display: flex; align-items: flex-end; justify-content: center; gap: 10px; padding-top: 6px; }
 	.slot { flex: 1; max-width: 120px; min-width: 0; border: 0; background: none; color: inherit; padding: 0; text-align: center; }
+	.slot { transition: transform var(--dur-1) var(--ease-out); }
+	.slot:active { transform: scale(0.98); }
 	.who { padding-bottom: 8px; }
 	.av { width: 48px; height: 48px; margin: 0 auto 6px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 20px; color: #1a1a1a;
 		background: radial-gradient(circle at 30% 25%, var(--hi), var(--lo)); box-shadow: 0 6px 18px var(--glow); }
@@ -29,8 +32,11 @@
 	.val { font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
 	.ped { border-radius: 14px 14px 4px 4px; display: grid; place-items: start center; padding-top: 8px; font-weight: 900; font-size: 24px; color: rgba(0,0,0,.55);
 		background: linear-gradient(to bottom, var(--hi), var(--lo)); }
-	[data-rank='1'] { --hi: #ffe69a; --lo: #c9921a; --glow: rgba(255,212,94,.5); }
-	[data-rank='2'] { --hi: #f4f6fa; --lo: #8f98a8; --glow: rgba(223,228,236,.35); }
+	/* i gradini si alzano dal basso la prima volta che il podio si vede (clip-path: il numero dentro non si schiaccia); il terzo prima, il primo per ultimo */
+	.ped { transition: clip-path var(--dur-4) var(--ease-out) var(--d, 0ms); }
+	.podium:global([data-in='0']) .ped { clip-path: inset(100% 0 0 0); }
+	[data-rank='1'] { --d: 160ms; --hi: #ffe69a; --lo: #c9921a; --glow: rgba(255,212,94,.5); }
+	[data-rank='2'] { --d: 80ms; --hi: #f4f6fa; --lo: #8f98a8; --glow: rgba(223,228,236,.35); }
 	[data-rank='3'] { --hi: #f1b27a; --lo: #94562a; --glow: rgba(224,149,90,.35); }
 	.you .nm { color: var(--accent); }
 </style>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t, tn } from '../lib/i18n.ts'
+	import { onMount } from 'svelte'
 	import { countUp } from '../lib/fx.ts'
 
 	/** La prima cosa che vedi: una montagna e una frase che cambia. Sotto, i due numeri che contano di più.
@@ -7,6 +8,15 @@
 	let { greeting, name, streak, weekSessions, goal, roll, onavatar, onchangegoal }: {
 		greeting: string; name: string; streak: number; weekSessions: number; goal: number; roll?: { from: number; delay: number }; onavatar: () => void; onchangegoal: () => void
 	} = $props()
+
+	// i segmenti dell'obiettivo si riempiono da vuoti la prima volta (uno dopo l'altro), poi seguono i dati come prima
+	let armed = $state(false)
+	let intro = $state(true)
+	onMount(() => {
+		const a = setTimeout(() => (armed = true), 40)
+		const b = setTimeout(() => (intro = false), 450) // prima che parta la festa (500 ms)
+		return () => { clearTimeout(a); clearTimeout(b) }
+	})
 
 	const PHRASES = [
 		t('Oggi è un buon giorno per battere il tuo record.'),
@@ -73,8 +83,8 @@
 
 	<!-- l'obiettivo della settimana: un segmento per allenamento -->
 	<button class="goal" onclick={onchangegoal} aria-label="{t('Obiettivo della settimana')}: {Math.min(weekSessions, goal)} / {goal}. {t('Cambia l\'obiettivo della settimana')}">
-		<div class="gl"><span>{weekSessions >= goal ? t('Obiettivo raggiunto!') : t('Obiettivo della settimana')}</span><b>{weekSessions} / {goal}</b></div>
-		<div class="segs">{#each Array(goal) as _, k}<i class:on={k < weekSessions} class:last={k === weekSessions - 1}></i>{/each}</div>
+		<div class="gl"><span>{weekSessions >= goal ? t('Obiettivo raggiunto!') : t('Obiettivo della settimana')}</span><b><span use:countUp={{ value: weekSessions, from: 0, follow: true, delay: 250, ms: 500 }}></span> / {goal}</b></div>
+		<div class="segs">{#each Array(goal) as _, k}<i class:on={armed && k < weekSessions} class:last={k === weekSessions - 1} style="--d:{intro ? 250 + k * 70 : 0}ms"></i>{/each}</div>
 	</button>
 
 	<div class="foot">
@@ -90,18 +100,20 @@
 	.mount { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 	.top { position: relative; display: flex; align-items: center; justify-content: space-between; }
 	.who { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
-	.avatar { width: 34px; height: 34px; border-radius: 50%; border: 0; font-weight: 800; font-size: 15px; color: var(--on-accent); background: linear-gradient(135deg, var(--accent), rgba(var(--accent-rgb), .55)); box-shadow: 0 6px 18px rgba(var(--accent-rgb), .35); }
+	.avatar { width: 34px; height: 34px; border-radius: 50%; border: 0; font-weight: 800; font-size: 15px; color: var(--on-accent); background: linear-gradient(135deg, var(--accent), rgba(var(--accent-rgb), .55)); box-shadow: 0 6px 18px rgba(var(--accent-rgb), .35); transition: transform var(--dur-1) var(--ease-out); }
+	.avatar:active { transform: scale(0.94); }
 	.quote { position: relative; margin-top: 14px; max-width: 62%; min-height: 68px; }
 	.quote p { margin: 0; font-size: 20px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.08; white-space: pre-line; text-shadow: 0 4px 30px rgba(var(--accent-rgb), .45); animation: in .7s cubic-bezier(.22, 1, .36, 1); }
 	@keyframes in { from { opacity: 0; transform: translateY(10px); } }
 	@media (prefers-reduced-motion: reduce) { .quote p { animation: none; } }
-	.goal { position: relative; margin-top: auto; padding: 8px 0 0; border: 0; background: none; color: inherit; text-align: left; width: 100%; }
+	.goal { position: relative; margin-top: auto; padding: 8px 0 0; border: 0; background: none; color: inherit; text-align: left; width: 100%; transition: transform var(--dur-1) var(--ease-out); }
+	.goal:active { transform: scale(0.99); }
 	.gl { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; color: var(--text-2); margin-bottom: 6px; text-shadow: 0 1px 10px rgba(0,0,0,.7); }
 	.gl b { font-size: 13px; color: var(--text); font-variant-numeric: tabular-nums; }
 	.segs { display: flex; gap: 6px; }
 	.segs i { position: relative; flex: 1; height: 9px; border-radius: 5px; background: rgba(255,255,255,.14); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
 	/* il riempimento è un velo che si allunga da sinistra (transform), così un segmento nuovo si riempie invece di comparire */
-	.segs i::after { content: ''; position: absolute; inset: 0; border-radius: 6px; background: linear-gradient(90deg, rgba(var(--accent-rgb), .7), rgb(var(--accent-rgb))); transform: scaleX(0); transform-origin: left; transition: transform 220ms var(--ease-out); }
+	.segs i::after { content: ''; position: absolute; inset: 0; border-radius: 6px; background: linear-gradient(90deg, rgba(var(--accent-rgb), .7), rgb(var(--accent-rgb))); transform: scaleX(0); transform-origin: left; transition: transform 220ms var(--ease-out) var(--d, 0ms); }
 	.segs i.on::after { transform: none; }
 	.segs i.last::after { box-shadow: 0 0 14px rgba(var(--accent-rgb), .7); }
 	.foot { position: relative; padding-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; }

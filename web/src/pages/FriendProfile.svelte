@@ -9,6 +9,7 @@
 	import { getProfile, removeFriend, type Max, type Profile } from '../lib/social.svelte.ts'
 	import { toast } from '../lib/toast.svelte.ts'
 	import { oneRepMax } from '@common/domain.ts'
+	import { stagger } from '../lib/fx.ts'
 	import Icon from '../components/Icon.svelte'
 
 	let { id }: { id: string } = $props()
@@ -46,7 +47,7 @@
 	}
 </script>
 
-<main class="screen no-tabs wide page two">
+<main class="screen no-tabs wide page two" use:stagger={profile || failed}>
 	<div class="bar span">
 		<button class="icon-btn" onclick={() => back('amici')} aria-label={t('Indietro')}><Icon name="left" /></button>
 		<h1 class="small">{profile ? '@' + profile.username : ''}</h1>

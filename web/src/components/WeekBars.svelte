@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { V } from '../lib/fmt.ts'
 	import { locale, t } from '../lib/i18n.ts'
+	import { inview } from '../lib/fx.ts'
 
 	/** Una barra per settimana, dalla più vecchia a questa; sotto, il giorno in cui la settimana comincia (il lunedì). */
 	let { weeks }: { weeks: { ws: number; volume: number }[] } = $props()
@@ -12,10 +13,10 @@
 	const monthAt = (i: number) => i === 0 || new Date(weeks[i]!.ws).getMonth() !== new Date(weeks[i - 1]!.ws).getMonth()
 </script>
 
-<div class="wk" role="img" aria-label={t('Volume sollevato per settimana')}>
+<div class="wk" role="img" aria-label={t('Volume sollevato per settimana')} use:inview>
 	<div class="bars">
 		{#each weeks as w, i}
-			<div class="col" class:now={i === weeks.length - 1}>
+			<div class="col" class:now={i === weeks.length - 1} style="--i:{i}">
 				<div class="bar" class:zero={w.volume === 0} style="height:{Math.max(4, (w.volume / max) * 100)}%" title="{t('Settimana dal {0}', full.format(w.ws))}: {V(w.volume)}"></div>
 			</div>
 		{/each}
@@ -36,6 +37,9 @@
 	.axis .mo { min-height: 13px; white-space: nowrap; text-transform: capitalize; }
 	.axis .now span:first-child { color: var(--accent); font-weight: 800; }
 	.bar { width: 100%; border-radius: 6px 6px 3px 3px; background: linear-gradient(to top, rgba(var(--accent-rgb), .25), rgba(var(--accent-rgb), .7)); }
+	/* le barre crescono dalla base una dopo l'altra la prima volta che il grafico si vede; col dato nuovo si allungano fino al valore */
+	.bar { transform-origin: bottom; transition: transform 400ms var(--ease-out) calc(var(--i) * 20ms), height var(--dur-3) var(--ease-out); }
+	.wk:global([data-in='0']) .bar { transform: scaleY(0); }
 	.bar.zero { background: rgba(255,255,255,.07); }
 	.now .bar { background: linear-gradient(to top, rgba(var(--accent-rgb), .5), rgb(var(--accent-rgb))); box-shadow: 0 0 14px rgba(var(--accent-rgb), .45); }
 </style>

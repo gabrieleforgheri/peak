@@ -4,6 +4,7 @@
 	import { go } from './lib/router.svelte.ts'
 	import { applyLang, lang, t } from './lib/i18n.ts'
 	import { T } from './lib/toast.svelte.ts'
+	import { pageIn, toastFx } from './lib/fx.ts'
 	import { adoptLooseTemplates } from './lib/actions.ts'
 	import Icon from './components/Icon.svelte'
 	import Onboarding from './pages/Onboarding.svelte'
@@ -65,7 +66,9 @@
 				<div class="banner warn"><div class="grow"><b>{t('Sessione scaduta')}</b>{t('I tuoi dati sono al sicuro sul telefono; accedi di nuovo per sincronizzarli.')}</div><a class="btn small" href="/auth/login">{t('Accedi')}</a></div>
 			</div>
 		{/if}
+		<!-- la pagina nuova entra con una breve dissolvenza e uno scivolo (fx.pageIn); nessuna uscita: la vecchia sparisce subito -->
 		{#key route.parts.join('/')}
+		<div class="view" use:pageIn={route.dir}>
 			{#if tab === 'invito'}
 				<Invite code={route.parts[1] ?? ''} />
 			{:else if tab === 'macchinari'}
@@ -83,6 +86,7 @@
 			{:else}
 				<Settings />
 			{/if}
+		</div>
 		{/key}
 		{#if showNav}
 			<nav class="tabbar"><div class="tabbar-in" data-tour="tabs">
@@ -95,5 +99,5 @@
 	<!-- la prima volta: prima l'obiettivo (nel primo avvio l'ha già scelto), poi il tutorial -->
 	{#if !loading && !onboarding && S.synced && !m.settings.weeklyGoal}<GoalPicker onclose={() => {}} />
 	{:else if !loading && !onboarding && (tutorialHeld || wantTutorial)}<Tour onend={() => (tutorialHeld = false)} />{/if}
-	{#if T.msg}<div class="toast" role="status">{#if T.icon}<Icon name={T.icon} size={18} />{/if}{T.msg}</div>{/if}
+	{#if T.on}<div class="toast" role="status" transition:toastFx>{#if T.icon}<Icon name={T.icon} size={18} />{/if}{T.msg}</div>{/if}
 </div>

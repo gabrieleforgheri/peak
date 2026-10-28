@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 	import { t } from '../lib/i18n.ts'
+	import { sheetMotion } from '../lib/fx.ts'
 	import Icon from './Icon.svelte'
 
 	let { title, onclose, children, action }: { title: string; onclose: () => void; children: Snippet; action?: Snippet } = $props()
@@ -13,8 +14,9 @@
 </script>
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && onclose()} />
+<!-- entra e esce con fx.sheetMotion: sul telefono sale dal bordo, a schermo largo si dissolve crescendo da .98; chiudendo, un doppione inerte fa l'uscita e i tocchi vanno già alla pagina -->
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-<div class="backdrop" onclick={(e) => e.target === e.currentTarget && onclose()}>
+<div class="backdrop" onclick={(e) => e.target === e.currentTarget && onclose()} use:sheetMotion>
 	<div class="sheet" role="dialog" aria-modal="true" aria-label={title}>
 		<div class="grab"></div>
 		<div class="sheet-head">
