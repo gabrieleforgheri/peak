@@ -13,6 +13,14 @@
       "tintColor": "34C759",
       "versions": [
         {
+          "version": "3.3",
+          "date": "2026-10-28T18:55:22Z",
+          "localizedDescription": "Merge remote-tracking branch 'origin/main'",
+          "downloadURL": "https://github.com/gabrieleforgheri/peak/releases/download/v3.3/Peak.ipa",
+          "size": 2152611,
+          "minOSVersion": "17.0"
+        },
+        {
           "version": "3.2.1",
           "date": "2026-10-27T16:30:08Z",
           "localizedDescription": "Peak 3.2.1: niente titolo grande su Allenamento, in cima c'è già la montagna",
