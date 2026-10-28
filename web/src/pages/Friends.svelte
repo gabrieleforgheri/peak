@@ -121,6 +121,8 @@
 
 <style>
 	.empty-state { text-align: center; padding: 28px 20px; }
+	/* sotto la ricerca: in una colonna lo stesso spazio della .stack sopra; a tre colonne è una colonna a sé */
+	@media (max-width: 899.98px) { .empty-state { margin-top: 12px; } }
 	@media (min-width: 900px) and (max-width: 1399.98px) { .empty-state { margin-top: 20px; } }
 	.big-icon { width: 84px; height: 84px; margin: 0 auto 14px; border-radius: 50%; display: grid; place-items: center; color: var(--accent);
 		background: radial-gradient(circle, rgba(var(--accent-rgb), .25), rgba(var(--accent-rgb), .05)); }
