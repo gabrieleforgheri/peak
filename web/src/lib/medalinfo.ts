@@ -1,7 +1,7 @@
 // Le medaglie sulle schermate: nome, icona, spiegazione, e le medaglie come erano a una certa data (per «cosa hai guadagnato oggi»).
 
 import { oneRepMax } from '@common/domain.ts'
-import { medals, type Medal, type MedalId } from '@common/medals.ts'
+import { medals, tierDates, type Medal, type MedalId } from '@common/medals.ts'
 import { weeklyStreak, workoutVolume, type StatWorkout } from '@common/stats.ts'
 import { V, W } from './fmt.ts'
 import { t } from './i18n.ts'
@@ -14,8 +14,10 @@ export const MEDAL: Record<MedalId, { icon: string; title: string }> = {
 }
 export const TIERS = [t('da conquistare'), t('Bronzo'), t('Argento'), t('Oro')]
 export const fmtMedal = (id: MedalId, v: number): string => id === 'volume' ? V(v) : id === 'strength' ? W(v) : String(Math.round(v))
-/** Sotto la medaglia: quanto manca, o il livello preso. */
-export const medalSub = (md: Medal): string => md.next === null ? TIERS[3]! : md.tier === 0 ? `${fmtMedal(md.id, md.value)} / ${fmtMedal(md.id, md.next)}` : `${TIERS[md.tier]} · ${fmtMedal(md.id, md.value)}/${fmtMedal(md.id, md.next)}`
+/** Quanto del livello dopo hai fatto, da 0 a 1 (valore / soglia): è anche quello che si legge accanto, «12 / 25». Oro preso = 1. */
+export const medalFrac = (md: Medal): number => md.next === null ? 1 : Math.min(1, md.value / md.next)
+/** Prima le più vicine al livello dopo, poi quelle d'oro (a parità resta l'ordine di sempre). */
+export const medalOrder = (list: Medal[]): Medal[] => [...list.filter((md) => md.next !== null).sort((a, b) => medalFrac(b) - medalFrac(a)), ...list.filter((md) => md.next === null)]
 /** Cosa misura ogni medaglia, in una riga. */
 export const MEDAL_INFO: Record<MedalId, string> = {
 	sessions: t('Ogni allenamento concluso conta.'), records: t('Ogni massimale battuto conta.'),
@@ -48,4 +50,20 @@ export function medalsAt(m: Model, friends: number, until?: { ms: number; inclus
 		sessions: done.length, records, streak: weeklyStreak(stat, until?.ms), volumeKg: stat.reduce((v, w) => v + workoutVolume(w), 0),
 		bestOneRm, machines, friends,
 	})
+}
+
+const datesCache = new WeakMap<Model, Record<MedalId, (number | null)[]>>()
+/**
+ * Quando hai preso ogni livello (bronzo, argento, oro; null se non c'è o non si sa), ricavato dalla storia: gli istanti in cui
+ * qualcosa è cambiato sono gli allenamenti e i massimali. Si calcola una volta per modello. Gli amici non hanno una data.
+ */
+export function medalDates(m: Model, friends: number): Record<MedalId, (number | null)[]> {
+	let d = datesCache.get(m)
+	if (!d) {
+		const times = [...m.workouts.filter((w) => !w.isActive).map((w) => w.dateMs), ...m.exercises.flatMap((e) => e.records.map((r) => r.date))]
+		d = tierDates(times, (ms) => medalsAt(m, friends, { ms, inclusive: true }), medalsAt(m, friends))
+		d.friends = [null, null, null]
+		datesCache.set(m, d)
+	}
+	return d
 }

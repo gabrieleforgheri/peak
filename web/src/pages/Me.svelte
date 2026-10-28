@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import { oneRepMax } from '@common/domain.ts'
-	import { medalTotals } from '@common/medals.ts'
+	import { medalTotals, type MedalId } from '@common/medals.ts'
 	import { topMovers, volumeByGroup, weekStart, weeklyStreak, workoutVolume, type StatWorkout } from '@common/stats.ts'
 	import { GROUP_NAMES, V, W, dateShort, delta, relDay } from '../lib/fmt.ts'
-	import { MEDAL, MEDAL_INFO, TIERS, fmtMedal, medalSub, medalsAt } from '../lib/medalinfo.ts'
+	import { MEDAL, TIERS, fmtMedal, medalFrac, medalOrder, medalsAt } from '../lib/medalinfo.ts'
 	import { t, tn } from '../lib/i18n.ts'
 	import { go } from '../lib/router.svelte.ts'
 	import { F, loadFriends } from '../lib/social.svelte.ts'
@@ -14,6 +14,7 @@
 	import Heatmap from '../components/Heatmap.svelte'
 	import Icon from '../components/Icon.svelte'
 	import Medal from '../components/Medal.svelte'
+	import MedalSheet from '../components/MedalSheet.svelte'
 	import LineChart from '../components/LineChart.svelte'
 	import WeekBars from '../components/WeekBars.svelte'
 
@@ -100,7 +101,11 @@
 
 	const medalList = $derived(medalsAt(m, friendCount))
 	const totals = $derived(medalTotals(medalList))
-	const nextLine = (md: (typeof medalList)[number]) => md.next === null ? t('Oro conquistato.') : t('Mancano {0} per {1}.', fmtMedal(md.id, md.next - md.value), TIERS[md.tier + 1])
+	// le tre più vicine al livello dopo in cima, le altre dietro «Mostra tutte»
+	const ordered = $derived(medalOrder(medalList))
+	let showAll = $state(false)
+	let openId = $state<MedalId | null>(null)
+	const openMedal = $derived(openId ? medalList.find((md) => md.id === openId) : undefined)
 
 	const movers = $derived(topMovers(m.exercises.map((e) => ({ id: e.uuid, records: e.records })), 90, 5))
 	const latest = $derived([...allRecords].sort((a, b) => b.date - a.date).slice(0, 4))
@@ -141,21 +146,29 @@
 		</div>
 	{/if}
 
-	<div class="blk span">
-		<div class="row between sec-row"><div class="sec-title">{t('Medaglie')}</div><span class="small muted">{totals.earned} / {totals.total}</span></div>
-		<div class="medals">
-			{#each medalList as md (md.id)}<Medal medal={md} icon={MEDAL[md.id].icon} title={MEDAL[md.id].title} sub={medalSub(md)} />{/each}
-		</div>
-		<div class="card list cells" style="margin-top:8px">
-			{#each medalList as md (md.id)}
-				<div class="item" style="flex-direction:column;align-items:stretch;gap:6px">
-					<div class="row between"><span class="row" style="gap:10px"><Icon name={MEDAL[md.id].icon} size={20} /><b>{MEDAL[md.id].title}</b></span><span class="small" style="color:var(--accent);font-weight:700">{TIERS[md.tier]}</span></div>
-					<div class="small muted">{MEDAL_INFO[md.id]}</div>
-					<div class="tiny muted num">{TIERS[1]} {fmtMedal(md.id, md.tiers[0])} · {TIERS[2]} {fmtMedal(md.id, md.tiers[1])} · {TIERS[3]} {fmtMedal(md.id, md.tiers[2])}</div>
-					<div style="height:6px;border-radius:3px;background:var(--stroke);overflow:hidden"><div style="height:100%;width:{Math.round(md.progress * 100)}%;background:var(--accent)"></div></div>
-					<div class="small">{nextLine(md)}</div>
+	<div class="blk">
+		<div class="row between sec-row"><div class="sec-title">{t('Medaglie')}</div><span class="small muted num">{totals.earned} / {totals.total}</span></div>
+		<div class="card mlist" data-tour="medals">
+			{#snippet mrow(md: (typeof medalList)[number], i: number, first: boolean)}
+				<button class="mrow" class:first onclick={() => (openId = md.id)} style="--i:{i}">
+					<Medal medal={md} icon={MEDAL[md.id].icon} progress={medalFrac(md)} />
+					<span class="mbody">
+						<span class="mtop"><b class="ellipsis">{MEDAL[md.id].title}</b><span class="mtier" class:none={md.tier === 0} data-tier={['', 'bronze', 'silver', 'gold'][md.tier]}>{TIERS[md.tier]}</span></span>
+						<span class="mbar"><i style="transform:scaleX({medalFrac(md)})"></i></span>
+						<span class="tiny muted num">{md.next === null ? fmtMedal(md.id, md.value) : `${fmtMedal(md.id, md.value)} / ${fmtMedal(md.id, md.next)}`}</span>
+					</span>
+				</button>
+			{/snippet}
+			{#each ordered.slice(0, 3) as md, i (md.id)}{@render mrow(md, 0, i === 0)}{/each}
+			<!-- le altre: l'altezza si apre in dolcezza, le righe salgono una dopo l'altra -->
+			<div class="more" class:open={showAll}>
+				<div class="more-in" inert={!showAll}>
+					{#each ordered.slice(3) as md, i (md.id)}{@render mrow(md, i, false)}{/each}
 				</div>
-			{/each}
+			</div>
+			{#if ordered.length > 3}
+				<button class="mtoggle" onclick={() => (showAll = !showAll)} aria-expanded={showAll}>{showAll ? t('Mostra meno') : t('Mostra tutte ({0})', ordered.length)}</button>
+			{/if}
 		</div>
 	</div>
 
@@ -236,6 +249,8 @@
 	{/if}
 </main>
 
+{#if openMedal}<MedalSheet md={openMedal} friends={friendCount} onclose={() => (openId = null)} />{/if}
+
 <style>
 	.head { display: flex; align-items: center; gap: 14px; }
 	.head h1 { margin: 0; font-size: 26px; }
@@ -249,5 +264,29 @@
 	.friends { margin: 14px 0 4px; gap: 10px; }
 	@media (min-width: 900px) { .friends { margin: 0; } .friends > .btn { flex: none; width: auto; min-width: 240px; } }
 	.trophy { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,212,94,.14); color: #ffd45e; flex: none; }
+	/* medaglie: righe-pulsante dentro una card */
+	.mlist { padding: 0 var(--pad); }
+	.mrow { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 44px; padding: 12px 0; border: 0; border-top: 1px solid var(--stroke); background: none; color: inherit; text-align: left; font: inherit; touch-action: manipulation; }
+	.mrow.first { border-top: 0; }
+	.mrow:focus-visible, .mtoggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 12px; }
+	.mbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+	.mtop { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+	.mtop b { font-size: 15px; min-width: 0; }
+	.mtier { flex: none; font-size: 12px; font-weight: 800; color: var(--tint); }
+	.mtier.none { color: var(--text-3); font-weight: 600; }
+	.mtier[data-tier='bronze'] { --tint: var(--bronze); }
+	.mtier[data-tier='silver'] { --tint: var(--silver); }
+	.mtier[data-tier='gold'] { --tint: var(--gold); }
+	.mbar { display: block; height: 4px; border-radius: 2px; background: var(--stroke); overflow: hidden; }
+	.mbar i { display: block; height: 100%; background: var(--accent); transform-origin: left; animation: mfill 500ms var(--ease-out) backwards; }
+	.mtoggle { display: block; width: 100%; min-height: 44px; border: 0; border-top: 1px solid var(--stroke); background: none; color: var(--text-2); font: inherit; font-size: 14px; font-weight: 600; touch-action: manipulation; }
+	.more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 300ms var(--ease-out); }
+	.more.open { grid-template-rows: 1fr; }
+	.more-in { min-height: 0; overflow: hidden; }
+	.more .mrow { opacity: 0; transform: translateY(8px); transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out); }
+	.more.open .mrow { opacity: 1; transform: none; transition-duration: 280ms; transition-delay: calc(var(--i) * 35ms + 60ms); }
+	@media (hover: hover) and (pointer: fine) { .mrow:hover b, .mtoggle:hover { color: var(--text); } }
+	.mrow:active { opacity: .7; }
+	@keyframes mfill { from { transform: scaleX(0); } }
 	.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 </style>

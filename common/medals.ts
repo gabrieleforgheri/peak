@@ -54,3 +54,22 @@ export function medals(input: MedalInput): Medal[] {
 /** Quante medaglie (livelli) hai preso sul massimo possibile. */
 export const medalTotals = (list: Medal[]): { earned: number; total: number } =>
   ({ earned: list.reduce((n, m) => n + m.tier, 0), total: list.length * 3 })
+
+/**
+ * Quando ogni livello già preso è scattato la prima volta: scorre gli istanti `times` (ms, in ordine qualsiasi) e li chiede a `at`
+ * (le medaglie com'erano allora), fermandosi quando ha trovato tutto. Per i livelli non ancora presi (`current`) o non trovati: null.
+ * Vale il primo istante in cui il livello c'era, anche se poi è stato perso (la serie settimanale può interrompersi).
+ */
+export function tierDates(times: number[], at: (ms: number) => Medal[], current: Medal[]): Record<MedalId, (number | null)[]> {
+  const out = Object.fromEntries(current.map((m) => [m.id, [null, null, null] as (number | null)[]])) as Record<MedalId, (number | null)[]>
+  let left = current.reduce((n, m) => n + m.tier, 0)
+  for (const ms of [...new Set(times)].sort((a, b) => a - b)) {
+    if (left === 0) break
+    for (const m of at(ms)) {
+      const slot = out[m.id]
+      const cap = current.find((c) => c.id === m.id)!.tier
+      for (let i = 0; i < Math.min(m.tier, cap); i++) if (slot[i] === null) { slot[i] = ms; left-- }
+    }
+  }
+  return out
+}
