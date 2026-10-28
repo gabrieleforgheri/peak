@@ -5,7 +5,8 @@ Web + iPhone in parità. Codice scritto da subagenti Sonnet, rivisto e unito a m
 | Fatto | Dove |
 |---|---|
 | «Scorso» nella card dell'esercizio: due pagine da scorrere (ultime serie / ultimi 3 allenamenti in riga da taccuino `71,5 kg 8·6 · 54 kg 8`), puntini sotto | `WorkoutSessionView.swift`, `Session.svelte`, `Fmt.notebookLine`, `common/format.ts` `notebookLine` |
-| Serie «Un braccio» (`singleArm` su serie e massimali manuali): peso del singolo manico, rip per lato; linea di massimali separata («Massimale a un braccio» nel dettaglio), tutto il resto usa solo le due braccia; volume ×2; segno «1 br»; la serie nuova eredita il flag dalla precedente; Watch solo in lettura | `common/docs.ts` (+`KEEP_IF_ABSENT`), `common/records.ts`, `RecordRules.swift`, `AddSetSheet`, `EditMaxSheet`, `WatchMessages.swift` |
+| Serie «Un braccio» (`singleArm` su serie e massimali manuali): peso del singolo manico, rip per lato; linea di massimali separata («Massimale a un braccio» nel dettaglio), tutto il resto usa solo le due braccia; volume ×2; segno «1 br» | `common/docs.ts` (+`KEEP_IF_ABSENT`), `common/records.ts`, `RecordRules.swift`, `AddSetSheet`, `EditMaxSheet`, `WatchMessages.swift` |
+| 3.3.1: controllo «2 \| 1» accanto a «Peso» (non più la card), parole secondo il gruppo (gambe «1 gb», core senza controllo), le serie nuove partono sempre a 2, Watch senza segno | `SideSegment.swift`, `SideSegment.svelte`, `MuscleGroup.side`, `sideText` in `common/format.ts` |
 | Primo sync dopo l'aggiornamento: l'iPhone rimanda una volta tutte le serie e i record (nuovo campo `singleArm`) | `SyncDocs.swift` |
 | Non pubblicato: manichino 3D (`scripts/gen-muscle3d.py`, da Z-Anatomy CC BY-SA 4.0), in prova | — |
 
