@@ -13,6 +13,14 @@
       "tintColor": "34C759",
       "versions": [
         {
+          "version": "3.3.1",
+          "date": "2026-10-28T19:51:53Z",
+          "localizedDescription": "Merge remote-tracking branch 'origin/main'",
+          "downloadURL": "https://github.com/gabrieleforgheri/peak/releases/download/v3.3.1/Peak.ipa",
+          "size": 2155644,
+          "minOSVersion": "17.0"
+        },
+        {
           "version": "3.3",
           "date": "2026-10-28T18:55:22Z",
           "localizedDescription": "Merge remote-tracking branch 'origin/main'",
