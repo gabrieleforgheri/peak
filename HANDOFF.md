@@ -1,3 +1,19 @@
+# Benvenuto nuovo, medaglie, animazioni, zoom dei muscoli (29 ottobre 2026 — Peak 3.4, build 16)
+
+Onboarding, medaglie e animazioni solo sul web per ora (iPhone dopo); zoom e dimezzamento a un braccio su web + iPhone. Codice scritto da subagenti Sonnet, rivisto e unito a mano.
+
+| Fatto | Dove |
+|---|---|
+| Primo avvio a tutta pagina: montagna disegnata come un grafico, giorni a settimana, gruppi (un giorno per gruppo nella scheda «La mia scheda»), macchinari proposti; niente import per i nuovi (resta nelle Impostazioni) | `Onboarding.svelte`, `SummitDraw.svelte`, `common/onboarding.ts` |
+| Tutorial misto: 4 idee animate, poi riquadri sui controlli veri fino alla prima serie salvata (scelta giorno, «+ Serie», peso e ripetizioni, «Salva la serie»); saltabile | `Ideas.svelte`, `Tour.svelte`, `AddSetSheet.svelte` |
+| Medaglie in Me: tre righe vicine al livello dopo, «Mostra tutte», foglio con anello, percorso e date | `Me.svelte`, `MedalSheet.svelte`, `Medal.svelte`, `common/medals.ts` `tierDates` |
+| Animazioni sobrie: pagine, contenuti, numeri, grafici, fogli; rispettano «riduci movimento» | `app.css`, `fx.ts`, `App.svelte`, `Sheet.svelte` |
+| Scheda Muscoli: tocca una figura per ingrandirla | `MuscleZoomView.swift`, `MuscleZoom.svelte` |
+| Da 2 a 1 braccio il peso si dimezza sulla griglia del macchinario (pari verso il basso); tornando a 2 si ripristina o raddoppia. Macchine senza sbarra di default | `common/domain.ts` `switchArm`, `Warmup.swift` `ArmSwitch` |
+| Aperto: sbarra di default di Preacher Curl (iPhone) e EZ-Bar Preacher Curl (web) non allineate | — |
+
+---
+
 # «Scorso» a due pagine e serie a un braccio (28 ottobre 2026 — Peak 3.3, build 14)
 
 Web + iPhone in parità. Codice scritto da subagenti Sonnet, rivisto e unito a mano.
