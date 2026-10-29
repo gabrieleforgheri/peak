@@ -64,11 +64,13 @@ function seed(sub: string, username: string, name: string, scale: number, days: 
 
   // Otto settimane piene e questa a metà; il peso sale ogni due settimane, l'ultima settimana porta un record.
   const kg = (e: Ex, week: number) => Math.round(((e.start + e.step * Math.floor(week / 2)) * scale) / e.step) * e.step
+  // l'allenamento in corso: l'ultimo giorno della scheda non oltre oggi, a qualunque ora si lanci
+  const liveDay = Math.max(...days.filter((d) => monday + d * DAY <= now))
   let w = 0
   for (let week = 0; week <= 8; week++) {
     for (const d of days) {
       const start = monday - (8 - week) * 7 * DAY + d * DAY + 18.5 * 3600_000
-      const isLive = live && week === 8 && start > now - DAY && start <= now
+      const isLive = live && week === 8 && d === liveDay
       if (start > now && !isLive) continue
       const p = plans[w++ % plans.length]
       const begin = isLive ? now - 38 * 60_000 : start
