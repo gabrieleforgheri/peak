@@ -237,7 +237,7 @@ struct PrimaryButtonStyle: ButtonStyle {
             .background(tint, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .opacity(configuration.isPressed ? 0.75 : 1)
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .animation(Motion.out(Motion.press), value: configuration.isPressed)
     }
 }
 
@@ -257,7 +257,7 @@ struct SecondaryButtonStyle: ButtonStyle {
             )
             .opacity(configuration.isPressed ? 0.7 : 1)
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .animation(Motion.out(Motion.press), value: configuration.isPressed)
     }
 }
 

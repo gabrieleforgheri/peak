@@ -54,6 +54,7 @@ struct MeView: View {
             .accessibilityLabel("Impostazioni")
         }
         .padding(.top, 8)
+        .appear(0)
     }
 
     private var friendsButton: some View {
@@ -63,16 +64,17 @@ struct MeView: View {
                 .frame(maxWidth: .infinity, minHeight: 50)
                 .glassSurface(radius: 16)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressStyle())
         .foregroundStyle(Theme.textPrimary)
+        .appear(1)
     }
 
     private func overview(_ s: HomeStats) -> some View {
-        func cell(_ symbol: String, _ value: String, _ label: String) -> some View {
+        func cell(_ symbol: String, _ value: Double, _ label: String, format: @escaping (Double) -> String = { String(Int($0.rounded())) }) -> some View {
             HStack(spacing: 12) {
                 Image(systemName: symbol).font(.system(size: 18, weight: .semibold)).foregroundStyle(settings.accentColor).frame(width: 26)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(value).font(Theme.rounded(22, .heavy)).lineLimit(1).minimumScaleFactor(0.6).rolls(on: value)
+                    CountText(value: value, format: format).font(Theme.rounded(22, .heavy)).lineLimit(1).minimumScaleFactor(0.6)
                     Text(label).font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textSecondary)
                 }
                 Spacer(minLength: 0)
@@ -80,10 +82,10 @@ struct MeView: View {
         }
         return GlassCard {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible())], alignment: .leading, spacing: 18) {
-                cell("flame", String(s.streak), "Settimane di fila")
-                cell("dumbbell", String(s.finished), "Allenamenti")
-                cell("scalemass", Fmt.volume(s.totalVolume, unit: settings.unit), "Sollevati")
-                cell("trophy", String(s.recordCount), "Record")
+                cell("flame", Double(s.streak), "Settimane di fila")
+                cell("dumbbell", Double(s.finished), "Allenamenti")
+                cell("scalemass", s.totalVolume, "Sollevati") { Fmt.volume($0, unit: settings.unit) }
+                cell("trophy", Double(s.recordCount), "Record")
             }
         }
     }
@@ -93,6 +95,7 @@ struct MeView: View {
             SectionHeader(title: title, trailing: trailing).padding(.top, 6)
             content()
         }
+        .appear()
     }
 
     /// Il peso corporeo si registra anche senza aver mai fatto un allenamento,

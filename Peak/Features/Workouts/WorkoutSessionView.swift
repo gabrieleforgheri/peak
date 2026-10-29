@@ -65,12 +65,13 @@ struct WorkoutSessionView: View {
         ScrollView {
             VStack(spacing: 14) {
                 header
+                    .appear(0)
 
                 if let restEnd = RestTimer.shared.end {
                     restCard(until: restEnd)
                 }
 
-                ForEach(list) { item in
+                ForEach(Array(list.enumerated()), id: \.element.id) { index, item in
                     if let exercise = known[item.exercise] {
                     let sets = workout.sets(for: exercise)
                     ExerciseSessionCard(
@@ -98,6 +99,7 @@ struct WorkoutSessionView: View {
                         onDeleteSet: { delete($0) },
                         onDetail: { viewingExercise = exercise }
                     )
+                    .appear(index + 1)
                     }
                 }
 
@@ -813,7 +815,7 @@ private struct ExerciseSessionCard: View {
                             .background(exercise.muscleGroup.tint.opacity(0.20), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                             .foregroundStyle(exercise.muscleGroup.tint)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(PressStyle())
 
                     if let last = sets.last {
                         Button(action: onRepeatLast) {
@@ -831,7 +833,7 @@ private struct ExerciseSessionCard: View {
                                 .background(Theme.card, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                                 .foregroundStyle(Theme.textSecondary)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(PressStyle())
                     }
                 }
             }

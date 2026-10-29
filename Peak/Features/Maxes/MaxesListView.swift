@@ -131,7 +131,7 @@ struct MaxesListView: View {
 
             ForEach(grouped, id: \.group) { section in
                 Section {
-                    ForEach(section.items) { exercise in
+                    ForEach(Array(section.items.enumerated()), id: \.element.persistentModelID) { index, exercise in
                         ZStack {
                             // NavigationLink senza la freccia di sistema: la riga
                             // è già una card e la chevron la sporcherebbe.
@@ -144,6 +144,7 @@ struct MaxesListView: View {
 
                             ExerciseRow(exercise: exercise)
                         }
+                        .appear(index, key: "ex-\(exercise.uuid)")
                         .plainListRow()
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
@@ -271,6 +272,8 @@ private struct ExerciseRow: View {
                             Text(Fmt.weightValue(best.weight, unit: settings.unit))
                                 .font(Theme.display(21))
                                 .foregroundStyle(Theme.textPrimary)
+                                .contentTransition(.numericText()) // un nuovo massimale scorre invece di saltare
+                                .animation(Motion.out(Motion.enter), value: best.weight)
                             Text("\(settings.unit.symbol) × \(best.reps)")
                                 .font(Theme.rounded(11, .semibold))
                                 .foregroundStyle(Theme.textTertiary)
@@ -306,7 +309,8 @@ private struct FilterPill: View {
                 .padding(.vertical, 8)
                 .background(isOn ? tint : Theme.card, in: Capsule())
                 .overlay(Capsule().strokeBorder(isOn ? .clear : Theme.stroke, lineWidth: 1))
+                .animation(Motion.out(Motion.fade), value: isOn) // i colori sfumano
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressStyle())
     }
 }

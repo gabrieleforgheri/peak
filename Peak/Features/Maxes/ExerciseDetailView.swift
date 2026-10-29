@@ -82,7 +82,7 @@ struct ExerciseDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
-                heroCard
+                heroCard.appear(0)
                 if settings.progressionEnabled, let next = exercise.progression(range: settings.repRange, unit: settings.unit) {
                     GlassCard(padding: 16) {
                         HStack {
@@ -93,15 +93,16 @@ struct ExerciseDetailView: View {
                                 .foregroundStyle(tint)
                         }
                     }
+                    .appear(1)
                 }
-                leaderboardCard
-                if !warmupPlan.isEmpty { warmupCard }
-                if records.count >= 2 { chartCard }
-                if !records.isEmpty { recordsCard(title: "Storico massimali", records: records) }
+                leaderboardCard.appear(2)
+                if !warmupPlan.isEmpty { warmupCard.appear(3) }
+                if records.count >= 2 { chartCard.appear(4) }
+                if !records.isEmpty { recordsCard(title: "Storico massimali", records: records).appear(5) }
                 // una linea a parte, solo se ci sono massimali a un braccio
-                if !exercise.singleArmRecords.isEmpty { recordsCard(title: exercise.worksLegs ? "Massimale a una gamba" : "Massimale a un braccio", records: exercise.singleArmRecordsByDateDesc) }
-                if !recentSets.isEmpty { setsCard }
-                if !exercise.notes.isEmpty { notesCard }
+                if !exercise.singleArmRecords.isEmpty { recordsCard(title: exercise.worksLegs ? "Massimale a una gamba" : "Massimale a un braccio", records: exercise.singleArmRecordsByDateDesc).appear(6) }
+                if !recentSets.isEmpty { setsCard.appear(7) }
+                if !exercise.notes.isEmpty { notesCard.appear(8) }
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 28)
@@ -175,7 +176,7 @@ struct ExerciseDetailView: View {
                         if let best = exercise.bestRecord {
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                    Text(Fmt.weightValue(best.weight, unit: settings.unit))
+                                    CountText(value: best.weight) { Fmt.weightValue($0, unit: settings.unit) }
                                         .font(Theme.display(52))
                                         .foregroundStyle(Theme.textPrimary)
                                     Text(settings.unit.symbol)
@@ -232,7 +233,7 @@ struct ExerciseDetailView: View {
                                 .background(exercise.muscleGroup.tint.opacity(0.14), in: Capsule())
                             }
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(PressStyle())
                         .accessibilityLabel("Mappa muscolare".tr)
                     }
                 }
@@ -337,6 +338,7 @@ struct ExerciseDetailView: View {
                         .foregroundStyle(point.isEstimated ? tint.opacity(0.55) : tint)
                         .symbolSize(point.isEstimated ? 28 : 55)
                     }
+                    .drawIn()
                     .chartXScale(domain: xDomain)
                     .chartYScale(domain: yDomain)
                     .chartYAxis {

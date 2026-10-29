@@ -42,13 +42,14 @@ struct FriendProfileView: View {
                                 }
                             }
                         }
+                        .appear(0)
                     }
 
                     SectionHeader(title: "Schede").padding(.top, 8)
                     if profile.templates.isEmpty {
                         note("Nessuna scheda condivisa.")
                     } else {
-                        ForEach(profile.templates) { templateCard($0) }
+                        ForEach(Array(profile.templates.enumerated()), id: \.element.id) { i, t in templateCard(t).appear(i + 1) }
                     }
 
                     Button(role: .destructive) { confirmRemove = true } label: { Label("Togli dagli amici", systemImage: "person.badge.minus") }

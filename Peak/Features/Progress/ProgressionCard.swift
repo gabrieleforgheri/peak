@@ -114,6 +114,7 @@ struct ProgressionCard: View {
                 }
             }
             .frame(height: 170)
+            .drawIn()
         }
     }
 }

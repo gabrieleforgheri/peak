@@ -32,11 +32,11 @@ struct FriendsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     if !social.isAvailable {
-                        connectCard
+                        connectCard.appear(0)
                     } else {
-                        inviteBlock
-                        requests
-                        if social.friendCount == 0 { emptyState } else { league; byExercise; news }
+                        inviteBlock.appear(0)
+                        requests.appear(1)
+                        if social.friendCount == 0 { emptyState.appear(2) } else { league.appear(2); byExercise.appear(3); news.appear(4) }
                     }
                 }
                 .padding(.horizontal, 16)
@@ -197,8 +197,9 @@ struct FriendsView: View {
                                         .foregroundStyle(metric == m ? Color.black.opacity(0.85) : Theme.textSecondary)
                                         .padding(.horizontal, 14).padding(.vertical, 8)
                                         .background(Capsule().fill(metric == m ? settings.accentColor : Theme.card))
+                                        .animation(Motion.out(Motion.fade), value: metric)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(PressStyle())
                             }
                         }
                     }
@@ -236,7 +237,7 @@ struct FriendsView: View {
                             .padding(10)
                             .background(r.isMe ? settings.accentColor.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(PressStyle())
                     }
                 }
             }
@@ -259,8 +260,9 @@ struct FriendsView: View {
                                         .foregroundStyle(current == e.catalogID ? Color.black.opacity(0.85) : Theme.textSecondary)
                                         .padding(.horizontal, 14).padding(.vertical, 8)
                                         .background(Capsule().fill(current == e.catalogID ? settings.accentColor : Theme.card))
+                                        .animation(Motion.out(Motion.fade), value: current)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(PressStyle())
                             }
                         }
                     }
@@ -300,7 +302,7 @@ struct FriendsView: View {
             GlassCard(padding: 6) {
                 VStack(spacing: 0) {
                     ForEach(Array(list.prefix(6).enumerated()), id: \.offset) { i, e in
-                        Button { if let p = social.friends?.friends.first(where: { $0.id == e.friendID }) { path.append(p) } } label: { NewsRow(event: e) }.buttonStyle(.plain)
+                        Button { if let p = social.friends?.friends.first(where: { $0.id == e.friendID }) { path.append(p) } } label: { NewsRow(event: e) }.buttonStyle(PressStyle())
                         if i < min(6, list.count) - 1 { Divider().overlay(Theme.stroke) }
                     }
                 }
@@ -321,6 +323,8 @@ struct ProgressBar: View {
             ZStack(alignment: .leading) {
                 Capsule().fill(Theme.cardStrong)
                 Capsule().fill(tint).frame(width: max(6, geo.size.width * CGFloat(min(1, max(0, fraction)))))
+                    .animation(Motion.out(Motion.enter), value: fraction) // cambiando metrica la barra scorre
+                    .drawIn()
             }
         }
         .frame(height: 10)
@@ -384,10 +388,11 @@ struct Podium: View {
                             .font(Theme.rounded(24, .black)).foregroundStyle(Color.black.opacity(0.55))
                             .frame(maxWidth: .infinity, minHeight: height, alignment: .top).padding(.top, 8)
                             .background(UnevenRoundedRectangle(topLeadingRadius: 14, bottomLeadingRadius: 4, bottomTrailingRadius: 4, topTrailingRadius: 14).fill(LinearGradient(colors: [c.hi, c.lo], startPoint: .top, endPoint: .bottom)))
+                            .growUp(slot.rank) // il podio sale dal basso, un gradino dopo l'altro
                     }
                     .frame(maxWidth: 120)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressStyle())
             }
         }
         .frame(maxWidth: .infinity)

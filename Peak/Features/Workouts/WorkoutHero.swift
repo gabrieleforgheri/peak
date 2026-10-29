@@ -63,7 +63,7 @@ struct WorkoutHero: View {
                             .frame(width: 36, height: 36)
                             .background(Circle().fill(LinearGradient(colors: [settings.accentColor, settings.accentColor.opacity(0.55)], startPoint: .topLeading, endPoint: .bottomTrailing)))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(PressStyle())
                     .tourTarget("avatar")
                     .accessibilityLabel("Impostazioni")
                 }
@@ -289,7 +289,7 @@ struct NextWorkoutBar: View {
             .padding(12)
             .glassSurface(radius: 18)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressStyle())
     }
 }
 

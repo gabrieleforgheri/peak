@@ -147,6 +147,7 @@ struct HeatmapCard: View {
                     }
                 }
                 .frame(height: 12 + 4 + 7 * 22 + 6 * 4)
+                .drawIn()
                 Text("Una colonna = una settimana, un quadratino = un giorno")
                     .font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
                 Text(count == 1 ? "1 allenamento in 14 settimane" : "\(count) allenamenti in 14 settimane")
@@ -172,6 +173,7 @@ struct WeeklyBarsCard: View {
                                 colors: [settings.accentColor.opacity(now ? 0.5 : 0.25), settings.accentColor.opacity(now ? 1 : 0.7)], startPoint: .bottom, endPoint: .top)))
                             .frame(height: max(4, CGFloat(w.volume / top) * 100))
                             .shadow(color: now ? settings.accentColor.opacity(0.45) : .clear, radius: 8)
+                            .growUp(i)
                     }
                 }
                 .frame(height: 110, alignment: .bottom)
@@ -197,6 +199,7 @@ struct WeeklyBarsCard: View {
 struct WorkDonutCard: View {
     @Environment(AppSettings.self) private var settings
     let groups: [Stats.GroupVolume]
+    @State private var sweep: CGFloat = 0
 
     var body: some View {
         let total = max(1, groups.reduce(0) { $0 + $1.volume })
@@ -207,9 +210,12 @@ struct WorkDonutCard: View {
                     ForEach(Array(slices(total).enumerated()), id: \.offset) { _, s in
                         Circle().trim(from: s.from, to: s.to).stroke(s.color, style: StrokeStyle(lineWidth: 14, lineCap: .butt)).rotationEffect(.degrees(-90))
                     }
+                    // la maschera ad anello scopre le fette da ore 12 in senso orario
+                    .mask { Circle().trim(from: 0, to: sweep).stroke(lineWidth: 40).rotationEffect(.degrees(-90)) }
                     Text(Fmt.volume(total, unit: settings.unit)).font(Theme.rounded(15, .heavy))
                 }
                 .frame(width: 128, height: 128)
+                .drawProgress($sweep)
                 VStack(spacing: 8) {
                     ForEach(groups) { g in
                         HStack {
@@ -293,6 +299,7 @@ struct LiftChartCard: View {
                     .chartYScale(domain: lo...hi)
                     .chartYAxis(.hidden)
                     .frame(height: 150)
+                    .drawIn()
                 } else {
                     Text("Dati non sufficienti per questo intervallo")
                         .font(Theme.rounded(12, .medium))

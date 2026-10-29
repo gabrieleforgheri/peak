@@ -42,6 +42,7 @@ struct WorkoutsListView: View {
                 if let s = insights.stats {
                     Section {
                         WorkoutHero(name: displayName, streak: s.streak, weekSessions: s.weekSessions, goal: s.goal, onAvatar: { nav.tab = .me }, onChangeGoal: { choosingGoal = true })
+                            .appear(0)
                             .plainListRow()
                             .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 0, trailing: 16))
                     }
@@ -49,6 +50,7 @@ struct WorkoutsListView: View {
 
                 Section {
                     startCard
+                        .appear(1)
                         .plainListRow()
                         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 10, trailing: 16))
                 }
@@ -64,10 +66,11 @@ struct WorkoutsListView: View {
                                             .background(p.uuid == program?.uuid ? settings.accentColor.opacity(0.22) : Theme.card, in: Capsule())
                                             .foregroundStyle(p.uuid == program?.uuid ? settings.accentColor : Theme.textSecondary)
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(PressStyle())
                                 }
                             }
                         }
+                        .appear(2)
                         .plainListRow()
                     }
                     if let program {
@@ -77,6 +80,7 @@ struct WorkoutsListView: View {
                             Button("Modifica scheda") { editingProgram = program }
                                 .font(Theme.rounded(13, .bold)).foregroundStyle(settings.accentColor).buttonStyle(.plain)
                         }
+                        .appear(2)
                         .plainListRow()
                     }
                     if days.isEmpty {
@@ -85,7 +89,7 @@ struct WorkoutsListView: View {
                             .foregroundStyle(Theme.textTertiary)
                             .plainListRow()
                     } else {
-                        ForEach(days) { template in
+                        ForEach(Array(days.enumerated()), id: \.element.persistentModelID) { i, template in
                             Button {
                                 editingTemplate = template
                             } label: {
@@ -113,7 +117,8 @@ struct WorkoutsListView: View {
                                     }
                                 }
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(PressStyle())
+                            .appear(3 + i, key: "day-\(template.uuid)")
                             .plainListRow()
                         }
                     }
@@ -157,6 +162,7 @@ struct WorkoutsListView: View {
                             NavigationLink(value: workout) { EmptyView() }.opacity(0)
                             WorkoutRow(workout: workout)
                         }
+                        .appear(key: "wk-\(workout.uuid)")
                         .plainListRow()
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
@@ -384,6 +390,7 @@ struct MiniStat: View {
             Text(value)
                 .font(Theme.rounded(15, .bold))
                 .foregroundStyle(Theme.textPrimary)
+                .contentTransition(.numericText()) // scorre dentro l'`animation` della sessione
             Text(label)
                 .font(Theme.rounded(11, .medium))
                 .foregroundStyle(Theme.textTertiary)

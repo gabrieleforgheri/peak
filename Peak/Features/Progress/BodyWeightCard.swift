@@ -126,6 +126,7 @@ struct BodyWeightCard: View {
                             }
                         }
                         .frame(height: 120)
+                        .drawIn()
                     } else {
                         Text("Dati non sufficienti per questo intervallo")
                             .font(Theme.rounded(12, .medium))
