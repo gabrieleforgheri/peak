@@ -44,7 +44,7 @@
 		tabs: { target: '[data-tour="tabs"]', title: t('Quattro sezioni'), text: t('Allenamento, Macchinari, Me, Amici.'), next: 'start' },
 		start: { target: '[data-tour="start"]', title: t('Inizia da qui'), text: t('Tocca il pulsante per iniziare.') },
 		pick: { target: '.backdrop [data-tour="days"], .backdrop [data-tour="go"]', title: hasDays ? t('Scegli un giorno') : t('Scegli i gruppi, poi Inizia'), up: true },
-		set: { target: '[data-tour="add-set"]', title: t('Aggiungi una serie'), text: t('Tocca + Serie e salvala.') },
+		set: { target: '[data-tour="add-set"]', title: t('Aggiungi una serie'), text: t('Tocca + Serie.') },
 		load: { target: '.backdrop [data-tour="load"]', title: t('Peso e ripetizioni'), text: t('Usa − e + per scegliere.'), next: 'save', up: true },
 		save: { target: '.backdrop [data-tour="save"]', title: t('Salva la serie'), up: true },
 	})
