@@ -483,7 +483,7 @@ private struct MedalBar: View {
 }
 
 /// Un numero che scorre da quello che si vede al nuovo (come `countUp` del web).
-private struct CountText: View, Animatable {
+private struct RollText: View, Animatable {
     var value: Double
     let format: (Double) -> String
     var animatableData: Double {
@@ -558,7 +558,7 @@ struct MedalSheet: View {
                 .font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textSecondary)
                 .frame(maxWidth: 260).padding(.bottom, 12)
             MedalDisc(medal: medal, size: 112, sweep: true)
-            CountText(value: appeared ? medal.value : 0, format: { fmt($0) })
+            RollText(value: appeared ? medal.value : 0, format: { fmt($0) })
                 .font(Theme.rounded(34, .heavy).monospacedDigit()).foregroundStyle(Theme.textPrimary)
                 .padding(.top, 12)
             Text(tierNames[medal.tier])
