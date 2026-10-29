@@ -16,4 +16,6 @@ final class AppNav {
     var templateToStart: UUID?
     /// Aprire la sessione in corso.
     var resumeActive = false
+    /// Sale quando le impostazioni devono chiudersi da sole («Rivedi il tutorial»: il giro sta sotto il foglio).
+    var closeSettings = 0
 }

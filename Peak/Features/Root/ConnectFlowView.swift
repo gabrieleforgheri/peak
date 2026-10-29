@@ -8,6 +8,8 @@ struct ConnectFlowView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(\.webAuthenticationSession) private var webAuthentication
 
+    /// Dal primo avvio: niente scelte sui dati (né backup da importare). Account vuoto = si parte da zero, con i dati di questo iPhone se ce ne sono.
+    var firstRun = false
     var onFinish: () -> Void
     var onCancel: () -> Void
 
@@ -31,6 +33,9 @@ struct ConnectFlowView: View {
         }
         .onChange(of: flow.stage) { _, stage in
             if stage == .done { onFinish() }
+            if firstRun, case .emptyServer(let hasLocalData) = stage {
+                Task { if hasLocalData { await flow.uploadLocalData() } else { await flow.startEmpty() } }
+            }
         }
         .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.json], allowsMultipleSelection: false) { result in
             pickBackup(result)
@@ -49,6 +54,9 @@ struct ConnectFlowView: View {
             Text(text)
                 .font(Theme.rounded(15, .semibold))
                 .foregroundStyle(Theme.textSecondary)
+
+        case .emptyServer where firstRun:
+            ProgressView().controlSize(.large).tint(settings.accentColor)
 
         case .emptyServer(let hasLocalData):
             message(

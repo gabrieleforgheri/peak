@@ -153,8 +153,11 @@ struct AddSetSheet: View {
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 14) {
+                    // carico e ripetizioni insieme, per il riquadro del tutorial
+                    VStack(spacing: 14) {
                     GlassCard(padding: 18, tint: tint) {
                         VStack(spacing: 14) {
                             HStack(alignment: .firstTextBaseline) {
@@ -238,6 +241,9 @@ struct AddSetSheet: View {
                             RepsStepper(reps: $reps, tint: tint)
                         }
                     }
+                    }
+                    .tourTarget("load")
+                    .id("tour-load")
 
                     if let plateBase {
                         GlassCard(padding: 18) {
@@ -347,11 +353,18 @@ struct AddSetSheet: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(weight <= 0 || reps < 1)
+                        .tourTarget("save")
+                        .id("tour-save")
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)
             }
+            // il tutorial porta in vista il controllo del passo
+            .onChange(of: TourState.shared.step) { scrollForTour(proxy) }
+            .onAppear { scrollForTour(proxy) }
+            }
+            .tourMarks(.load, .save)
             .screenBackground(settings.accentColor)
             .navigationTitle(exercise.name)
             .navigationBarTitleDisplayMode(.inline)
@@ -361,6 +374,17 @@ struct AddSetSheet: View {
                 }
             }
             .onAppear(perform: prefill)
+        }
+        .tourSheet(.save, when: !isEditing)
+    }
+
+    /// Peso e ripetizioni stanno in cima, il tasto che salva in fondo: sul telefono piccolo il passo del tutorial li porta in vista.
+    private func scrollForTour(_ proxy: ScrollViewProxy) {
+        guard !isEditing, TourState.shared.phase == .marks else { return }
+        let step = TourState.shared.step
+        guard step == .load || step == .save else { return }
+        DispatchQueue.main.async {
+            withAnimation(.smooth(duration: 0.35)) { proxy.scrollTo(step == .load ? "tour-load" : "tour-save", anchor: step == .load ? .top : .bottom) }
         }
     }
 

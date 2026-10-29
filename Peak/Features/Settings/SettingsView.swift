@@ -64,6 +64,7 @@ struct SettingsView: View {
             .screenBackground(settings.accentColor)
             .navigationTitle("Impostazioni")
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Fine") { dismiss() } } }
+            .onChange(of: AppNav.shared.closeSettings) { dismiss() }
             .navigationDestination(for: SettingsCategory.self) { category in
                 page(category)
                     .navigationTitle(category.title)

@@ -76,6 +76,7 @@ struct WorkoutSessionView: View {
                     let sets = workout.sets(for: exercise)
                     ExerciseSessionCard(
                         exercise: exercise,
+                        tourFirst: item.exercise == list.first?.exercise,
                         goal: Plan.targetLine(
                             item,
                             done: sets.filter { !$0.isWarmup }.count,
@@ -158,6 +159,9 @@ struct WorkoutSessionView: View {
             // una serie in più o in meno (anche dal Watch): le righe entrano e escono piano, il resto scorre di conseguenza
             .animation(.easeOut(duration: reduceMotion ? 0.15 : 0.22), value: workout.setList.count)
         }
+        .tourMarks(.set)
+        .onAppear { if workout.isActive { TourState.shared.inSession = true } }
+        .onDisappear { TourState.shared.inSession = false }
         .confettiLayer(["record": recordTick])
         .celebrationToast("Nuovo massimale!", trigger: recordTick)
         .screenBackground(settings.accentColor)
@@ -570,6 +574,8 @@ private struct ExerciseSessionCard: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let exercise: Exercise
+    /// Il primo della lista: il suo «+ Serie» è quello che il tutorial indica.
+    let tourFirst: Bool
     /// Obiettivo della scheda («2/4 serie · 8–10 rip · 60 kg»), vuoto se non c'è.
     let goal: String
     let previousSets: [WorkoutSet]
@@ -816,6 +822,7 @@ private struct ExerciseSessionCard: View {
                             .foregroundStyle(exercise.muscleGroup.tint)
                     }
                     .buttonStyle(PressStyle())
+                    .background { if tourFirst { Color.clear.tourTarget("add-set") } }
 
                     if let last = sets.last {
                         Button(action: onRepeatLast) {

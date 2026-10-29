@@ -69,6 +69,7 @@ struct FocusPickerSheet: View {
                                 }
                             }
                         }
+                        .tourTarget("days")
 
                         Text("Oppure scegli i gruppi")
                             .font(Theme.rounded(12, .semibold))
@@ -133,11 +134,13 @@ struct FocusPickerSheet: View {
                         Label(confirmTitle, systemImage: "bolt.fill")
                     }
                     .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
+                    .tourTarget("go")
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
             }
             .scrollDismissesKeyboard(.interactively)
+            .tourMarks(.pick)
             .screenBackground(settings.accentColor)
             .navigationTitle("Cosa alleni oggi?")
             .navigationBarTitleDisplayMode(.inline)
@@ -148,5 +151,8 @@ struct FocusPickerSheet: View {
             }
         }
         .presentationDetents([.large])
+        // il tutorial: «Scegli un giorno» sta qui dentro (senza giorni si scelgono i gruppi e si preme «Inizia»)
+        .tourSheet(.days, when: onStartTemplate != nil)
+        .onAppear { if onStartTemplate != nil { TourState.shared.hasDays = !templates.isEmpty } }
     }
 }

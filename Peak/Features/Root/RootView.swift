@@ -7,28 +7,55 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     private let nav = AppNav.shared
+    private let tour = TourState.shared
+
+    /// Il primo avvio di un'app vuota (deciso una volta sola all'apertura) e se la sincronizzazione ha già detto la sua.
+    @State private var decided = false
+    @State private var onboarding = false
+    @State private var synced = false
+
+    /// Il tutorial parte da solo (dopo il primo avvio, o da «Rivedi il tutorial») e resta finché non lo chiudi, anche se intanto le impostazioni cambiano.
+    private var wantTutorial: Bool {
+        synced && settings.didSeeWelcome && settings.weeklyGoal > 0 && (!settings.tutorialDone || settings.tourSeen < 2) && !AppStore.isFallback
+    }
 
     var body: some View {
         ZStack {
             tabs
-            // La prima pagina della 2.0, una volta sola.
-            if !settings.didSeeWelcome {
-                WelcomeView()
+            // il primo avvio, a tutto schermo; chi ha già dei dati (un aggiornamento, un account ritrovato) non lo vede
+            if onboarding {
+                OnboardingView { settings.didSeeWelcome = true; onboarding = false }
+                    .transition(.opacity)
+                    .zIndex(1)
+            } else if !decided && !settings.didSeeWelcome {
+                Theme.background(accent: settings.accentColor).zIndex(1)
+            }
+            if tour.phase == .ideas {
+                IdeasView(onNext: { tour.phase = .marks }, onSkip: { tour.skip(settings) })
                     .transition(.opacity)
                     .zIndex(1)
             }
+            if tour.running { TourDriver() }
         }
-        .animation(.easeInOut(duration: 0.25), value: settings.didSeeWelcome)
+        .animation(.easeInOut(duration: 0.25), value: onboarding)
+        .animation(.easeInOut(duration: 0.25), value: tour.phase == .ideas)
+        .onAppear(perform: decide)
+        .onChange(of: wantTutorial, initial: true) { _, want in
+            if want, !tour.running { tour.start() }
+        }
         // la prima volta: prima l'obiettivo, poi il tutorial
         .fullScreenCover(isPresented: .constant(settings.didSeeWelcome && settings.weeklyGoal == 0)) {
             GoalPickerView(current: 0, suggested: 3) {}
         }
         .task {
+            // senza rete (o con un server lento) il tutorial non aspetta più di qualche secondo
+            Task { try? await Task.sleep(for: .seconds(4)); synced = true }
             runAutoBackup()
             linkCatalogOnce()
             Programs.adoptLoose(context: context, name: "La mia scheda")
             freezeGlyphsOnce()
             await SyncService.shared.syncNow()
+            synced = true
             await Catalog.refresh()
         }
         .onChange(of: scenePhase) { _, phase in
@@ -37,6 +64,14 @@ struct RootView: View {
             if phase == .background { runAutoBackup() }
             if phase == .active { Task { await SyncService.shared.syncNow() } }
         }
+    }
+
+    /// Un'app vuota parte dal primo avvio; una con dei dati (o con lo store di emergenza) no.
+    private func decide() {
+        guard !decided else { return }
+        decided = true
+        guard !settings.didSeeWelcome, !AppStore.isFallback else { return }
+        if Onboarding.hasData(context) { settings.didSeeWelcome = true } else { onboarding = true }
     }
 
     /// L'icona dei macchinari: il pittogramma di un macchinario a pacco pesi, lo stesso disegno che si vede nelle liste.
@@ -68,7 +103,7 @@ struct RootView: View {
         .tint(settings.accentColor)
         .overlayPreferenceValue(TourTargetKey.self) { anchors in
             GeometryReader { geo in
-                if settings.didSeeWelcome, settings.weeklyGoal > 0, !settings.tutorialDone || settings.tourSeen < 3, !AppStore.isFallback {
+                if tour.phase == .marks || tour.phase == .cheer, !AppStore.isFallback {
                     TourOverlay(rects: anchors.mapValues { geo[$0] }, size: geo.size)
                 }
             }

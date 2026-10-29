@@ -12,7 +12,7 @@ struct GeneralSettingsView: View {
             accentCard
             soundsCard
             GlassCard {
-                Button { settings.tutorialDone = false; AppNav.shared.tab = .workouts } label: {
+                Button { AppNav.shared.tab = .workouts; AppNav.shared.closeSettings += 1; settings.tutorialDone = false } label: {
                     Label("Rivedi il tutorial", systemImage: "questionmark.circle")
                         .font(Theme.rounded(15, .semibold))
                         .frame(maxWidth: .infinity, alignment: .leading)

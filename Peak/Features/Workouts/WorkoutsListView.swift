@@ -243,6 +243,7 @@ struct WorkoutsListView: View {
                         Label("Riprendi allenamento", systemImage: "play.fill")
                     }
                     .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
+                    .tourTarget("start")
                 }
             }
         } else if let today = todayTemplate {
