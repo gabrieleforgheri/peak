@@ -109,12 +109,7 @@ struct MeView: View {
                     recordsSection
                     let medalList = medals(s)
                     let totals = Medals.totals(medalList)
-                    section("Medaglie", trailing: "\(totals.earned) / \(totals.total)") {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) { ForEach(medalList) { MedalChip(medal: $0) } }
-                        }
-                        VStack(spacing: 10) { ForEach(medalList) { MedalRow(medal: $0) } }
-                    }
+                    section("Medaglie", trailing: "\(totals.earned) / \(totals.total)") { MedalsCard(medals: medalList) }
                     section("Attività", trailing: "ultime 14 settimane") { HeatmapCard(perDay: s.perDay, count: s.last98Days) }
                     section("Volume settimanale", trailing: "ultime 12 settimane") { WeeklyBarsCard(weeks: s.weeks) }
                     if !s.groups.isEmpty { section("Dove va il lavoro", trailing: "ultimi 30 giorni") { WorkDonutCard(groups: s.groups) } }

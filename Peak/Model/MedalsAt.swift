@@ -24,4 +24,13 @@ extension Medals {
             bestOneRm: best, machines: machines, friends: friends
         ))
     }
+
+    /// Quando hai preso ogni livello (bronzo, argento, oro; nil se non c'è o non si sa), ricavato dalla storia: gli istanti in cui
+    /// qualcosa è cambiato sono gli allenamenti e i massimali. Come `medalDates` in web/src/lib/medalinfo.ts. Gli amici non hanno una data.
+    static func dates(workouts: [Workout], exercises: [Exercise], friends: Int, current: [Medal]) -> [MedalID: [Date?]] {
+        let times = workouts.filter { !$0.isActive }.map(\.date) + exercises.flatMap { $0.twoArmRecords.map(\.date) }
+        var out = tierDates(times: times, at: { at(workouts: workouts, exercises: exercises, friends: friends, until: $0, inclusive: true) }, current: current)
+        out[.friends] = [nil, nil, nil]
+        return out
+    }
 }

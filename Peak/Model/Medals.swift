@@ -92,9 +92,37 @@ struct Medal: Identifiable {
     let next: Double?
 
     var id: String { kind.rawValue }
+
+    /// Quanto del livello dopo hai fatto, da 0 a 1 (valore / soglia): è anche quello che si legge accanto, «12 / 25». Oro preso = 1.
+    var frac: Double { next.map { min(1, value / $0) } ?? 1 }
 }
 
 enum Medals {
+    /// Prima le più vicine al livello dopo, poi quelle d'oro; a parità resta l'ordine di sempre.
+    static func ordered(_ list: [Medal]) -> [Medal] {
+        let open = list.enumerated().filter { $0.element.next != nil }
+            .sorted { $0.element.frac != $1.element.frac ? $0.element.frac > $1.element.frac : $0.offset < $1.offset }
+        return open.map(\.element) + list.filter { $0.next == nil }
+    }
+
+    /// Quando ogni livello già preso è scattato la prima volta: scorre gli istanti `times` (in ordine qualsiasi) e li chiede a `at`
+    /// (le medaglie com'erano allora), fermandosi quando ha trovato tutto. Per i livelli non presi (`current`) o non trovati: nil.
+    /// Vale il primo istante in cui il livello c'era, anche se poi è stato perso (la serie settimanale può interrompersi).
+    /// Come `tierDates` in common/medals.ts.
+    static func tierDates(times: [Date], at: (Date) -> [Medal], current: [Medal]) -> [MedalID: [Date?]] {
+        var out = Dictionary(uniqueKeysWithValues: current.map { ($0.kind, [Date?](repeating: nil, count: 3)) })
+        let cap = Dictionary(uniqueKeysWithValues: current.map { ($0.kind, $0.tier) })
+        var left = current.reduce(0) { $0 + $1.tier }
+        for time in Set(times).sorted() {
+            if left == 0 { break }
+            for m in at(time) {
+                guard let c = cap[m.kind] else { continue }
+                for i in 0..<min(m.tier, c) where out[m.kind]?[i] == nil { out[m.kind]?[i] = time; left -= 1 }
+            }
+        }
+        return out
+    }
+
     static func list(_ input: MedalInput) -> [Medal] {
         MedalID.allCases.map { kind in
             let value = input.value(kind)

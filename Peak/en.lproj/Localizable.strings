@@ -427,9 +427,9 @@
 "Macchinario tuo: resta fuori dalle classifiche." = "Your own machine: stays out of the rankings.";
 "Mai allenato" = "Never trained";
 "Mai usato" = "Never used";
-"Mancano %@ per %@." = "%@ to go for %@.";
+"Mancano %@ per %@." = "%@ left for %@.";
 "Mancano %@ per lato con i dischi disponibili." = "%@ per side still missing with the available plates.";
-"Mancano %lld per %lld." = "%lld to go for %lld.";
+"Mancano %lld per %lld." = "%lld left for %lld.";
 "Mancano %lld per lato con i dischi disponibili." = "%lld per side still missing with the available plates.";
 "Manubri" = "Dumbbells";
 "Massimale" = "Max";
@@ -449,7 +449,9 @@
 "Modifica serie" = "Edit set";
 "Mostra la foto di %@" = "Show the photo of %@";
 "Mostra la foto di %lld" = "Show the photo of %lld";
+"Mostra meno" = "Show less";
 "Mostra tutti i macchinari" = "Show all machines";
+"Mostra tutte (%lld)" = "Show all (%lld)";
 "Multipower" = "Smith machine";
 "Mappa muscolare" = "Muscle map";
 "Muscoli" = "Muscles";

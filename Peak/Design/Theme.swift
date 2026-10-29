@@ -34,6 +34,11 @@ enum Theme {
     static let positive = Color(hex: 0x5FD98A)
     static let negative = Color(hex: 0xFF6B6B)
 
+    // I metalli delle medaglie
+    static let bronze = Color(hex: 0xE0955A)
+    static let silver = Color(hex: 0xDFE4EC)
+    static let gold = Color(hex: 0xFFD45E)
+
     // Geometria
     static let radius: CGFloat = 20
     static let radiusSmall: CGFloat = 14

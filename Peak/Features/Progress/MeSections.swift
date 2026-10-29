@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import Charts
 
 // Le parti di Me. Ognuna riceve già i numeri: i conti stanno in `HomeStats`.
@@ -306,109 +307,311 @@ struct LiftChartCard: View {
 
 // MARK: - Medaglie
 
-/// Una medaglia in elenco: cosa misura, a che livello sei, cosa manca per il prossimo. Come nel web.
-struct MedalRow: View {
-    @Environment(AppSettings.self) private var settings
-    let medal: Medal
+/// La curva «ease-out» del web (--ease-out).
+private func easeOut(_ seconds: Double) -> Animation { .timingCurve(0.23, 1, 0.32, 1, duration: seconds) }
 
-    private var tierName: String { ["da conquistare", "Bronzo", "Argento", "Oro"][medal.tier] }
-
-    private func format(_ v: Double) -> String {
-        switch medal.kind {
-        case .volume: return Fmt.volume(v, unit: settings.unit)
-        case .strength: return Fmt.weight(v, unit: settings.unit)
-        default: return String(Int(v.rounded()))
-        }
-    }
-
-    private var nextLine: String {
-        guard let next = medal.next else { return "Oro conquistato." }
-        let names = ["Bronzo", "Argento", "Oro"]
-        return "Mancano \(format(next - medal.value)) per \(names[medal.tier])."
-    }
-
-    private var tiersLine: String {
-        let t = medal.kind.tiers
-        return "Bronzo \(format(t[0])) · Argento \(format(t[1])) · Oro \(format(t[2]))"
-    }
-
-    var body: some View {
-        GlassCard(padding: 14) {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Image(systemName: medal.kind.symbol)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(settings.accentColor)
-                    Text(medal.kind.title)
-                        .font(Theme.rounded(15, .bold))
-                        .foregroundStyle(Theme.textPrimary)
-                    Spacer()
-                    Text(tierName)
-                        .font(Theme.rounded(12, .bold))
-                        .foregroundStyle(settings.accentColor)
-                }
-                Text(medal.kind.info)
-                    .font(Theme.rounded(12, .medium))
-                    .foregroundStyle(Theme.textSecondary)
-                Text(tiersLine)
-                    .font(Theme.rounded(11, .medium))
-                    .foregroundStyle(Theme.textTertiary)
-                ProgressView(value: medal.progress)
-                    .tint(settings.accentColor)
-                Text(nextLine)
-                    .font(Theme.rounded(12, .medium))
-                    .foregroundStyle(Theme.textSecondary)
-            }
-        }
+/// Il valore di una medaglia come si legge: volume in tonnellate, forza nell'unità scelta, il resto intero.
+private func medalValue(_ kind: MedalID, _ v: Double, unit: WeightUnit) -> String {
+    switch kind {
+    case .volume: return Fmt.volume(v, unit: unit)
+    case .strength: return Fmt.weight(v, unit: unit)
+    default: return String(Int(v.rounded()))
     }
 }
 
-/// Una medaglia come sul sito: disco metallico col simbolo, anello che si riempie verso il livello dopo, nome e livello.
-struct MedalChip: View {
+private let tierNames = ["da conquistare", "Bronzo", "Argento", "Oro"]
+private func metalTint(_ tier: Int) -> Color { [Theme.textTertiary, Theme.bronze, Theme.silver, Theme.gold][tier] }
+
+/// Una medaglia come sul sito: disco metallico col simbolo e un anello sottile che si riempie verso il livello dopo
+/// (a oro preso è pieno). `sweep`: all'apertura l'anello parte da vuoto e si riempie.
+struct MedalDisc: View {
     @Environment(AppSettings.self) private var settings
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let medal: Medal
+    var size: CGFloat = 52
+    var sweep = false
+    @State private var swept = false
 
     private var palette: (tint: Color, hi: Color, lo: Color, ink: Color) {
         switch medal.tier {
-        case 1: return (Color(hex: 0xE0955A), Color(hex: 0xF1B27A), Color(hex: 0xA35F2A), Color(hex: 0x3A1D08))
-        case 2: return (Color(hex: 0xDFE4EC), Color(hex: 0xF4F6FA), Color(hex: 0x98A1B1), Color(hex: 0x232A36))
-        case 3: return (Color(hex: 0xFFD45E), Color(hex: 0xFFE69A), Color(hex: 0xD39A14), Color(hex: 0x3D2A00))
+        case 1: return (Theme.bronze, Color(hex: 0xF1B27A), Color(hex: 0xA35F2A), Color(hex: 0x3A1D08))
+        case 2: return (Theme.silver, Color(hex: 0xF4F6FA), Color(hex: 0x98A1B1), Color(hex: 0x232A36))
+        case 3: return (Theme.gold, Color(hex: 0xFFE69A), Color(hex: 0xD39A14), Color(hex: 0x3D2A00))
         default: return (settings.accentColor, Color.white.opacity(0.08), Color.white.opacity(0.03), Theme.textTertiary)
         }
     }
 
-    private var caption: String {
-        let tier = ["", "Bronzo", "Argento", "Oro"][medal.tier]
-        guard let next = medal.next else { return tier }
-        let fmt: (Double) -> String = { v in
-            switch medal.kind {
-            case .volume: return Fmt.volume(v, unit: settings.unit)
-            case .strength: return Fmt.weight(v, unit: settings.unit)
-            default: return String(Int(v.rounded()))
-            }
+    var body: some View {
+        let p = palette
+        let line = size * 0.045
+        ZStack {
+            Circle().stroke(Color.white.opacity(0.1), lineWidth: line).padding(size * 0.04)
+            Circle().trim(from: 0, to: sweep && !swept ? 0 : medal.frac)
+                .stroke(p.tint, style: StrokeStyle(lineWidth: line, lineCap: .butt))
+                .rotationEffect(.degrees(-90)).padding(size * 0.04)
+            Circle()
+                .fill(RadialGradient(colors: [p.hi, p.lo], center: UnitPoint(x: 0.32, y: 0.26), startRadius: 0, endRadius: size * 0.5))
+                .padding(size * 0.11)
+                .shadow(color: medal.tier == 0 ? .clear : p.tint.opacity(0.3), radius: size * 0.12, y: size * 0.06)
+            Image(systemName: medal.kind.symbol)
+                .font(.system(size: size * 0.4, weight: .bold))
+                .foregroundStyle(p.ink)
         }
-        return (tier.isEmpty ? "" : tier + " · ") + "\(fmt(medal.value))/\(fmt(next))"
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
+        .onAppear {
+            guard sweep, !swept else { return }
+            if reduceMotion { swept = true } else { withAnimation(easeOut(0.7).delay(0.12)) { swept = true } }
+        }
+    }
+}
+
+/// La sezione Medaglie di Me: le tre più vicine al livello dopo, le altre dietro «Mostra tutte». Toccando una riga si apre il foglio.
+struct MedalsCard: View {
+    @Environment(AppSettings.self) private var settings
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let medals: [Medal]
+    @State private var showAll = false
+    @State private var open: MedalID?
+
+    private var divider: some View { Rectangle().fill(Theme.stroke).frame(height: 1) }
+
+    var body: some View {
+        let list = Medals.ordered(medals)
+        GlassCard(padding: 0) {
+            VStack(spacing: 0) {
+                ForEach(Array(list.prefix(3).enumerated()), id: \.element.id) { i, md in
+                    if i > 0 { divider }
+                    row(md)
+                }
+                if showAll {
+                    VStack(spacing: 0) {
+                        ForEach(list.dropFirst(3)) { md in
+                            divider
+                            row(md)
+                        }
+                    }
+                    .transition(.opacity.combined(with: .offset(y: 8)))
+                }
+                if list.count > 3 {
+                    divider
+                    Button {
+                        if reduceMotion { showAll.toggle() } else { withAnimation(easeOut(0.3)) { showAll.toggle() } }
+                    } label: {
+                        Text(showAll ? "Mostra meno" : "Mostra tutte (\(list.count))")
+                            .font(Theme.rounded(14, .semibold))
+                            .foregroundStyle(Theme.textSecondary)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, Theme.padding)
+        }
+        .sheet(item: $open) { kind in
+            if let md = medals.first(where: { $0.kind == kind }) { MedalSheet(medal: md, medals: medals) }
+        }
+    }
+
+    private func row(_ md: Medal) -> some View {
+        Button { open = md.kind } label: {
+            HStack(spacing: 14) {
+                MedalDisc(medal: md)
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Text(md.kind.title).font(Theme.rounded(15, .bold)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                        Spacer(minLength: 0)
+                        Text(tierNames[md.tier])
+                            .font(Theme.rounded(12, md.tier == 0 ? .semibold : .heavy))
+                            .foregroundStyle(metalTint(md.tier))
+                    }
+                    MedalBar(frac: md.frac)
+                    Text(progressLine(md))
+                        .font(Theme.rounded(11, .medium).monospacedDigit())
+                        .foregroundStyle(Theme.textTertiary)
+                }
+            }
+            .padding(.vertical, 12)
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressFade())
+    }
+
+    /// «12 / 25», o solo il valore a oro preso.
+    private func progressLine(_ md: Medal) -> String {
+        let value = medalValue(md.kind, md.value, unit: settings.unit)
+        guard let next = md.next else { return value }
+        return "\(value) / \(medalValue(md.kind, next, unit: settings.unit))"
+    }
+}
+
+/// La riga si attenua mentre la premi.
+private struct PressFade: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.opacity(configuration.isPressed ? 0.7 : 1)
+    }
+}
+
+/// La barretta sotto il nome: si riempie da sinistra quando compare.
+private struct MedalBar: View {
+    @Environment(AppSettings.self) private var settings
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let frac: Double
+    @State private var grown = false
+
+    var body: some View {
+        Capsule().fill(Theme.stroke)
+            .frame(height: 4)
+            .overlay(alignment: .leading) {
+                Rectangle().fill(settings.accentColor)
+                    .scaleEffect(x: grown ? max(frac, 0.0001) : 0.0001, anchor: .leading)
+            }
+            .clipShape(Capsule())
+            .onAppear {
+                if reduceMotion { grown = true } else { withAnimation(easeOut(0.5)) { grown = true } }
+            }
+    }
+}
+
+/// Un numero che scorre da quello che si vede al nuovo (come `countUp` del web).
+private struct CountText: View, Animatable {
+    var value: Double
+    let format: (Double) -> String
+    var animatableData: Double {
+        get { value }
+        set { value = newValue }
+    }
+    var body: some View { Text(format(value)) }
+}
+
+/// Il foglio di una medaglia: grande, con anello e valore che salgono all'apertura, il percorso bronzo/argento/oro e la data
+/// in cui ogni livello è stato preso (ricavata dalla storia).
+struct MedalSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppSettings.self) private var settings
+    @Query private var workouts: [Workout]
+    @Query private var exercises: [Exercise]
+
+    let medal: Medal
+    /// Tutte le medaglie di adesso: da qui si capisce fino a che livello cercare le date.
+    let medals: [Medal]
+    @State private var dates: [Date?] = [nil, nil, nil]
+    @State private var appeared = false
+
+    private func fmt(_ v: Double) -> String { medalValue(medal.kind, v, unit: settings.unit) }
+
+    /// Quanto di ogni tratto del percorso è fatto: il tratto verso il bronzo parte da 0, gli altri dalla soglia sotto.
+    private func fill(_ i: Int) -> Double {
+        let t = medal.kind.tiers
+        let from = i == 0 ? 0 : t[i - 1]
+        return max(0, min(1, (medal.value - from) / (t[i] - from)))
+    }
+
+    private var nextLine: String {
+        guard let next = medal.next else { return "Oro conquistato." }
+        return "Mancano \(fmt(next - medal.value)) per \(tierNames[medal.tier + 1])."
     }
 
     var body: some View {
-        let p = palette
-        VStack(spacing: 6) {
-            ZStack {
-                Circle().stroke(Color.white.opacity(0.1), lineWidth: 4)
-                Circle().trim(from: 0, to: medal.progress).stroke(p.tint, style: StrokeStyle(lineWidth: 4, lineCap: .butt)).rotationEffect(.degrees(-90))
-                Circle()
-                    .fill(RadialGradient(colors: [p.hi, p.lo], center: UnitPoint(x: 0.32, y: 0.26), startRadius: 0, endRadius: 50))
-                    .padding(6)
-                    .shadow(color: medal.tier == 0 ? .clear : p.tint.opacity(0.4), radius: 8, y: 4)
-                Image(systemName: medal.kind.symbol)
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(p.ink)
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 0) {
+                    hero.padding(.bottom, 18)
+                    path
+                }
+                .padding(16)
             }
-            .frame(width: 76, height: 76)
-            Text(medal.kind.title).font(Theme.rounded(13, .bold)).lineLimit(1)
-            Text(caption).font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
-                .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
+            .background(Theme.bg)
+            .navigationTitle(medal.kind.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Chiudi") { dismiss() }
+                        .font(Theme.rounded(15, .semibold))
+                        .foregroundStyle(settings.accentColor)
+                }
+            }
         }
-        .frame(width: 104)
+        .presentationDetents([.medium, .large])
+        .task {
+            let all = Medals.dates(workouts: workouts, exercises: exercises, friends: SocialStore.shared.friendCount, current: medals)
+            dates = all[medal.kind] ?? dates
+        }
+        .onAppear {
+            if reduceMotion { appeared = true } else { withAnimation(easeOut(0.8).delay(0.12)) { appeared = true } }
+        }
+    }
+
+    private var hero: some View {
+        VStack(spacing: 4) {
+            Text(medal.kind.info)
+                .font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textSecondary)
+                .frame(maxWidth: 260).padding(.bottom, 12)
+            MedalDisc(medal: medal, size: 112, sweep: true)
+            CountText(value: appeared ? medal.value : 0, format: { fmt($0) })
+                .font(Theme.rounded(34, .heavy).monospacedDigit()).foregroundStyle(Theme.textPrimary)
+                .padding(.top, 12)
+            Text(tierNames[medal.tier])
+                .font(Theme.rounded(12, .heavy)).tracking(0.9).textCase(.uppercase)
+                .foregroundStyle(metalTint(medal.tier))
+            Text(nextLine).font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .multilineTextAlignment(.center)
+    }
+
+    /// Dal basso (zero) in su: bronzo, argento, oro. Il tratto si riempie fino al valore di adesso.
+    private var path: some View {
+        VStack(spacing: 0) {
+            ForEach([2, 1, 0], id: \.self) { i in
+                pathRow(i)
+            }
+        }
+        .padding(.horizontal, 4)
+    }
+
+    private func pathRow(_ i: Int) -> some View {
+        let on = medal.tier > i
+        let lit = on && appeared
+        let tint = metalTint(i + 1)
+        let delay = Double(i) * 0.2
+        return HStack(alignment: .top, spacing: 10) {
+            Circle()
+                .strokeBorder(lit ? tint : Theme.strokeStrong, lineWidth: 2)
+                .background(Circle().fill(lit ? tint : .clear))
+                .shadow(color: lit ? tint.opacity(0.5) : .clear, radius: 6)
+                .frame(width: 14, height: 14)
+                .frame(width: 28)
+                .padding(.top, 4)
+                .animation(reduceMotion ? nil : easeOut(0.25).delay(delay + 0.45), value: appeared)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(tierNames[i + 1]).font(Theme.rounded(15, .bold)).foregroundStyle(on ? tint : Theme.textPrimary)
+                Text(fmt(medal.kind.tiers[i])).font(Theme.rounded(12, .medium).monospacedDigit()).foregroundStyle(Theme.textSecondary)
+            }
+            .padding(.top, 1)
+            Spacer(minLength: 0)
+            if on, let d = dates[i] {
+                Text(Fmt.date(d)).font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textSecondary).padding(.top, 3)
+            }
+        }
+        .frame(minHeight: 72, alignment: .top)
+        .background(alignment: .topLeading) {
+            // il tratto sotto il nodo, fino al nodo di sotto
+            GeometryReader { g in
+                Capsule().fill(Theme.stroke)
+                    .overlay(alignment: .bottom) {
+                        Rectangle().fill(tint)
+                            .scaleEffect(y: appeared ? max(fill(i), 0.0001) : 0.0001, anchor: .bottom)
+                            .animation(reduceMotion ? nil : easeOut(0.4).delay(delay + 0.15), value: appeared)
+                    }
+                    .clipShape(Capsule())
+                    .frame(width: 3, height: max(0, g.size.height - 20 + (i == 0 ? 0 : 4)))
+                    .offset(x: 12.5, y: 20)
+            }
+        }
+        .opacity(on ? 1 : 0.55)
     }
 }
