@@ -13,6 +13,14 @@
       "tintColor": "34C759",
       "versions": [
         {
+          "version": "3.4",
+          "date": "2026-10-29T07:09:12Z",
+          "localizedDescription": "Peak 3.4 (build 16): benvenuto nuovo, tutorial, medaglie, animazioni, zoom muscoli",
+          "downloadURL": "https://github.com/gabrieleforgheri/peak/releases/download/v3.4/Peak.ipa",
+          "size": 2174124,
+          "minOSVersion": "17.0"
+        },
+        {
           "version": "3.3.1",
           "date": "2026-10-28T19:51:53Z",
           "localizedDescription": "Merge remote-tracking branch 'origin/main'",
