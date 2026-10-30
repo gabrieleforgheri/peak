@@ -366,7 +366,7 @@ struct AddSetSheet: View {
             }
             .tourMarks(.load, .save)
             .screenBackground(settings.accentColor)
-            .navigationTitle(exercise.name)
+            .navigationTitle(exercise.displayName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

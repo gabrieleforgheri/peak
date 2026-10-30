@@ -232,7 +232,7 @@ struct TemplateEditorView: View {
         GlassCard(padding: 14) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top, spacing: 12) {
-                    Text(exercise.name)
+                    Text(exercise.displayName)
                         .font(Theme.rounded(16, .semibold))
                         .foregroundStyle(Theme.textPrimary)
                         .lineLimit(2)

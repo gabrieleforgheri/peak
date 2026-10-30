@@ -2,6 +2,7 @@
 	import { MUSCLE_GROUPS, type MuscleGroup } from '@common/docs.ts'
 	import { flip } from 'svelte/animate'
 		import { patchExercise } from '../lib/actions.ts'
+	import { exMatches } from '../lib/catalog.ts'
 	import { deltaOf, warmupFor } from '../lib/derive.ts'
 	import { GROUP_NAMES, W, delta, relDay, unit } from '../lib/fmt.ts'
 	import { locale, t, tn } from '../lib/i18n.ts'
@@ -20,7 +21,7 @@
 	let creating = $state(false)
 	let menu = $state<Ex | null>(null)
 
-	const visible = $derived(m.exercises.filter((e) => !e.isArchived && (!filter || e.muscleGroup === filter) && e.name.toLowerCase().includes(query.trim().toLowerCase())))
+	const visible = $derived(m.exercises.filter((e) => !e.isArchived && (!filter || e.muscleGroup === filter) && exMatches(e, query)))
 	const groups = $derived(MUSCLE_GROUPS.map((g) => ({ g, items: visible.filter((e) => e.muscleGroup === g) })).filter((x) => x.items.length))
 	const active = $derived(m.exercises.filter((e) => !e.isArchived))
 	const withMax = $derived(active.filter((e) => e.best).length)

@@ -16,4 +16,6 @@ struct WorkoutActivityAttributes: ActivityAttributes {
     }
 
     var startDate: Date
+    /// Lingua dell'app all'avvio dell'attività: l'estensione non ha le traduzioni.
+    var english: Bool = false
 }

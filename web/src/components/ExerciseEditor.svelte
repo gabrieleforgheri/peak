@@ -194,7 +194,7 @@
 			<div class="chips">
 				<button class="chip" class:on={glyph === ''} onclick={() => (glyph = '')}>{t('Nessuno')}</button>
 				{#each GLYPHS as g}
-					<button class="chip" class:on={glyph === g} onclick={() => (glyph = g)} title={GLYPH_TITLES[g]} aria-label={GLYPH_TITLES[g]} style="padding:0 10px">
+					<button class="chip" class:on={glyph === g} onclick={() => (glyph = g)} title={t(GLYPH_TITLES[g])} aria-label={t(GLYPH_TITLES[g])} style="padding:0 10px">
 						<span style="width:24px;height:24px;display:inline-block;vertical-align:middle"><Glyph name={g} /></span>
 					</button>
 				{/each}

@@ -12,7 +12,7 @@ enum WorkoutActivity {
 
     private static func state(for workout: Workout, unit: WeightUnit) -> WorkoutActivityAttributes.ContentState {
         .init(
-            exercise: workout.orderedSets.last?.exercise?.name ?? "",
+            exercise: workout.orderedSets.last?.exercise?.displayName ?? "",
             sets: workout.workingSetCount,
             volume: Fmt.volume(workout.totalVolume, unit: unit),
             restEnd: RestTimer.shared.end,
@@ -28,7 +28,7 @@ enum WorkoutActivity {
             let id = item.exercise
             var descriptor = FetchDescriptor<Exercise>(predicate: #Predicate { $0.uuid == id })
             descriptor.fetchLimit = 1
-            if let exercise = try? context.fetch(descriptor).first { return exercise.name }
+            if let exercise = try? context.fetch(descriptor).first { return exercise.displayName }
         }
         return nil
     }
@@ -39,7 +39,7 @@ enum WorkoutActivity {
         guard workout.isActive, ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         guard current == nil else { return update(for: workout, unit: unit) }
         _ = try? Activity.request(
-            attributes: WorkoutActivityAttributes(startDate: workout.date),
+            attributes: WorkoutActivityAttributes(startDate: workout.date, english: !Lang.isItalian),
             content: .init(state: state(for: workout, unit: unit), staleDate: nil)
         )
     }

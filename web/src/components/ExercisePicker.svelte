@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { MUSCLE_GROUPS, type MuscleGroup } from '@common/docs.ts'
+	import { exMatches } from '../lib/catalog.ts'
 	import { GROUP_NAMES, W } from '../lib/fmt.ts'
 	import { t } from '../lib/i18n.ts'
 	import { getModel } from '../lib/store.svelte.ts'
@@ -18,7 +19,7 @@
 	const filtering = $derived(focus.size > 0 && !all)
 	const pool = $derived(m.exercises.filter((e) => !e.isArchived && (!filtering || focus.has(e.muscleGroup))))
 	const searching = $derived(query.trim().length > 0)
-	const list = $derived(pool.filter((e) => e.name.toLowerCase().includes(query.trim().toLowerCase())))
+	const list = $derived(pool.filter((e) => exMatches(e, query)))
 
 	// i più usati di recente: le ultime 80 serie, fino a sei macchinari diversi
 	const recent = $derived.by(() => {

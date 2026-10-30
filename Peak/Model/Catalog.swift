@@ -94,7 +94,7 @@ enum Catalog {
         return list
     }
 
-    private static func names(of entry: CatalogEntry) -> [String] {
+    static func names(of entry: CatalogEntry) -> [String] {
         if let known = names[entry.id] { return known }
         let all = ([entry.it, entry.en] + entry.alias).map(norm)
         names[entry.id] = all

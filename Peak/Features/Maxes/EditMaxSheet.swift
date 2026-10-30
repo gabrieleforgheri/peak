@@ -75,7 +75,7 @@ struct EditMaxSheet: View {
                 .padding(.bottom, 24)
             }
             .screenBackground(settings.accentColor)
-            .navigationTitle(exercise.name)
+            .navigationTitle(exercise.displayName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

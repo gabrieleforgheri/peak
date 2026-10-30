@@ -766,7 +766,7 @@ struct ExerciseEditorView: View {
         isCustom = exercise.isCustom
         muscles = exercise.muscleIDs
         figureSide = AnatomyView(rawValue: exercise.viewRaw) ?? anatomyView(for: exercise.muscleIDs)
-        name = exercise.name
+        name = exercise.displayName
         group = exercise.muscleGroup
         step = exercise.incrementStep
         notes = exercise.notes

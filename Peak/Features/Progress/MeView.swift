@@ -153,7 +153,7 @@ struct MeView: View {
                         ExerciseThumbnail(exercise: mover.exercise, size: 32)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(mover.exercise.name)
+                            Text(mover.exercise.displayName)
                                 .font(Theme.rounded(14, .semibold))
                                 .foregroundStyle(Theme.textPrimary)
                                 .lineLimit(1)
@@ -189,7 +189,7 @@ struct MeView: View {
                                     Image(systemName: "trophy.fill").font(.system(size: 14)).foregroundStyle(Color(hex: 0xFFD45E))
                                         .frame(width: 34, height: 34).background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color(hex: 0xFFD45E).opacity(0.14)))
                                     VStack(alignment: .leading, spacing: 1) {
-                                        Text(pair.exercise.name).font(Theme.rounded(15, .bold)).lineLimit(1)
+                                        Text(pair.exercise.displayName).font(Theme.rounded(15, .bold)).lineLimit(1)
                                         Text(Fmt.relativeDay(pair.record.date)).font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
                                     }
                                     Spacer()

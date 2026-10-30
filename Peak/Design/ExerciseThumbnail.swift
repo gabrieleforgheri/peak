@@ -22,9 +22,9 @@ struct ExerciseThumbnail: View {
         if zoomable, let image = photo {
             Button { showingPhoto = true } label: { thumbnail }
                 .buttonStyle(.borderless)
-                .accessibilityLabel("Mostra la foto di \(exercise.name)")
+                .accessibilityLabel("Mostra la foto di \(exercise.displayName)")
                 .fullScreenCover(isPresented: $showingPhoto) {
-                    PhotoViewer(image: image, title: exercise.name)
+                    PhotoViewer(image: image, title: exercise.displayName)
                 }
         } else {
             thumbnail

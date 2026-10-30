@@ -272,7 +272,7 @@ struct LiftChartCard: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(exercise.name).font(Theme.rounded(15, .bold))
+                    Text(exercise.displayName).font(Theme.rounded(15, .bold))
                     Spacer()
                     if let a = pts.first, let b = pts.last {
                         Text("\(Fmt.weight(a.oneRm, unit: settings.unit)) → \(Fmt.weight(b.oneRm, unit: settings.unit))")

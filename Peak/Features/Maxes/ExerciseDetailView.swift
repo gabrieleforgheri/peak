@@ -114,7 +114,7 @@ struct ExerciseDetailView: View {
             await SocialStore.shared.refresh()
             board = try? await api.board(catalog: exercise.catalogID)
         }
-        .navigationTitle(exercise.name)
+        .navigationTitle(exercise.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

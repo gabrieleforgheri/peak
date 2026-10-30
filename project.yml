@@ -38,6 +38,9 @@ targets:
       # il catalogo degli esercizi, lo stesso file del server e del web
       - path: common/catalog.json
         buildPhase: resources
+      # i testi inglesi condivisi col web (chiave = italiano, {0} = segnaposto)
+      - path: web/src/lib/en.json
+        buildPhase: resources
     dependencies:
       - target: PeakWidgets
     settings:

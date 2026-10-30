@@ -5,7 +5,8 @@
 
 import { SETTING_DEFAULTS, split, upgradeDoc, type DocDataMap, type Kind, type LiveDoc } from '@common/docs.ts'
 import { glyphOf } from '@common/glyph.ts'
-import { loadCatalog } from './catalog.ts'
+import { norm, type CatalogEntry } from '@common/catalog.ts'
+import { entryName, loadCatalog } from './catalog.ts'
 import type { Muscle, View } from '@common/muscle-info.ts'
 import { bestOf } from '@common/domain.ts'
 import { deriveRecords, recordsByExercise } from '@common/records.ts'
@@ -108,12 +109,14 @@ export async function wipeLocal() {
 
 // ---- modello derivato --------------------------------------------------------------------------------------
 
-/** L'icona di ogni voce del catalogo: arriva poco dopo l'avvio, e intanto i macchinari collegati mostrano quella salvata. */
+/** Le voci del catalogo (icona, figura, nomi): arrivano poco dopo l'avvio, e intanto i macchinari collegati mostrano quanto salvato. */
 const catalog = $state({
+	entries: new Map<string, CatalogEntry>(),
 	glyphs: new Map<string, string>(),
 	figures: new Map<string, { muscles: Muscle[]; view: '' | View }>(),
 })
 void loadCatalog().then((l) => {
+	catalog.entries = new Map(l.map((e) => [e.id, e]))
 	catalog.glyphs = new Map(l.map((e) => [e.id, e.glyph]))
 	catalog.figures = new Map(l.map((e) => [e.id, { muscles: e.muscles, view: e.view }]))
 }, () => {})
@@ -154,8 +157,12 @@ function compute(): Model {
 		const x = upgradeDoc('exercise', e.data)
 		const records = (byEx.get(e.uuid) ?? []).sort((a, b) => b.date - a.date)
 		const armRecords = (byExArm.get(e.uuid) ?? []).sort((a, b) => b.date - a.date)
+		// collegato e col nome originale (it o en): lo mostro nella lingua dell'app; se l'hai rinominato resta il tuo
+		const entry = x.catalog ? catalog.entries.get(x.catalog) : undefined
+		const stock = entry && [norm(entry.it), norm(entry.en)].includes(norm(x.name))
 		return {
-			...x, uuid: e.uuid, glyphName: glyphOf(x, catalog.glyphs.get(x.catalog)), records, best: bestOf(records), armRecords, armBest: bestOf(armRecords),
+			...x, name: entry && stock ? entryName(entry) : x.name, aka: entry ? [entry.it, entry.en, ...entry.alias] : [],
+			uuid: e.uuid, glyphName: glyphOf(x, catalog.glyphs.get(x.catalog)), records, best: bestOf(records), armRecords, armBest: bestOf(armRecords),
 			// la figura: quella della voce del catalogo se è collegato, altrimenti quella che hai toccato tu
 			figure: x.catalog ? (catalog.figures.get(x.catalog) ?? { muscles: [], view: '' as const }) : { muscles: x.muscles, view: x.view },
 			sets: (setsByEx.get(e.uuid) ?? []).sort((a, b) => b.createdAt - a.createdAt || b.order - a.order),

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { MUSCLE_GROUPS } from '@common/docs.ts'
 	import { patchExercise } from '../lib/actions.ts'
+	import { exMatches } from '../lib/catalog.ts'
 	import { getModel } from '../lib/store.svelte.ts'
 	import { GROUP_NAMES } from '../lib/fmt.ts'
 	import { t } from '../lib/i18n.ts'
@@ -13,8 +14,7 @@
 	const m = $derived(getModel())
 	let query = $state('')
 
-	const matches = (n: string) => n.toLowerCase().includes(query.trim().toLowerCase())
-	const list = $derived(m.exercises.filter((e) => matches(e.name) && e.isArchived))
+	const list = $derived(m.exercises.filter((e) => exMatches(e, query) && e.isArchived))
 	const groups = $derived(MUSCLE_GROUPS.map((g) => ({ g, items: list.filter((e) => e.muscleGroup === g) })).filter((x) => x.items.length))
 
 </script>

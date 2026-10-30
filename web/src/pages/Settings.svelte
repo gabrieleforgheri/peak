@@ -19,7 +19,7 @@
 	const m = $derived(getModel())
 	const s = $derived(m.settings)
 	const ACCENT_RGB: Record<string, string> = { lime: '184,240,77', ember: '255,148,61', ice: '115,204,255', violet: '173,140,255', coral: '255,115,115' }
-	const ACCENT_NAME: Record<string, string> = { lime: 'Lime', ember: 'Brace', ice: 'Ghiaccio', violet: 'Viola', coral: 'Corallo' }
+	const ACCENT_NAME: Record<string, string> = { lime: t('Lime'), ember: t('Brace'), ice: t('Ghiaccio'), violet: t('Viola'), coral: t('Corallo') }
 
 	let devices = $state<{ id: number; name: string; created_at: number; used_at: number | null }[]>([])
 	const loadDevices = async () => { try { const r = await call('/api/dispositivi'); if (r.ok) devices = (await r.json()).dispositivi } catch { /* offline */ } }

@@ -28,7 +28,7 @@ struct MuscleDetailSheet: View {
                 VStack(spacing: 20) {
                     // Header: Nome esercizio e chip del gruppo muscolare
                     HStack(spacing: 10) {
-                        Text(exercise.name)
+                        Text(exercise.displayName)
                             .font(Theme.rounded(22, .bold))
                             .foregroundStyle(Theme.textPrimary)
 

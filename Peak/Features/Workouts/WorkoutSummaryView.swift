@@ -301,7 +301,7 @@ struct WorkoutSummaryView: View {
                             .pop(recordsIn, from: 0.6, delay: delay + 0.1)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(set.exercise?.name ?? "Esercizio rimosso")
+                            Text(set.exercise?.displayName ?? "Esercizio rimosso")
                                 .font(Theme.rounded(14, .semibold))
                                 .foregroundStyle(Theme.textPrimary)
                             Text(Fmt.setLine(weight: set.weight, reps: set.reps, unit: settings.unit, singleArm: set.singleArm, group: set.exercise?.muscleGroup))

@@ -1,5 +1,10 @@
 import SwiftUI
 
+/// Il Watch segue la lingua del sistema (italiano, altrimenti inglese).
+private func w(_ it: String, _ en: String) -> String {
+    Locale.preferredLanguages.first?.hasPrefix("it") == true ? it : en
+}
+
 struct ContentView: View {
     @Environment(WatchModel.self) private var model
 
@@ -11,7 +16,7 @@ struct ContentView: View {
                 Image(systemName: "iphone")
                     .font(.title2)
                     .foregroundStyle(.secondary)
-                Text("Apri un esercizio nella sessione sull'iPhone.")
+                Text(w("Apri un esercizio nella sessione sull'iPhone.", "Open an exercise in the session on your iPhone."))
                     .font(.footnote)
                     .multilineTextAlignment(.center)
             }
@@ -35,10 +40,10 @@ private struct ExerciseView: View {
                     minus: { if model.reps > 0 { model.reps -= 1 } },
                     plus: { model.reps += 1 })
 
-            Toggle("Riscaldamento", isOn: $model.isWarmup)
+            Toggle(w("Riscaldamento", "Warm-up"), isOn: $model.isWarmup)
                 .font(.footnote)
 
-            Button("Salva") { model.send() }
+            Button(w("Salva", "Save")) { model.send() }
                 .tint(.green)
                 .disabled(model.reps == 0)
         }

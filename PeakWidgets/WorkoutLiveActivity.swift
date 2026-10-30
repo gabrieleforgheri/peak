@@ -27,7 +27,7 @@ struct WorkoutLiveActivity: Widget {
                     VStack(alignment: .trailing, spacing: 0) {
                         Text("\(context.state.sets)")
                             .font(.system(.title3, design: .rounded).weight(.bold))
-                        Text("serie")
+                        Text(w(context, "serie", context.state.sets == 1 ? "set" : "sets"))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
@@ -35,7 +35,7 @@ struct WorkoutLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack {
-                            Text(context.state.exercise.isEmpty ? "Allenamento in corso" : context.state.exercise)
+                            Text(context.state.exercise.isEmpty ? w(context, "Allenamento in corso", "Workout in progress") : context.state.exercise)
                                 .lineLimit(1)
                             Spacer()
                             Text(context.state.volume)
@@ -43,7 +43,7 @@ struct WorkoutLiveActivity: Widget {
                         }
                         .font(.system(.subheadline, design: .rounded).weight(.semibold))
                         if let next = context.state.next {
-                            Text("Poi: \(next)")
+                            Text("\(w(context, "Poi", "Next")): \(next)")
                                 .font(.system(.caption, design: .rounded).weight(.medium))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
@@ -64,6 +64,11 @@ struct WorkoutLiveActivity: Widget {
             .keylineTint(liftTint)
         }
     }
+}
+
+/// Il testo nella lingua dell'app (l'estensione non ha le traduzioni).
+private func w(_ context: ActivityViewContext<WorkoutActivityAttributes>, _ it: String, _ en: String) -> String {
+    context.attributes.english ? en : it
 }
 
 /// Durante il recupero conta alla rovescia, altrimenti mostra la durata della sessione.
@@ -94,16 +99,16 @@ private struct LockScreenView: View {
                 .background(liftTint.opacity(0.18), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(context.state.exercise.isEmpty ? "Allenamento in corso" : context.state.exercise)
+                Text(context.state.exercise.isEmpty ? w(context, "Allenamento in corso", "Workout in progress") : context.state.exercise)
                     .font(.system(.headline, design: .rounded))
                     .lineLimit(1)
                 Text(context.state.restEnd == nil
-                     ? "\(context.state.sets) serie · \(context.state.volume)"
-                     : "Recupero · \(context.state.sets) serie")
+                     ? "\(context.state.sets) \(w(context, "serie", context.state.sets == 1 ? "set" : "sets")) · \(context.state.volume)"
+                     : "\(w(context, "Recupero", "Rest")) · \(context.state.sets) \(w(context, "serie", context.state.sets == 1 ? "set" : "sets"))")
                     .font(.system(.caption, design: .rounded).weight(.medium))
                     .foregroundStyle(.secondary)
                 if let next = context.state.next {
-                    Text("Poi: \(next)")
+                    Text("\(w(context, "Poi", "Next")): \(next)")
                         .font(.system(.caption, design: .rounded).weight(.medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)

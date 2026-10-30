@@ -246,6 +246,7 @@ final class AppSettings {
         self.tourSeen = defaults.object(forKey: Key.tourSeen) == nil ? 1 : defaults.integer(forKey: Key.tourSeen)
         self.machineTipsSeen = defaults.bool(forKey: Key.machineTipsSeen)
         self.weeklyGoal = defaults.integer(forKey: Key.weeklyGoal)
+        _ = Lang.launched // prima di leggerla: allinea la lingua scelta da Impostazioni di iOS
         self.language = defaults.string(forKey: Key.language) ?? ""
         self.activeProgram = defaults.string(forKey: Key.activeProgram) ?? ""
         self.watchEnabled = defaults.object(forKey: Key.watchEnabled) as? Bool ?? true

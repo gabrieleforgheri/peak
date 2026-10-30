@@ -1,4 +1,4 @@
-import type { CatalogEntry } from '@common/catalog.ts'
+import { norm, type CatalogEntry } from '@common/catalog.ts'
 import { defaultBarWeightFor, guessPlateLoaded } from '@common/domain.ts'
 import { locale } from './i18n.ts'
 
@@ -16,4 +16,10 @@ export const entryOther = (e: CatalogEntry): string => (locale.startsWith('it') 
 export function catalogDefaults(e: CatalogEntry) {
 	const name = entryName(e)
 	return { name, group: e.group, step: e.step, notes: e.notes, barWeight: defaultBarWeightFor(e.glyph, name), plateLoaded: guessPlateLoaded(e.glyph, name) }
+}
+
+/** La ricerca fra i propri macchinari: nome e altri nomi del catalogo, senza maiuscole né accenti. */
+export const exMatches = (ex: { name: string; aka: string[] }, query: string): boolean => {
+	const q = norm(query)
+	return !q || [ex.name, ...ex.aka].some((n) => norm(n).includes(q))
 }

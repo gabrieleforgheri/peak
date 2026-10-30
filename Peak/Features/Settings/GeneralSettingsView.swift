@@ -39,6 +39,15 @@ struct GeneralSettingsView: View {
                      : "Segue il tuo account: la stessa lingua sul web e sull'iPhone.")
                     .font(Theme.rounded(11, .medium))
                     .foregroundStyle(Lang.needsRestart(settings.language) ? settings.accentColor : Theme.textTertiary)
+                Text("Puoi cambiarla anche da Impostazioni dell'iPhone › Peak.")
+                    .font(Theme.rounded(11, .medium))
+                    .foregroundStyle(Theme.textTertiary)
+                Button("Apri Impostazioni") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+                }
+                .font(Theme.rounded(12, .semibold))
+                .buttonStyle(.plain)
+                .foregroundStyle(settings.accentColor)
             }
         }
     }

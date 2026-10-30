@@ -116,7 +116,7 @@ struct ArchivedExercisesView: View {
                                 .frame(width: 30, height: 30)
                                 .background(exercise.muscleGroup.tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
 
-                            Text(exercise.name)
+                            Text(exercise.displayName)
                                 .font(Theme.rounded(15, .semibold))
                                 .foregroundStyle(Theme.textPrimary)
 

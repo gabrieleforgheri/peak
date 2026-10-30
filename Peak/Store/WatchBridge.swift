@@ -96,7 +96,7 @@ final class WatchBridge: NSObject, WCSessionDelegate {
             ?? exercise.incrementStep * 4
         return WatchExercise(
             uuid: exercise.uuid,
-            name: exercise.name,
+            name: exercise.displayName,
             weight: weight,
             step: exercise.incrementStep,
             target: target(for: exercise, in: workout)

@@ -47,7 +47,7 @@ struct ProgressionCard: View {
                         ForEach(series) { s in
                             let picked = s.id == current?.id
                             Button { pickedID = s.id; Haptics.tap() } label: {
-                                Text(s.exercise.name).font(Theme.rounded(12, .semibold)).lineLimit(1)
+                                Text(s.exercise.displayName).font(Theme.rounded(12, .semibold)).lineLimit(1)
                                     .padding(.horizontal, 12).padding(.vertical, 7)
                                     .background(picked ? settings.accentColor.opacity(0.22) : Theme.card, in: Capsule())
                                     .overlay(Capsule().strokeBorder(picked ? settings.accentColor.opacity(0.7) : Theme.stroke, lineWidth: 1))

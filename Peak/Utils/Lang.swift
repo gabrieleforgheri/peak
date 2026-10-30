@@ -1,15 +1,25 @@
 import Foundation
 
-/// La lingua dell'interfaccia: italiano (i testi del codice) o inglese (`en.lproj/Localizable.strings`, generato da web/src/lib/en.json).
+/// La lingua dell'interfaccia: italiano (i testi del codice) o inglese: i testi comuni col web stanno in `web/src/lib/en.json`
+/// (copiato nell'app), quelli solo dell'iPhone e le correzioni in `en.lproj/Localizable.strings`, che vince.
 /// "" = quella del telefono.
 ///
 /// Come funziona: iOS sceglie la lingua dell'app all'avvio, da `AppleLanguages`. Cambiando la scelta si scrive quella chiave e la
 /// lingua nuova vale **alla prossima apertura** (nessun ridisegno a caldo: era lento e instabile). I `Text("…")` si traducono da soli;
 /// per i testi passati come `String` (titoli, righe di elenco) si usa `.tr`.
+///
+/// La lingua si cambia anche da Impostazioni di iOS › Peak (l'app dichiara `CFBundleLocalizations` it/en): iOS scrive la stessa chiave
+/// `AppleLanguages` nel dominio dell'app e la riapre. All'avvio, se quella chiave c'è e dice una lingua diversa da `settings.language`,
+/// vince lei e la scelta salvata si allinea (così la prende anche la sincronizzazione). Senza chiave vale `settings.language`.
 enum Lang {
     /// Quella con cui l'app è partita: `.tr` e i `Text` devono andare d'accordo fino alla chiusura.
     static let launched: String = {
         let saved = UserDefaults.standard.string(forKey: "settings.language") ?? ""
+        let system = UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "")?["AppleLanguages"] as? [String]
+        if let first = system?.first, let chosen = ["it", "en"].first(where: { first.hasPrefix($0) }), chosen != saved {
+            UserDefaults.standard.set(chosen, forKey: "settings.language")
+            return chosen
+        }
         return code(for: saved)
     }()
 
@@ -29,12 +39,22 @@ enum Lang {
     /// La lingua è già quella scelta, o serve riaprire l'app?
     static func needsRestart(_ setting: String) -> Bool { code(for: setting) != launched }
 
-    /// Le traduzioni: la chiave è il testo italiano. Quelle con segnaposto (`%@`, `%lld`) valgono anche per i testi già composti
+    /// Le traduzioni: la chiave è il testo italiano. Localizable.strings vince su en.json (che qui perde i testi con «|» e
+    /// ha `{0}` al posto di `%@`). Quelle con segnaposto (`%@`, `%lld`) valgono anche per i testi già composti
     /// ("3 esercizi" ↔ "%@ esercizi"), così basta un elenco per i testi fissi e per quelli con numeri e nomi dentro.
     private static let table: (exact: [String: String], patterns: [(regex: NSRegularExpression, value: String)]) = {
         guard launched == "en",
               let path = Bundle.main.path(forResource: "Localizable", ofType: "strings", inDirectory: nil, forLocalization: "en"),
-              let dict = NSDictionary(contentsOfFile: path) as? [String: String] else { return ([:], []) }
+              var dict = NSDictionary(contentsOfFile: path) as? [String: String] else { return ([:], []) }
+        if let url = Bundle.main.url(forResource: "en", withExtension: "json"),
+           let data = try? Data(contentsOf: url),
+           let web = try? JSONSerialization.jsonObject(with: data) as? [String: String] {
+            for (key, value) in web where !key.contains("|") {
+                var k = key, v = value
+                for i in 0..<10 { k = k.replacingOccurrences(of: "{\(i)}", with: "%@"); v = v.replacingOccurrences(of: "{\(i)}", with: "%@") }
+                if dict[k] == nil { dict[k] = v }
+            }
+        }
         var patterns: [(NSRegularExpression, String)] = []
         for (key, value) in dict where key.contains("%@") || key.contains("%lld") {
             // senza almeno un po' di testo fisso il modello combacerebbe con qualsiasi cosa

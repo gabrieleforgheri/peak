@@ -28,7 +28,7 @@
 		<div class="sec-title" style="margin:8px 4px 0">{t('Attrezzi')}</div>
 		<div class="grid">
 			{#each GLYPHS as g}
-				<button class="cell" class:on={current === `glyph:${g}`} onclick={() => pick(`glyph:${g}`)} aria-label={GLYPH_TITLES[g]} title={GLYPH_TITLES[g]}><TemplateIconView icon={`glyph:${g}`} size={34} /></button>
+				<button class="cell" class:on={current === `glyph:${g}`} onclick={() => pick(`glyph:${g}`)} aria-label={t(GLYPH_TITLES[g])} title={t(GLYPH_TITLES[g])}><TemplateIconView icon={`glyph:${g}`} size={34} /></button>
 			{/each}
 		</div>
 		<div class="sec-title" style="margin:8px 4px 0">{t('Generali')}</div>

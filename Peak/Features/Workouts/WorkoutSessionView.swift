@@ -614,7 +614,7 @@ private struct ExerciseSessionCard: View {
                 HStack(alignment: .top, spacing: 12) {
                     VStack(alignment: .leading, spacing: 6) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(exercise.name)
+                            Text(exercise.displayName)
                                 .font(Theme.rounded(22, .bold))
                                 .foregroundStyle(Theme.textPrimary)
                                 .lineLimit(2)

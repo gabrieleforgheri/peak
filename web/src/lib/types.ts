@@ -9,6 +9,8 @@ export interface SetItem {
 }
 export interface Ex extends ExerciseDoc {
 	uuid: string
+	/** Gli altri nomi del catalogo (it, en, sinonimi) se è collegato, per la ricerca; `name` è già nella lingua dell'app. */
+	aka: string[]
 	/** null = macchinario personalizzato senza icona scelta. */
 	glyphName: GlyphName | null
 	/** Massimali manuali + automatici, dal più recente. */

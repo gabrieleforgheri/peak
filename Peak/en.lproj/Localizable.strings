@@ -1,4 +1,4 @@
-/* Inglese: parte da web/src/lib/en.json, più i testi solo dell'iPhone. La chiave è il testo italiano. */
+/* Inglese: solo i testi dell'iPhone e le correzioni (qui si vince su web/src/lib/en.json, caricato da Lang). La chiave è il testo italiano. */
 " %@ per lato" = " %@ per side";
 " %lld per lato" = " %lld per side";
 " · da allenamento" = " · from a workout";
@@ -974,3 +974,13 @@
 "Ora sai come si fa." = "Now you know how it's done.";
 "Passo %lld di %lld" = "Step %lld of %lld";
 "Ho già un account yG" = "I already have a yG account";
+" (%@%@ per lato)" = " (%@%@ per side)";
+"%@ (%@ per lato)" = "%@ (%@ per side)";
+"%@%@ rispetto alla serie precedente" = "%@%@ compared to the previous set";
+"Sbarra %@" = "Bar %@";
+"il tuo account yG" = "your yG account";
+"collegato" = "linked";
+"scaduto" = "expired";
+"esercizi" = "exercises";
+"Puoi cambiarla anche da Impostazioni dell'iPhone › Peak." = "You can also change it in iPhone Settings › Peak.";
+"Apri Impostazioni" = "Open Settings";

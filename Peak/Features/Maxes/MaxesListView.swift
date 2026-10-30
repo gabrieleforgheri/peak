@@ -19,7 +19,7 @@ struct MaxesListView: View {
             guard !exercise.isArchived else { return false }
             if let selectedGroup, exercise.muscleGroup != selectedGroup { return false }
             guard !search.isEmpty else { return true }
-            return exercise.name.localizedCaseInsensitiveContains(search)
+            return exercise.matches(search: search)
         }
     }
 
@@ -84,7 +84,7 @@ struct MaxesListView: View {
                     HStack(spacing: 8) {
                         ForEach(unlinked) { e in
                             NavigationLink { ExerciseDetailView(exercise: e) } label: {
-                                Text(e.name).font(Theme.rounded(12, .semibold)).lineLimit(1)
+                                Text(e.displayName).font(Theme.rounded(12, .semibold)).lineLimit(1)
                                     .padding(.horizontal, 12).padding(.vertical, 7)
                                     .background(Theme.card, in: Capsule())
                                     .overlay(Capsule().strokeBorder(Theme.stroke, lineWidth: 1))
@@ -241,7 +241,7 @@ private struct ExerciseRow: View {
                 ExerciseThumbnail(exercise: exercise, size: 42, zoomable: true)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(exercise.name)
+                    Text(exercise.displayName)
                         .font(Theme.rounded(16, .semibold))
                         .foregroundStyle(Theme.textPrimary)
                         .lineLimit(1)

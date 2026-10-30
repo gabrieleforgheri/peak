@@ -55,7 +55,7 @@ struct ExercisePickerSheet: View {
         let filtered = allExercises.filter { exercise in
             guard !exercise.isArchived, isVisible(exercise) else { return false }
             guard !search.isEmpty else { return true }
-            return exercise.name.localizedCaseInsensitiveContains(search)
+            return exercise.matches(search: search)
         }
         return MuscleGroup.allCases.compactMap { group in
             let items = filtered.filter { $0.muscleGroup == group }
@@ -74,7 +74,7 @@ struct ExercisePickerSheet: View {
                 dismiss()
             } label: {
                 HStack(spacing: 12) {
-                    Text(exercise.name)
+                    Text(exercise.displayName)
                         .font(Theme.rounded(15, .semibold))
                         .foregroundStyle(Theme.textPrimary)
 

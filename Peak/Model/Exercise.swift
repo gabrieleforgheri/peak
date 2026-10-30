@@ -74,6 +74,24 @@ final class Exercise {
         set { muscleGroupRaw = newValue.rawValue }
     }
 
+    /// Il nome da mostrare: se è collegato al catalogo e il nome salvato è ancora quello italiano o inglese della voce, quello
+    /// nella lingua dell'app; se l'hai rinominato resta il tuo. Per la logica (abbinamenti, salvataggio, sync) vale `name`.
+    var displayName: String {
+        guard !catalogID.isEmpty, let entry = Catalog.entry(id: catalogID) else { return name }
+        let n = Catalog.norm(name)
+        return n == Catalog.norm(entry.it) || n == Catalog.norm(entry.en) ? entry.name : name
+    }
+
+    /// Ricerca per più parole in qualsiasi ordine, senza accenti: nome salvato, nome mostrato e, se collegato,
+    /// nome italiano, inglese e sinonimi del catalogo.
+    func matches(search: String) -> Bool {
+        let words = Catalog.norm(search).split(separator: " ")
+        guard !words.isEmpty else { return true }
+        var hay = [Catalog.norm(name), Catalog.norm(displayName)]
+        if let entry = Catalog.entry(id: catalogID) { hay += Catalog.names(of: entry) }
+        return words.allSatisfy { w in hay.contains { $0.contains(w) } }
+    }
+
     /// L'icona da mostrare: quella dell'attrezzo del catalogo; per un macchinario personalizzato
     /// quella scelta a mano, altrimenti nessuna. Come `glyphOf` in common/glyph.ts.
     var glyph: MachineGlyph? {
