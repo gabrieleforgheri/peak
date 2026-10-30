@@ -57,6 +57,23 @@ Web + iPhone in parità. Codice scritto da un subagente Sonnet, rivisto e unito 
 
 ---
 
+# Watch come l'app Allenamento (31 ottobre 2026)
+
+Solo Watch (+ due campi opzionali nel messaggio dall'iPhone). Installazione: NON da AltStore (l'ipa non contiene il Watch), ma dal Mac con `scripts/install_device.sh`, poi si rinnova ogni 7 giorni. Codice scritto da un subagente Sonnet, da rivedere. Provato solo compilando e con un banco di prova iOS: nessun simulatore watchOS installato e nessun orologio vero.
+
+| Fatto | Dove |
+|---|---|
+| Pagine da scorrere come in Allenamento: Comandi (Termina rosso, Pausa/Riprendi giallo, Nuova serie verde) · Numeri (tempo giallo `mm:ss.cc`, kcal attive e totali, battito con cuore che pulsa, esercizio, obiettivo, serie fatte) · Serie (peso con Digital Crown, ripetizioni, riscaldamento, Salva) · Musica (`NowPlayingView`) | `ContentView.swift`, `WorkoutPages.swift`, `LogPage.swift` |
+| Misure in diretta con `HKLiveWorkoutBuilder` (battito, calorie attive, basali). A fine sessione l'allenamento si SCARTA (`discardWorkout()`): in Salute lo scrive già l'iPhone, salvarlo anche qui lo duplicherebbe. Prezzo: battito e kcal del Watch non restano in Salute | `WorkoutController.swift` |
+| Recupero dopo «Salva»: anello a tutto schermo che si svuota, «Salta», vibrazione alla fine. Durata dall'iPhone: nuovi campi opzionali `restSeconds` / `warmupRestSeconds` in `WatchExercise` (vecchi messaggi si leggono lo stesso; senza `restSeconds` il Watch non recupera). Il riscaldamento recupera la metà (`// TODO warmupRestPercent` in `WatchBridge.swift`, da collegare quando c'è l'impostazione) | `WatchModel.swift`, `WatchMessages.swift`, `WatchBridge.swift` |
+| Riepilogo a fine sessione (tempo, kcal, battito medio, serie) e «Fine». Conto alla rovescia 3-2-1 quando parte dall'iPhone | `SummaryView.swift`, `ContentView.swift` |
+| Senza allenamento: scheda «Allenamento di forza»; il tocco avvia la sessione sul polso e dice di aprire un esercizio sull'iPhone. Schermo attenuato (`isLuminanceReduced`): niente centesimi, niente puntini | `ContentView.swift` |
+| Termina sul Watch chiude solo la sessione del polso: l'allenamento dell'iPhone resta aperto. L'iPhone che chiude l'allenamento porta il Watch al riepilogo (solo se prima c'era un esercizio: un contesto vuoto vecchio non chiude più la sessione appena partita) | `WatchModel.swift` |
+| `NSHealthShareUsageDescription` del Watch ora cita battito e calorie (`project.yml` + `Info.plist`). `docs/apps.json` invariato: il Watch non è nell'ipa di AltStore | — |
+| Aperto: la sessione non si recupera se il sistema chiude l'app a metà (`handleActiveWorkoutRecovery`); sullo schermo vero vanno controllati spazi del 41 mm e comportamento della corona dentro il `TabView` | — |
+
+---
+
 # Benvenuto nuovo, medaglie, animazioni, zoom dei muscoli (29 ottobre 2026 — Peak 3.4, build 16)
 
 Onboarding, medaglie e animazioni solo sul web per ora (iPhone dopo); zoom e dimezzamento a un braccio su web + iPhone. Codice scritto da subagenti Sonnet, rivisto e unito a mano.

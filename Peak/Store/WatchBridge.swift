@@ -94,12 +94,17 @@ final class WatchBridge: NSObject, WCSessionDelegate {
             ?? exercise.setList.max(by: { $0.createdAt < $1.createdAt })?.weight
             ?? exercise.currentMax
             ?? exercise.incrementStep * 4
+        // stesso recupero del timer dell'iPhone (macchinario, altrimenti impostazioni); spento = nessun anello sul Watch
+        let rest: Int? = settings?.restTimerEnabled == true ? settings?.restDuration(for: exercise, warmup: false) : nil
+        let warmupRest: Int? = settings?.restTimerEnabled == true ? settings?.restDuration(for: exercise, warmup: true) : nil
         return WatchExercise(
             uuid: exercise.uuid,
             name: exercise.displayName,
             weight: weight,
             step: exercise.incrementStep,
-            target: target(for: exercise, in: workout)
+            target: target(for: exercise, in: workout),
+            restSeconds: rest,
+            warmupRestSeconds: warmupRest
         )
     }
 

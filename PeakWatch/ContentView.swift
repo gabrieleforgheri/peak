@@ -1,67 +1,87 @@
 import SwiftUI
+import WatchKit
 
-/// Il Watch segue la lingua del sistema (italiano, altrimenti inglese).
-private func w(_ it: String, _ en: String) -> String {
-    Locale.preferredLanguages.first?.hasPrefix("it") == true ? it : en
-}
-
+/// Come l'app Allenamento: scheda di partenza, conto alla rovescia, pagine da scorrere, riepilogo.
 struct ContentView: View {
     @Environment(WatchModel.self) private var model
 
     var body: some View {
-        if let exercise = model.exercise {
-            ExerciseView(exercise: exercise)
-        } else {
-            VStack(spacing: 8) {
-                Image(systemName: "iphone")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-                Text(w("Apri un esercizio nella sessione sull'iPhone.", "Open an exercise in the session on your iPhone."))
-                    .font(.footnote)
-                    .multilineTextAlignment(.center)
+        Group {
+            switch model.workout.phase {
+            case .idle: StartView()
+            case .countdown: CountdownView()
+            case .active: WorkoutTabs()
+            case .summary: SummaryView()
             }
-            .padding()
         }
+        .background(.black)
     }
 }
 
-private struct ExerciseView: View {
+/// Pagine orizzontali: comandi · numeri · serie · musica.
+private struct WorkoutTabs: View {
     @Environment(WatchModel.self) private var model
-    let exercise: WatchExercise
+    @Environment(\.isLuminanceReduced) private var isLuminanceReduced
 
     var body: some View {
         @Bindable var model = model
-        // una sola schermata, senza scorrere: peso, ripetizioni, riscaldamento e salva
-        VStack(spacing: 6) {
-            stepper(model.displayWeight(model.weight), size: 22,
-                    minus: { model.weightSteps = max(model.weightSteps - 1, model.weightStepRange.lowerBound) },
-                    plus: { model.weightSteps = min(model.weightSteps + 1, model.weightStepRange.upperBound) })
-            stepper("\(model.reps)", size: 34,
-                    minus: { if model.reps > 0 { model.reps -= 1 } },
-                    plus: { model.reps += 1 })
+        TabView(selection: $model.page) {
+            ControlsPage().tag(WatchModel.Page.controls)
+            MetricsPage().tag(WatchModel.Page.metrics)
+            LogPage().tag(WatchModel.Page.log)
+            NowPlayingView().tag(WatchModel.Page.music)
+        }
+        .tabViewStyle(.page(indexDisplayMode: isLuminanceReduced ? .never : .automatic))
+    }
+}
 
-            Toggle(w("Riscaldamento", "Warm-up"), isOn: $model.isWarmup)
-                .font(.footnote)
+/// Nessun allenamento in corso: la scheda grande di Apple. Il tocco avvia la sessione sul polso;
+/// la serie si apre poi dall'iPhone.
+private struct StartView: View {
+    @Environment(WatchModel.self) private var model
 
-            Button(w("Salva", "Save")) { model.send() }
-                .tint(.green)
-                .disabled(model.reps == 0)
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button { model.startWorkout() } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "figure.strengthtraining.traditional")
+                        .font(.title3)
+                        .foregroundStyle(.black)
+                        .frame(width: 40, height: 40)
+                        .background(Color.workoutEnergy, in: Circle())
+                    Text(w("Allenamento di forza", "Strength Training"))
+                        .font(.headline)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.vertical, 10)
+                .padding(.horizontal, 10)
+                .background(Color.white.opacity(0.18), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            }
+            .buttonStyle(.plain)
+
+            Text(model.exercise.map { w("Sull'iPhone: \($0.name)", "On iPhone: \($0.name)") }
+                 ?? w("Poi apri un esercizio nella sessione sull'iPhone.", "Then open an exercise in the session on your iPhone."))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(3)
+                .padding(.horizontal, 4)
         }
         .padding(.horizontal, 4)
     }
+}
 
-    /// Valore al centro, − e + ai lati.
-    private func stepper(_ value: String, size: CGFloat, minus: @escaping () -> Void, plus: @escaping () -> Void) -> some View {
-        HStack {
-            Button(action: minus) { Image(systemName: "minus") }
-            Text(value)
-                .font(.system(size: size, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .minimumScaleFactor(0.6)
-                .frame(maxWidth: .infinity)
-            Button(action: plus) { Image(systemName: "plus") }
-        }
-        .buttonStyle(.bordered)
-        .controlSize(.small)
+/// 3, 2, 1 prima di partire.
+private struct CountdownView: View {
+    @Environment(WatchModel.self) private var model
+
+    var body: some View {
+        Text("\(model.workout.countdown)")
+            .font(.system(size: 96, weight: .bold, design: .rounded))
+            .foregroundStyle(Color.workoutTime)
+            .contentTransition(.numericText(countsDown: true))
+            .animation(.snappy, value: model.workout.countdown)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

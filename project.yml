@@ -109,7 +109,7 @@ targets:
         WKRunsIndependentlyOfCompanionApp: true
         WKCompanionAppBundleIdentifier: com.gabrieleforghieri.massimali.HKR6AKCLPA
         WKBackgroundModes: [workout-processing]
-        NSHealthShareUsageDescription: Per tenere aperta l'app sul polso durante l'allenamento.
+        NSHealthShareUsageDescription: Per mostrare battito e calorie durante l'allenamento e tenere aperta l'app sul polso.
         NSHealthUpdateUsageDescription: Per tenere aperta l'app sul polso durante l'allenamento. L'allenamento in Salute lo registra l'iPhone.
     entitlements:
       path: PeakWatch/PeakWatch.entitlements
