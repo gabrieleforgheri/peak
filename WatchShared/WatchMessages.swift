@@ -10,6 +10,18 @@ struct WatchExercise: Codable, Equatable {
     var step: Double
     /// Obiettivo della scheda già scritto («2/4 serie · 8–10 rip · 60 kg»). `nil` se l'allenamento non ne ha.
     var target: String? = nil
+    /// Recupero dopo una serie vera, in secondi. `nil` se il timer di recupero è spento sull'iPhone
+    /// (e nei messaggi di un iPhone più vecchio, che non lo mandano).
+    var restSeconds: Int? = nil
+    /// Recupero dopo una serie di riscaldamento. `nil`: la metà di `restSeconds`.
+    var warmupRestSeconds: Int? = nil
+
+    /// Secondi di recupero da far girare sul Watch dopo una serie; `nil` se non si deve recuperare.
+    func restDuration(warmup: Bool) -> Int? {
+        guard let rest = restSeconds, rest > 0 else { return nil }
+        let seconds = warmup ? (warmupRestSeconds ?? rest / 2) : rest
+        return seconds > 0 ? seconds : nil
+    }
 }
 
 /// Stato che l'iPhone tiene aggiornato sul Watch (application context:

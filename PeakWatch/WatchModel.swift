@@ -1,10 +1,9 @@
 import Foundation
-import HealthKit
 import Observation
 import WatchConnectivity
-import WatchKit
 
-/// Stato dell'app del Watch: l'esercizio aperto sull'iPhone e la serie in corso.
+/// Stato dell'app del Watch: l'esercizio aperto sull'iPhone, la serie in corso, il recupero.
+/// La sessione di allenamento (tempo, battito, calorie) è in `WorkoutController`.
 @Observable
 final class WatchModel: NSObject, WCSessionDelegate {
 
@@ -34,8 +33,23 @@ final class WatchModel: NSObject, WCSessionDelegate {
 
     var exercise: WatchExercise? { context?.exercise }
 
-    @ObservationIgnored private let health = HKHealthStore()
-    @ObservationIgnored private var workout: HKWorkoutSession?
+    /// Sessione di allenamento locale: tempo, battito, calorie, pausa, riepilogo.
+    let workout = WorkoutController()
+
+    /// Pagine dell'allenamento, da sinistra a destra come nell'app Allenamento.
+    enum Page: Hashable { case controls, metrics, log, music }
+    var page: Page = .metrics
+
+    /// Serie mandate all'iPhone in questo allenamento.
+    private(set) var setsLogged = 0
+
+    /// Recupero in corso dopo una serie.
+    struct Rest: Equatable {
+        var end: Date
+        var total: TimeInterval
+    }
+    private(set) var rest: Rest?
+    @ObservationIgnored private var restTask: Task<Void, Never>?
 
     func activate() {
         guard WCSession.isSupported() else { return }
@@ -65,45 +79,70 @@ final class WatchModel: NSObject, WCSessionDelegate {
             session.transferUserInfo(payload)
         }
         lastSent = set
+        setsLogged += 1
+        startRest(exercise.restDuration(warmup: isWarmup))
         reps = 0
         isWarmup = false
-        WKInterfaceDevice.current().play(.success)
+        Haptic.success()
+    }
+
+    // MARK: - Recupero
+
+    /// Anello di recupero dopo la serie; `nil` se l'iPhone ha il timer spento.
+    private func startRest(_ seconds: Int?) {
+        restTask?.cancel()
+        guard let seconds else { rest = nil; return }
+        rest = Rest(end: Date().addingTimeInterval(Double(seconds)), total: Double(seconds))
+        page = .log
+        restTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(seconds))
+            guard !Task.isCancelled else { return }
+            rest = nil
+            Haptic.alert()
+        }
+    }
+
+    func skipRest() {
+        restTask?.cancel()
+        rest = nil
+        Haptic.click()
     }
 
     // MARK: - Sessione di allenamento
 
-    /// Una sessione di allenamento tiene l'app viva a polso abbassato.
-    /// Non viene mai salvata: in Salute l'allenamento lo scrive l'iPhone.
+    /// Avvio dall'iPhone («Avvia sul Watch») o dalla scheda di partenza: conto alla rovescia e poi la sessione.
     func startWorkout() {
-        guard workout == nil, HKHealthStore.isHealthDataAvailable() else { return }
-        let configuration = HKWorkoutConfiguration()
-        configuration.activityType = .traditionalStrengthTraining
-        configuration.locationType = .indoor
-        health.requestAuthorization(toShare: [HKObjectType.workoutType()], read: []) { [weak self] _, _ in
-            DispatchQueue.main.async {
-                guard let self, self.workout == nil,
-                      let session = try? HKWorkoutSession(healthStore: self.health, configuration: configuration)
-                else { return }
-                self.workout = session
-                session.startActivity(with: Date())
-            }
-        }
+        guard workout.phase == .idle else { return }
+        setsLogged = 0
+        page = exercise == nil ? .metrics : .log
+        workout.start()
     }
 
-    private func endWorkout() {
-        workout?.end()
-        workout = nil
+    /// Termina la sessione del Watch (l'allenamento dell'iPhone resta com'è) e mostra il riepilogo.
+    func endWorkout() {
+        restTask?.cancel()
+        rest = nil
+        workout.end()
+    }
+
+    /// «Fine» nel riepilogo.
+    func finishSummary() {
+        workout.finishSummary()
+        setsLogged = 0
+        lastSent = nil
     }
 
     // MARK: - Dall'iPhone
 
     private func apply(_ newContext: WatchContext) {
-        let changedExercise = newContext.exercise?.uuid != context?.exercise?.uuid
+        let previous = context?.exercise
+        let changedExercise = newContext.exercise?.uuid != previous?.uuid
         context = newContext
 
         guard newContext.exercise != nil else {
-            // Allenamento finito sull'iPhone.
-            endWorkout()
+            // Allenamento finito sull'iPhone. Solo se prima c'era un esercizio: un contesto vuoto
+            // vecchio, arrivato all'apertura, non deve chiudere la sessione appena partita.
+            if previous != nil { endWorkout() }
             return
         }
 
@@ -112,6 +151,7 @@ final class WatchModel: NSObject, WCSessionDelegate {
             weightSteps = 0
             reps = 0
             lastSent = nil
+            if workout.phase == .active { page = .log }
         }
     }
 

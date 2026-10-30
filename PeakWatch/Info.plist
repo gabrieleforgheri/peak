@@ -21,7 +21,7 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Per tenere aperta l'app sul polso durante l'allenamento.</string>
+	<string>Per mostrare battito e calorie durante l'allenamento e tenere aperta l'app sul polso.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Per tenere aperta l'app sul polso durante l'allenamento. L'allenamento in Salute lo registra l'iPhone.</string>
 	<key>WKApplication</key>
