@@ -137,7 +137,7 @@ export function createAuth(store: Store, cfg: AuthConfig | null, dataDir: string
     const claims = JSON.parse(Buffer.from(body.id_token.split('.')[1] ?? '', 'base64url').toString('utf8')) as Claims
     const aud = Array.isArray(claims.aud) ? claims.aud : [claims.aud]
     if (claims.iss !== d.issuer || !aud.includes(cfg!.clientId)) throw new OidcError('token di un altro emittente')
-    if (claims.exp * 1000 < Date.now() || claims.nonce !== nonce) throw new OidcError('token scaduto o riusato')
+    if (typeof claims.exp !== 'number' || claims.exp * 1000 < Date.now() || claims.nonce !== nonce) throw new OidcError('token scaduto o riusato')
     return claims
   }
 
@@ -168,7 +168,9 @@ export function createAuth(store: Store, cfg: AuthConfig | null, dataDir: string
     const t = T[langOf(req)]
     const method = req.method ?? 'GET'
 
-    if (path === '/auth/dev' && method === 'GET' && !cfg) {
+    // Scorciatoia di sviluppo: solo senza OIDC, solo dal loopback e mai dietro un proxy (X-Forwarded-For).
+    const local = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress ?? '') && !req.headers['x-forwarded-for']
+    if (path === '/auth/dev' && method === 'GET' && !cfg && local) {
       const user = store.upsertUser('dev', 'dev@example.com', 'dev', 'Dev')
       const token = store.createSession(user.id, 30)
       redirect(res, '/', [cookie(SESSION, token, '/', Math.round(30 * 86_400))])
@@ -176,7 +178,11 @@ export function createAuth(store: Store, cfg: AuthConfig | null, dataDir: string
     }
 
     if (path === '/auth/login' && method === 'GET') {
-      if (!cfg) { redirect(res, '/auth/dev'); return true }
+      if (!cfg) {
+        if (local) redirect(res, '/auth/dev')
+        else page(req, res, 503, t.notConfigured[0], t.notConfigured[1], [])
+        return true
+      }
       try {
         const d = await discover()
         const flow: Flow = { state: b64(randomBytes(16)), nonce: b64(randomBytes(16)), verifier: b64(randomBytes(32)), exp: Date.now() + 10 * 60_000 }

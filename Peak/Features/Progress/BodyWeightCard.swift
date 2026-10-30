@@ -336,7 +336,8 @@ struct BodyWeightSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Salva") { save() }
                         .font(Theme.rounded(16, .bold))
-                        .disabled(weight <= 0)
+                        // i limiti del server: 20-400 kg (fuori, la pesata verrebbe scartata)
+                        .disabled(!(20...400).contains(weight))
                 }
             }
             .onAppear {

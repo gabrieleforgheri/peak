@@ -67,11 +67,15 @@
 			await syncNow()
 			const res = await call(`/api/importa?modo=${mode}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: importing })
 			const out = await res.json()
-			if (res.status === 422) result = out.error === 'versione' ? t('Backup in versione {0}: serve una versione più recente di Peak.', out.version) : t('Il file non è un backup di Massimali valido.')
+			if (res.status === 422) result = out.error === 'versione' ? t('Backup in versione {0}: serve una versione più recente di Peak.', out.version)
+				: out.error === 'scartati' ? tn(out.scartati, '1 elemento del file non è valido: non è stato sostituito nulla.', '{0} elementi del file non sono validi: non è stato sostituito nulla.')
+				: t('Il file non è un backup di Massimali valido.')
+			else if (res.status === 409 && out.error === 'troppe foto') result = t('Troppe foto: non è stato importato nulla.')
 			else if (!res.ok) result = t('Non è andata: riprova.')
 			else {
 				const c = out.conteggi
 				result = t('{0} macchinari e {1} allenamenti importati.', c.esercizi, c.allenamenti) + (out.orfani ? ' ' + tn(out.orfani, '1 massimale automatico senza serie è stato scartato.', '{0} massimali automatici senza serie sono stati scartati.') : '')
+					+ (out.scartati ? ' ' + tn(out.scartati, '1 elemento non valido è stato scartato.', '{0} elementi non validi sono stati scartati.') : '')
 				await resync()
 			}
 		} catch { result = t('Serve la connessione.') }

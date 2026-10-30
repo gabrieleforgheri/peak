@@ -271,13 +271,16 @@ export function openStore(dataDir: string) {
     push(userId: number, docs: WireDoc[], now = Date.now()): PushResult {
       const out: PushResult = { rev: 0, rifiutati: [], scartati: [] }
       tx(() => {
-        for (const d of docs) {
+        for (let d of docs) {
           const reject = (errore: string) => out.scartati.push({ kind: String(d?.kind), uuid: String(d?.uuid), errore })
           if (!d || !(KINDS as readonly unknown[]).includes(d.kind)) { reject('kind'); continue }
           if (d.kind === 'setting' && LEGACY_SETTINGS.includes(d.uuid)) continue
-          const uuid = d.kind === 'setting' ? (d.uuid in SETTING_DEFAULTS ? d.uuid : null) : normUuid(d.uuid)
+          const uuid = d.kind === 'setting' ? (typeof d.uuid === 'string' && Object.hasOwn(SETTING_DEFAULTS, d.uuid) ? d.uuid : null) : normUuid(d.uuid)
           if (!uuid) { reject('uuid'); continue }
-          if (!Number.isInteger(d.m) || d.m < 0 || d.m > now + MAX_FUTURE_MS) { reject('m'); continue }
+          if (!Number.isInteger(d.m) || d.m < 0) { reject('m'); continue }
+          if (typeof d.deleted !== 'boolean') { reject('deleted'); continue }
+          // un orologio avanti non deve far perdere il documento: la `m` troppo nel futuro si porta a adesso
+          if (d.m > now + MAX_FUTURE_MS) d = { ...d, m: now }
           let data: unknown = null
           if (!d.deleted) {
             const parsed = parseDoc(d.kind, uuid, d.data)
@@ -287,7 +290,7 @@ export function openStore(dataDir: string) {
           const row = q.getDoc.get(userId, d.kind, uuid) as Record<string, unknown> | undefined
           if (row && d.m < Number(row.m)) { out.rifiutati.push(toWire(row)); continue }
           if (data) data = keepMissing(d.kind, d.data as Record<string, unknown>, data as Record<string, unknown>, row)
-          write(userId, d.kind, uuid, data, d.m, !!d.deleted)
+          write(userId, d.kind, uuid, data, d.m, d.deleted)
         }
       })
       out.rev = rev

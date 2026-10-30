@@ -92,7 +92,13 @@ export interface WarmupStep { percent: number; reps: number; weight: number }
 
 export function warmupPlan(base: number | null | undefined, step: number): WarmupStep[] {
   if (!base || !(base > 0)) return []
-  return WARMUP_RAMP.map(([percent, reps]) => ({ percent, reps, weight: nearest(base * percent, base, step) }))
+  // con basi piccole e passi grandi i pesi si ripetono o arrivano al carico vero: quelli non servono come riscaldamento
+  const out: WarmupStep[] = []
+  for (const [percent, reps] of WARMUP_RAMP) {
+    const weight = nearest(base * percent, base, step)
+    if (weight < base && !out.some((s) => s.weight === weight)) out.push({ percent, reps, weight })
+  }
+  return out
 }
 
 // ---- doppia progressione -----------------------------------------------------------------------------
@@ -127,13 +133,38 @@ export function progressionFor(sets: ProgressionSet[], step: number, range: [num
 
 export interface PlateLoad { perSide: number[]; leftover: number }
 
-/** Avido dal disco più pesante. `bar` è il peso senza dischi (0 per le plate loaded). */
+/** Avido dal disco più pesante; se lascia un resto (set di dischi su misura: 100 con [25, 20] darebbe 25 e 15 mancanti)
+ *  si cerca fra le combinazioni con al massimo 6 dischi per taglia quella col resto minore e meno dischi.
+ *  ponytail: la ricerca si ferma a 200 000 passi, poi vale il migliore trovato. */
 export function loadPlates(total: number, bar: number, plates: number[]): PlateLoad {
-  let remaining = Math.max(0, (total - bar) / 2)
-  const perSide: number[] = []
-  for (const plate of [...plates].sort((a, b) => b - a)) {
-    if (!(plate > 0)) continue
+  const start = Math.max(0, (total - bar) / 2)
+  const sorted = [...new Set(plates)].filter((p) => p > 0).sort((a, b) => b - a)
+  let remaining = start
+  let perSide: number[] = []
+  for (const plate of sorted) {
     while (remaining + 0.0001 >= plate) { perSide.push(plate); remaining -= plate }
+  }
+  if (remaining >= 0.0001) {
+    let bestLeft = remaining, bestPlates = perSide, budget = 200_000
+    const walk = (i: number, rem: number, chosen: number[]) => {
+      if (budget-- <= 0) return
+      if (bestLeft < 0.0001 && chosen.length >= bestPlates.length) return
+      if (i === sorted.length) {
+        if (rem < bestLeft - 0.0001 || (Math.abs(rem - bestLeft) <= 0.0001 && chosen.length < bestPlates.length)) { bestLeft = rem; bestPlates = [...chosen] }
+        return
+      }
+      const p = sorted[i]
+      let max = 0
+      while (max < 6 && rem + 0.0001 >= p * (max + 1)) max++
+      for (let k = max; k >= 0; k--) {
+        for (let j = 0; j < k; j++) chosen.push(p)
+        walk(i + 1, rem - k * p, chosen)
+        chosen.length -= k
+      }
+    }
+    walk(0, start, [])
+    remaining = bestLeft
+    perSide = bestPlates
   }
   return { perSide, leftover: remaining < 0.0001 ? 0 : Math.round(remaining * 100) / 100 }
 }
@@ -199,6 +230,8 @@ export const PLATES_LB_ALL = [45, 35, 25, 10, 5, 2.5]
 export const defaultPlates = (unit: Unit): number[] =>
   unit === 'kg' ? [25, 20, 15, 10, 5, 2.5, 1.25] : PLATES_LB_ALL.map((p) => p * KG_PER_LB)
 export const defaultBar = (unit: Unit): number => (unit === 'kg' ? 20 : 45 * KG_PER_LB)
+/** Una sbarra di serie (in kg) come la vorrebbe l'unità: in lb si porta al multiplo di 5 lb più vicino (20 kg → 45 lb, non 44,09). */
+export const barForUnit = (kg: number, unit: Unit): number => (unit === 'kg' || !(kg > 0) ? kg : Math.round(kg / KG_PER_LB / 5) * 5 * KG_PER_LB)
 
 const sameList = (a: number[], b: number[]) =>
   a.length === b.length && [...a].sort((x, y) => x - y).every((v, i) => Math.abs(v - [...b].sort((x, y) => x - y)[i]) < 0.001)

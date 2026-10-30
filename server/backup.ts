@@ -4,7 +4,7 @@
 
 import { createHash } from 'node:crypto'
 import {
-  CATALOG_ID_RE, isoSec, normUuid, parseDoc, parseIso, split, MUSCLE_GROUPS,
+  CATALOG_ID_RE, cleanFocus, isoSec, MAX_ITEMS, normUuid, parseDoc, parseIso, split, MUSCLE_GROUPS,
   type DocDataMap, type ExerciseDoc, type Kind, type LiveDoc, type MuscleGroup, type TemplateItem, isTemplateIcon, cleanMuscles } from '../common/docs.ts'
 import { deriveRecords, type RecManual, type RecSet } from '../common/records.ts'
 import { EPSILON } from '../common/domain.ts'
@@ -283,6 +283,10 @@ export interface ImportPlan {
 }
 
 const normName = (s: string) => s.trim().toLowerCase()
+/** Porta nei limiti del validatore: un file con un valore fuori scala perde la precisione, non il documento. */
+const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
+const clampInt = (v: number, min: number, max: number) => clamp(Math.round(v), min, max)
+const cut = (v: string, max: number) => v.slice(0, max)
 
 function decodePhoto(b64: string | undefined): { sha: string; bytes: Uint8Array } | null {
   if (!b64) return null
@@ -337,13 +341,15 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
     const group: MuscleGroup = (MUSCLE_GROUPS as readonly string[]).includes(ex.muscleGroup) ? (ex.muscleGroup as MuscleGroup) : 'petto'
     const photo = decodePhoto(ex.photo)
     // un backup vecchio non ha l'id: lo si ricava dal nome; se resta personalizzato tiene l'icona che vedeva
-    const catalog = ex.catalogID ?? matchByName(CATALOG, ex.name)?.id ?? ''
+    // (un esercizio fatto a mano di proposito non si ricollega al catalogo per nome)
+    const catalog = ex.isCustom ? '' : (ex.catalogID ?? matchByName(CATALOG, ex.name)?.id ?? '')
     const doc = (): ExerciseDoc => ({
-      name: ex.name.trim() || 'Senza nome', muscleGroup: group, notes: ex.notes, incrementStep: ex.incrementStep, sortIndex: ex.sortIndex,
+      name: cut(ex.name.trim(), 80) || 'Senza nome', muscleGroup: group, notes: cut(ex.notes, 2000),
+      incrementStep: clamp(ex.incrementStep, 0.01, 100), sortIndex: clampInt(ex.sortIndex, -1e6, 1e6),
       isArchived: ex.isArchived, createdAt: ex.createdAt,
       glyph: isGlyph(ex.glyph) ? ex.glyph : ex.catalogID === undefined && !catalog ? suggestedGlyph(ex.name, group) : '',
       photo: photo?.sha ?? '', photoOffset: Math.min(1, Math.max(-1, ex.photoOffset ?? 0)),
-      isUnilateral: ex.isUnilateral === true, restSeconds: ex.restSeconds ?? 0,
+      isUnilateral: ex.isUnilateral === true, restSeconds: clampInt(ex.restSeconds ?? 0, 0, 3600),
       catalog, hidden: ex.isHidden === true, custom: ex.isCustom === true,
       muscles: cleanMuscles(ex.muscles ?? []) ?? [], view: ex.view === 'front' || ex.view === 'back' ? ex.view : '',
       barWeight: ex.barWeight ?? 0, weightDisplay: ex.weightDisplay === 'relative' ? 'relative' : 'absolute',
@@ -378,7 +384,7 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
           x.data.date === r.date && x.data.reps === r.reps && Math.abs(x.data.weight - r.weight) < EPSILON && (x.data.singleArm === true) === (r.singleArm === true))
         if (dup) continue
       }
-      add('record', r.uuid, { exercise: target, date: r.date, weight: r.weight, reps: r.reps, note: r.note, singleArm: r.singleArm === true }, 'record')
+      add('record', r.uuid, { exercise: target, date: r.date, weight: clamp(r.weight, 0.01, 2000), reps: clampInt(r.reps, 1, 1000), note: cut(r.note, 500), singleArm: r.singleArm === true }, 'record')
     }
   }
 
@@ -386,39 +392,42 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
   const mapItems = (items: ItemDTO[] | undefined) =>
     (items ?? []).flatMap((i) => {
       const ex = exMap.get(i.exerciseUUID) ?? (liveEx.has(i.exerciseUUID) ? i.exerciseUUID : null)
-      return ex ? [{ exercise: ex, sets: i.sets, repsMin: i.repsMin, repsMax: i.repsMax, weight: i.weight ?? null }] : []
-    })
+      if (!ex) return []
+      const repsMin = clampInt(i.repsMin, 0, 100)
+      return [{ exercise: ex, sets: clampInt(i.sets, 0, 20), repsMin, repsMax: Math.max(repsMin, clampInt(i.repsMax, 0, 100)), weight: i.weight == null ? null : clamp(i.weight, 0, 2000) }]
+    }).slice(0, MAX_ITEMS)
 
   for (const w of file.workouts) {
     if (merge && liveWk.has(w.uuid)) continue
     const workoutDoc = {
-      date: w.date, endedAt: w.endedAt ?? null, note: w.note, name: w.name, focus: w.focus,
+      date: w.date, endedAt: w.endedAt ?? null, note: cut(w.note, 2000), name: cut(w.name, 80), focus: cleanFocus(w.focus) ?? '',
       template: w.template ?? '', plan: mapItems(w.plan),
     }
     if (!add('workout', w.uuid, workoutDoc, 'allenamenti')) continue
     for (const s of w.sets) {
       const ex = s.exerciseUUID ? (exMap.get(s.exerciseUUID) ?? (liveEx.has(s.exerciseUUID) ? s.exerciseUUID : null)) : null
       add('set', s.uuid, {
-        workout: w.uuid, exercise: ex, weight: s.weight, reps: s.reps, rpe: s.rpe ?? null, isWarmup: s.isWarmup,
-        order: s.order, createdAt: s.createdAt, noRecord: s.excludedFromRecords === true, singleArm: s.singleArm === true,
+        workout: w.uuid, exercise: ex, weight: clamp(s.weight, 0, 2000), reps: clampInt(s.reps, 0, 1000),
+        rpe: s.rpe !== undefined && s.rpe >= 1 && s.rpe <= 10 ? s.rpe : null, isWarmup: s.isWarmup,
+        order: clampInt(s.order, 0, 1e6), createdAt: s.createdAt, noRecord: s.excludedFromRecords === true, singleArm: s.singleArm === true,
       }, 'serie')
     }
   }
   for (const b of file.bodyWeights ?? []) {
     if (merge && liveBw.has(b.uuid)) continue
-    add('bodyweight', b.uuid, { date: b.date, weight: b.weight, fromHealth: b.fromHealth }, 'pesate')
+    add('bodyweight', b.uuid, { date: b.date, weight: clamp(b.weight, 20, 400), fromHealth: b.fromHealth }, 'pesate')
   }
 
   for (const p of file.programs ?? []) {
     if (merge && liveProg.has(p.uuid)) continue
-    add('program', p.uuid, { name: p.name.trim() || 'Senza nome', sortIndex: p.sortIndex, createdAt: p.createdAt, useDays: p.useDays === true })
+    add('program', p.uuid, { name: cut(p.name.trim(), 80) || 'Senza nome', sortIndex: clampInt(p.sortIndex, -1e6, 1e6), createdAt: p.createdAt, useDays: p.useDays === true })
   }
   for (const t of file.templates ?? []) {
     if (merge && liveTpl.has(t.uuid)) continue
     // la scheda generale deve esistere (nel file o già qui), altrimenti il giorno resta senza
     const program = t.programID && (fileProg.has(t.programID) || liveProg.has(t.programID)) ? t.programID : ''
     const weekday = Number.isInteger(t.weekday) && t.weekday! >= 0 && t.weekday! <= 6 ? t.weekday! : -1
-    add('template', t.uuid, { name: t.name.trim() || 'Senza nome', items: mapItems(t.items), sortIndex: t.sortIndex, createdAt: t.createdAt, hidden: t.isHidden === true, icon: isTemplateIcon(t.icon) ? t.icon : '', program, weekday }, 'schede')
+    add('template', t.uuid, { name: cut(t.name.trim(), 80) || 'Senza nome', items: mapItems(t.items), sortIndex: clampInt(t.sortIndex, -1e6, 1e6), createdAt: t.createdAt, hidden: t.isHidden === true, icon: isTemplateIcon(t.icon) ? t.icon : '', program, weekday }, 'schede')
   }
 
   if (!merge) {

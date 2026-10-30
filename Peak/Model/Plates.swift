@@ -17,7 +17,19 @@ enum Plates {
     /// Bilanciere di serie: 20 kg, 45 lb.
     static func defaultBar(for unit: WeightUnit) -> Double { unit == .kg ? 20 : 45 * kilogramsPerPound }
 
-    /// Peso predefinito della sbarra in base a pittogramma o nome (come defaultBarWeightFor nel web).
+    /// Una sbarra di serie (in kg) come la vuole l'unità: in lb si porta al multiplo di 5 lb più vicino
+    /// (20 kg → 45 lb, non 44,09). Come `barForUnit` in common/domain.ts.
+    static func bar(_ kilograms: Double, in unit: WeightUnit) -> Double {
+        guard unit == .lb, kilograms > 0 else { return kilograms }
+        return (kilograms / kilogramsPerPound / 5).rounded() * 5 * kilogramsPerPound
+    }
+
+    /// Peso predefinito della sbarra in base a pittogramma o nome (come defaultBarWeightFor nel web), nell'unità scelta.
+    static func defaultBar(for glyph: MachineGlyph?, name: String, unit: WeightUnit) -> Double {
+        bar(defaultBar(for: glyph, name: name), in: unit)
+    }
+
+    /// Lo stesso in kg.
     static func defaultBar(for glyph: MachineGlyph?, name: String) -> Double {
         let n = name.lowercased()
         if n.contains("manubri") || n.contains("dumbbell") { return 0 }
@@ -65,16 +77,50 @@ enum Plates {
         let leftover: Double
     }
 
-    /// Avido dal disco più pesante: con i tagli standard è anche la soluzione con meno dischi.
+    /// Avido dal disco più pesante; se lascia un resto (set di dischi su misura: 100 con [25, 20] darebbe 25 e 15 mancanti)
+    /// si cerca fra le combinazioni con al massimo 6 dischi per taglia quella col resto minore e meno dischi,
+    /// con lo stesso ordine e lo stesso limite di passi di `loadPlates` in common/domain.ts.
     /// `bar` è il peso già presente senza dischi (bilanciere, 0 per le plate loaded).
     static func load(total: Double, bar: Double, plates: [Double]) -> Load {
-        var remaining = max(0, (total - bar) / 2)
+        let start = max(0, (total - bar) / 2)
+        var sorted: [Double] = []
+        for plate in plates.sorted(by: >) where plate > 0 && sorted.last != plate { sorted.append(plate) }
+        var remaining = start
         var perSide: [Double] = []
-        for plate in plates.sorted(by: >) where plate > 0 {
+        for plate in sorted {
             while remaining + 0.0001 >= plate {
                 perSide.append(plate)
                 remaining -= plate
             }
+        }
+        if remaining >= 0.0001 {
+            var bestLeft = remaining
+            var bestPlates = perSide
+            var budget = 200_000
+            var chosen: [Double] = []
+            func walk(_ i: Int, _ rem: Double) {
+                budget -= 1
+                if budget < 0 { return }
+                if bestLeft < 0.0001 && chosen.count >= bestPlates.count { return }
+                if i == sorted.count {
+                    if rem < bestLeft - 0.0001 || (abs(rem - bestLeft) <= 0.0001 && chosen.count < bestPlates.count) {
+                        bestLeft = rem
+                        bestPlates = chosen
+                    }
+                    return
+                }
+                let p = sorted[i]
+                var most = 0
+                while most < 6 && rem + 0.0001 >= p * Double(most + 1) { most += 1 }
+                for k in stride(from: most, through: 0, by: -1) {
+                    chosen.append(contentsOf: Array(repeating: p, count: k))
+                    walk(i + 1, rem - Double(k) * p)
+                    chosen.removeLast(k)
+                }
+            }
+            walk(0, start)
+            remaining = bestLeft
+            perSide = bestPlates
         }
         return Load(perSide: perSide, leftover: remaining < 0.0001 ? 0 : (remaining * 100).rounded() / 100)
     }

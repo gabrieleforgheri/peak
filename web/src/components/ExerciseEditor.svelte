@@ -72,7 +72,7 @@
 		if (wasNew) {
 			own = false; muscles = []; glyph = ''
 			// precompila: il nome si può cambiare subito con uno familiare
-			const d = catalogDefaults(e)
+			const d = catalogDefaults(e, m.settings.unit)
 			name = startName.trim() || d.name; group = d.group; step = d.step; notes = d.notes
 			barWeight = toUnit(d.barWeight)
 			plateLoaded = d.plateLoaded

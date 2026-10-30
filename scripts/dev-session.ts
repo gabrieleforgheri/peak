@@ -1,5 +1,5 @@
 // Sviluppo locale: crea un utente di prova con una sessione e stampa il valore del cookie `peak`.
-// Il server non ha scorciatoie per entrare senza login: è questo script a scrivere nel database.
+// Alternativa a `/auth/dev` (che il server offre solo senza OIDC e solo da localhost): questo script scrive nel database.
 // Uso: node scripts/dev-session.ts [cartellaDati] [sub]
 import { openStore } from '../server/store.ts'
 

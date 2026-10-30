@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   oneRepMax, beats, defaultBarWeightFor, warmupPlan, nearest, nextLoad, progressionFor, loadPlates, plateMode, toDisplay, toKg,
-  displayStep, snapToGrid, switchArm, restAfter, defaultPlates, defaultBar, settingsForUnitChange, PhotoFraming, KG_PER_LB,
+  displayStep, snapToGrid, switchArm, restAfter, defaultPlates, defaultBar, barForUnit, settingsForUnitChange, PhotoFraming, KG_PER_LB,
 } from './domain.ts'
 import { suggestedGlyph, SHAPES, GLYPH_TITLES, glyphSvg, glyphOf, isGlyph } from './glyph.ts'
 import { GLYPHS } from './docs.ts'
@@ -31,6 +31,29 @@ test('confronto dei massimali', () => {
   assert.ok(beats(80, 8, { weight: 80, reps: 5 }))
   assert.ok(!beats(80.005, 5, { weight: 80, reps: 5 }))
   assert.ok(!beats(0, 5, null))
+})
+
+test('riscaldamento: senza ripetizioni né pesi uguali al carico vero', () => {
+  assert.deepEqual(warmupPlan(10, 5).map((s) => s.weight), [5])
+  for (let base = 1; base <= 60; base += 1) for (const step of [1, 2.5, 5, 10]) {
+    const w = warmupPlan(base, step).map((s) => s.weight)
+    assert.equal(new Set(w).size, w.length)
+    assert.ok(w.every((x) => x > 0 && x < base))
+  }
+})
+
+test('dischi: set su misura e sbarra in lb', () => {
+  assert.deepEqual(loadPlates(100, 20, [25, 20]), { perSide: [20, 20], leftover: 0 })
+  assert.deepEqual(loadPlates(120, 0, [50, 20, 30]).perSide, [30, 30])
+  // il greedy resta: stesso risultato dove già funzionava
+  assert.deepEqual(loadPlates(65, 20, [20, 10, 5]), { perSide: [20], leftover: 2.5 })
+  assert.deepEqual(loadPlates(40, 20, []), { perSide: [], leftover: 10 })
+  near(barForUnit(20, 'lb'), 45 * KG_PER_LB, 1e-9)
+  assert.equal(barForUnit(20, 'kg'), 20)
+  assert.equal(barForUnit(0, 'lb'), 0)
+  near(barForUnit(10, 'lb') / KG_PER_LB, 20, 1e-9)
+  // 45 lb di sbarra con dischi in lb: nessun resto
+  assert.equal(loadPlates(135 * KG_PER_LB, barForUnit(20, 'lb'), defaultPlates('lb')).leftover, 0)
 })
 
 test('riscaldamento', () => {
@@ -227,7 +250,11 @@ test('statistiche', () => {
   near(movers[2].deltaPercent, 10)
   assert.equal(movers[0].deltaPercent, 100)
   assert.equal(weeklyStreak([{ date: now }, { date: now - 7 * DAY }, { date: now - 14 * DAY }, { date: now - 28 * DAY }], now), 3)
-  assert.equal(weeklyStreak([{ date: now - 7 * DAY }], now), 0)
+  // la serie resta viva finché la settimana in corso non finisce; saltata una settimana intera si spegne
+  assert.equal(weeklyStreak([{ date: now - 7 * DAY }], now), 1)
+  assert.equal(weeklyStreak([{ date: now - 7 * DAY }, { date: now - 14 * DAY }], now), 2)
+  assert.equal(weeklyStreak([{ date: now - 14 * DAY }], now), 0)
+  assert.equal(weeklyStreak([], now), 0)
   assert.equal(new Date(weekStart(now)).getDay(), 1)
   assert.deepEqual(tickIndices(10, 4), [0, 3, 6, 9])
   assert.deepEqual(tickIndices(3, 4), [0, 1, 2])
@@ -245,6 +272,11 @@ test('formati', () => {
   assert.equal(fmt.duration(80 * 60), '1 h 20 min')
   assert.equal(fmt.delta(4.2, 'it'), '+4,2%')
   assert.equal(fmt.delta(-1, 'it'), '-1%')
+  assert.equal(fmt.delta(-0.04, 'it'), '0%')
+  assert.equal(fmt.delta(0.04, 'it'), '0%')
+  assert.equal(fmt.delta(0.1, 'it'), '+0,1%')
+  assert.equal(fmt.clock(NaN), '0:00')
+  assert.equal(fmt.clock(Infinity), '0:00')
   assert.equal(fmt.setLine(80, 5, 'kg', 'it'), '80 kg × 5')
   assert.equal(fmt.setLine(40, 8, 'kg', 'it', true), '40 kg × 8 · 1 br')
   assert.equal(fmt.setLine(40, 8, 'kg', 'it', true, 'gambe'), '40 kg × 8 · 1 gb')
@@ -273,6 +305,9 @@ test('obiettivo della settimana: la tua media, fra 2 e 5, 3 se non c\'è storia'
   // sei a settimana: si ferma a 5; uno a settimana: sale a 2
   assert.equal(weeklyGoal([1, 2, 3, 4, 5, 6, 7, 8].flatMap((w) => mk(w, 6)), now), 5)
   assert.equal(weeklyGoal([1, 2, 3, 4, 5, 6, 7, 8].flatMap((w) => mk(w, 1)), now), 2)
+  // con meno di otto settimane di storia si divide per quelle che ci sono: 4 a settimana per 3 settimane = 4, non 2
+  assert.equal(weeklyGoal([1, 2, 3].flatMap((w) => mk(w, 4)), now), 4)
+  assert.equal(weeklyGoal([1, 2].flatMap((w) => mk(w, 5)), now), 5)
   // questa settimana non conta
   assert.equal(weeklyGoal([...mk(0, 5), ...mk(1, 3), ...mk(2, 3)].concat([1, 2, 3, 4, 5, 6].flatMap((w) => mk(w + 2, 3))), now), 3)
 })

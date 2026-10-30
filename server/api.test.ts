@@ -110,7 +110,7 @@ test('sync: push, pull, tombstone, uuid in maiuscolo, ultimo scrittore vince', a
   assert.equal(inc.docs[0].data, null)
 })
 
-test('sync: documenti non validi scartati uno per uno, m dal futuro rifiutata, limiti', async () => {
+test('sync: documenti non validi scartati uno per uno, m dal futuro portata a adesso, limiti', async () => {
   const { h } = login('s3')
   const r = await (await call('/api/sync', { h, body: { docs: [
     { kind: 'exercise', uuid: U(2), data: { ...exDoc(''), name: '' }, m: NOW(), deleted: false },
@@ -122,10 +122,24 @@ test('sync: documenti non validi scartati uno per uno, m dal futuro rifiutata, l
     { kind: 'set', uuid: U(5), data: { workout: U(6), exercise: null, weight: 99999, reps: 5, createdAt: '2026-01-01T00:00:00Z' }, m: NOW(), deleted: false },
     { kind: 'exercise', uuid: U(7), data: { ...exDoc('Ok'), extra: 'ignorato' }, m: NOW(), deleted: false },
   ] } })).json() as { scartati: { errore: string }[] }
-  assert.deepEqual(r.scartati.map((s) => s.errore), ['name', 'uuid', 'kind', 'm', 'uuid', 'value', 'weight'])
-  const pulled = await (await call('/api/sync?dopo=0', { h })).json() as { docs: { data: Record<string, unknown> }[] }
-  assert.equal(pulled.docs.length, 1)
-  assert.ok(!('extra' in pulled.docs[0].data), 'solo i campi noti')
+  assert.deepEqual(r.scartati.map((s) => s.errore), ['name', 'uuid', 'kind', 'uuid', 'value', 'weight'])
+  const pulled = await (await call('/api/sync?dopo=0', { h })).json() as { docs: { data: Record<string, unknown>; m: number }[] }
+  assert.equal(pulled.docs.length, 2, 'la m nel futuro non fa perdere il documento')
+  assert.ok(pulled.docs[0].m <= NOW() + 1000, 'la m è portata a adesso')
+  assert.ok(!('extra' in pulled.docs[1].data), 'solo i campi noti')
+  // `deleted` non booleano e chiavi di Object.prototype come impostazioni
+  const bad = await (await call('/api/sync', { h, body: { docs: [
+    { kind: 'exercise', uuid: U(8), data: exDoc('x'), m: NOW(), deleted: 'no' },
+    { kind: 'setting', uuid: 'constructor', data: { value: 1 }, m: NOW(), deleted: false },
+    { kind: 'exercise', uuid: U(9), data: exDoc('y'), m: NOW() },
+  ] } })).json() as { scartati: { errore: string }[] }
+  assert.deepEqual(bad.scartati.map((s) => s.errore), ['deleted', 'uuid', 'deleted'])
+  // un corpo `null` è un 400, non un 500
+  assert.equal((await call('/api/sync', { h, raw: 'null' })).status, 400)
+  assert.equal((await call('/api/amici', { h, raw: 'null' })).status, 400)
+  // cursore oltre la revisione del server (database ripristinato): si rilegge tutto
+  const again = await (await call(`/api/sync?dopo=${app.store.rev + 1000}`, { h })).json() as { docs: unknown[] }
+  assert.equal(again.docs.length, 2)
   assert.equal((await call('/api/sync', { h, body: { docs: 'no' } })).status, 400)
   assert.equal((await call('/api/sync', { h, body: { docs: Array(1001).fill({}) } })).status, 400)
   assert.equal((await call('/api/sync?dopo=-1', { h })).status, 400)
@@ -397,4 +411,25 @@ test('icone: un database già collegato da una 3.0 di prima le fissa una volta (
   assert.equal(app.store.migrateCatalog(), 0)
   const glyphs = app.store.live(u.id).map((d) => (d.data as { glyph: string }).glyph)
   assert.deepEqual(glyphs, ['calfPlatform', '', 'kettlebell'])
+})
+
+test('senza OIDC /auth/dev vale solo dal loopback e senza proxy; /auth/login altrimenti dice «non configurato»', async () => {
+  const dir2 = mkdtempSync(join(tmpdir(), 'peak-dev-'))
+  const bare = createApp({ dataDir: dir2, staticDir: join(dir, 'dist'), env: {} })
+  const b = await listen(bare.server)
+  const get = (path: string, h: Record<string, string> = {}) => fetch(b + path, { redirect: 'manual', headers: h })
+  try {
+    const ok = await get('/auth/dev')
+    assert.equal(ok.status, 302)
+    assert.match(ok.headers.get('set-cookie') ?? '', /^peak=/)
+    assert.equal((await get('/auth/login')).headers.get('location'), '/auth/dev')
+    const proxied = await get('/auth/dev', { 'x-forwarded-for': '203.0.113.9' })
+    assert.notEqual(proxied.status, 302)
+    assert.ok(!proxied.headers.get('set-cookie'), 'dietro un proxy niente sessione')
+    const login = await get('/auth/login', { 'x-forwarded-for': '203.0.113.9' })
+    assert.equal(login.status, 503)
+    assert.match(await login.text(), /not configured|non è configurato/)
+  } finally { bare.server.close(); bare.store.close(); rmSync(dir2, { recursive: true }) }
+  // con OIDC configurato /auth/dev non esiste
+  assert.notEqual((await call('/auth/dev')).status, 302)
 })

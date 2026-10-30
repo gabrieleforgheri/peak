@@ -84,4 +84,10 @@ final class WeeklyGoalTests: XCTestCase {
         XCTAssertEqual(Stats.weeklyGoal(workouts: (1...8).flatMap { workouts(weeksAgo: $0, count: 6, now: now) }, now: now), 5)
         XCTAssertEqual(Stats.weeklyGoal(workouts: (1...8).flatMap { workouts(weeksAgo: $0, count: 1, now: now) }, now: now), 2)
     }
+
+    /// Con meno di otto settimane di storia si divide per quelle che ci sono.
+    func testShortHistoryDividesByItsOwnLength() {
+        let now = Date()
+        XCTAssertEqual(Stats.weeklyGoal(workouts: (1...3).flatMap { workouts(weeksAgo: $0, count: 4, now: now) }, now: now), 4)
+    }
 }

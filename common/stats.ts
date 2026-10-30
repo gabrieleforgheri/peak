@@ -79,17 +79,20 @@ export function tickIndices(count: number, max = 4): number[] {
 export const sessionCount = (workouts: StatWorkout[], days: number, now = Date.now()): number =>
   workouts.filter((w) => w.date >= now - days * DAY).length
 
-/** Settimane consecutive con almeno un allenamento, fino a questa; 0 se questa settimana niente. */
+/** Settimane consecutive con almeno un allenamento, fino a questa. Finché in questa settimana non ti sei allenato la serie
+ *  è ancora viva: si conta da quella scorsa (si spegne solo a fine settimana). */
 export function weeklyStreak(workouts: { date: number }[], now = Date.now()): number {
   const trained = new Set(workouts.map((w) => weekStart(w.date)))
   let streak = 0
-  for (let cursor = weekStart(now); trained.has(cursor); cursor = weeksBefore(cursor, 1)) streak++
+  let cursor = weekStart(now)
+  if (!trained.has(cursor)) cursor = weeksBefore(cursor, 1)
+  for (; trained.has(cursor); cursor = weeksBefore(cursor, 1)) streak++
   return streak
 }
 
 /**
  * L'obiettivo della settimana: quanti allenamenti fai di solito. La media delle ultime otto settimane (questa esclusa),
- * arrotondata, fra 2 e 5; con meno di due settimane di storia, 3.
+ * arrotondata, fra 2 e 5; con meno di due settimane di storia, 3. Se la storia è più corta di otto settimane si divide per quelle che ci sono.
  */
 export function weeklyGoal(workouts: { date: number }[], now = Date.now()): number {
   const thisWeek = weekStart(now)
@@ -99,6 +102,8 @@ export function weeklyGoal(workouts: { date: number }[], now = Date.now()): numb
     if (ws < thisWeek && ws >= weeksBefore(thisWeek, 8)) perWeek.set(ws, (perWeek.get(ws) ?? 0) + 1)
   }
   if (perWeek.size < 2) return 3
-  const avg = [...perWeek.values()].reduce((a, b) => a + b, 0) / 8
+  const first = workouts.reduce((a, w) => Math.min(a, w.date), Infinity)
+  const weeks = Math.max(1, Math.min(8, Math.round((thisWeek - weekStart(first)) / (7 * DAY))))
+  const avg = [...perWeek.values()].reduce((a, b) => a + b, 0) / weeks
   return Math.min(5, Math.max(2, Math.round(avg)))
 }

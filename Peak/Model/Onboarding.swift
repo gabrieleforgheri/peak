@@ -66,7 +66,7 @@ enum Onboarding {
                     let ex = Exercise(name: entry.name, muscleGroup: entry.muscleGroup, incrementStep: entry.step, notes: entry.notes, sortIndex: top)
                     context.insert(ex)
                     ex.catalogID = entry.id
-                    ex.barWeight = Plates.defaultBar(for: entry.machineGlyph, name: entry.name)
+                    ex.barWeight = Plates.defaultBar(for: entry.machineGlyph, name: entry.name, unit: settings.unit)
                     ex.plateLoaded = Plates.guessPlateLoaded(glyph: entry.machineGlyph, name: entry.name)
                     made[entry.id] = ex.uuid
                     created.append(ex.uuid)

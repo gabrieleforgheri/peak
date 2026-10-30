@@ -221,7 +221,7 @@ export function saveExercise(id: string | null, d: Omit<ExerciseDoc, 'createdAt'
 
 /** Un macchinario preso dal catalogo, con i valori che gli dà l'aggiunta guidata. `sortIndex` va dato dentro un batch(), dove il modello non è ancora aggiornato. */
 export function addCatalogExercise(entry: CatalogEntry, sortIndex?: number): string {
-	const d = catalogDefaults(entry)
+	const d = catalogDefaults(entry, getModel().settings.unit)
 	return saveExercise(null, {
 		name: d.name, muscleGroup: d.group, notes: d.notes, incrementStep: d.step, isArchived: false, glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0,
 		catalog: entry.id, hidden: false, custom: false, muscles: [], view: '', barWeight: d.barWeight, weightDisplay: 'absolute', plateLoaded: d.plateLoaded, perSide: false,

@@ -77,4 +77,14 @@ final class StatsTests: XCTestCase {
         ]
         XCTAssertEqual(Stats.weeklyStreak(workouts: workouts), 3)
     }
+
+    /// La serie resta viva finché la settimana in corso non finisce.
+    func testWeeklyStreakStaysAliveBeforeTheFirstWorkoutOfTheWeek() {
+        let lastWeek = [
+            Workout(date: .now.addingTimeInterval(-7 * 86_400)),
+            Workout(date: .now.addingTimeInterval(-14 * 86_400))
+        ]
+        XCTAssertEqual(Stats.weeklyStreak(workouts: lastWeek), 2)
+        XCTAssertEqual(Stats.weeklyStreak(workouts: [Workout(date: .now.addingTimeInterval(-14 * 86_400))]), 0)
+    }
 }

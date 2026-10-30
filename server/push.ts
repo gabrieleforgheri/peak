@@ -22,7 +22,7 @@ export function endpointOk(endpoint: unknown): endpoint is string {
 const b64u = (b: Buffer | string) => Buffer.from(b).toString('base64url')
 
 export type Send = (endpoint: string, headers: Record<string, string>) => Promise<number>
-const defaultSend: Send = async (endpoint, headers) => (await fetch(endpoint, { method: 'POST', headers, signal: AbortSignal.timeout(10_000) })).status
+const defaultSend: Send = async (endpoint, headers) => (await fetch(endpoint, { method: 'POST', headers, redirect: 'error', signal: AbortSignal.timeout(10_000) })).status
 
 export function createPush(store: Store, dataDir: string, baseUrl: string, send: Send = defaultSend) {
   const file = join(dataDir, 'vapid.json')

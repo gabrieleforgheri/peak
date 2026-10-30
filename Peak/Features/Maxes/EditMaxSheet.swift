@@ -84,7 +84,8 @@ struct EditMaxSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Salva") { save() }
                         .font(Theme.rounded(16, .bold))
-                        .disabled(weight <= 0)
+                        // i limiti del server: 0,01-2000 kg (fuori, il massimale verrebbe scartato)
+                        .disabled(!(0.01...2000).contains(weight))
                 }
             }
             .onAppear(perform: prefill)

@@ -18,6 +18,30 @@ Solo iPhone. Codice scritto da un subagente Sonnet, da rivedere. Build `xcodebui
 
 ---
 
+# Correzioni da audit: sync, import, server, formule (31 ottobre 2026)
+
+Web + iPhone in parità dove c'è logica condivisa. Codice scritto da un subagente Sonnet, da rivedere e unire a mano. **Ordine di rilascio: prima il server** (la `m` nel futuro, i `null`, la sicurezza e `/api/importa` sono lì; il web nuovo funziona anche col server vecchio, ma perde le correzioni di sync finché non è aggiornato).
+
+| Fatto | Dove |
+|---|---|
+| `/auth/dev` solo senza OIDC, solo dal loopback e senza `X-Forwarded-For`; senza OIDC fuori dal loopback `/auth/login` dà «non configurato» (503) invece di rimandare a `/auth/dev`. Commento di `dev-session.ts` corretto | `server/auth.ts`, `scripts/dev-session.ts`, `api.test.ts` |
+| Token OIDC senza `exp` numerico rifiutato; Web Push con `redirect: 'error'`; `/api/importa` rispetta `MAX_PHOTOS_PER_USER` (409 `troppe foto`, nulla importato) | `server/auth.ts`, `server/push.ts`, `server/api.ts` |
+| Sync, server: una `m` più di 2 giorni nel futuro si porta a adesso invece di scartare il documento; `deleted` deve essere booleano; `Object.hasOwn` per le chiavi delle impostazioni (`constructor` non passa più); corpo JSON `null` → 400 invece di 500; `GET /api/sync?dopo=` oltre la revisione del server (database ripristinato) rilegge da 0 | `server/store.ts`, `server/http.ts` (`readJson`), `server/api.ts`, `api.test.ts` |
+| Sync, web: i documenti scartati dal server restano sporchi (non si perdono) ma non si rimandano finché non cambiano (`rejected`, per `key` + `m`); `S.error` dice quanti. Foto: segnata caricata solo con `res.ok`; 4xx (409 troppe foto, 400, 413) segnata `failed` e non ritentata ogni giro, 5xx/408/429 ritentate | `web/src/lib/sync.ts`, `idb.ts` (`PhotoRow.failed`) |
+| Limiti in kg come il server: peso corporeo 20-400 kg (prima `>= 20` nell'unità mostrata: sotto 44 lb passava e il server scartava), massimale 0,01-2000 kg (prima 5000 nell'unità mostrata). iPhone: i pesi sono già in kg ma il Salva accettava fuori scala: ora disabilitato fuori dagli stessi limiti | `BodyWeightSheet.svelte`, `EditMaxSheet.svelte`, `BodyWeightCard.swift`, `EditMaxSheet.swift` |
+| Importa backup: valori fuori scala e testi lunghi si riportano nei limiti (nome 80, note 2000, peso, ripetizioni, rpe, passo, recupero, peso corporeo…) invece di scartare il documento; «sostituisci» con ancora qualcosa di scartato è rifiutato con 422 `scartati` (nessuna cancellazione); `scartati` mostrato nel risultato e nuovi messaggi tradotti | `server/backup.ts`, `server/api.ts`, `Settings.svelte`, `en.json`, `backup.test.ts` |
+| Importa backup: un esercizio `isCustom` non si ricollega al catalogo per nome | `server/backup.ts` |
+| Utenti in lb: i macchinari presi dal catalogo / dal primo avvio hanno la sbarra dell'unità (20 kg → 45 lb; le altre al multiplo di 5 lb più vicino) invece di 44,09 lb che dava «Mancano 0,45 lb per lato». Nuova `barForUnit` (web) / `Plates.bar(_:in:)` (iPhone) | `common/domain.ts`, `catalog.ts`, `actions.ts`, `ExerciseEditor.svelte`, `Plates.swift`, `Onboarding.swift` |
+| Lega fra amici: il volume dei 30 giorni non conta le serie di esercizi nascosti o archiviati | `server/social.ts` |
+| Dischi su misura: se il greedy lascia un resto si cerca (max 6 dischi per taglia, 200 000 passi) il resto minore con meno dischi (`loadPlates(100, 20, [25, 20])` → 20+20). iPhone identico | `common/domain.ts`, `Plates.swift` |
+| Riscaldamento: niente pesi ripetuti né uguali o sopra il carico vero (base 10 passo 5 → un solo passo). iPhone identico | `common/domain.ts`, `Warmup.swift` |
+| Obiettivo settimanale: la media divide per `min(8, settimane di storia)`, almeno 1 (prima sempre 8). Serie di settimane: viva durante la settimana in corso (test aggiornato in `domain.test.ts`). iPhone identico | `common/stats.ts`, `Stats.swift` |
+| `parseIso` rifiuta le date impossibili (30 febbraio, `T24:00`); `fromDateInput('')` → adesso (prima NaN e `isoSec` lanciava); `clock(NaN)` → `0:00`; `delta(±0.04)` → `0%` (non `-0%`) | `common/docs.ts`, `web/src/lib/fmt.ts`, `common/format.ts` |
+| **Non fatto, da fare nei file di altri agenti**: (1) `SyncService.swift` riga ~284 ha lo stesso difetto del web: i documenti in `discarded` diventano puliti e non si rimandano mai; (2) `ExerciseEditorView.swift` riga ~480 chiama `Plates.defaultBar(for:name:)` (kg): passare `unit: settings.unit`; (3) `AddSetSheet.svelte` ha lo stesso tetto sbagliato del massimale (`max={5000}` nell'unità mostrata, il server accetta 2000 kg): usare `Math.floor(toDisplay(2000, unit) * 100) / 100` | — |
+| Non verificato nel browser/sul telefono: solo `npm test`, svelte-check, check i18n, build web e xcodebuild build (nessun test Swift eseguito) | — |
+
+---
+
 # «Scorso» ricorda la pagina, recupero dopo il riscaldamento (31 ottobre 2026)
 
 Web + iPhone in parità. Codice scritto da un subagente Sonnet, rivisto e unito a mano.
@@ -95,7 +119,7 @@ Web + iPhone in parità. Codice scritto da subagenti Sonnet, rivisto e unito a m
 | Me: «Record recenti» (uno per macchinario) dopo Panoramica; tolto il vecchio «Ultimi record». Novità degli amici solo in Amici | `MeView.swift`, `Me.svelte` |
 | Tutorial: passi spostati su Allenamento e Me | `TourOverlay.swift`, `Tour.svelte` |
 | Verifiche: `swiftc -typecheck` ok, svelte-check 0, i18n 0 mancanti, `npm test` 107/107, prova in Chrome (build vera su :3016) con e senza il giorno di oggi. | Rilascio: 85/85 test sul telefono vero, installata su iPhone e Watch (il Watch non era nel profilo: registrato con una build di `PeakWatch` verso l'orologio), avvio con i dati veri senza errori nel log; i README di documentazione esclusi dai target in `project.yml`; pagina studio rifatta (clip «home» ora è Allenamento) e testi aggiornati in yG (`lib/seeds.js` + `data/site` sul server, backup `*.bak-peak31-*`) | — |
-| Aperto: la serie di settimane vale 0 finché nella settimana in corso non ti alleni (`weeklyStreak`, voluto da `domain.test.ts:207`?) — da decidere | — |
+| Risolto (31 ottobre 2026): la serie di settimane resta viva finché la settimana in corso non finisce (si conta da quella scorsa); `weeklyStreak` web, server e iPhone | `common/stats.ts`, `Stats.swift` |
 
 ---
 
