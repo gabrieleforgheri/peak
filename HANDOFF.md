@@ -1,3 +1,18 @@
+# «Scorso» ricorda la pagina, recupero dopo il riscaldamento (31 ottobre 2026)
+
+Web + iPhone in parità. Codice scritto da un subagente Sonnet, rivisto e unito a mano.
+
+| Fatto | Dove |
+|---|---|
+| «Scorso» si ricorda l'ultima pagina scelta (0 ultime serie, 1 ultimi allenamenti), una sola per tutte le card, per dispositivo: web `localStorage` `peak.prevPage` (try/catch), si posa sulla pagina salvata senza animazione all'apertura e scrive solo se lo scorrimento cambia pagina (lo scatto iniziale non riscrive); iPhone `@AppStorage("peak.prevPage")`, `prevPage` parte da lì | `Session.svelte` (`restorePrev`, `prevScrolled`), `WorkoutSessionView.swift` |
+| Impostazione sincronizzata `warmupRestPercent` (intero 0..100, predefinito 50): dopo una serie di riscaldamento il timer dura `round(recupero × %)`, minimo 5 s, 0 = nessun timer. Vale anche per il recupero proprio del macchinario | `common/docs.ts`, `restAfter` in `common/domain.ts` (+ test), `AppSettings.restDuration(for:warmup:)` |
+| Dove parte il timer: web `Session.svelte` `added()` (tocca anche «Ripeti» e modifica); iPhone `WorkoutSessionView.addSet` e serie dal Watch in `WatchBridge.record` (la Live Activity segue `RestTimer`, nessuna modifica) | — |
+| Impostazioni → Allenamento: scelta 0/25/50/75/100 % «Recupero dopo il riscaldamento» sotto il recupero predefinito, visibile solo con il timer attivo | `Settings.svelte`, `TrainingSettingsView.swift`, `en.json` |
+| Ordine di rilascio: prima il server. Verificato in `cleanSetting`/`store.push`: una chiave non nota dà `fail('value')` e il documento finisce in `scartati` (non è un errore fatale, ma l'impostazione non viene salvata né sincronizzata finché il server non è aggiornato) | `common/docs.ts`, `server/store.ts` |
+| Non verificato nel browser/sul telefono: solo `npm test`, svelte-check, build web e xcodebuild | — |
+
+---
+
 # Benvenuto nuovo, medaglie, animazioni, zoom dei muscoli (29 ottobre 2026 — Peak 3.4, build 16)
 
 Onboarding, medaglie e animazioni solo sul web per ora (iPhone dopo); zoom e dimezzamento a un braccio su web + iPhone. Codice scritto da subagenti Sonnet, rivisto e unito a mano.

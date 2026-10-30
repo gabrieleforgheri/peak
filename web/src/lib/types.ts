@@ -39,7 +39,7 @@ export interface Prg extends ProgramDoc { uuid: string }
 export interface Bw { uuid: string; dateMs: number; weight: number; fromHealth: boolean }
 export interface Settings {
 	unit: 'kg' | 'lb'; accent: (typeof ACCENTS)[number]
-	restTimerEnabled: boolean; restSeconds: number; progressionEnabled: boolean; repRangeMin: number; repRangeMax: number
+	restTimerEnabled: boolean; restSeconds: number; warmupRestPercent: number; progressionEnabled: boolean; repRangeMin: number; repRangeMax: number
 	plateCalculatorEnabled: boolean; availablePlates: number[]; tutorialDone: boolean; tourSeen: number; machineTipsSeen: boolean; weeklyGoal: number; language: '' | 'it' | 'en'; activeProgram: string
 }
 export interface Model {

@@ -38,6 +38,18 @@ struct TrainingSettingsView: View {
                         Text("Recupero predefinito: \(Fmt.duration(seconds: settings.restSeconds))")
                             .font(Theme.rounded(14, .medium))
                     }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Recupero dopo il riscaldamento")
+                            .font(Theme.rounded(14, .medium))
+                        Picker("Recupero dopo il riscaldamento", selection: $settings.warmupRestPercent) {
+                            ForEach([0, 25, 50, 75, 100], id: \.self) { Text("\($0)%").tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                        Text("Percentuale del recupero normale")
+                            .font(Theme.rounded(11, .medium))
+                            .foregroundStyle(Theme.textTertiary)
+                    }
                 }
 
                 Divider().overlay(Theme.stroke)

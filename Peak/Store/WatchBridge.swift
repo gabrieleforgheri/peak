@@ -157,8 +157,9 @@ final class WatchBridge: NSObject, WCSessionDelegate {
             // dal Watch non si sceglie: le serie nuove partono a due
             context: context
         )
-        if settings.restTimerEnabled {
-            RestTimer.shared.start(seconds: exercise.restSeconds > 0 ? exercise.restSeconds : settings.restSeconds)
+        let rest = settings.restDuration(for: exercise, warmup: watchSet.isWarmup)
+        if settings.restTimerEnabled, rest > 0 {
+            RestTimer.shared.start(seconds: rest)
         }
         WorkoutActivity.start(for: workout, unit: settings.unit)
         show(exercise, in: workout)

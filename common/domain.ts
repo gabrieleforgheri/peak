@@ -69,6 +69,12 @@ export function snapToGrid(weight: number, bar: number, step: number): number {
 /** Passando da due bracci a uno: ricordo il peso di prima (`before`) e quello dopo la metà (`after`). */
 export interface ArmMemo { before: number; after: number }
 
+/** Secondi di recupero dopo una serie: dopo il riscaldamento una percentuale di quello normale (almeno 5 s, 0 % = nessun timer). 0 = niente timer. */
+export function restAfter(baseSeconds: number, warmup: boolean, warmupPercent: number): number {
+  if (!warmup) return baseSeconds
+  return warmupPercent > 0 ? Math.max(5, Math.round(baseSeconds * warmupPercent / 100)) : 0
+}
+
 /** Il peso dopo un tocco sul selettore «2 | 1». A uno: metà, sulla griglia. Di nuovo a due: se il peso è ancora
  *  quello dimezzato torna esattamente il precedente, altrimenti il doppio sulla griglia. */
 export function switchArm(

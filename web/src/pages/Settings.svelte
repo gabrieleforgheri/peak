@@ -154,6 +154,8 @@
 		<hr style="border:0;border-top:1px solid var(--stroke);width:100%;margin:0" />
 		<label class="row between"><span>{t('Timer di recupero')}</span><input class="toggle" type="checkbox" checked={s.restTimerEnabled} onchange={(e) => setSetting('restTimerEnabled', e.currentTarget.checked)} /></label>
 		{#if s.restTimerEnabled}<Stepper value={s.restSeconds} step={15} min={15} max={600} unit={t('secondi')} onchange={(v) => setSetting('restSeconds', v)} />
+			<div><div>{t('Recupero dopo il riscaldamento')}</div><div class="small muted">{t('Percentuale del recupero normale')}</div></div>
+			<div class="seg">{#each [0, 25, 50, 75, 100] as p}<button class:on={s.warmupRestPercent === p} onclick={() => setSetting('warmupRestPercent', p)}>{p}%</button>{/each}</div>
 			{#if push !== 'unsupported'}
 				<label class="row between"><span>{t('Avviso a fine recupero')}<br /><span class="small muted">{push === 'needs-install' ? t('Su iPhone serve Peak aggiunta alla schermata Home (Condividi → Aggiungi alla schermata Home).') : push === 'denied' ? t('Le notifiche sono bloccate: riattivale dalle impostazioni del browser.') : t('Arriva anche a telefono bloccato. Con la rete assente suona solo con la pagina aperta.')}</span></span>
 					<input class="toggle" type="checkbox" checked={push === 'on'} disabled={push === 'needs-install' || push === 'denied'} onchange={(e) => togglePush(e.currentTarget.checked)} /></label>

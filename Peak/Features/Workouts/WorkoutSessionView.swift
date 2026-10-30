@@ -387,7 +387,7 @@ struct WorkoutSessionView: View {
             singleArm: singleArm,
             context: context
         )
-        startRest(for: exercise)
+        startRest(for: exercise, warmup: isWarmup)
         currentExerciseID = exercise.persistentModelID
         WatchBridge.shared.show(exercise, in: workout)
 
@@ -436,9 +436,10 @@ struct WorkoutSessionView: View {
         .transition(.move(edge: .top).combined(with: .opacity))
     }
 
-    private func startRest(for exercise: Exercise) {
-        if settings.restTimerEnabled, workout.isActive {
-            RestTimer.shared.start(seconds: exercise.restSeconds > 0 ? exercise.restSeconds : settings.restSeconds)
+    private func startRest(for exercise: Exercise, warmup: Bool) {
+        let seconds = settings.restDuration(for: exercise, warmup: warmup)
+        if settings.restTimerEnabled, workout.isActive, seconds > 0 {
+            RestTimer.shared.start(seconds: seconds)
         }
         WorkoutActivity.update(for: workout, unit: settings.unit)
     }
@@ -603,7 +604,9 @@ private struct ExerciseSessionCard: View {
 
     @State private var showingMuscleDetail = false
     /// Pagina visibile di «Scorso» (0 = ultime serie, 1 = ultimi allenamenti), per i puntini.
-    @State private var prevPage: Int? = 0
+    /// Parte dall'ultima scelta (per tutte le card, su questo dispositivo) e la riscrive quando scorri.
+    @State private var prevPage: Int? = UserDefaults.standard.integer(forKey: "peak.prevPage")
+    @AppStorage("peak.prevPage") private var savedPrevPage = 0
 
     var body: some View {
         GlassCard(padding: 16, tint: isCurrent ? exercise.muscleGroup.tint : nil) {
@@ -686,6 +689,9 @@ private struct ExerciseSessionCard: View {
                                 }
                                 .scrollTargetBehavior(.paging)
                                 .scrollPosition(id: $prevPage)
+                                .onChange(of: prevPage) { _, page in
+                                    if let page { savedPrevPage = page }
+                                }
 
                                 HStack(spacing: 4) {
                                     ForEach(0..<2, id: \.self) { i in

@@ -59,6 +59,12 @@ test('obiettivo settimanale: intero da 0 a 7', () => {
   for (const bad of [-1, 8, 2.5, '3', null]) assert.deepEqual(parseDoc('setting', 'weeklyGoal', { value: bad }), { error: 'value' })
 })
 
+test('recupero dopo il riscaldamento: intero da 0 a 100, predefinito 50', () => {
+  assert.equal(SETTING_DEFAULTS.warmupRestPercent, 50)
+  for (const ok of [0, 25, 100]) assert.deepEqual(parseDoc('setting', 'warmupRestPercent', { value: ok }), { data: { value: ok } })
+  for (const bad of [-1, 101, 12.5, '50', null]) assert.deepEqual(parseDoc('setting', 'warmupRestPercent', { value: bad }), { error: 'value' })
+})
+
 test('serie e massimali: singleArm è un booleano, assente = falso', () => {
   const set = { workout: U(1), exercise: null, weight: 40, reps: 8, order: 0, createdAt: '2026-10-01T08:00:00Z' }
   assert.equal((parseDoc('set', U(2), set) as { data: { singleArm: boolean } }).data.singleArm, false)

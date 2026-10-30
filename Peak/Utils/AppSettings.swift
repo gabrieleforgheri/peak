@@ -81,6 +81,7 @@ final class AppSettings {
         static let health = "settings.healthSyncEnabled"
         static let restEnabled = "settings.restTimerEnabled"
         static let restSeconds = "settings.restSeconds"
+        static let warmupRestPercent = "settings.warmupRestPercent"
         static let progression = "settings.progressionEnabled"
         static let repMin = "settings.repRangeMin"
         static let repMax = "settings.repRangeMax"
@@ -132,6 +133,19 @@ final class AppSettings {
     /// Recupero predefinito in secondi; ogni macchinario può avere il suo.
     var restSeconds: Int {
         didSet { defaults.set(restSeconds, forKey: Key.restSeconds) }
+    }
+
+    /// Recupero dopo una serie di riscaldamento, in percentuale di quello normale (0 = nessun timer).
+    var warmupRestPercent: Int {
+        didSet { defaults.set(warmupRestPercent, forKey: Key.warmupRestPercent) }
+    }
+
+    /// Secondi di recupero dopo una serie di `exercise`; 0 = nessun timer.
+    /// Dopo il riscaldamento è la percentuale scelta (almeno 5 s). Stessa regola di `restAfter` in common/domain.ts.
+    func restDuration(for exercise: Exercise, warmup: Bool) -> Int {
+        let base = exercise.restSeconds > 0 ? exercise.restSeconds : restSeconds
+        guard warmup else { return base }
+        return warmupRestPercent > 0 ? max(5, Int((Double(base) * Double(warmupRestPercent) / 100).rounded())) : 0
     }
 
     /// Suggerimento del prossimo carico (doppia progressione).
@@ -232,6 +246,7 @@ final class AppSettings {
         self.lastBackupDate = defaults.object(forKey: Key.lastBackup) as? Date
         self.restTimerEnabled = defaults.object(forKey: Key.restEnabled) as? Bool ?? true
         self.restSeconds = defaults.object(forKey: Key.restSeconds) as? Int ?? 120
+        self.warmupRestPercent = defaults.object(forKey: Key.warmupRestPercent) as? Int ?? 50
         self.progressionEnabled = defaults.object(forKey: Key.progression) as? Bool ?? true
         self.repRangeMin = defaults.object(forKey: Key.repMin) as? Int ?? 8
         self.repRangeMax = defaults.object(forKey: Key.repMax) as? Int ?? 12

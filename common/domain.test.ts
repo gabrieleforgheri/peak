@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   oneRepMax, beats, defaultBarWeightFor, warmupPlan, nearest, nextLoad, progressionFor, loadPlates, plateMode, toDisplay, toKg,
-  displayStep, snapToGrid, switchArm, defaultPlates, defaultBar, settingsForUnitChange, PhotoFraming, KG_PER_LB,
+  displayStep, snapToGrid, switchArm, restAfter, defaultPlates, defaultBar, settingsForUnitChange, PhotoFraming, KG_PER_LB,
 } from './domain.ts'
 import { suggestedGlyph, SHAPES, GLYPH_TITLES, glyphSvg, glyphOf, isGlyph } from './glyph.ts'
 import { GLYPHS } from './docs.ts'
@@ -330,4 +330,12 @@ test('un braccio in lb: griglia nel passo nativo', () => {
   // con la sbarra da 20 kg (44,09 lb): griglia 44,09 + 5k; 100 kg = 220,46 lb -> 110,23 -> k = 13
   const bar = lb(20)
   near(switchArm(true, lb(100), null, bar, step).weight, bar + 13 * step)
+})
+
+test('recupero dopo il riscaldamento', () => {
+  assert.equal(restAfter(120, false, 50), 120)
+  assert.equal(restAfter(120, true, 50), 60)
+  assert.equal(restAfter(120, true, 100), 120)
+  assert.equal(restAfter(120, true, 0), 0)
+  assert.equal(restAfter(15, true, 25), 5) // 3,75 s: minimo 5
 })

@@ -121,6 +121,8 @@ export interface DocDataMap {
 export const SETTING_DEFAULTS = {
   unit: 'kg', accent: 'lime',
   restTimerEnabled: true, restSeconds: 120,
+  /** Il recupero dopo una serie di riscaldamento, in percentuale di quello normale (0 = nessun timer). */
+  warmupRestPercent: 50,
   progressionEnabled: true, repRangeMin: 8, repRangeMax: 12,
   plateCalculatorEnabled: true, availablePlates: [25, 20, 15, 10, 5, 2.5, 1.25],
   /** Il tutorial l'hai già fatto (su un dispositivo qualsiasi). */
@@ -158,6 +160,7 @@ function cleanSetting(key: string, v: unknown): unknown {
     case 'restTimerEnabled': case 'progressionEnabled': case 'plateCalculatorEnabled': case 'tutorialDone': case 'machineTipsSeen':
       return typeof v === 'boolean' ? v : undefined
     case 'restSeconds': return int(v, 15, 600) ?? undefined
+    case 'warmupRestPercent': return int(v, 0, 100) ?? undefined
     case 'activeProgram': return v === '' || (typeof v === 'string' && normUuid(v) !== null) ? v : undefined
     case 'language': return v === '' || v === 'it' || v === 'en' ? v : undefined
     case 'weeklyGoal': return int(v, 0, 7) ?? undefined

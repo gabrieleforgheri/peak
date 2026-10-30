@@ -22,7 +22,7 @@ enum SyncDocs {
 
     /// Le impostazioni che seguono l'account. Quelle del Watch, di Salute e dei dati interni restano del dispositivo.
     static let settingKeys = [
-        "unit", "accent", "restTimerEnabled", "restSeconds", "progressionEnabled", "repRangeMin",
+        "unit", "accent", "restTimerEnabled", "restSeconds", "warmupRestPercent", "progressionEnabled", "repRangeMin",
         "repRangeMax", "plateCalculatorEnabled", "availablePlates", "tutorialDone", "tourSeen", "machineTipsSeen", "weeklyGoal", "language", "activeProgram"
     ]
 
@@ -32,6 +32,7 @@ enum SyncDocs {
         case "accent": return settings.accent.rawValue
         case "restTimerEnabled": return settings.restTimerEnabled
         case "restSeconds": return settings.restSeconds
+        case "warmupRestPercent": return settings.warmupRestPercent
         case "progressionEnabled": return settings.progressionEnabled
         case "repRangeMin": return settings.repRangeMin
         case "repRangeMax": return settings.repRangeMax
@@ -57,6 +58,7 @@ enum SyncDocs {
         case "accent": guard let raw = value as? String, let v = AccentPalette(rawValue: raw) else { return false }; settings.accent = v
         case "restTimerEnabled": guard let v = value as? Bool else { return false }; settings.restTimerEnabled = v
         case "restSeconds": guard let v = number(15, 600) else { return false }; settings.restSeconds = Int(v)
+        case "warmupRestPercent": guard let v = number(0, 100) else { return false }; settings.warmupRestPercent = Int(v)
         case "progressionEnabled": guard let v = value as? Bool else { return false }; settings.progressionEnabled = v
         case "repRangeMin": guard let v = number(1, 30) else { return false }; settings.repRangeMin = Int(v)
         case "repRangeMax": guard let v = number(1, 30) else { return false }; settings.repRangeMax = Int(v)

@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte'
 	import { flip } from 'svelte/animate'
 	import type { MuscleGroup } from '@common/docs.ts'
-	import { oneRepMax } from '@common/domain.ts'
+	import { oneRepMax, restAfter } from '@common/domain.ts'
 	import { addSet, addToPlan, deleteWorkout, endWorkout, itemsFromWorkout, moveInPlan, patchWorkout, removeFromPlan, replaceInPlan, templateChanged, todayItems, updateTemplateFromWorkout } from '../lib/actions.ts'
 	import { GROUP_NAMES, V, W, clock, dateShort, dateTime, duration, notebookLine, setLine, targetLine } from '../lib/fmt.ts'
 	import { t, tn } from '../lib/i18n.ts'
@@ -65,7 +65,11 @@
 			confetti({ x: innerWidth / 2, y: 120 })
 			play('record')
 		} else play('set')
-		if (wk?.isActive && m.settings.restTimerEnabled) startRest(ex.restSeconds || m.settings.restSeconds)
+		if (wk?.isActive && m.settings.restTimerEnabled) {
+			// dopo il riscaldamento il recupero è una percentuale di quello normale (0 % = nessun timer)
+			const secs = restAfter(ex.restSeconds || m.settings.restSeconds, r.isWarmup, m.settings.warmupRestPercent)
+			if (secs > 0) startRest(secs)
+		}
 	}
 
 	function previousWorkingSets(exercise: Ex, currentWk: Wk): SetItem[] {
@@ -99,6 +103,24 @@
 	}
 	// pagina visibile del blocco «Scorso» di ogni esercizio, per i puntini
 	let prevPage = $state<Record<string, number>>({})
+	// l'ultima pagina scelta (0 ultime serie, 1 ultimi allenamenti) vale per tutte le card e resta su questo dispositivo
+	const PREV_KEY = 'peak.prevPage'
+	const savedPage = (): number => { try { return localStorage.getItem(PREV_KEY) === '1' ? 1 : 0 } catch { return 0 } }
+	function prevScrolled(uuid: string, el: HTMLElement) {
+		if (!el.clientWidth) return // nascosto: niente larghezza, niente pagina
+		const page = Math.round(el.scrollLeft / el.clientWidth)
+		prevPage[uuid] = page
+		// lo scatto iniziale a pagina salvata arriva qui con lo stesso valore: non riscrive nulla
+		if (page !== savedPage()) { try { localStorage.setItem(PREV_KEY, String(page)) } catch { /* senza archivio la scelta vale finché la pagina è aperta */ } }
+	}
+	// all'apertura il blocco si posa subito (senza animazione) sull'ultima pagina scelta
+	function restorePrev(el: HTMLElement, uuid: string) {
+		const page = savedPage()
+		prevPage[uuid] = page
+		el.style.scrollSnapType = 'none'
+		el.scrollLeft = page * el.clientWidth
+		requestAnimationFrame(() => (el.style.scrollSnapType = ''))
+	}
 
 	function formatSetLine(weightKg: number, reps: number, ex: Ex, singleArm: boolean): { main: string; sub?: string } {
 		if (ex.weightDisplay === 'relative' && !ex.perSide && (ex.barWeight ?? 0) > 0) {
@@ -206,7 +228,7 @@
 							{#if prevSets.length}
 								<div class="stack" style="gap:3px;margin-top:2px">
 									<div class="tiny muted" style="font-weight:700">{t('Scorso:')}</div>
-									<div class="prev-pager" onscroll={(e) => (prevPage[ex.uuid] = Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
+									<div class="prev-pager" use:restorePrev={ex.uuid} onscroll={(e) => prevScrolled(ex.uuid, e.currentTarget)}>
 										<div class="stack" style="gap:2px">
 											{#each prevSets as s, i}
 												{@const fmt = formatSetLine(s.weight, s.reps, ex, s.singleArm)}
