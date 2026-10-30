@@ -3,7 +3,8 @@
 import type { Kind } from '@common/docs.ts'
 
 export interface Row { key: string; kind: Kind; uuid: string; data: unknown; m: number; deleted: boolean; dirty: boolean }
-export interface PhotoRow { sha: string; blob: Blob; uploaded: boolean }
+/** `failed`: il server l'ha rifiutata in modo definitivo (troppe foto, file non valido): non si riprova a ogni giro. */
+export interface PhotoRow { sha: string; blob: Blob; uploaded: boolean; failed?: boolean }
 
 let db: IDBDatabase | null = null
 

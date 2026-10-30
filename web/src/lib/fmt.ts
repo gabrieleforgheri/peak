@@ -65,6 +65,7 @@ export const toDateInput = (ms: number): string => {
 /** Data scelta + ora attuale (un massimale inserito oggi vale "adesso"). */
 export const fromDateInput = (v: string): number => {
 	const [y, m, d] = v.split('-').map(Number)
+	if (!y || !m || !d) return Date.now() // campo vuoto o incompleto
 	const now = new Date()
 	const same = y === now.getFullYear() && m === now.getMonth() + 1 && d === now.getDate()
 	return same ? now.getTime() : new Date(y, m - 1, d, 12).getTime()

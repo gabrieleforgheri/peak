@@ -52,4 +52,9 @@ final class WarmupTests: XCTestCase {
             }
         }
     }
+
+    /// Base piccola e passo grande: niente ripetizioni né pesi uguali al carico vero.
+    func testSmallBaseDropsDuplicatesAndTheWorkingWeight() {
+        XCTAssertEqual(Warmup.plan(base: 10, step: 5).map(\.weight), [5])
+    }
 }

@@ -37,7 +37,9 @@ const MAX_MS = Date.UTC(2100, 0, 1)
 export function parseIso(value: unknown): number | null {
   if (typeof value !== 'string' || !ISO_RE.test(value)) return null
   const ms = Date.parse(value)
-  return Number.isFinite(ms) && ms >= MIN_MS && ms <= MAX_MS ? floorSec(ms) : null
+  // andata e ritorno: 2023-02-30 o T24:00:00 non esistono, ma Date li fa scorrere al giorno dopo
+  if (!Number.isFinite(ms) || ms < MIN_MS || ms > MAX_MS || new Date(ms).toISOString().slice(0, 19) !== value.slice(0, 19)) return null
+  return floorSec(ms)
 }
 
 const UUID_RE = /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/

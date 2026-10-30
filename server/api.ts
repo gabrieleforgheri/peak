@@ -45,7 +45,8 @@ export function createApi(store: Store, auth: Auth, push: Push, commit: () => st
     if (path === '/api/sync' && method === 'GET') {
       const dopo = Number(query.get('dopo') ?? 0)
       if (!Number.isInteger(dopo) || dopo < 0) throw new HttpError(400, 'dopo')
-      sendJson(res, 200, store.pull(user.id, dopo))
+      // cursore oltre la revisione del server: database ripristinato da un backup, il client deve rileggere tutto
+      sendJson(res, 200, store.pull(user.id, dopo > store.rev ? 0 : dopo))
       return true
     }
 
@@ -84,6 +85,10 @@ export function createApi(store: Store, auth: Auth, push: Push, commit: () => st
       // la prima scelta su un account vuoto: due dispositivi non possono farla entrambi
       if (query.get('primo') === '1' && store.hasData(user.id)) { sendJson(res, 409, { error: 'account non vuoto' }); return true }
       const plan = planImport(parsed.file, store.live(user.id), modo)
+      // «sostituisci» cancella il resto: con documenti scartati lascerebbe riferimenti nel vuoto e dati persi in silenzio
+      if (modo === 'sostituisci' && plan.scartati > 0) { sendJson(res, 422, { error: 'scartati', scartati: plan.scartati }); return true }
+      const nuove = [...plan.photos.keys()].filter((sha) => !store.getPhoto(user.id, sha)).length
+      if (nuove > 0 && store.photoCount(user.id) + nuove > MAX_PHOTOS_PER_USER) throw new HttpError(409, 'troppe foto')
       store.applyPlan(user.id, plan)
       sendJson(res, 200, { conteggi: plan.conteggi, orfani: plan.orfani, scartati: plan.scartati, rev: store.rev })
       return true

@@ -34,4 +34,18 @@ final class PlatesTests: XCTestCase {
         XCTAssertEqual(Plates.load(total: 20, bar: 20, plates: standard).perSide, [])
         XCTAssertEqual(Plates.load(total: 15, bar: 20, plates: standard).perSide, [])
     }
+
+    /// Un set su misura: il greedy da solo lascerebbe 15 per lato.
+    func testCustomPlateSetFindsAnExactLoad() {
+        let load = Plates.load(total: 100, bar: 20, plates: [25, 20])
+        XCTAssertEqual(load.perSide, [20, 20])
+        XCTAssertEqual(load.leftover, 0)
+    }
+
+    /// Come `barForUnit` nel web: 20 kg sono 45 lb, la sbarra di serie dell'unità.
+    func testBarFollowsTheUnit() {
+        XCTAssertEqual(Plates.defaultBar(for: .barbell, name: "Curl Bilanciere", unit: .kg), 20)
+        XCTAssertEqual(Plates.defaultBar(for: .barbell, name: "Curl Bilanciere", unit: .lb), 45 * 0.45359237, accuracy: 1e-9)
+        XCTAssertEqual(Plates.defaultBar(for: .barbell, name: "Rematore macchina", unit: .lb), 0)
+    }
 }

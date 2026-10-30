@@ -196,3 +196,12 @@ test('a un braccio: non entra nel massimale mostrato agli amici', () => {
   ] as unknown as LiveDoc[]
   assert.deepEqual(sharedView(docs).maxes.map((m) => [m.weight, m.reps]), [[60, 5]])
 })
+
+test('lega: il volume non conta le serie di esercizi nascosti o archiviati', async () => {
+  const kim = login('lola')
+  await train(kim, 70, { name: 'Panca', catalog: 'bench-press-barbell' }, 100, 10, 0.1) // 1000 kg visibili
+  await train(kim, 71, { name: 'Segreto', catalog: '', hidden: true }, 100, 10, 0.1)
+  await train(kim, 72, { name: 'Vecchio', catalog: '', archived: true }, 100, 10, 0.1)
+  const { righe } = await (await call('/api/lega', kim.h)).json() as { righe: { volume30: number; sessions30: number }[] }
+  assert.deepEqual([righe[0].volume30, righe[0].sessions30], [1000, 3])
+})

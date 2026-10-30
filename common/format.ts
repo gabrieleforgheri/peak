@@ -18,7 +18,7 @@ export function volume(kg: number, unit: Unit, locale = 'it'): string {
 
 /** "1:30". */
 export function clock(seconds: number): string {
-  const s = Math.max(0, Math.round(seconds))
+  const s = Number.isFinite(seconds) ? Math.max(0, Math.round(seconds)) : 0
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 }
 
@@ -29,7 +29,10 @@ export function duration(seconds: number): string {
 }
 
 /** "+4,2%". */
-export const delta = (percent: number, locale = 'it'): string => `${percent > 0 ? '+' : ''}${nf(locale, 0, 1).format(percent)}%`
+export const delta = (percent: number, locale = 'it'): string => {
+  const p = Math.abs(percent) < 0.05 || !Number.isFinite(percent) ? 0 : percent // niente «-0%»
+  return `${p > 0 ? '+' : ''}${nf(locale, 0, 1).format(p)}%`
+}
 
 /** Il lato di una serie: le gambe parlano di gambe, il resto di braccia. */
 export type SideKind = 'long' | 'one' | 'two'

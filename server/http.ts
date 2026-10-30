@@ -25,10 +25,14 @@ export function readBody(req: IncomingMessage, limit: number): Promise<Buffer> {
 }
 
 export async function readJson(req: IncomingMessage, limit: number): Promise<unknown> {
-  try { return JSON.parse((await readBody(req, limit)).toString('utf8')) } catch (e) {
+  let body: unknown
+  try { body = JSON.parse((await readBody(req, limit)).toString('utf8')) } catch (e) {
     if (e instanceof HttpError) throw e
     throw new HttpError(400, 'JSON non valido')
   }
+  // `null` farebbe lanciare le destrutturazioni dei chiamanti: 500 al posto di 400
+  if (body === null) throw new HttpError(400, 'JSON non valido')
+  return body
 }
 
 export function sendJson(res: ServerResponse, status: number, body: unknown, extra: Record<string, string> = {}) {

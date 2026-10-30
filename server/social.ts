@@ -78,7 +78,9 @@ export interface Activity { volume30: number; sessions30: number; streak: number
 export function activityOf(docs: LiveDoc[], now = Date.now()): Activity {
   const d = split(docs)
   const volumeOf = new Map<string, number>()
-  for (const s of d.sets) if (!s.data.isWarmup) volumeOf.set(s.data.workout, (volumeOf.get(s.data.workout) ?? 0) + setVolume(s.data))
+  // le serie di esercizi nascosti o archiviati non escono: il volume non deve tradirli
+  const visible = new Set(d.exercises.filter(shown).map((e) => e.uuid))
+  for (const s of d.sets) if (!s.data.isWarmup && visible.has(s.data.exercise)) volumeOf.set(s.data.workout, (volumeOf.get(s.data.workout) ?? 0) + setVolume(s.data))
   const done = d.workouts.filter((w) => w.data.endedAt).map((w) => ({ uuid: w.uuid, date: Date.parse(w.data.date) }))
   const recent = done.filter((w) => w.date >= now - 30 * 86_400_000)
   return {

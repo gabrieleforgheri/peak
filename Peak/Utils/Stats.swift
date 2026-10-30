@@ -125,7 +125,8 @@ enum Stats {
         return workouts.filter { $0.date >= cutoff }.count
     }
 
-    /// Serie di settimane consecutive con almeno un allenamento, fino a oggi.
+    /// Serie di settimane consecutive con almeno un allenamento, fino a oggi. Finché in questa settimana non ti sei
+    /// allenato la serie è ancora viva: si conta da quella scorsa. Come `weeklyStreak` in common/stats.ts.
     static func weeklyStreak(workouts: [Workout], calendar: Calendar = .current, now: Date = Date()) -> Int {
         var cal = calendar
         cal.firstWeekday = 2
@@ -137,6 +138,7 @@ enum Stats {
 
         var streak = 0
         var cursor = thisWeek
+        if !trainedWeeks.contains(cursor), let previous = cal.date(byAdding: .weekOfYear, value: -1, to: cursor) { cursor = previous }
         while trainedWeeks.contains(cursor) {
             streak += 1
             guard let previous = cal.date(byAdding: .weekOfYear, value: -1, to: cursor) else { break }
@@ -146,7 +148,8 @@ enum Stats {
     }
 
     /// L'obiettivo della settimana: quanti allenamenti fai di solito. La media delle ultime otto settimane (questa esclusa),
-    /// arrotondata, fra 2 e 5; con meno di due settimane di storia, 3. Come `weeklyGoal` in common/stats.ts.
+    /// arrotondata, fra 2 e 5; con meno di due settimane di storia, 3. Se la storia è più corta di otto settimane si divide
+    /// per quelle che ci sono. Come `weeklyGoal` in common/stats.ts.
     static func weeklyGoal(workouts: [Workout], calendar: Calendar = .current, now: Date = Date()) -> Int {
         var cal = calendar
         cal.firstWeekday = 2
@@ -158,7 +161,10 @@ enum Stats {
             perWeek[start, default: 0] += 1
         }
         guard perWeek.count >= 2 else { return 3 }
-        let average = Double(perWeek.values.reduce(0, +)) / 8
+        let first = workouts.map(\.date).min() ?? now
+        let firstWeek = cal.dateInterval(of: .weekOfYear, for: first)?.start ?? thisWeek
+        let weeks = max(1, min(8, cal.dateComponents([.weekOfYear], from: firstWeek, to: thisWeek).weekOfYear ?? 8))
+        let average = Double(perWeek.values.reduce(0, +)) / Double(weeks)
         return min(5, max(2, Int(average.rounded())))
     }
 }

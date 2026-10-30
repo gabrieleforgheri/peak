@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { cleanItems, parseDoc, upgradeDoc, LEGACY_SETTINGS, SETTING_DEFAULTS } from './docs.ts'
+import { cleanItems, parseDoc, parseIso, upgradeDoc, LEGACY_SETTINGS, SETTING_DEFAULTS } from './docs.ts'
 
 const U = (n: number) => `00000000-0000-0000-0000-${String(n).padStart(12, '0')}`
 const item = { exercise: U(1), sets: 4, repsMin: 8, repsMax: 10, weight: 60 }
@@ -72,4 +72,13 @@ test('serie e massimali: singleArm è un booleano, assente = falso', () => {
   const rec = { exercise: U(1), date: '2026-10-01T08:00:00Z', weight: 40, reps: 8 }
   assert.equal((parseDoc('record', U(3), rec) as { data: { singleArm: boolean } }).data.singleArm, false)
   assert.equal((parseDoc('record', U(3), { ...rec, singleArm: true }) as { data: { singleArm: boolean } }).data.singleArm, true)
+})
+
+test('date ISO: le date impossibili non scorrono al giorno dopo', () => {
+  assert.equal(parseIso('2026-02-28T10:00:00Z'), Date.UTC(2026, 1, 28, 10))
+  assert.equal(parseIso('2024-02-29T10:00:00Z'), Date.UTC(2024, 1, 29, 10))
+  assert.equal(parseIso('2026-02-30T10:00:00Z'), null)
+  assert.equal(parseIso('2026-13-01T10:00:00Z'), null)
+  assert.equal(parseIso('2026-01-01T24:00:00Z'), null)
+  assert.equal(parseIso('2026-01-01T10:00:00.250Z'), Date.UTC(2026, 0, 1, 10))
 })

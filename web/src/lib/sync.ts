@@ -24,10 +24,11 @@ async function api(path: string, init?: RequestInit): Promise<Response> {
 
 async function uploadPhotos() {
 	for (const p of await idb.allPhotos()) {
-		if (p.uploaded) continue
+		if (p.uploaded || p.failed) continue
 		const res = await api(`/api/foto/${p.sha}`, { method: 'PUT', body: p.blob, headers: { 'content-type': 'image/jpeg' } })
-		if (res.ok || res.status === 409) await idb.putPhoto({ ...p, uploaded: true })
-		else if (res.status >= 500) throw new Error(`foto ${res.status}`)
+		if (res.ok) await idb.putPhoto({ ...p, uploaded: true })
+		else if (res.status >= 500 || res.status === 408 || res.status === 429) throw new Error(`foto ${res.status}`)
+		else { console.warn('foto rifiutata dal server', p.sha, res.status); await idb.putPhoto({ ...p, failed: true }) }
 	}
 }
 
@@ -43,8 +44,11 @@ async function downloadPhotos() {
 	}
 }
 
+/** Documenti che il server ha scartato, con la `m` che ha rifiutato: restano sporchi (non si perdono) ma non si rimandano finché non cambiano. */
+const rejected = new Map<string, number>()
+
 async function push() {
-	const dirty = [...rows.values()].filter((r) => r.dirty)
+	const dirty = [...rows.values()].filter((r) => r.dirty && rejected.get(r.key) !== r.m)
 	for (let i = 0; i < dirty.length; i += PUSH_BATCH) {
 		const chunk = dirty.slice(i, i + PUSH_BATCH)
 		const body: Wire[] = chunk.map((r) => ({ kind: r.kind, uuid: r.uuid, data: r.data, m: r.m, deleted: r.deleted }))
@@ -57,15 +61,16 @@ async function push() {
 			const now = rows.get(sent.key)
 			// toccato mentre il push era in volo: resta sporco e riparte al prossimo giro
 			if (!now || now.m !== sent.m || lost.has(sent.key)) continue
+			if (out.scartati.some((b) => `${b.kind}:${b.uuid}` === sent.key)) continue
 			const clean = { ...now, dirty: false }
 			rows.set(sent.key, clean)
+			rejected.delete(sent.key)
 			cleaned.push(clean)
 		}
-		for (const bad of out.scartati) console.warn('documento scartato dal server', bad)
 		for (const bad of out.scartati) {
-			const key = `${bad.kind}:${bad.uuid}`
-			const row = rows.get(key)
-			if (row?.dirty) { const clean = { ...row, dirty: false }; rows.set(key, clean); cleaned.push(clean) }
+			console.warn('documento scartato dal server', bad)
+			const row = rows.get(`${bad.kind}:${bad.uuid}`)
+			if (row?.dirty) rejected.set(row.key, row.m)
 		}
 		if (cleaned.length) await idb.writeRows(cleaned)
 		// perso contro una versione più nuova: il server ci rimanda la sua
@@ -102,7 +107,7 @@ export function syncNow(): Promise<void> {
 			await downloadPhotos()
 			S.online = true
 			S.auth = 'ok'
-			S.error = ''
+			S.error = rejected.size ? `rifiutati dal server: ${rejected.size}` : ''
 			S.lastSync = Date.now()
 		} catch (e) {
 			if (e instanceof Unauthorized) S.auth = 'expired'

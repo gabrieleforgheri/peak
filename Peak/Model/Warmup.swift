@@ -44,13 +44,15 @@ enum Warmup {
     /// vero del macchinario). Vuota se non c'è ancora niente su cui calcolarla.
     static func plan(base: Double?, step: Double) -> [Step] {
         guard let base, base > 0 else { return [] }
-        return ramp.map { entry in
-            Step(
-                percent: entry.percent,
-                reps: entry.reps,
-                weight: nearest(base * entry.percent, anchor: base, step: step)
-            )
+        // Con basi piccole e passi grandi i pesi si ripetono o arrivano al carico vero: quelli non servono come riscaldamento.
+        var steps: [Step] = []
+        for entry in ramp {
+            let weight = nearest(base * entry.percent, anchor: base, step: step)
+            if weight < base && !steps.contains(where: { $0.weight == weight }) {
+                steps.append(Step(percent: entry.percent, reps: entry.reps, weight: weight))
+            }
         }
+        return steps
     }
 }
 

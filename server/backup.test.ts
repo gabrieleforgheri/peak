@@ -203,3 +203,30 @@ test('figura dei muscoli: il macchinario personalizzato la tiene nel backup', ()
     assert.equal(out.exercises.find((e) => e.name === 'Chest Press')!.muscles, undefined, 'nessun muscolo: niente campo')
   } finally { done() }
 })
+
+test('un macchinario personalizzato non si ricollega al catalogo per nome; nel catalogo sì', () => {
+  const f = sample()
+  f.exercises = [
+    { ...f.exercises[0], name: 'Leg Press', isCustom: true, records: [] },
+    { ...f.exercises[1], name: 'Leg Press', records: [] },
+  ]
+  f.workouts = []
+  const [custom, linked] = planImport(parse(f), [], 'sostituisci').put.filter((p) => p.kind === 'exercise').map((p) => p.data as { catalog: string; custom: boolean })
+  assert.equal(custom.catalog, '')
+  assert.equal(custom.custom, true)
+  assert.notEqual(linked.catalog, '', 'senza isCustom un backup vecchio si ricollega per nome')
+})
+
+test('sostituisci: valori fuori scala e testi lunghi si riportano nei limiti, nessun documento scartato', () => {
+  const f = sample()
+  f.exercises[0].name = 'N'.repeat(200); f.exercises[0].notes = 'n'.repeat(5000); f.exercises[0].incrementStep = 0; f.exercises[0].restSeconds = 99999
+  f.exercises[0].records[0].weight = 5000; f.exercises[0].records[0].reps = 5000
+  f.workouts[0].note = 'x'.repeat(3000); f.workouts[0].name = 'y'.repeat(300); f.workouts[0].focus = 'boh'
+  f.workouts[0].sets[0].weight = 9999; f.workouts[0].sets[0].rpe = 15
+  f.bodyWeights![0].weight = 5
+  const plan = planImport(parse(f), [], 'sostituisci')
+  assert.equal(plan.scartati, 0)
+  assert.deepEqual(plan.conteggi, { esercizi: 2, allenamenti: 1, serie: 3, record: 1, pesate: 1, schede: 0 })
+  const ex = plan.put.find((p) => p.kind === 'exercise')!.data as { name: string; notes: string; incrementStep: number; restSeconds: number }
+  assert.deepEqual([ex.name.length, ex.notes.length, ex.incrementStep, ex.restSeconds], [80, 2000, 0.01, 3600])
+})

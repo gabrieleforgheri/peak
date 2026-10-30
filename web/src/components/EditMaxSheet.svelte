@@ -24,6 +24,8 @@
 	let arm = $state(false)
 
 	const kg = $derived(fromUnit(weight))
+	// il server accetta 0,01-2000 kg per un massimale: il tetto si calcola in kg, poi si mostra nell'unità scelta
+	const maxShown = Math.floor(toDisplay(2000, m.settings.unit) * 100) / 100
 	const best = $derived(arm ? ex.armBest : ex.best)
 	const isNew = $derived(beats(kg, reps, best))
 	const est = $derived(oneRepMax(kg, reps))
@@ -35,14 +37,14 @@
 </script>
 
 <Sheet title={t('Aggiorna massimale')} {onclose}>
-	{#snippet action()}<button class="btn primary small" onclick={save} disabled={!(weight > 0)}>{t('Salva')}</button>{/snippet}
+	{#snippet action()}<button class="btn primary small" onclick={save} disabled={!(kg >= 0.01 && kg <= 2000)}>{t('Salva')}</button>{/snippet}
 	<div class="stack">
 		<div class="card">
 			<div class="row between" style="align-items:baseline">
 				<div class="sec-title" style="margin-top:0">{t('Carico')}</div>
 				{#if hasSides(ex.muscleGroup)}<SideSegment bind:value={arm} group={ex.muscleGroup} />{/if}
 			</div>
-			<Stepper bind:value={weight} {step} min={0} max={5000} unit={unit()} />
+			<Stepper bind:value={weight} {step} min={0} max={maxShown} unit={unit()} />
 			<div class="sec-title">{t('Ripetizioni')}</div>
 			<Stepper bind:value={reps} step={1} min={1} max={50} />
 		</div>
