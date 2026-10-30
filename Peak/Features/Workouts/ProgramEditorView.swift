@@ -121,10 +121,15 @@ struct ProgramEditorView: View {
 
     private func delete() {
         guard let program else { return }
-        for day in days { context.delete(day) }
-        context.delete(program)
+        let doomed = days
         if settings.activeProgram.uppercased() == program.uuid.uuidString { settings.activeProgram = "" }
-        try? context.save()
         dismiss()
+        // la cancellazione vera dopo che il foglio è sparito: finché è aperto legge ancora scheda e giorni
+        let context = self.context
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            for day in doomed { context.delete(day) }
+            context.delete(program)
+            try? context.save()
+        }
     }
 }

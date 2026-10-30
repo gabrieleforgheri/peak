@@ -17,6 +17,7 @@ struct WorkoutsListView: View {
     @State private var editingProgram: WorkoutProgram?
     @State private var showingNewProgram = false
     @State private var choosingGoal = false
+    @State private var workoutToDelete: Workout?
 
     private let nav = AppNav.shared
     private let insights = Insights.shared
@@ -164,9 +165,9 @@ struct WorkoutsListView: View {
                         }
                         .appear(key: "wk-\(workout.uuid)")
                         .plainListRow()
-                        .swipeActions(edge: .trailing) {
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
-                                delete(workout)
+                                workoutToDelete = workout
                             } label: {
                                 Label("Elimina", systemImage: "trash")
                             }
@@ -181,6 +182,12 @@ struct WorkoutsListView: View {
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: Workout.self) { workout in
                 WorkoutSessionView(workout: workout)
+            }
+            .confirmationDialog("Eliminare questo allenamento e le sue serie?", isPresented: Binding(get: { workoutToDelete != nil }, set: { if !$0 { workoutToDelete = nil } }), titleVisibility: .visible) {
+                Button("Elimina", role: .destructive) {
+                    if let workout = workoutToDelete { delete(workout) }
+                    workoutToDelete = nil
+                }
             }
             .onChange(of: settings.weeklyGoal) { Insights.shared.refresh() }
             .fullScreenCover(isPresented: $choosingGoal) {

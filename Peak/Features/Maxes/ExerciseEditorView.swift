@@ -787,7 +787,8 @@ struct ExerciseEditorView: View {
     private func save() {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         if let exercise {
-            exercise.name = trimmed
+            // il campo parte dal nome nella lingua dell'app: se non l'hai toccato, il nome salvato (italiano) resta com'è
+            if trimmed != exercise.displayName { exercise.name = trimmed }
             exercise.muscleGroup = group
             exercise.incrementStep = step
             exercise.notes = notes

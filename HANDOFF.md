@@ -1,3 +1,23 @@
+# Correzioni iPhone dopo l'audit (31 ottobre 2026)
+
+Solo iPhone. Codice scritto da un subagente Sonnet, da rivedere. Build `xcodebuild build` ok, `check-i18n-ios` 0 mancanti; non provato sul telefono né nel simulatore.
+
+| Fatto | Dove |
+|---|---|
+| Elimina allenamento dalla lista: niente più cancellazione con scorrimento pieno, conferma «Eliminare questo allenamento e le sue serie?» | `WorkoutsListView.swift` |
+| Modificare una serie di riscaldamento ne mantiene il flag (prima diventava serie vera). Sul web «Salva» passa ancora `false`: lì resta il bug | `AddSetSheet.swift` |
+| Operazioni distruttive con allenamento in corso rifiutate: «Cancella tutti i dati», import locale «Sostituisci tutto» (`BackupError.workoutInProgress`), import da connesso (controllo prima di toccare il server, poi `replaceLocalWithServer` ha la stessa guardia). L'import connesso fa prima `syncNow()` per non perdere le modifiche non salite | `DataSettingsView.swift`, `BackupService.swift`, `BackupSettingsView.swift`, `SyncService.swift` |
+| Eliminare una scheda: prima chiude il foglio, poi cancella dopo 0,35 s (come i macchinari) | `ProgramEditorView.swift` |
+| Salute: l'allenamento inviato si ricorda (`UserDefaults` `peak.healthSentWorkouts`, uuid), il tasto diventa «Già in Salute» e non duplica; un invio automatico fallito alla fine non mostra più l'avviso sopra il riepilogo (resta il tasto manuale) | `WorkoutSessionView.swift` |
+| «Elimina allenamento» nel menu in alto della sessione in corso (con conferma): ferma recupero, Live Activity, svuota il Watch (`WatchBridge.clear()`), chiude la vista e cancella dopo 0,35 s. Il web con 0 serie NON scarta l'allenamento al termine: l'iPhone idem | `WorkoutSessionView.swift` |
+| Sezione «Esercizio rimosso» per le serie senza macchinario (si eliminano col tasto lungo; la modifica no, serve un macchinario) | `WorkoutSessionView.swift` |
+| `RestTimer`: la notifica in programma ha il suo `Task`, annullato da `set`/`stop`; prima di aggiungerla ricontrolla che la fine sia ancora quella | `RestTimer.swift` |
+| Modifica macchinario: il nome si riscrive solo se l'hai cambiato (non più l'italiano sovrascritto dal nome inglese del catalogo) | `ExerciseEditorView.swift` |
+| `≈ 1RM` nascosto sulle serie di riscaldamento | `WorkoutSessionView.swift` (`SetRow`) |
+| Non fatto: scelta obiettivo 1–7 (il web ha 2–6 nel selettore, 1–7 solo nello stepper delle Impostazioni, già uguale sull'iPhone); date delle medaglie fuori dal main (gli ingressi sono modelli SwiftData, non Sendable) | — |
+
+---
+
 # «Scorso» ricorda la pagina, recupero dopo il riscaldamento (31 ottobre 2026)
 
 Web + iPhone in parità. Codice scritto da un subagente Sonnet, rivisto e unito a mano.

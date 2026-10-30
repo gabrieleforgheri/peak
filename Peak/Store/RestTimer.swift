@@ -28,16 +28,22 @@ final class RestTimer {
 
     func stop() { set(nil) }
 
+    /// La notifica in programma: un nuovo `set` o uno `stop` la annulla prima che arrivi al centro notifiche.
+    private var scheduling: Task<Void, Never>?
+
     private func set(_ newEnd: Date?) {
         end = newEnd
+        scheduling?.cancel()
+        scheduling = nil
         center.removePendingNotificationRequests(withIdentifiers: [Self.notificationID])
-        guard let newEnd else { return }
-        let seconds = newEnd.timeIntervalSinceNow
-        guard seconds > 1 else { return }
+        guard let newEnd, newEnd.timeIntervalSinceNow > 1 else { return }
         let center = center
-        Task {
+        scheduling = Task { @MainActor in
             // Al primo uso chiede il permesso; le volte dopo risponde subito.
             guard (try? await center.requestAuthorization(options: [.alert, .sound])) == true else { return }
+            // nel frattempo il recupero può essere stato fermato o spostato (anche con la richiesta del permesso a schermo)
+            let seconds = newEnd.timeIntervalSinceNow
+            guard !Task.isCancelled, self.end == newEnd, seconds > 1 else { return }
             let content = UNMutableNotificationContent()
             content.title = "Recupero finito".tr
             content.body = "Tocca alla prossima serie.".tr

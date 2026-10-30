@@ -28,6 +28,10 @@ struct WorkoutSessionView: View {
     @State private var showingFinishConfirm = false
     @State private var healthMessage: String?
     @State private var sendingToHealth = false
+    /// Già scritto in Salute: un secondo invio duplicherebbe l'allenamento.
+    @State private var sentToHealth = false
+    @State private var showingDeleteConfirm = false
+    private static let healthSentKey = "peak.healthSentWorkouts"
     /// Le serie che c'erano già: una serie che compare e non è qui dentro è nuova (dal telefono o dal Watch).
     @State private var knownSets: Set<UUID> = []
     /// La serie dell'ultimo record e quante feste di record ci sono state (il contatore fa ripartire coriandoli, toast e riga).
@@ -104,6 +108,28 @@ struct WorkoutSessionView: View {
                     }
                 }
 
+                // serie il cui macchinario è stato eliminato: contano nei totali, quindi si vedono (e si possono togliere)
+                let orphans = workout.setList.filter { $0.exercise == nil }
+                if !orphans.isEmpty {
+                    GlassCard(padding: 16) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Esercizio rimosso")
+                                .font(Theme.rounded(15, .bold))
+                                .foregroundStyle(Theme.textSecondary)
+                            ForEach(Array(orphans.enumerated()), id: \.element.uuid) { index, set in
+                                SetRow(index: index, set: set, pulse: 0)
+                                    .contextMenu {
+                                        Button(role: .destructive) {
+                                            delete(set)
+                                        } label: {
+                                            Label("Elimina serie", systemImage: "trash")
+                                        }
+                                    }
+                            }
+                        }
+                    }
+                }
+
                 Button {
                     showingPicker = true
                 } label: {
@@ -146,12 +172,12 @@ struct WorkoutSessionView: View {
                         sendToHealth(announceSuccess: true)
                     } label: {
                         Label(
-                            sendingToHealth ? "Invio…" : "Invia a Salute",
-                            systemImage: "heart.fill"
+                            sentToHealth ? "Già in Salute" : sendingToHealth ? "Invio…" : "Invia a Salute",
+                            systemImage: sentToHealth ? "checkmark.circle.fill" : "heart.fill"
                         )
                     }
                     .buttonStyle(SecondaryButtonStyle())
-                    .disabled(sendingToHealth)
+                    .disabled(sendingToHealth || sentToHealth)
                 }
             }
             .padding(.horizontal, 16)
@@ -167,6 +193,25 @@ struct WorkoutSessionView: View {
         .screenBackground(settings.accentColor)
         .navigationTitle(workout.name.isEmpty ? Fmt.relativeDay(workout.date) : workout.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if workout.isActive {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button(role: .destructive) {
+                            showingDeleteConfirm = true
+                        } label: {
+                            Label("Elimina allenamento", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    .accessibilityLabel("Altro")
+                }
+            }
+        }
+        .confirmationDialog("Eliminare questo allenamento e le sue serie?", isPresented: $showingDeleteConfirm, titleVisibility: .visible) {
+            Button("Elimina allenamento", role: .destructive) { deleteWorkout() }
+        }
         .sheet(isPresented: $showingPicker) {
             ExercisePickerSheet(focus: workout.focus) { exercise in
                 editPlan { Plan.adding($0, exercise.uuid) }
@@ -220,6 +265,7 @@ struct WorkoutSessionView: View {
             }
         }
         .onAppear {
+            sentToHealth = Self.healthSentIDs.contains(workout.uuid.uuidString)
             WorkoutActivity.start(for: workout, unit: settings.unit)
             knownSets = Set(workout.setList.map(\.uuid))
         }
@@ -484,28 +530,56 @@ struct WorkoutSessionView: View {
 
     /// Manda la sessione a Salute. Le date si leggono **qui**, sul main actor,
     /// e solo quelle attraversano il confine con HealthKit.
+    /// Un invio automatico (alla fine) che fallisce non mostra avvisi: coprirebbero il riepilogo, e il tasto «Invia a Salute» resta.
     private func sendToHealth(announceSuccess: Bool) {
         guard !workout.setList.isEmpty else {
-            healthMessage = HealthService.HealthError.emptyWorkout.localizedDescription
+            if announceSuccess { healthMessage = HealthService.HealthError.emptyWorkout.localizedDescription }
             return
         }
+        guard !sentToHealth, !sendingToHealth else { return }
         let start = workout.date
         let end = workout.endedAt ?? Date()
+        let id = workout.uuid.uuidString
 
         sendingToHealth = true
         Task {
             do {
                 try await HealthService.saveWorkout(start: start, end: end)
                 sendingToHealth = false
+                var sent = Self.healthSentIDs
+                sent.insert(id)
+                UserDefaults.standard.set(Array(sent), forKey: Self.healthSentKey)
+                sentToHealth = true
                 if announceSuccess {
                     healthMessage = "Allenamento registrato in Salute."
                     Haptics.success()
                 }
             } catch {
                 sendingToHealth = false
-                healthMessage = error.localizedDescription
-                Haptics.warning()
+                if announceSuccess {
+                    healthMessage = error.localizedDescription
+                    Haptics.warning()
+                }
             }
+        }
+    }
+
+    private static var healthSentIDs: Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: healthSentKey) ?? [])
+    }
+
+    /// Allenamento in corso buttato: stesso congedo del termine (recupero, Live Activity, Watch), poi via.
+    private func deleteWorkout() {
+        RestTimer.shared.stop()
+        WorkoutActivity.end()
+        WatchBridge.shared.clear()
+        Haptics.warning()
+        dismiss()
+        // La cancellazione vera dopo che la sessione è sparita: finché è a schermo legge ancora il modello.
+        let context = self.context
+        let workout = self.workout
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            RecordService.delete(workout, context: context)
         }
     }
 
@@ -903,7 +977,7 @@ private struct SetRow: View {
 
             Spacer()
 
-            if set.reps > 1 {
+            if set.reps > 1 && !set.isWarmup {
                 Text("≈ \(Fmt.weight(set.estimatedOneRepMax, unit: settings.unit))")
                     .font(Theme.rounded(11, .medium))
                     .foregroundStyle(Theme.textTertiary)

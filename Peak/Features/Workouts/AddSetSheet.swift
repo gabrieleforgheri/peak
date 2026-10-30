@@ -338,7 +338,8 @@ struct AddSetSheet: View {
                         .disabled(weight <= 0 || reps < 1)
 
                         Button {
-                            onSave(weight, reps, false, singleArm)
+                            // in modifica una serie di riscaldamento resta tale
+                            onSave(weight, reps, isEditing ? isWarmup : false, singleArm)
                             dismiss()
                         } label: {
                             Label(

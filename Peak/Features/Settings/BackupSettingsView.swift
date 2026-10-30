@@ -161,11 +161,18 @@ struct BackupSettingsView: View {
     /// Collegato: il backup passa dal server (che unisce i macchinari con lo stesso nome) e poi l'iPhone si riallinea.
     private func importThroughServer(_ data: Data, replace: Bool) {
         guard !isImporting else { return }
+        // prima del server: dopo, l'iPhone non potrebbe più riallinearsi con l'allenamento aperto
+        guard !sync.hasActiveWorkout else {
+            Haptics.warning()
+            alert = AlertPayload(title: "Import non riuscito", message: BackupError.workoutInProgress.localizedDescription)
+            return
+        }
         isImporting = true
         Task {
             defer { isImporting = false }
             do {
                 try sync.writePreConnectionBackup()
+                await sync.syncNow() // le modifiche locali non ancora salite non si perdono nel riallineamento
                 try await sync.uploadBackup(data, replace: replace, first: false)
                 try await sync.replaceLocalWithServer()
                 Haptics.success()

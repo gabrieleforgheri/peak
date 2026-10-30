@@ -70,6 +70,11 @@ struct DataSettingsView: View {
     }
 
     private func eraseAll() {
+        guard !sync.hasActiveWorkout else {
+            Haptics.warning()
+            errorMessage = "Termina l'allenamento in corso prima di cancellare i dati."
+            return
+        }
         do {
             try context.delete(model: WorkoutSet.self)
             try context.delete(model: Workout.self)

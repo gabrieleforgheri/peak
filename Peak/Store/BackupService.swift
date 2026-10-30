@@ -11,6 +11,7 @@ enum RestoreMode {
 enum BackupError: LocalizedError {
     case invalidFile
     case unsupportedVersion(Int)
+    case workoutInProgress
 
     var errorDescription: String? {
         switch self {
@@ -18,6 +19,8 @@ enum BackupError: LocalizedError {
             return "Il file non è un backup di Massimali valido."
         case .unsupportedVersion(let version):
             return "Backup in versione \(version): serve una versione più recente dell'app."
+        case .workoutInProgress:
+            return "Termina l'allenamento in corso prima di importare."
         }
     }
 }
@@ -225,6 +228,10 @@ enum BackupService {
         }
 
         if mode == .replace {
+            // sostituire tutto con un allenamento in corso lo cancellerebbe sotto gli occhi della sessione
+            guard try context.fetchCount(FetchDescriptor<Workout>(predicate: #Predicate { $0.endedAt == nil })) == 0 else {
+                throw BackupError.workoutInProgress
+            }
             try context.delete(model: WorkoutSet.self)
             try context.delete(model: Workout.self)
             try context.delete(model: MaxRecord.self)

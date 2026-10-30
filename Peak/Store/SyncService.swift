@@ -389,6 +389,7 @@ final class SyncService {
 
     func inspectServer() async throws -> ServerInfo {
         guard let api else { throw PeakAPIError.unauthorized }
+        guard !hasActiveWorkout else { throw BackupError.workoutInProgress }
         let answer = try await api.pull(since: 0)
         return ServerInfo(hasData: answer.docs.contains { !$0.deleted && $0.kind != "setting" })
     }
