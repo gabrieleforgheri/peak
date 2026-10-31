@@ -37,11 +37,29 @@ final class WatchModel: NSObject, WCSessionDelegate {
     let workout = WorkoutController()
 
     /// Pagine dell'allenamento, da sinistra a destra come nell'app Allenamento.
-    enum Page: Hashable { case controls, metrics, log, music }
+    enum Page: Hashable { case controls, metrics, exercises, log, music }
     var page: Page = .metrics
 
     /// Serie mandate all'iPhone in questo allenamento.
     private(set) var setsLogged = 0
+
+    /// La lista di oggi, per la pagina «Esercizi».
+    var plan: [WatchPlanItem] { context?.plan ?? [] }
+    /// Esercizio toccato sull'orologio e non ancora confermato dall'iPhone: la riga resta evidenziata.
+    private(set) var pendingSelection: UUID?
+    /// Ultimi totali dell'allenamento mandati dall'iPhone (serie di lavoro, volume in kg), per il riepilogo:
+    /// il contesto che chiude l'allenamento non li porta più.
+    private(set) var totals: (sets: Int, volume: Double)?
+
+    /// Serie del riepilogo: quelle dell'iPhone (contano anche le sue), almeno quelle mandate da qui.
+    var summarySets: Int { max(totals?.sets ?? 0, setsLogged) }
+    /// Volume del riepilogo, già nell'unità dell'utente; `nil` se l'iPhone non l'ha mai mandato.
+    var summaryVolume: String? {
+        guard let kilograms = totals?.volume else { return nil }
+        let factor = context?.unitFactor ?? 1
+        let value = (kilograms * factor).formatted(.number.precision(.fractionLength(0)))
+        return "\(value) \(context?.unitSymbol ?? "kg")"
+    }
 
     /// Recupero in corso dopo una serie.
     struct Rest: Equatable {
@@ -70,7 +88,17 @@ final class WatchModel: NSObject, WCSessionDelegate {
         guard let exercise, reps > 0 else { return }
         let set = WatchSet(exerciseUUID: exercise.uuid, weight: weight, reps: reps, isWarmup: isWarmup,
                            id: UUID(), sentAt: Date())
-        let payload = set.watchPayload(key: WatchSet.key)
+        transmit(set.watchPayload(key: WatchSet.key))
+        lastSent = set
+        setsLogged += 1
+        startRest(exercise.restDuration(warmup: isWarmup))
+        reps = 0
+        isWarmup = false
+        Haptic.success()
+    }
+
+    /// Subito se l'iPhone è raggiungibile, altrimenti (o se il messaggio fallisce) in coda garantita.
+    private func transmit(_ payload: [String: Any]) {
         let session = WCSession.default
         if session.isReachable {
             session.sendMessage(payload, replyHandler: nil) { _ in
@@ -79,12 +107,28 @@ final class WatchModel: NSObject, WCSessionDelegate {
         } else {
             session.transferUserInfo(payload)
         }
-        lastSent = set
-        setsLogged += 1
-        startRest(exercise.restDuration(warmup: isWarmup))
-        reps = 0
-        isWarmup = false
-        Haptic.success()
+    }
+
+    private func send(_ action: String, exercise: UUID? = nil) {
+        let command = WatchCommand(action: action, exerciseUUID: exercise, id: UUID(), sentAt: Date())
+        transmit(command.watchPayload(key: WatchCommand.key))
+    }
+
+    /// Riga toccata in «Esercizi»: se è già quella in corso si va alla serie; altrimenti si chiede all'iPhone,
+    /// e si salta alla serie quando arriva l'esercizio nuovo (`apply`).
+    func select(_ item: WatchPlanItem) {
+        Haptic.click()
+        if item.uuid == exercise?.uuid {
+            page = .log
+        } else {
+            pendingSelection = item.uuid
+            send(WatchCommand.select, exercise: item.uuid)
+            // se l'iPhone non risponde la riga non resta accesa per sempre
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(6))
+                if pendingSelection == item.uuid { pendingSelection = nil }
+            }
+        }
     }
 
     // MARK: - Recupero
@@ -113,37 +157,48 @@ final class WatchModel: NSObject, WCSessionDelegate {
 
     /// Avvio dall'iPhone («Avvia sul Watch») o dalla scheda di partenza: conto alla rovescia e poi la sessione.
     func startWorkout() {
+        // già in corso (o al conto alla rovescia): un secondo avvio, per esempio «Avvia sul Watch» dopo che l'iPhone
+        // ha già fatto partire il Watch, non rifà il 3-2-1 né riavvia la sessione di HealthKit
+        if workout.phase == .summary { workout.finishSummary() }
         guard workout.phase == .idle else { return }
         setsLogged = 0
-        page = exercise == nil ? .metrics : .log
+        page = exercise != nil ? .log : (plan.isEmpty ? .metrics : .exercises)
         workout.start()
     }
 
-    /// Termina la sessione del Watch (l'allenamento dell'iPhone resta com'è) e mostra il riepilogo.
-    func endWorkout() {
+    /// «Termina» confermato sul Watch: riepilogo qui e comando all'iPhone, che chiude l'allenamento come se
+    /// avessi toccato «Termina allenamento». `notifyPhone == false` quando è stato l'iPhone a chiudere.
+    func endWorkout(notifyPhone: Bool = true) {
         restTask?.cancel()
         rest = nil
+        pendingSelection = nil
+        let wasRunning = workout.phase == .active
         workout.end()
+        if notifyPhone, wasRunning { send(WatchCommand.end) }
     }
 
     /// «Fine» nel riepilogo.
     func finishSummary() {
         workout.finishSummary()
         setsLogged = 0
+        totals = nil
         lastSent = nil
     }
 
     // MARK: - Dall'iPhone
 
     private func apply(_ newContext: WatchContext) {
-        let previous = context?.exercise
-        let changedExercise = newContext.exercise?.uuid != previous?.uuid
+        let wasActive = context?.isWorkoutActive == true
+        let changedExercise = newContext.exercise?.uuid != context?.exercise?.uuid
         context = newContext
+        if let sets = newContext.workoutSets { totals = (sets, newContext.workoutVolume ?? 0) }
+        if pendingSelection == newContext.exercise?.uuid { pendingSelection = nil }
 
-        guard newContext.exercise != nil else {
-            // Allenamento finito sull'iPhone. Solo se prima c'era un esercizio: un contesto vuoto
-            // vecchio, arrivato all'apertura, non deve chiudere la sessione appena partita.
-            if previous != nil { endWorkout() }
+        guard newContext.isWorkoutActive else {
+            // Allenamento finito sull'iPhone (anche con «Termina» dal Watch, che ha già il suo riepilogo).
+            // Solo se prima c'era un allenamento: un contesto vuoto vecchio, arrivato all'apertura,
+            // non deve chiudere la sessione appena partita.
+            if wasActive { endWorkout(notifyPhone: false) }
             return
         }
 
@@ -152,7 +207,7 @@ final class WatchModel: NSObject, WCSessionDelegate {
             weightSteps = 0
             reps = 0
             lastSent = nil
-            if workout.phase == .active { page = .log }
+            if workout.phase == .active { page = newContext.exercise == nil ? (plan.isEmpty ? .metrics : .exercises) : .log }
         }
     }
 

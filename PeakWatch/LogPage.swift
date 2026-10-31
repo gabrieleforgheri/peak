@@ -17,7 +17,9 @@ struct LogPage: View {
                 Image(systemName: "iphone")
                     .font(.title2)
                     .foregroundStyle(.secondary)
-                Text(w("Apri un esercizio nella sessione sull'iPhone.", "Open an exercise in the session on your iPhone."))
+                Text(model.plan.isEmpty
+                     ? w("Aggiungi un esercizio nella sessione sull'iPhone.", "Add an exercise in the session on your iPhone.")
+                     : w("Scegli un esercizio nella pagina Esercizi.", "Pick an exercise on the Exercises page."))
                     .font(.footnote)
                     .multilineTextAlignment(.center)
             }

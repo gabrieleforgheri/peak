@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Riepilogo a fine allenamento, come quello di Apple: tempo, calorie, battito medio, serie, poi «Fine».
+/// Riepilogo a fine allenamento, come quello di Apple: tempo, calorie, battito medio, serie e volume, poi «Fine».
+/// Compatto per il 41 mm: calorie e serie/volume stanno ciascuno su una riga.
 struct SummaryView: View {
     @Environment(WatchModel.self) private var model
 
@@ -13,11 +14,12 @@ struct SummaryView: View {
                     .foregroundStyle(Color.workoutEnergy)
 
                 row(w("Tempo totale", "Total time"), elapsedText(summary?.duration ?? 0, centiseconds: false), .workoutTime)
-                row(w("Calorie attive", "Active energy"), "\(Int((summary?.activeKcal ?? 0).rounded())) kcal", .workoutEnergy)
-                row(w("Calorie totali", "Total energy"), "\(Int((summary?.totalKcal ?? 0).rounded())) kcal", .workoutEnergy)
+                row(w("Calorie attive · totali", "Active · total energy"),
+                    "\(Int((summary?.activeKcal ?? 0).rounded())) · \(Int((summary?.totalKcal ?? 0).rounded())) kcal", .workoutEnergy)
                 row(w("Battito medio", "Avg. heart rate"),
                     summary?.averageHeartRate.map { "\(Int($0.rounded())) bpm" } ?? "--", .workoutHeart)
-                row(w("Serie", "Sets"), "\(model.setsLogged)", .white)
+                row(w("Serie · volume", "Sets · volume"),
+                    model.summaryVolume.map { "\(model.summarySets) · \($0)" } ?? "\(model.summarySets)", .white)
 
                 Button(w("Fine", "Done")) { model.finishSummary() }
                     .tint(.workoutTime)
@@ -32,7 +34,7 @@ struct SummaryView: View {
         VStack(alignment: .leading, spacing: 0) {
             Text(title).font(.caption2.weight(.semibold)).foregroundStyle(color)
             Text(value)
-                .font(.system(size: 21, weight: .semibold, design: .rounded))
+                .font(.system(size: 20, weight: .semibold, design: .rounded))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)

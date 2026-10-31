@@ -19,6 +19,11 @@ final class WatchBridge: NSObject, WCSessionDelegate {
     /// `true` se sull'orologio abbinato c'è l'app di Massimali.
     private(set) var isWatchAppInstalled = false
 
+    /// L'esercizio scelto dall'orologio (pagina «Esercizi») e un contatore che sale a ogni scelta:
+    /// la sessione sull'iPhone li osserva e lo rende l'esercizio in corso (anche se è lo stesso di prima).
+    private(set) var selectedFromWatch: UUID?
+    private(set) var selectionTick = 0
+
     @ObservationIgnored private var container: ModelContainer?
     @ObservationIgnored private var settings: AppSettings?
     @ObservationIgnored private var lastContext: WatchContext?
@@ -38,60 +43,80 @@ final class WatchBridge: NSObject, WCSessionDelegate {
     func show(_ exercise: Exercise, in workout: Workout) {
         // un allenamento già concluso (aperto dalla storia) non tocca il Watch
         guard workout.isActive else { return }
-        push(exercise: watchExercise(exercise, in: workout), start: false)
+        push(exercise: watchExercise(exercise, in: workout), workout: workout, start: false)
     }
 
-    /// Apre l'app sul Watch (via HealthKit) e fa partire subito la serie.
+    /// Apre l'app sul Watch (via HealthKit) e fa partire subito la serie. Senza esercizio (allenamento ancora vuoto)
+    /// il Watch parte lo stesso e mostra la lista, vuota, in attesa che sull'iPhone si aggiunga qualcosa.
     @MainActor
-    func start(_ exercise: Exercise, in workout: Workout) {
-        guard workout.isActive else { return }
+    func start(_ exercise: Exercise?, in workout: Workout) {
+        guard workout.isActive, settings?.watchEnabled != false else { return }
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = .traditionalStrengthTraining
         configuration.locationType = .indoor
-        guard settings?.watchEnabled != false else { return }
         HKHealthStore().startWatchApp(with: configuration) { _, _ in }
-        push(exercise: watchExercise(exercise, in: workout), start: true)
+        push(exercise: exercise.map { watchExercise($0, in: workout) }, workout: workout, start: true)
+    }
+
+    /// Un allenamento appena creato sull'iPhone fa partire anche il Watch (se c'è ed è attivo), sul primo
+    /// esercizio della lista. Sul Watch la sessione parte una volta sola: un secondo «Avvia sul Watch» riporta
+    /// solo la pagina della serie (`WatchModel.startWorkout` ignora l'avvio se la sessione già gira).
+    @MainActor
+    func startForNewWorkout(_ workout: Workout) {
+        guard settings?.watchEnabled == true, isWatchAppInstalled, let container else { return }
+        let known = Dictionary(((try? container.mainContext.fetch(FetchDescriptor<Exercise>())) ?? []).map { ($0.uuid, $0) },
+                               uniquingKeysWith: { first, _ in first })
+        let first = workout.items(exists: { known[$0] != nil }).first.flatMap { known[$0.exercise] }
+        start(first, in: workout)
     }
 
     /// Fine allenamento: il Watch torna in attesa.
     @MainActor
     func clear() {
-        push(exercise: nil, start: false)
+        push(exercise: nil, workout: nil, start: false)
     }
 
     /// L'esercizio mostrato sul Watch è stato eliminato o tolto dalla lista: si passa al primo che resta
-    /// nell'allenamento in corso, se non ce n'è si svuota il Watch.
+    /// nell'allenamento in corso. Se non ne resta nessuno il Watch tiene la sessione (lista vuota), non la chiude.
     @MainActor
     func exerciseRemoved(_ uuid: UUID) {
         guard lastContext?.exercise?.uuid == uuid, let container else { return }
-        let context = container.mainContext
-        var active = FetchDescriptor<Workout>(predicate: #Predicate { $0.endedAt == nil }, sortBy: [SortDescriptor(\.date, order: .reverse)])
-        active.fetchLimit = 1
-        let exercises = (try? context.fetch(FetchDescriptor<Exercise>())) ?? []
+        guard let workout = activeWorkout() else { clear(); return }
+        let exercises = (try? container.mainContext.fetch(FetchDescriptor<Exercise>())) ?? []
         let known = Dictionary(exercises.map { ($0.uuid, $0) }, uniquingKeysWith: { first, _ in first })
-        if let workout = try? context.fetch(active).first,
-           let next = workout.items(exists: { $0 != uuid && known[$0] != nil }).first.flatMap({ known[$0.exercise] }) {
+        if let next = workout.items(exists: { $0 != uuid && known[$0] != nil }).first.flatMap({ known[$0.exercise] }) {
             show(next, in: workout)
         } else {
-            clear()
+            push(exercise: nil, workout: workout, start: false)
         }
     }
 
     /// Acceso o spento dalle impostazioni: da spento il Watch torna in attesa e non riceve più nulla.
     @MainActor
     func enabledChanged() {
-        if settings?.watchEnabled == true { settingsChanged() } else { push(exercise: nil, start: false, force: true) }
+        if settings?.watchEnabled == true { settingsChanged() } else { push(exercise: nil, workout: nil, start: false, force: true) }
     }
 
     /// Reinvia le impostazioni cambiate senza toccare l'esercizio mostrato.
     @MainActor
     func settingsChanged() {
         guard let lastContext else { return }
-        push(exercise: lastContext.exercise, start: false)
+        push(exercise: lastContext.exercise, workout: activeWorkout(), start: false)
     }
 
+    /// L'allenamento in corso, il più recente.
     @MainActor
-    private func push(exercise: WatchExercise?, start: Bool, force: Bool = false) {
+    private func activeWorkout() -> Workout? {
+        guard let context = container?.mainContext else { return nil }
+        var active = FetchDescriptor<Workout>(predicate: #Predicate { $0.endedAt == nil }, sortBy: [SortDescriptor(\.date, order: .reverse)])
+        active.fetchLimit = 1
+        return try? context.fetch(active).first
+    }
+
+    /// `workout == nil`: nessun allenamento (il Watch chiude la sessione). Con un allenamento il contesto porta
+    /// anche la lista di oggi e i totali, anche se l'esercizio è `nil`.
+    @MainActor
+    private func push(exercise: WatchExercise?, workout: Workout?, start: Bool, force: Bool = false) {
         // con l'Apple Watch spento non si manda niente (tranne il «torna in attesa» di quando lo si spegne)
         guard let settings, settings.watchEnabled || force,
               WCSession.isSupported(), WCSession.default.activationState == .activated else { return }
@@ -99,10 +124,31 @@ final class WatchBridge: NSObject, WCSessionDelegate {
             exercise: exercise,
             unitSymbol: settings.unit.symbol,
             unitFactor: settings.unit.fromKilograms(1),
-            startRequestedAt: start ? Date() : nil
+            startRequestedAt: start ? Date() : nil,
+            plan: workout.map(watchPlan),
+            workoutSets: workout?.workingSetCount,
+            workoutVolume: workout?.totalVolume
         )
         lastContext = context
         try? WCSession.default.updateApplicationContext(context.watchPayload(key: WatchContext.key))
+    }
+
+    /// La lista di oggi per la pagina «Esercizi»: nell'ordine del piano, solo macchinari che esistono ancora,
+    /// con le serie di lavoro fatte e quelle previste (0 se il piano non le dice).
+    @MainActor
+    private func watchPlan(_ workout: Workout) -> [WatchPlanItem] {
+        guard let container else { return [] }
+        let known = Dictionary(((try? container.mainContext.fetch(FetchDescriptor<Exercise>())) ?? []).map { ($0.uuid, $0) },
+                               uniquingKeysWith: { first, _ in first })
+        var done: [UUID: Int] = [:]
+        for set in workout.setList where !set.isWarmup {
+            if let id = set.exercise?.uuid { done[id, default: 0] += 1 }
+        }
+        return workout.items(exists: { known[$0] != nil }).compactMap { item in
+            known[item.exercise].map {
+                WatchPlanItem(uuid: $0.uuid, name: $0.displayName, done: done[$0.uuid] ?? 0, target: item.sets)
+            }
+        }
     }
 
     /// Carico proposto: l'ultima serie di oggi, altrimenti il consiglio di progressione,
@@ -153,8 +199,35 @@ final class WatchBridge: NSObject, WCSessionDelegate {
 
     private func receive(_ payload: [String: Any]) {
         guard settings?.watchEnabled != false else { return }
-        guard let set = WatchSet(watchPayload: payload, key: WatchSet.key) else { return }
-        Task { @MainActor in self.record(set) }
+        if let set = WatchSet(watchPayload: payload, key: WatchSet.key) {
+            Task { @MainActor in self.record(set) }
+        } else if let command = WatchCommand(watchPayload: payload, key: WatchCommand.key) {
+            Task { @MainActor in self.handle(command) }
+        }
+    }
+
+    /// «Esercizio scelto» e «Termina» dal Watch. Valgono solo per l'allenamento in corso e solo se mandati
+    /// dopo il suo inizio (un comando rimasto in coda da un allenamento precedente non tocca quello nuovo);
+    /// l'id scarta le consegne doppie.
+    @MainActor
+    private func handle(_ command: WatchCommand) {
+        guard let container, let settings, isNew(command.id),
+              let workout = activeWorkout(), command.sentAt >= workout.date else { return }
+        let context = container.mainContext
+        switch command.action {
+        case WatchCommand.select:
+            guard let uuid = command.exerciseUUID,
+                  let exercise = try? context.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { $0.uuid == uuid })).first else { return }
+            selectedFromWatch = uuid
+            selectionTick += 1
+            show(exercise, in: workout)
+        case WatchCommand.end:
+            // la stessa chiusura del tasto «Termina allenamento»; il riepilogo lo apre la sessione o la radice dell'app
+            WorkoutFinisher.shared.finish(workout, context: context, settings: settings)
+            AppNav.shared.pendingSummary = workout.uuid
+        default:
+            break
+        }
     }
 
     /// Ultime serie già registrate (id), per scartare le consegne doppie del Watch.

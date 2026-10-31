@@ -106,7 +106,7 @@ struct MetricsPage: View {
                     }
                 }
             }
-            Label(w("\(model.setsLogged) serie", "\(model.setsLogged) sets"), systemImage: "checkmark.circle.fill")
+            Label(w("\(model.summarySets) serie", "\(model.summarySets) sets"), systemImage: "checkmark.circle.fill")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }

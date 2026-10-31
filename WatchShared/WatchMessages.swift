@@ -24,6 +24,20 @@ struct WatchExercise: Codable, Equatable {
     }
 }
 
+/// Una riga della lista di oggi, per la pagina «Esercizi» del Watch.
+struct WatchPlanItem: Codable, Equatable, Identifiable {
+    var uuid: UUID
+    var name: String
+    /// Serie di lavoro fatte oggi.
+    var done: Int
+    /// Serie previste dal piano; 0 = il piano non ne dice.
+    var target: Int
+
+    var id: UUID { uuid }
+    /// Obiettivo raggiunto (solo se il piano ne ha uno).
+    var reached: Bool { target > 0 && done >= target }
+}
+
 /// Stato che l'iPhone tiene aggiornato sul Watch (application context:
 /// arriva anche se l'app del Watch era chiusa, alla prossima apertura).
 struct WatchContext: Codable, Equatable {
@@ -33,6 +47,15 @@ struct WatchContext: Codable, Equatable {
     var unitFactor: Double
     /// Valorizzato quando sull'iPhone si tocca "Avvia sul Watch": il Watch riparte da zero su questo esercizio.
     var startRequestedAt: Date?
+    /// La lista di oggi, nell'ordine del piano. `nil` = nessun allenamento in corso (e nei messaggi di un iPhone
+    /// più vecchio); `[]` = allenamento aperto ma senza ancora esercizi.
+    var plan: [WatchPlanItem]? = nil
+    /// Serie di lavoro e volume (kg) dell'allenamento, per il riepilogo del Watch. `nil` nei messaggi vecchi.
+    var workoutSets: Int? = nil
+    var workoutVolume: Double? = nil
+
+    /// C'è un allenamento aperto sull'iPhone (con o senza esercizio scelto).
+    var isWorkoutActive: Bool { exercise != nil || plan != nil }
 
     static let key = "context"
 }
@@ -50,6 +73,20 @@ struct WatchSet: Codable, Equatable {
     var sentAt: Date? = nil
 
     static let key = "set"
+}
+
+/// Comando dal Watch all'iPhone: scegliere l'esercizio o chiudere l'allenamento.
+struct WatchCommand: Codable, Equatable {
+    var action: String
+    /// Solo per `select`.
+    var exerciseUUID: UUID? = nil
+    /// Identificativo e istante dell'invio: come in `WatchSet`, per scartare i doppioni e i comandi in ritardo.
+    var id: UUID
+    var sentAt: Date
+
+    static let select = "select"
+    static let end = "end"
+    static let key = "command"
 }
 
 extension Encodable {

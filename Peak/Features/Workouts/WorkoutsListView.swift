@@ -312,6 +312,8 @@ struct WorkoutsListView: View {
         context.insert(workout)
         try? context.save()
         WorkoutActivity.start(for: workout, unit: settings.unit)
+        // il Watch parte insieme (se c'è e l'interruttore è acceso): sul primo esercizio, o vuoto se la lista lo è
+        WatchBridge.shared.startForNewWorkout(workout)
         Haptics.commit()
         path.append(workout)
     }

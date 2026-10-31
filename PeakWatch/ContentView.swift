@@ -18,7 +18,7 @@ struct ContentView: View {
     }
 }
 
-/// Pagine orizzontali: comandi · numeri · serie · musica.
+/// Pagine orizzontali: comandi · numeri · esercizi · serie · musica.
 private struct WorkoutTabs: View {
     @Environment(WatchModel.self) private var model
     @Environment(\.isLuminanceReduced) private var isLuminanceReduced
@@ -28,6 +28,7 @@ private struct WorkoutTabs: View {
         TabView(selection: $model.page) {
             ControlsPage().tag(WatchModel.Page.controls)
             MetricsPage().tag(WatchModel.Page.metrics)
+            ExercisesPage().tag(WatchModel.Page.exercises)
             LogPage().tag(WatchModel.Page.log)
             NowPlayingView().tag(WatchModel.Page.music)
         }

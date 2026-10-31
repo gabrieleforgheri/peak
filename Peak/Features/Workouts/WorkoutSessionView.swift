@@ -9,6 +9,7 @@ struct WorkoutSessionView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Bindable var workout: Workout
+    private let nav = AppNav.shared
 
     @Query private var allExercises: [Exercise]
     @Query private var templates: [WorkoutTemplate]
@@ -27,11 +28,11 @@ struct WorkoutSessionView: View {
     @State private var showingSummary = false
     @State private var showingFinishConfirm = false
     @State private var healthMessage: String?
-    @State private var sendingToHealth = false
-    /// Già scritto in Salute: un secondo invio duplicherebbe l'allenamento.
-    @State private var sentToHealth = false
     @State private var showingDeleteConfirm = false
-    private static let healthSentKey = "peak.healthSentWorkouts"
+    /// Già scritto in Salute (un secondo invio duplicherebbe l'allenamento) o in corso: lo sa `WorkoutFinisher`,
+    /// che chiude anche gli allenamenti terminati dal Watch.
+    private var sentToHealth: Bool { WorkoutFinisher.shared.isSent(workout) }
+    private var sendingToHealth: Bool { WorkoutFinisher.shared.isSending(workout) }
     /// Le serie che c'erano già: una serie che compare e non è qui dentro è nuova (dal telefono o dal Watch).
     @State private var knownSets: Set<UUID> = []
     /// La serie dell'ultimo record e quante feste di record ci sono state (il contatore fa ripartire coriandoli, toast e riga).
@@ -163,20 +164,11 @@ struct WorkoutSessionView: View {
                     }
                     .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
                     .padding(.top, 4)
-                    // il popup nasce dal bottone, non dalla barra in alto
-                    .confirmationDialog(
-                        "Terminare l'allenamento?",
-                        isPresented: $showingFinishConfirm,
-                        titleVisibility: .visible
-                    ) {
-                        Button("Termina") { finish() }
-                        Button("Continua ad allenarti", role: .cancel) {}
-                    }
                 } else if settings.healthSyncEnabled {
                     // Serve per le sessioni chiuse prima di attivare Salute,
                     // o quando il primo invio è fallito.
                     Button {
-                        sendToHealth(announceSuccess: true)
+                        sendToHealth()
                     } label: {
                         Label(
                             sentToHealth ? "Già in Salute" : sendingToHealth ? "Invio…" : "Invia a Salute",
@@ -216,9 +208,21 @@ struct WorkoutSessionView: View {
                 }
             }
         }
-        .confirmationDialog("Eliminare questo allenamento e le sue serie?", isPresented: $showingDeleteConfirm, titleVisibility: .visible) {
-            Button("Elimina allenamento", role: .destructive) { deleteWorkout() }
-        }
+        // conferme in un foglio basso nello stile dell'app: il dialogo di sistema su iOS recente nasce a metà schermo
+        .confirmSheet(
+            isPresented: $showingFinishConfirm,
+            title: "Terminare l'allenamento?",
+            confirm: "Termina",
+            cancel: "Continua ad allenarti",
+            tint: settings.accentColor
+        ) { finish() }
+        .confirmSheet(
+            isPresented: $showingDeleteConfirm,
+            title: "Eliminare questo allenamento e le sue serie?",
+            confirm: "Elimina allenamento",
+            cancel: "Annulla",
+            tint: Theme.negative
+        ) { deleteWorkout() }
         .sheet(isPresented: $showingPicker) {
             ExercisePickerSheet(focus: workout.focus) { exercise in
                 editPlan { Plan.adding($0, exercise.uuid) }
@@ -272,9 +276,22 @@ struct WorkoutSessionView: View {
             }
         }
         .onAppear {
-            sentToHealth = Self.healthSentIDs.contains(workout.uuid.uuidString)
+            nav.visibleSession = workout.uuid
             WorkoutActivity.start(for: workout, unit: settings.unit)
             knownSets = Set(workout.setList.map(\.uuid))
+        }
+        .onDisappear { if nav.visibleSession == workout.uuid { nav.visibleSession = nil } }
+        // dal Watch: l'esercizio scelto sull'orologio diventa quello in corso anche qui
+        .onChange(of: WatchBridge.shared.selectionTick) {
+            if let id = WatchBridge.shared.selectedFromWatch, let exercise = allExercises.first(where: { $0.uuid == id }) {
+                withAnimation(.snappy) { currentExerciseID = exercise.persistentModelID }
+            }
+        }
+        // dal Watch: «Termina» ha già chiuso l'allenamento (`WorkoutFinisher`), qui resta il resto del congedo
+        .onChange(of: nav.pendingSummary, initial: true) {
+            guard nav.pendingSummary == workout.uuid, !workout.isActive else { return }
+            nav.pendingSummary = nil
+            afterFinish()
         }
         .onChange(of: workout.setList.count) { setsChanged() }
         .task(id: RestTimer.shared.end) {
@@ -535,44 +552,18 @@ struct WorkoutSessionView: View {
         if isRecord { celebrateRecord(set) } // una correzione che è massimale: festa
     }
 
-    /// Manda la sessione a Salute. Le date si leggono **qui**, sul main actor,
-    /// e solo quelle attraversano il confine con HealthKit.
-    /// Un invio automatico (alla fine) che fallisce non mostra avvisi: coprirebbero il riepilogo, e il tasto «Invia a Salute» resta.
-    private func sendToHealth(announceSuccess: Bool) {
-        guard !workout.setList.isEmpty else {
-            if announceSuccess { healthMessage = HealthService.HealthError.emptyWorkout.localizedDescription }
-            return
-        }
+    /// Invio manuale a Salute (tasto «Invia a Salute»); il lavoro e il controllo dei doppioni sono in `WorkoutFinisher`.
+    private func sendToHealth() {
         guard !sentToHealth, !sendingToHealth else { return }
-        let start = workout.date
-        let end = workout.endedAt ?? Date()
-        let id = workout.uuid.uuidString
-
-        sendingToHealth = true
         Task {
-            do {
-                try await HealthService.saveWorkout(start: start, end: end)
-                sendingToHealth = false
-                var sent = Self.healthSentIDs
-                sent.insert(id)
-                UserDefaults.standard.set(Array(sent), forKey: Self.healthSentKey)
-                sentToHealth = true
-                if announceSuccess {
-                    healthMessage = "Allenamento registrato in Salute."
-                    Haptics.success()
-                }
-            } catch {
-                sendingToHealth = false
-                if announceSuccess {
-                    healthMessage = error.localizedDescription
-                    Haptics.warning()
-                }
+            if let error = await WorkoutFinisher.shared.sendToHealth(workout) {
+                healthMessage = error.localizedDescription
+                Haptics.warning()
+            } else {
+                healthMessage = "Allenamento registrato in Salute."
+                Haptics.success()
             }
         }
-    }
-
-    private static var healthSentIDs: Set<String> {
-        Set(UserDefaults.standard.stringArray(forKey: healthSentKey) ?? [])
     }
 
     /// Allenamento in corso buttato: stesso congedo del termine (recupero, Live Activity, Watch), poi via.
@@ -617,21 +608,13 @@ struct WorkoutSessionView: View {
     }
 
     private func finish() {
-        let changed = changedTemplate()
-        workout.endedAt = Date()
-        try? context.save()
-        RestTimer.shared.stop()
-        WorkoutActivity.end()
-        WatchBridge.shared.clear()
-        if !SyncService.shared.isConnected, let date = try? BackupService.writeAutoBackup(context: context) {
-            settings.lastBackupDate = date
-        }
-        if settings.healthSyncEnabled {
-            sendToHealth(announceSuccess: false)
-        }
+        WorkoutFinisher.shared.finish(workout, context: context, settings: settings)
+        afterFinish()
+    }
 
-        Haptics.success()
-        if let changed {
+    /// Dopo la chiusura (dal tasto o dal Watch): se la lista è cambiata si chiede di aggiornare il giorno, poi il riepilogo.
+    private func afterFinish() {
+        if let changed = changedTemplate() {
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(350))
                 templateToUpdate = changed

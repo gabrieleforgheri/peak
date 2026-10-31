@@ -13,6 +13,8 @@ struct RootView: View {
     @State private var decided = false
     @State private var onboarding = false
     @State private var synced = false
+    /// Riepilogo di un allenamento chiuso dal Watch mentre la sessione non era a schermo.
+    @State private var summaryWorkout: Workout?
 
     /// Il tutorial parte da solo (dopo il primo avvio, o da «Rivedi il tutorial») e resta finché non lo chiudi, anche se intanto le impostazioni cambiano.
     private var wantTutorial: Bool {
@@ -58,12 +60,27 @@ struct RootView: View {
             synced = true
             await Catalog.refresh()
         }
+        .sheet(item: $summaryWorkout) { workout in
+            WorkoutSummaryView(workout: workout) { summaryWorkout = nil }
+        }
+        .onChange(of: nav.pendingSummary, initial: true) { presentPendingSummary() }
         .onChange(of: scenePhase) { _, phase in
+            if phase == .active { presentPendingSummary() }
             // Alla chiusura dell'app il backup automatico resta allineato (se non si è collegati a yG,
             // che ha già i dati): è la rete di sicurezza contro la disinstallazione.
             if phase == .background { runAutoBackup() }
             if phase == .active { Task { await SyncService.shared.syncNow() } }
         }
+    }
+
+    /// Il Watch ha chiuso l'allenamento: se la sua sessione è a schermo è lei a congedarsi (template, riepilogo),
+    /// altrimenti il riepilogo completo si apre qui, appena l'app è in primo piano.
+    private func presentPendingSummary() {
+        guard let id = nav.pendingSummary, nav.visibleSession != id, scenePhase == .active, summaryWorkout == nil else { return }
+        nav.pendingSummary = nil
+        var descriptor = FetchDescriptor<Workout>(predicate: #Predicate { $0.uuid == id })
+        descriptor.fetchLimit = 1
+        summaryWorkout = try? context.fetch(descriptor).first
     }
 
     /// Un'app vuota parte dal primo avvio; una con dei dati (o con lo store di emergenza) no.

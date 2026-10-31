@@ -18,4 +18,9 @@ final class AppNav {
     var resumeActive = false
     /// Sale quando le impostazioni devono chiudersi da sole («Rivedi il tutorial»: il giro sta sotto il foglio).
     var closeSettings = 0
+    /// L'allenamento (uuid) la cui sessione è a schermo adesso.
+    var visibleSession: UUID?
+    /// Un allenamento chiuso dal Watch di cui va mostrato il riepilogo. Lo prende la sessione se è a schermo,
+    /// altrimenti la radice (`RootView`) con il foglio del riepilogo.
+    var pendingSummary: UUID?
 }
