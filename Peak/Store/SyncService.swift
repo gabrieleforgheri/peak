@@ -148,7 +148,7 @@ final class SyncService {
             try await push(api, snapshot)
             try await pull(api)
             lastSync = Date()
-            lastError = rejected.isEmpty ? nil : "Rifiutati dal server: \(rejected.count)"
+            lastError = rejected.isEmpty ? nil : String(format: "Rifiutati dal server: %d".tr, rejected.count)
         } catch PeakAPIError.unauthorized {
             state = .expired
         } catch {

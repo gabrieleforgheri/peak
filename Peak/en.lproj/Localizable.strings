@@ -987,3 +987,4 @@
 "Termina l'allenamento in corso prima di cancellare i dati." = "Finish the workout in progress before erasing your data.";
 "Elimina allenamento" = "Delete workout";
 "Già in Salute" = "Already in Health";
+"Rifiutati dal server: %d" = "Rejected by the server: %d";
