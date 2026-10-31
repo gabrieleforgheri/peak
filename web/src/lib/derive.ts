@@ -7,8 +7,10 @@ import type { Ex, Model, Prg, Tpl } from './types.ts'
 /** Il passo del macchinario nell'unità scelta. */
 export const stepOf = (ex: { incrementStep: number }, m: Model): number => displayStep(ex.incrementStep, m.settings.unit)
 
-export function warmupFor(ex: Ex, m: Model): WarmupStep[] {
-	return warmupPlan(ex.best ? round2(toDisplay(ex.best.weight, m.settings.unit)) : null, stepOf(ex, m))
+/** Riscaldamento sul massimale della linea della serie: a una gamba quello a una gamba. */
+export function warmupFor(ex: Ex, m: Model, arm = false): WarmupStep[] {
+	const best = arm ? ex.armBest : ex.best
+	return warmupPlan(best ? round2(toDisplay(best.weight, m.settings.unit)) : null, stepOf(ex, m))
 }
 
 /** Doppia progressione sull'ultima sessione conclusa; pesi nell'unità scelta. */

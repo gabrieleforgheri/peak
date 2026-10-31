@@ -51,7 +51,7 @@ struct AddSetSheet: View {
         OneRepMax.estimate(weight: weight, reps: reps)
     }
 
-    private var warmupPlan: [Warmup.Step] { exercise.warmupPlan(unit: settings.unit) }
+    private var warmupPlan: [Warmup.Step] { exercise.warmupPlan(unit: settings.unit, oneLimb: oneLimb) }
 
     /// Peso senza dischi, se l'esercizio si carica a dischi: bilanciere (anche panche e rack) o leva plate loaded.
     private var plateBase: Double? {
@@ -113,9 +113,10 @@ struct AddSetSheet: View {
         )
     }
 
+    /// Il confronto resta sulla stessa linea: una serie a una gamba non si misura con quella a due.
     private var previousSetWeight: Double? {
-        if case let .add(lastSet) = mode, let lastSet { return lastSet.weight }
-        return allPreviousSets.first?.weight
+        if case let .add(lastSet) = mode, let lastSet, lastSet.isOneLimbLine == oneLimb { return lastSet.weight }
+        return allPreviousSets.first { $0.isOneLimbLine == oneLimb }?.weight
     }
     private var delta: Double? {
         guard let prev = previousSetWeight else { return nil }

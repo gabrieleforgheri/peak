@@ -167,8 +167,10 @@ final class Exercise {
     }
 
     /// La rampa sulla griglia dell'unità scelta: in lb si calcola in lb (passo di 5 lb, non 2,5 kg) e si riporta in kg.
-    func warmupPlan(unit: WeightUnit) -> [Warmup.Step] {
-        guard unit == .lb, let base = currentMax else { return warmupPlan }
+    /// `oneLimb`: sul massimale a un arto (la serie che stai per fare è a una gamba o un braccio).
+    func warmupPlan(unit: WeightUnit, oneLimb: Bool = false) -> [Warmup.Step] {
+        let base = (oneLimb ? singleArmBestRecord : bestRecord)?.weight
+        guard unit == .lb, let base else { return Warmup.plan(base: base, step: incrementStep) }
         let rounded = (unit.fromKilograms(base) * 100).rounded() / 100
         return Warmup.plan(base: rounded, step: unit.displayStep(forKilograms: incrementStep)).map {
             Warmup.Step(percent: $0.percent, reps: $0.reps, weight: unit.toKilograms($0.weight))

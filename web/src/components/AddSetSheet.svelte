@@ -77,15 +77,16 @@
 	const relWeight = $derived(isRel ? weight : Math.max(0, round2(absWeight - (mode?.bar ? bar : 0))))
 	const perSideW = $derived(round2(relWeight / 2))
 
-	const inWorkoutPrev = $derived([...workout.sets].reverse().find((s) => s.exercise === ex.uuid && !s.isWarmup && (!set || s.uuid !== set.uuid)))
-	const prevSet = $derived(inWorkoutPrev ?? ex.sets.find((s) => !s.isWarmup && (!set || s.uuid !== set.uuid)))
+	// il confronto resta sulla stessa linea: una serie a una gamba non si misura con quella a due
+	const inWorkoutPrev = $derived([...workout.sets].reverse().find((s) => s.exercise === ex.uuid && !s.isWarmup && s.singleArm === arm && (!set || s.uuid !== set.uuid)))
+	const prevSet = $derived(inWorkoutPrev ?? ex.sets.find((s) => !s.isWarmup && s.singleArm === arm && (!set || s.uuid !== set.uuid)))
 	const prevAbsWeight = $derived(prevSet ? toUnit(prevSet.weight) : null)
 	const delta = $derived(prevAbsWeight !== null ? round2(absWeight - prevAbsWeight) : null)
 
 	const kg = $derived(fromUnit(absWeight))
 	const reference = $derived(bestOf((arm ? ex.armRecords : ex.records).filter((r) => !set || r.uuid !== set.uuid)))
 	const isRecord = $derived(!warm && beats(kg, reps, reference))
-	const warmSteps = $derived(warmupFor(ex, m))
+	const warmSteps = $derived(warmupFor(ex, m, arm))
 
 	// solo il tocco sul selettore (non il caricamento di una serie): metà o doppio, sulla griglia sbarra + k × passo
 	// (per lato il totale sale di due passi alla volta)
