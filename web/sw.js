@@ -72,9 +72,11 @@ self.addEventListener('fetch', (e) => {
 /* Web Push: il server manda un avviso senza testo quando finisce il recupero; il testo è qui, tradotto. */
 self.addEventListener('push', (e) => {
 	const it = (self.navigator.language || 'it').toLowerCase().startsWith('it')
-	e.waitUntil(self.registration.showNotification(it ? 'Recupero finito' : 'Rest over', {
-		body: it ? 'Tocca alla prossima serie.' : 'Time for your next set.', tag: 'recupero', icon: '/icon-192.png',
-	}))
+	// suoni spenti nell'app (la pagina lo scrive in «peak-pref», vedi src/lib/sound.ts): avviso muto
+	e.waitUntil(caches.open('peak-pref').then((c) => c.match('/suoni')).then((r) => (r ? r.text() : '1')).catch(() => '1').then((on) =>
+		self.registration.showNotification(it ? 'Recupero finito' : 'Rest over', {
+			body: it ? 'Tocca alla prossima serie.' : 'Time for your next set.', tag: 'recupero', icon: '/icon-192.png', silent: on === '0',
+		})))
 })
 
 self.addEventListener('notificationclick', (e) => {

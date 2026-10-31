@@ -7,8 +7,8 @@
  * - Le foto dei macchinari (/api/foto/<sha256>) non cambiano mai: prima la cache.
  * - L'API non si tocca: i dati stanno in IndexedDB e li sincronizza l'app. */
 
-const SHELL = ["/","/assets/index-B6S3H9YP.js","/assets/catalog-LQoF-E0c.js","/assets/day1-CmerdDsK.m4a","/assets/day2-ClDcIYqc.m4a","/assets/day3-ClyWpz9_.m4a","/assets/day4-D2SDwU0m.m4a","/assets/day5-BJx2N6jx.m4a","/assets/day6-DfznrENH.m4a","/assets/day7-D7IMfGAa.m4a","/assets/finish-Cbs1SR7_.m4a","/assets/goal-Dh2wX4ZL.m4a","/assets/index-CgyneJnv.css","/assets/medal-DLhEwGvt.m4a","/assets/record-ripQ09NX.m4a","/assets/remove-1isPNzvf.m4a","/assets/set-DQIF1Gp8.m4a","/assets/streak-BsVjrHqX.m4a","/manifest.webmanifest","/icon-192.png"]
-const VERSION = "ed42372b01"
+const SHELL = ["/","/assets/index-DJqBbIGg.js","/assets/catalog-LQoF-E0c.js","/assets/day1-CmerdDsK.m4a","/assets/day2-ClDcIYqc.m4a","/assets/day3-ClyWpz9_.m4a","/assets/day4-D2SDwU0m.m4a","/assets/day5-BJx2N6jx.m4a","/assets/day6-DfznrENH.m4a","/assets/day7-D7IMfGAa.m4a","/assets/finish-Cbs1SR7_.m4a","/assets/goal-Dh2wX4ZL.m4a","/assets/index-CgyneJnv.css","/assets/medal-DLhEwGvt.m4a","/assets/record-ripQ09NX.m4a","/assets/remove-1isPNzvf.m4a","/assets/set-DQIF1Gp8.m4a","/assets/streak-BsVjrHqX.m4a","/manifest.webmanifest","/icon-192.png"]
+const VERSION = "7f740819fe"
 const SHELL_CACHE = `peak-guscio-${VERSION}`
 const PHOTOS = 'peak-foto'
 
@@ -72,9 +72,11 @@ self.addEventListener('fetch', (e) => {
 /* Web Push: il server manda un avviso senza testo quando finisce il recupero; il testo è qui, tradotto. */
 self.addEventListener('push', (e) => {
 	const it = (self.navigator.language || 'it').toLowerCase().startsWith('it')
-	e.waitUntil(self.registration.showNotification(it ? 'Recupero finito' : 'Rest over', {
-		body: it ? 'Tocca alla prossima serie.' : 'Time for your next set.', tag: 'recupero', icon: '/icon-192.png',
-	}))
+	// suoni spenti nell'app (la pagina lo scrive in «peak-pref», vedi src/lib/sound.ts): avviso muto
+	e.waitUntil(caches.open('peak-pref').then((c) => c.match('/suoni')).then((r) => (r ? r.text() : '1')).catch(() => '1').then((on) =>
+		self.registration.showNotification(it ? 'Recupero finito' : 'Rest over', {
+			body: it ? 'Tocca alla prossima serie.' : 'Time for your next set.', tag: 'recupero', icon: '/icon-192.png', silent: on === '0',
+		})))
 })
 
 self.addEventListener('notificationclick', (e) => {

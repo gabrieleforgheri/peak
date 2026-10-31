@@ -47,7 +47,8 @@ final class RestTimer {
             let content = UNMutableNotificationContent()
             content.title = "Recupero finito".tr
             content.body = "Tocca alla prossima serie.".tr
-            content.sound = .default
+            // Suoni spenti nelle Impostazioni → Generale: l'avviso arriva lo stesso, ma muto
+            content.sound = (UserDefaults.standard.object(forKey: SoundFX.enabledKey) as? Bool ?? true) ? .default : nil
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
             try? await center.add(UNNotificationRequest(identifier: Self.notificationID, content: content, trigger: trigger))
         }

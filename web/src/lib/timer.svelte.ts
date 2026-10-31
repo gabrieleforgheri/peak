@@ -3,6 +3,7 @@
 
 import { t } from './i18n.ts'
 import { cancelRestPush, pushEnabled, scheduleRestPush } from './push.ts'
+import { soundsOn } from './sound.ts'
 
 const KEY = 'peak.rest'
 
@@ -50,7 +51,8 @@ export function resumeRest() {
 }
 
 function beep() {
-	try {
+	// Impostazioni → Generale → Suoni spento: niente bip (la notifica resta, muta)
+	if (soundsOn()) try {
 		const ctx = new AudioContext()
 		for (const [i, f] of [880, 1175].entries()) {
 			const o = ctx.createOscillator(), g = ctx.createGain()
@@ -63,5 +65,5 @@ function beep() {
 		setTimeout(() => ctx.close(), 800)
 	} catch { /* senza audio */ }
 	if (!pushEnabled() && document.visibilityState === 'hidden' && 'Notification' in window && Notification.permission === 'granted')
-		navigator.serviceWorker?.ready.then((r) => r.showNotification(t('Recupero finito'), { body: t('Tocca alla prossima serie.'), tag: 'recupero' })).catch(() => {})
+		navigator.serviceWorker?.ready.then((r) => r.showNotification(t('Recupero finito'), { body: t('Tocca alla prossima serie.'), tag: 'recupero', silent: !soundsOn() })).catch(() => {})
 }

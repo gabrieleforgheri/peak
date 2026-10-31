@@ -33,8 +33,16 @@ export function soundsOn(): boolean {
 
 export function setSounds(on: boolean): void {
 	try { localStorage.setItem(KEY, on ? '1' : '0') } catch { /* senza archivio vale solo per questa pagina */ }
+	tellWorker(on)
 	if (on) unlock()
 }
+
+/** Il service worker non legge localStorage: la scelta gli arriva in una cache a parte, così l'avviso di fine recupero (Web Push) è muto anche lui. */
+function tellWorker(on: boolean): void {
+	try { void caches.open('peak-pref').then((c) => c.put('/suoni', new Response(on ? '1' : '0'))).catch(() => {}) } catch { /* niente Cache API */ }
+}
+// la scelta fatta prima che esistesse questo passaggio
+tellWorker(soundsOn())
 
 /** Crea il contesto la prima volta, lo risveglia se dorme (iOS lo sospende dopo una chiamata o lo sfondo) e scarica i suoni mancanti. */
 function unlock(): void {
