@@ -3,12 +3,19 @@ package com.gabrieleforghieri.peak.data
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
+import androidx.room.Upsert
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ExerciseDao {
+    @Query("SELECT * FROM exercise")
+    suspend fun all(): List<ExerciseEntity>
+
+    @Query("DELETE FROM exercise")
+    suspend fun deleteAll()
+
     @Query("SELECT * FROM exercise ORDER BY sortIndex, name")
     fun observeAll(): Flow<List<ExerciseEntity>>
 
@@ -18,7 +25,7 @@ interface ExerciseDao {
     @Query("SELECT uuid FROM exercise")
     suspend fun allUuids(): List<String>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsert(exercise: ExerciseEntity)
 
     @Query("DELETE FROM exercise WHERE uuid = :uuid")
@@ -27,6 +34,12 @@ interface ExerciseDao {
 
 @Dao
 interface MaxRecordDao {
+    @Query("SELECT * FROM max_record")
+    suspend fun all(): List<MaxRecordEntity>
+
+    @Query("DELETE FROM max_record")
+    suspend fun deleteAll()
+
     @Query("SELECT * FROM max_record WHERE exerciseUuid = :exercise")
     suspend fun ofExercise(exercise: String): List<MaxRecordEntity>
 
@@ -36,7 +49,7 @@ interface MaxRecordDao {
     @Query("SELECT * FROM max_record WHERE uuid = :uuid")
     suspend fun get(uuid: String): MaxRecordEntity?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsert(record: MaxRecordEntity)
 
     @Query("DELETE FROM max_record WHERE uuid = :uuid")
@@ -45,13 +58,19 @@ interface MaxRecordDao {
 
 @Dao
 interface WorkoutDao {
+    @Query("SELECT * FROM workout")
+    suspend fun all(): List<WorkoutEntity>
+
+    @Query("DELETE FROM workout")
+    suspend fun deleteAll()
+
     @Query("SELECT * FROM workout ORDER BY date DESC")
     fun observeAll(): Flow<List<WorkoutEntity>>
 
     @Query("SELECT * FROM workout WHERE uuid = :uuid")
     suspend fun get(uuid: String): WorkoutEntity?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsert(workout: WorkoutEntity)
 
     @Query("DELETE FROM workout WHERE uuid = :uuid")
@@ -60,6 +79,12 @@ interface WorkoutDao {
 
 @Dao
 interface WorkoutSetDao {
+    @Query("SELECT * FROM workout_set")
+    suspend fun all(): List<WorkoutSetEntity>
+
+    @Query("DELETE FROM workout_set")
+    suspend fun deleteAll()
+
     /** Le serie di un macchinario che stanno in un allenamento che esiste ancora. */
     @Query("SELECT * FROM workout_set WHERE exerciseUuid = :exercise AND workoutUuid IS NOT NULL")
     suspend fun liveOfExercise(exercise: String): List<WorkoutSetEntity>
@@ -88,7 +113,7 @@ interface WorkoutSetDao {
     @Query("SELECT uuid FROM workout_set WHERE workoutUuid = :workout AND isPersonalRecord = 1 ORDER BY setOrder")
     suspend fun personalRecordsOf(workout: String): List<String>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsert(set: WorkoutSetEntity)
 
     @Update
@@ -100,10 +125,16 @@ interface WorkoutSetDao {
 
 @Dao
 interface BodyWeightDao {
+    @Query("SELECT * FROM body_weight")
+    suspend fun all(): List<BodyWeightEntity>
+
+    @Query("DELETE FROM body_weight")
+    suspend fun deleteAll()
+
     @Query("SELECT * FROM body_weight ORDER BY date DESC")
     fun observeAll(): Flow<List<BodyWeightEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsert(entry: BodyWeightEntity)
 
     @Query("DELETE FROM body_weight WHERE uuid = :uuid")
@@ -112,13 +143,19 @@ interface BodyWeightDao {
 
 @Dao
 interface TemplateDao {
+    @Query("SELECT * FROM workout_template")
+    suspend fun all(): List<WorkoutTemplateEntity>
+
+    @Query("DELETE FROM workout_template")
+    suspend fun deleteAll()
+
     @Query("SELECT * FROM workout_template ORDER BY sortIndex, name")
     fun observeAll(): Flow<List<WorkoutTemplateEntity>>
 
     @Query("SELECT * FROM workout_template WHERE uuid = :uuid")
     suspend fun get(uuid: String): WorkoutTemplateEntity?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsert(template: WorkoutTemplateEntity)
 
     @Query("DELETE FROM workout_template WHERE uuid = :uuid")
@@ -127,13 +164,19 @@ interface TemplateDao {
 
 @Dao
 interface ProgramDao {
+    @Query("SELECT * FROM workout_program")
+    suspend fun all(): List<WorkoutProgramEntity>
+
+    @Query("DELETE FROM workout_program")
+    suspend fun deleteAll()
+
     @Query("SELECT * FROM workout_program ORDER BY sortIndex, name")
     fun observeAll(): Flow<List<WorkoutProgramEntity>>
 
     @Query("SELECT * FROM workout_program WHERE uuid = :uuid")
     suspend fun get(uuid: String): WorkoutProgramEntity?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsert(program: WorkoutProgramEntity)
 
     @Query("DELETE FROM workout_program WHERE uuid = :uuid")
@@ -142,6 +185,9 @@ interface ProgramDao {
 
 @Dao
 interface SettingDao {
+    @Query("SELECT * FROM setting")
+    suspend fun all(): List<SettingEntity>
+
     @Query("SELECT * FROM setting")
     fun observeAll(): Flow<List<SettingEntity>>
 

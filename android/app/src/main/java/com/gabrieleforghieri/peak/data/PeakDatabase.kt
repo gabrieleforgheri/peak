@@ -26,8 +26,24 @@ abstract class PeakDatabase : RoomDatabase() {
     companion object {
         @Volatile private var instance: PeakDatabase? = null
 
+        /** Il database vero non si è aperto e si lavora su uno in memoria: la sincronizzazione e i backup restano spenti, per non spingere un «tutto cancellato». */
+        @Volatile var isFallback = false
+            private set
+
         fun get(context: Context): PeakDatabase = instance ?: synchronized(this) {
-            instance ?: Room.databaseBuilder(context.applicationContext, PeakDatabase::class.java, "peak.db").build().also { instance = it }
+            instance ?: open(context.applicationContext).also { instance = it }
+        }
+
+        private fun open(context: Context): PeakDatabase {
+            val real = Room.databaseBuilder(context, PeakDatabase::class.java, "peak.db").build()
+            return try {
+                real.openHelper.writableDatabase // si apre (e si migra) adesso, non alla prima lettura
+                real
+            } catch (e: Exception) {
+                android.util.Log.e("Peak", "Il database non si apre: ripiego in memoria", e)
+                isFallback = true
+                Room.inMemoryDatabaseBuilder(context, PeakDatabase::class.java).build()
+            }
         }
     }
 }
