@@ -63,10 +63,6 @@ kotlin {
     }
 }
 
-tasks.matching { (it.name.startsWith("merge") && it.name.endsWith("Assets")) || it.name.contains("UnitTestJavaRes") }.configureEach {
-    dependsOn(copyCatalog)
-}
-
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }

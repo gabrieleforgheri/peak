@@ -1,0 +1,250 @@
+{
+  "bodyWeights": [
+    {
+      "date": "2026-09-11T07:00:00Z",
+      "fromHealth": false,
+      "uuid": "00000000-0000-4000-8000-000000000300",
+      "weight": 78.4
+    },
+    {
+      "date": "2026-09-18T07:00:00Z",
+      "fromHealth": true,
+      "uuid": "00000000-0000-4000-8000-000000000301",
+      "weight": 78.1
+    }
+  ],
+  "exercises": [
+    {
+      "barWeight": 20,
+      "catalogID": "chest-press-machine",
+      "createdAt": "2026-09-01T08:00:00Z",
+      "glyph": "pecDeck",
+      "incrementStep": 5,
+      "isArchived": false,
+      "isUnilateral": true,
+      "limbs": "either",
+      "muscleGroup": "petto",
+      "name": "Chest Press",
+      "notes": "sedile 4",
+      "photo": "/9j/2wECAwQ=",
+      "photoOffset": 0.5,
+      "plateLoaded": true,
+      "records": [
+        {
+          "date": "2026-09-02T09:00:00Z",
+          "isEstimated": false,
+          "note": "primo",
+          "reps": 5,
+          "uuid": "00000000-0000-4000-8000-000000000101",
+          "weight": 50
+        },
+        {
+          "date": "2026-09-03T09:00:00Z",
+          "isEstimated": false,
+          "note": "",
+          "reps": 8,
+          "singleArm": true,
+          "uuid": "00000000-0000-4000-8000-000000000102",
+          "weight": 30
+        },
+        {
+          "date": "2026-09-10T10:00:00Z",
+          "isEstimated": true,
+          "note": "Da allenamento",
+          "reps": 5,
+          "uuid": "00000000-0000-4000-8000-000000000201",
+          "weight": 60
+        },
+        {
+          "date": "2026-09-10T10:07:00Z",
+          "isEstimated": true,
+          "note": "Da allenamento",
+          "reps": 8,
+          "singleArm": true,
+          "uuid": "00000000-0000-4000-8000-000000000203",
+          "weight": 35
+        },
+        {
+          "date": "2026-09-17T10:00:00Z",
+          "isEstimated": true,
+          "note": "Da allenamento",
+          "reps": 5,
+          "uuid": "00000000-0000-4000-8000-000000000211",
+          "weight": 65
+        }
+      ],
+      "restSeconds": 90,
+      "sortIndex": 0,
+      "uuid": "00000000-0000-4000-8000-000000000001"
+    },
+    {
+      "createdAt": "2026-09-01T08:00:00Z",
+      "glyph": "latPulldown",
+      "incrementStep": 2.5,
+      "isArchived": true,
+      "isCustom": true,
+      "muscleGroup": "schiena",
+      "muscles": [
+        "deltoids"
+      ],
+      "name": "Lat Machine",
+      "notes": "",
+      "perSide": true,
+      "records": [],
+      "sortIndex": 1,
+      "uuid": "00000000-0000-4000-8000-000000000002",
+      "view": "back",
+      "weightDisplay": "relative"
+    },
+    {
+      "createdAt": "2026-09-05T08:00:00Z",
+      "glyph": "legPress",
+      "incrementStep": 10,
+      "isArchived": false,
+      "isHidden": true,
+      "muscleGroup": "gambe",
+      "name": "Pressa di casa",
+      "notes": "",
+      "records": [],
+      "sortIndex": 2,
+      "uuid": "00000000-0000-4000-8000-000000000003"
+    }
+  ],
+  "exportedAt": "2026-10-14T12:00:00Z",
+  "programs": [
+    {
+      "createdAt": "2026-09-20T08:00:00Z",
+      "name": "Push Pull Legs",
+      "sortIndex": 0,
+      "useDays": true,
+      "uuid": "00000000-0000-4000-8000-000000000500"
+    }
+  ],
+  "templates": [
+    {
+      "createdAt": "2026-09-20T08:00:00Z",
+      "icon": "flame",
+      "items": [
+        {
+          "exerciseUUID": "00000000-0000-4000-8000-000000000001",
+          "repsMax": 10,
+          "repsMin": 8,
+          "sets": 4,
+          "weight": 60
+        },
+        {
+          "exerciseUUID": "00000000-0000-4000-8000-000000000002",
+          "repsMax": 12,
+          "repsMin": 10,
+          "sets": 3
+        }
+      ],
+      "name": "Push 1",
+      "programID": "00000000-0000-4000-8000-000000000500",
+      "sortIndex": 0,
+      "uuid": "00000000-0000-4000-8000-000000000400",
+      "weekday": 2
+    }
+  ],
+  "version": 1,
+  "workouts": [
+    {
+      "date": "2026-09-10T09:30:00Z",
+      "endedAt": "2026-09-10T10:30:00Z",
+      "focus": "petto",
+      "name": "Push",
+      "note": "ok",
+      "plan": [
+        {
+          "exerciseUUID": "00000000-0000-4000-8000-000000000001",
+          "repsMax": 10,
+          "repsMin": 8,
+          "sets": 4,
+          "weight": 60
+        },
+        {
+          "exerciseUUID": "00000000-0000-4000-8000-000000000002",
+          "repsMax": 12,
+          "repsMin": 10,
+          "sets": 3
+        }
+      ],
+      "sets": [
+        {
+          "createdAt": "2026-09-10T10:00:00Z",
+          "exerciseUUID": "00000000-0000-4000-8000-000000000001",
+          "isPersonalRecord": true,
+          "isWarmup": false,
+          "order": 0,
+          "reps": 5,
+          "uuid": "00000000-0000-4000-8000-000000000201",
+          "weight": 60
+        },
+        {
+          "createdAt": "2026-09-10T10:05:00Z",
+          "exerciseUUID": "00000000-0000-4000-8000-000000000001",
+          "isPersonalRecord": false,
+          "isWarmup": true,
+          "order": 1,
+          "reps": 10,
+          "uuid": "00000000-0000-4000-8000-000000000202",
+          "weight": 20
+        },
+        {
+          "createdAt": "2026-09-10T10:07:00Z",
+          "exerciseUUID": "00000000-0000-4000-8000-000000000001",
+          "isPersonalRecord": true,
+          "isWarmup": false,
+          "order": 2,
+          "reps": 8,
+          "singleArm": true,
+          "uuid": "00000000-0000-4000-8000-000000000203",
+          "weight": 35
+        },
+        {
+          "createdAt": "2026-09-10T10:06:00Z",
+          "isPersonalRecord": false,
+          "isWarmup": false,
+          "order": 3,
+          "reps": 8,
+          "uuid": "00000000-0000-4000-8000-000000000204",
+          "weight": 30
+        },
+        {
+          "createdAt": "2026-09-10T10:08:00Z",
+          "excludedFromRecords": true,
+          "exerciseUUID": "00000000-0000-4000-8000-000000000002",
+          "isPersonalRecord": false,
+          "isWarmup": false,
+          "order": 4,
+          "reps": 9,
+          "rpe": 8.5,
+          "uuid": "00000000-0000-4000-8000-000000000205",
+          "weight": 99
+        }
+      ],
+      "template": "00000000-0000-4000-8000-000000000400",
+      "uuid": "00000000-0000-4000-8000-000000000010"
+    },
+    {
+      "date": "2026-09-17T09:30:00Z",
+      "endedAt": "2026-09-17T10:15:00Z",
+      "focus": "",
+      "name": "",
+      "note": "",
+      "sets": [
+        {
+          "createdAt": "2026-09-17T10:00:00Z",
+          "exerciseUUID": "00000000-0000-4000-8000-000000000001",
+          "isPersonalRecord": true,
+          "isWarmup": false,
+          "order": 0,
+          "reps": 5,
+          "uuid": "00000000-0000-4000-8000-000000000211",
+          "weight": 65
+        }
+      ],
+      "uuid": "00000000-0000-4000-8000-000000000011"
+    }
+  ]
+}

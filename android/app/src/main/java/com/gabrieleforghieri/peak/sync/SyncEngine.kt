@@ -245,7 +245,8 @@ class SyncEngine(
             if (doc.kind != "exercise" || doc.deleted) continue
             val sha = (doc.data?.get("photo") as? kotlinx.serialization.json.JsonPrimitive)?.takeIf { it.isString }?.content ?: continue
             if (sha.isEmpty() || photos.has(sha)) continue
-            val bytes = api.photo(sha)
+            // Una foto che il server non ha (caricarla era stato rifiutato: troppe foto) non deve bloccare ogni giro: il macchinario resta senza.
+            val bytes = try { api.photo(sha) } catch (e: PeakApiException.Server) { if (e.status == 404) continue else throw e }
             if (photos.writeAs(sha, bytes)) store.uploadedPhotos += sha // se i byte non tornano con lo sha la foto resta senza
         }
     }
@@ -268,10 +269,10 @@ class SyncEngine(
             }
             val answer = api.push(docs)
             val lost = answer.rejected.mapTo(HashSet()) { it.key }
-            // pulito solo ciò che è davvero partito
+            // pulito solo ciò che è davvero partito e il server ha preso (uno scartato resta sporco, come sul web: l'iPhone lo dà per fatto)
             val sent = docs.mapTo(HashSet()) { it.key }
             for ((key, entry) in chunk) {
-                if (key !in sent || key in lost) continue
+                if (key !in sent || key in lost || key in answer.discarded) continue
                 val current = store.entries[key]
                 if (current != null && current.m == entry.m) { store.entries[key] = current.copy(dirty = false); rejected.remove(key) }
             }

@@ -181,7 +181,7 @@ object BackupCodec {
             is JsonArray -> JsonArray(e.map(::sort))
             else -> e
         }
-        return pretty.encodeToString(JsonElement.serializer(), sort(writer.encodeToJsonElement(BackupFile.serializer(), file))).encodeToByteArray()
+        return pretty.encodeToString(JsonElement.serializer(), sort(SyncDocs.tidy(writer.encodeToJsonElement(BackupFile.serializer(), file)))).encodeToByteArray()
     }
 
     /** Legge un file. Una versione più nuova della nostra si riconosce prima di tutto il resto (come sul server). */
@@ -291,8 +291,10 @@ object BackupCodec {
                 continue
             }
             val group = MuscleGroup.of(dto.muscleGroup)?.raw ?: MuscleGroup.petto.raw
-            // un backup vecchio non ha l'id: lo si ricava dal nome; se resta personalizzato tiene l'icona che vedeva
-            val catalogID = dto.catalogID ?: Catalog.match(dto.name)?.id ?: ""
+            // un backup vecchio non ha l'id: lo si ricava dal nome; se resta personalizzato tiene l'icona che vedeva.
+            // Un macchinario fatto a mano di proposito (isCustom) non si ricollega al catalogo per nome: come server/backup.ts (planImport).
+            // ponytail: `RestoreMode` di BackupService.swift lo ricollega comunque per nome; qui si segue il server, vedi HANDOFF.md
+            val catalogID = if (dto.isCustom == true) "" else dto.catalogID ?: Catalog.match(dto.name)?.id ?: ""
             var glyph = MachineGlyph.of(dto.glyph)?.raw ?: ""
             if (dto.catalogID == null && catalogID.isEmpty() && glyph.isEmpty()) {
                 glyph = MachineGlyph.suggested(dto.name, MuscleGroup.of(group) ?: MuscleGroup.petto).raw

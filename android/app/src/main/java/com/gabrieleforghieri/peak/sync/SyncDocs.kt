@@ -50,7 +50,7 @@ object SyncDocs {
         val out = LinkedHashMap<String, JsonObject>()
         for (name in SettingKeys.synced) {
             val text = SettingsCodec.encode(name, settings) ?: continue
-            out[key("setting", name)] = JsonObject(mapOf("value" to Json.parseToJsonElement(text)))
+            out[key("setting", name)] = JsonObject(mapOf("value" to tidy(Json.parseToJsonElement(text))))
         }
         return out
     }
@@ -64,8 +64,19 @@ object SyncDocs {
         is Boolean -> JsonPrimitive(v)
         is Int -> JsonPrimitive(v)
         is Long -> JsonPrimitive(v)
-        is Double -> JsonPrimitive(v)
+        is Double -> number(v)
         else -> error("tipo non previsto: ${v::class}")
+    }
+
+    /** Un numero intero si scrive senza «.0» (come lo scrive l'iPhone): 60 e non 60.0. */
+    private fun number(v: Double): JsonPrimitive = if (v == Math.floor(v) && Math.abs(v) < 1e15) JsonPrimitive(v.toLong()) else JsonPrimitive(v)
+
+    /** Dappertutto, i numeri interi senza «.0». */
+    fun tidy(e: JsonElement): JsonElement = when (e) {
+        is JsonArray -> JsonArray(e.map(::tidy))
+        is JsonObject -> JsonObject(e.mapValues { tidy(it.value) })
+        is JsonPrimitive -> if (!e.isString && e !is JsonNull) e.doubleOrNull?.let(::number) ?: e else e
+        else -> e
     }
 
     private fun strings(csv: String) = JsonArray(csv.split(',').filter { it.isNotEmpty() }.map(::JsonPrimitive))
