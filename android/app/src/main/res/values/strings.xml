@@ -412,6 +412,7 @@
     <string name="t_impostazioni_7e6340b7">Impostazioni</string>
     <string name="t_in_30_gg_ffce4f0b">%1$s%2$s in 30 gg</string>
     <string name="t_in_alto_la_montagna_la_tua_settimana_e_l_5db2e03e">In alto la montagna: la tua settimana e l\'obiettivo, cioè quanti allenamenti ti dai a settimana. Toccalo per cambiarlo.</string>
+    <string name="t_in_arrivo_49f0071f">In arrivo</string>
     <string name="t_in_attesa_dei_dati_12125406">In attesa dei dati…</string>
     <string name="t_in_corso_7a72405c">IN CORSO</string>
     <string name="t_in_ginocchio_davanti_al_cavo_alto_con_la_7112afd0">In ginocchio davanti al cavo alto, con la corda.</string>
@@ -744,6 +745,7 @@
     <string name="t_quanti_macchinari_diversi_hai_usato_c665751c">Quanti macchinari diversi hai usato.</string>
     <string name="t_quasi_tutti_i_giorni_f43e9d65">Quasi tutti i giorni.</string>
     <string name="t_quattro_sezioni_3558eca6">Quattro sezioni</string>
+    <string name="t_questa_scheda_e_in_costruzione_2341dae7">Questa scheda è in costruzione.</string>
     <string name="t_questa_serie_72b0d660">QUESTA SERIE</string>
     <string name="t_questa_serie_di_1rm_688ee735">questa serie ≈ %1$s di 1RM</string>
     <string name="t_questa_serie_lld_di_1rm_e53a9221">questa serie ≈ %1$d di 1RM</string>

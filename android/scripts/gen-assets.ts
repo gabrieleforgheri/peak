@@ -128,6 +128,12 @@ function parseStrings(text: string): Map<string, string> {
   return out
 }
 
+/** Testi che esistono solo su Android (il guscio dell'app): italiano → inglese. */
+const ANDROID_ONLY: Record<string, string> = {
+  'In arrivo': 'Coming soon',
+  'Questa scheda è in costruzione.': 'This tab is under construction.',
+}
+
 function strings(): { it: string; en: string; count: number } {
   const ios = parseStrings(readFileSync(root('Peak/en.lproj/Localizable.strings'), 'utf8'))
   const web = JSON.parse(readFileSync(root('web/src/lib/en.json'), 'utf8')) as Record<string, string>
@@ -135,6 +141,7 @@ function strings(): { it: string; en: string; count: number } {
   const table = new Map<string, string>()
   for (const [k, v] of Object.entries(web)) if (!k.includes('|')) table.set(k.replace(/\{\d\}/g, '%@'), v)
   for (const [k, v] of ios) table.set(k, v)
+  for (const [k, v] of Object.entries(ANDROID_ONLY)) table.set(k, v)
   // i nomi dei gruppi e delle tessere, usati dal codice con .tr
   const names = new Map<string, string>()
   for (const [k, v] of table) {
@@ -151,17 +158,21 @@ function strings(): { it: string; en: string; count: number } {
 
 // ---- scrittura ----------------------------------------------------------------------------------
 
-mkdirSync(kt('design'), { recursive: true })
-mkdirSync(kt('domain'), { recursive: true })
-writeFileSync(kt('domain/MachineGlyph.kt'), glyphs())
-writeFileSync(kt('domain/MuscleId.kt'), muscleIds())
-writeFileSync(kt('design/AnatomyShapes.kt'), anatomy())
+function main() {
+  mkdirSync(kt('design'), { recursive: true })
+  mkdirSync(kt('domain'), { recursive: true })
+  writeFileSync(kt('domain/MachineGlyph.kt'), glyphs())
+  writeFileSync(kt('domain/MuscleId.kt'), muscleIds())
+  writeFileSync(kt('design/AnatomyShapes.kt'), anatomy())
 
-const s = strings()
-mkdirSync(res('values-en'), { recursive: true })
-writeFileSync(res('values/strings.xml'), s.it)
-writeFileSync(res('values-en/strings.xml'), s.en)
+  const s = strings()
+  mkdirSync(res('values-en'), { recursive: true })
+  writeFileSync(res('values/strings.xml'), s.it)
+  writeFileSync(res('values-en/strings.xml'), s.en)
 
-mkdirSync(res('raw'), { recursive: true })
-for (const f of readdirSync(root('Peak/Sounds')).filter((n) => n.endsWith('.m4a'))) copyFileSync(root(`Peak/Sounds/${f}`), res(`raw/fx_${f}`))
-console.log(`${GLYPHS.length} pittogrammi, ${MUSCLES.length} muscoli, ${s.count} testi`)
+  mkdirSync(res('raw'), { recursive: true })
+  for (const f of readdirSync(root('Peak/Sounds')).filter((n) => n.endsWith('.m4a'))) copyFileSync(root(`Peak/Sounds/${f}`), res(`raw/fx_${f}`))
+  console.log(`${GLYPHS.length} pittogrammi, ${MUSCLES.length} muscoli, ${s.count} testi`)
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) main()
