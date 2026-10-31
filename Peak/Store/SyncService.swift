@@ -252,7 +252,11 @@ final class SyncService {
         var out: [String: Data] = [:]
         for doc in docs where doc.kind == "exercise" && !doc.deleted {
             guard let digest = doc.data?["photo"] as? String, !digest.isEmpty, !local.contains(digest), out[digest] == nil else { continue }
-            out[digest] = try await api.photo(sha: digest)
+            do {
+                out[digest] = try await api.photo(sha: digest)
+            } catch PeakAPIError.server(404) {
+                continue // il server non ha la foto (rifiutata o mai caricata): il macchinario resta senza, come sul web
+            }
             store.uploadedPhotos.insert(digest)
         }
         return out
@@ -277,9 +281,10 @@ final class SyncService {
             }
             let answer = try await api.push(docs)
             let lost = Set(answer.rejected.map(\.key))
-            // pulito solo ciò che è davvero partito
+            let discarded = Set(answer.discarded)
+            // pulito solo ciò che è davvero partito e il server ha accettato
             let sent = Set(docs.map(\.key))
-            for (key, entry) in chunk where sent.contains(key) && !lost.contains(key) {
+            for (key, entry) in chunk where sent.contains(key) && !lost.contains(key) && !discarded.contains(key) {
                 if var current = store.entries[key], current.m == entry.m { current.dirty = false; store.entries[key] = current; rejected[key] = nil }
             }
             // scartati dal server: restano sporchi (non si perdono), ma non si rimandano finché non cambiano
