@@ -1,6 +1,6 @@
 # Android: fondamenta (31 ottobre 2026, fase 1 di PIANO-ANDROID.md)
 
-App nativa Kotlin + Compose in `android/` (la TWA non c'è più, stesso package). Compila con `cd android && ./gradlew test assembleDebug`: 133 prove JUnit sul JVM, tutte verdi; provata nell'emulatore (Pixel, Android 36 arm64) solo fino alle quattro schede vuote (screenshot in `android/docs/fase1.png`). Non provata su un telefono vero. Codice scritto da una sessione Sonnet, da rivedere. Dettagli in `android/README.md`.
+App nativa Kotlin + Compose in `android/` (la TWA non c'è più, stesso package). Compila con `cd android && ./gradlew test assembleDebug`: 133 prove JUnit sul JVM, tutte verdi; provata nell'emulatore (Android 36 arm64, immagine google_apis) solo fino alle quattro schede vuote, in italiano e in inglese, nessun errore nel log (screenshot in `android/docs/fase1.png`). Non provata su un telefono vero. Codice scritto da una sessione Sonnet, da rivedere. Dettagli in `android/README.md`.
 
 | Fatto | Dove |
 |---|---|
