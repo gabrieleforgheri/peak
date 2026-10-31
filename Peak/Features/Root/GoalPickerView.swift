@@ -70,7 +70,7 @@ struct GoalPickerView: View {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(o.n) a settimana").font(Theme.rounded(17, .bold)).foregroundStyle(Theme.textPrimary)
-                    Text("\(o.name) · \(o.text)").font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.leading)
+                    Text("\(o.name.tr) · \(o.text.tr)").font(Theme.rounded(12, .medium)).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.leading)
                 }
                 Spacer()
                 Circle().strokeBorder(on ? settings.accentColor : Theme.stroke, lineWidth: 2)
