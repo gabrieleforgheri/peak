@@ -9,3 +9,4 @@ captures/
 
 # il .gitignore della radice ignora le cartelle "data/" (dati del server): qui è il pacchetto Room
 !data/
+.kotlin/
