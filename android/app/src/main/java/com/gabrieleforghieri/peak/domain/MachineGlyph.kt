@@ -1,6 +1,6 @@
 // Generato da android/scripts/gen-assets.ts: non modificarlo a mano.
 
-package com.gabrieleforghieri.peak.design
+package com.gabrieleforghieri.peak.domain
 
 /** Pittogrammi degli attrezzi: uno per tipo di attrezzo del catalogo, più quelli generici di prima. */
 enum class MachineGlyph(val raw: String, val title: String, val shapes: List<GlyphShape>) {

@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
 }
 
@@ -41,6 +42,9 @@ android {
 
     sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/catalog"))
 
+    // Le prove usano i dati condivisi con web e iPhone: il catalogo e i vettori dei record.
+    sourceSets.getByName("test").resources.srcDirs(rootProject.file("../common/fixtures"), layout.buildDirectory.dir("generated/catalog"))
+
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
@@ -52,7 +56,7 @@ kotlin {
     }
 }
 
-tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+tasks.matching { (it.name.startsWith("merge") && it.name.endsWith("Assets")) || it.name.contains("UnitTestJavaRes") }.configureEach {
     dependsOn(copyCatalog)
 }
 
@@ -73,8 +77,10 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.serialization.json)
     ksp(libs.androidx.room.compiler)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

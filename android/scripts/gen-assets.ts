@@ -1,6 +1,7 @@
 // Genera i file Android che derivano da dati condivisi con web e iPhone, così non si ricopiano a mano:
-//   - design/MachineGlyphShapes.kt   dai disegni di common/glyph.ts (come scripts/gen-glyphs.ts per Swift)
-//   - design/MuscleFigureShapes.kt   dai contorni di common/anatomy.ts + common/muscle-info.ts
+//   - domain/MachineGlyph.kt         dai disegni di common/glyph.ts (come scripts/gen-glyphs.ts per Swift)
+//   - domain/MuscleId.kt             dai muscoli di common/muscle-info.ts
+//   - design/AnatomyShapes.kt        dai contorni di common/anatomy.ts
 //   - res/values/strings.xml, res/values-en/strings.xml   da Peak/en.lproj/Localizable.strings + web/src/lib/en.json
 //   - res/raw/fx_*.m4a               da Peak/Sounds/
 // Uso (dalla radice del repo): node android/scripts/gen-assets.ts
@@ -24,7 +25,7 @@ const shape = (s: Shape) => `${{ line: 'Line', bar: 'Bar', rect: 'SolidRect', do
 
 function glyphs(): string {
   return `${HEADER}
-package com.gabrieleforghieri.peak.design
+package com.gabrieleforghieri.peak.domain
 
 /** Pittogrammi degli attrezzi: uno per tipo di attrezzo del catalogo, più quelli generici di prima. */
 enum class MachineGlyph(val raw: String, val title: String, val shapes: List<GlyphShape>) {
@@ -39,15 +40,9 @@ ${GLYPHS.map((g) => `    ${g}(${q(g)}, ${q(GLYPH_TITLES[g])}, listOf(\n${SHAPES[
 
 // ---- figura dei muscoli --------------------------------------------------------------------------
 
-function anatomy(): string {
-  const pieces = (view: 'front' | 'back') =>
-    ANATOMY[view].map((p) => `        AnatomyPiece(${p.muscle ? `MuscleId.${p.muscle}` : 'null'}, listOf(\n${p.paths.map((d) => `            ${q(d)}`).join(',\n')}\n        ))`).join(',\n')
-  const boxes = (['front', 'back'] as const).flatMap((v) =>
-    Object.entries(MUSCLE_BOX[v]).map(([m, b]) => `        ${q(`${v}.${m}`)} to doubleArrayOf(${(b as number[]).join(', ')})`)).join(',\n')
+function muscleIds(): string {
   return `${HEADER}
-package com.gabrieleforghieri.peak.design
-
-import com.gabrieleforghieri.peak.domain.MuscleGroup
+package com.gabrieleforghieri.peak.domain
 
 /** I muscoli che la figura colora. Il raw è l'id di common/muscle-info.ts: mai rinominato, finisce nei documenti. */
 enum class MuscleId(val title: String, val titleEn: String, val group: MuscleGroup) {
@@ -57,6 +52,18 @@ ${MUSCLES.map((m) => `    ${m}(${q(MUSCLE_INFO[m].it)}, ${q(MUSCLE_INFO[m].en)},
         fun of(raw: String?): MuscleId? = entries.firstOrNull { it.name == raw }
     }
 }
+`
+}
+
+function anatomy(): string {
+  const pieces = (view: 'front' | 'back') =>
+    ANATOMY[view].map((p) => `        AnatomyPiece(${p.muscle ? `MuscleId.${p.muscle}` : 'null'}, listOf(\n${p.paths.map((d) => `            ${q(d)}`).join(',\n')}\n        ))`).join(',\n')
+  const boxes = (['front', 'back'] as const).flatMap((v) =>
+    Object.entries(MUSCLE_BOX[v]).map(([m, b]) => `        ${q(`${v}.${m}`)} to doubleArrayOf(${(b as number[]).join(', ')})`)).join(',\n')
+  return `${HEADER}
+package com.gabrieleforghieri.peak.design
+
+import com.gabrieleforghieri.peak.domain.MuscleId
 
 /** Un pezzo del corpo: il muscolo (null = corpo, sempre grigio) e i suoi contorni come percorsi SVG assoluti. */
 class AnatomyPiece(val muscle: MuscleId?, val paths: List<String>)
@@ -145,8 +152,10 @@ function strings(): { it: string; en: string; count: number } {
 // ---- scrittura ----------------------------------------------------------------------------------
 
 mkdirSync(kt('design'), { recursive: true })
-writeFileSync(kt('design/MachineGlyphShapes.kt'), glyphs())
-writeFileSync(kt('design/MuscleFigureShapes.kt'), anatomy())
+mkdirSync(kt('domain'), { recursive: true })
+writeFileSync(kt('domain/MachineGlyph.kt'), glyphs())
+writeFileSync(kt('domain/MuscleId.kt'), muscleIds())
+writeFileSync(kt('design/AnatomyShapes.kt'), anatomy())
 
 const s = strings()
 mkdirSync(res('values-en'), { recursive: true })
