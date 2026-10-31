@@ -20,7 +20,7 @@ struct FriendProfileView: View {
         var out: [String: Double] = [:]
         for e in exercises where !e.catalogID.isEmpty && !e.isArchived {
             var best = e.twoArmRecords.map(\.estimatedOneRepMax).max() ?? 0
-            best = max(best, e.setList.filter { !$0.isWarmup && !$0.singleArm }.map(\.estimatedOneRepMax).max() ?? 0)
+            best = max(best, e.setList.filter { !$0.isWarmup && !$0.isOneLimbLine }.map(\.estimatedOneRepMax).max() ?? 0)
             if best > 0 { out[e.catalogID] = max(out[e.catalogID] ?? 0, best) }
         }
         return out
@@ -150,6 +150,7 @@ struct FriendProfileView: View {
                 let entry = Catalog.entry(id: row.catalog)
                 let created = Exercise(name: entry?.name ?? row.name, muscleGroup: entry?.muscleGroup ?? .petto, incrementStep: entry?.step ?? 2.5, notes: entry?.notes ?? "", sortIndex: nextIndex)
                 created.catalogID = entry?.id ?? ""
+                created.setLimbs(created.limbs)
                 created.isCustom = entry == nil
                 context.insert(created)
                 mineExercises.append(created)

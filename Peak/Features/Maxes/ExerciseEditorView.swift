@@ -23,7 +23,11 @@ struct ExerciseEditorView: View {
     @State private var weightDisplay: String = "absolute"
     @State private var plateLoaded = false
     @State private var perSide = false
-    @State private var isUnilateral = false
+    /// Come si fa, se l'hai scelto qui; finché è `nil` vale quello del macchinario (o, se nuovo, quello di base dal catalogo/nome).
+    @State private var limbsPick: Limbs?
+    private var limbsShown: Limbs {
+        limbsPick ?? exercise?.limbs ?? Limbs.defaultLimbs(catalog: catalogID, name: name, muscleGroup: group.rawValue)
+    }
     @State private var restSeconds = 0
     @State private var isArchived = false
     @State private var isHidden = false
@@ -251,16 +255,18 @@ struct ExerciseEditorView: View {
             }
         }
 
-        GlassCard {
-            VStack(alignment: .leading, spacing: 12) {
-                SectionHeader(title: "Esecuzione")
-                HStack(spacing: 8) {
-                    stepChip(group == .gambe ? "Entrambe le gambe" : "Entrambe le braccia", isOn: !isUnilateral) {
-                        isUnilateral = false
+        if group != .core {
+            GlassCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    SectionHeader(title: "Come si fa")
+                    HStack(spacing: 8) {
+                        stepChip("Insieme", isOn: limbsShown == .both) { limbsPick = .both }
+                        stepChip(group == .gambe ? "Una gamba" : "Un braccio", isOn: limbsShown == .one) { limbsPick = .one }
+                        stepChip("A scelta", isOn: limbsShown == .either) { limbsPick = .either }
                     }
-                    stepChip(group == .gambe ? "Una gamba" : "Un braccio", isOn: isUnilateral) {
-                        isUnilateral = true
-                    }
+                    Text(limbsHint)
+                        .font(Theme.rounded(11, .medium))
+                        .foregroundStyle(Theme.textTertiary)
                 }
             }
         }
@@ -752,6 +758,14 @@ struct ExerciseEditorView: View {
         .buttonStyle(.plain)
     }
 
+    private var limbsHint: String {
+        switch limbsShown {
+        case .both: return "Insieme: i due arti lavorano sempre insieme."
+        case .one: return group == .gambe ? "Una gamba: si fa sempre una gamba alla volta." : "Un braccio: si fa sempre un braccio alla volta."
+        case .either: return "A scelta: sulla serie scegli 2 o 1."
+        }
+    }
+
     private func load() {
         guard !didLoad else { return }
         didLoad = true
@@ -770,7 +784,6 @@ struct ExerciseEditorView: View {
         group = exercise.muscleGroup
         step = exercise.incrementStep
         notes = exercise.notes
-        isUnilateral = exercise.isUnilateral
         restSeconds = exercise.restSeconds
         isArchived = exercise.isArchived
         isHidden = exercise.isHidden
@@ -792,7 +805,7 @@ struct ExerciseEditorView: View {
             exercise.muscleGroup = group
             exercise.incrementStep = step
             exercise.notes = notes
-            exercise.isUnilateral = isUnilateral
+            if group == .core { exercise.setLimbs(.both) } else if let limbsPick { exercise.setLimbs(limbsPick) }
             exercise.restSeconds = restSeconds
             exercise.isArchived = isArchived
             exercise.isHidden = isHidden
@@ -820,7 +833,6 @@ struct ExerciseEditorView: View {
             new.photo = photoData
             new.photoOffset = photoOffset
             new.glyphRaw = pickedGlyph?.rawValue ?? ""
-            new.isUnilateral = isUnilateral
             new.restSeconds = restSeconds
             new.catalogID = catalogID
             new.isCustom = catalogID.isEmpty && isCustom
@@ -831,6 +843,7 @@ struct ExerciseEditorView: View {
             new.weightDisplay = weightDisplay
             new.plateLoaded = plateLoaded
             new.perSide = perSide
+            new.setLimbs(group == .core ? .both : limbsShown)
         }
         try? context.save()
         if isNew { settings.machineTipsSeen = true } // ha creato un macchinario: i suggerimenti hanno fatto il loro

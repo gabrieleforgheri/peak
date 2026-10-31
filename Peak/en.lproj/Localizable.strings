@@ -988,3 +988,13 @@
 "Elimina allenamento" = "Delete workout";
 "Già in Salute" = "Already in Health";
 "Rifiutati dal server: %d" = "Rejected by the server: %d";
+"Come si fa" = "How it's done";
+"Insieme" = "Together";
+"A scelta" = "Either";
+"Insieme: i due arti lavorano sempre insieme." = "Together: both limbs always work together.";
+"Un braccio: si fa sempre un braccio alla volta." = "One arm: always done one arm at a time.";
+"Una gamba: si fa sempre una gamba alla volta." = "One leg: always done one leg at a time.";
+"A scelta: sulla serie scegli 2 o 1." = "Either: pick 2 or 1 on each set.";
+"Per gamba" = "Per leg";
+"Per braccio" = "Per arm";
+"a due" = "with two";

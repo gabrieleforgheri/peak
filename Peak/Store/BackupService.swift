@@ -111,6 +111,7 @@ enum BackupService {
                     weightDisplay: exercise.weightDisplay == "absolute" ? nil : exercise.weightDisplay,
                     plateLoaded: exercise.plateLoaded ? true : nil,
                     perSide: exercise.perSide ? true : nil,
+                    limbs: exercise.limbsRaw,
                     records: exercise.recordList.map { record in
                         MaxRecordDTO(
                             uuid: record.uuid,
@@ -285,6 +286,7 @@ enum BackupService {
             exercise.weightDisplay = dto.weightDisplay ?? "absolute"
             exercise.plateLoaded = dto.plateLoaded ?? false
             exercise.perSide = dto.perSide ?? false
+            exercise.limbsRaw = dto.limbs.flatMap { Limbs(rawValue: $0) }?.rawValue
             context.insert(exercise)
             exercisesByUUID[dto.uuid] = exercise
             addMissingRecords(from: dto, to: exercise, context: context)

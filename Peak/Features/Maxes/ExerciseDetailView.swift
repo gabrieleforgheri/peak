@@ -100,7 +100,19 @@ struct ExerciseDetailView: View {
                 if records.count >= 2 { chartCard.appear(4) }
                 if !records.isEmpty { recordsCard(title: "Storico massimali", records: records).appear(5) }
                 // una linea a parte, solo se ci sono massimali a un braccio
-                if !exercise.singleArmRecords.isEmpty { recordsCard(title: exercise.worksLegs ? "Massimale a una gamba" : "Massimale a un braccio", records: exercise.singleArmRecordsByDateDesc).appear(6) }
+                if exercise.limbs == .either, !exercise.singleArmRecords.isEmpty {
+                    VStack(spacing: 8) {
+                        recordsCard(title: exercise.worksLegs ? "Massimale a una gamba" : "Massimale a un braccio", records: exercise.singleArmRecordsByDateDesc)
+                        if let comparison = limbComparison {
+                            Text(comparison)
+                                .font(Theme.rounded(12, .medium))
+                                .foregroundStyle(Theme.textTertiary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 4)
+                        }
+                    }
+                    .appear(6)
+                }
                 if !recentSets.isEmpty { setsCard.appear(7) }
                 if !exercise.notes.isEmpty { notesCard.appear(8) }
             }
@@ -146,7 +158,7 @@ struct ExerciseDetailView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack(spacing: 8) {
                             MuscleGroupChip(group: exercise.muscleGroup)
-                            if exercise.isUnilateral {
+                            if exercise.limbs == .one {
                                 Text(exercise.worksLegs ? "Una gamba" : "Un braccio")
                                     .font(Theme.rounded(11, .semibold))
                                     .foregroundStyle(Theme.textSecondary)
@@ -397,6 +409,15 @@ struct ExerciseDetailView: View {
 
     // MARK: - Storico record
 
+    /// «Per gamba: 70 kg · a due 62,5 kg»: il massimale a un arto accanto alla metà di quello a due. Solo dove il peso
+    /// è quello di un arto solo e non di un manico (manubri e cavi), cioè la pila unica.
+    private var limbComparison: String? {
+        guard !exercise.twoHandles, let one = exercise.singleArmBestRecord, let two = exercise.bestRecord else { return nil }
+        let halved = Fmt.weight(two.weight / 2, unit: settings.unit)
+        let limb = exercise.worksLegs ? "Per gamba".tr : "Per braccio".tr
+        return "\(limb): \(Fmt.weight(one.weight, unit: settings.unit)) · \("a due".tr) \(halved)"
+    }
+
     private func recordsCard(title: String, records: [MaxRecord]) -> some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
@@ -414,7 +435,7 @@ struct ExerciseDetailView: View {
                             .frame(width: 8, height: 8)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(Fmt.setLine(weight: record.weight, reps: record.reps, unit: settings.unit, singleArm: record.singleArm, group: exercise.muscleGroup))
+                            Text(Fmt.setLine(weight: record.weight, reps: record.reps, unit: settings.unit, singleArm: record.isOneLimbLine, group: exercise.muscleGroup))
                                 .font(Theme.rounded(14, .semibold))
                                 .foregroundStyle(Theme.textPrimary)
                             Text(Fmt.date(record.date) + (record.isEstimated ? " · da allenamento" : ""))
@@ -461,7 +482,7 @@ struct ExerciseDetailView: View {
                         if exercise.weightDisplay == "relative", !exercise.perSide, exercise.barWeight > 0 {
                             let relWeight = max(0, set.weight - exercise.barWeight)
                             HStack(spacing: 4) {
-                                Text(Fmt.setLine(weight: relWeight, reps: set.reps, unit: settings.unit, singleArm: set.singleArm, group: exercise.muscleGroup))
+                                Text(Fmt.setLine(weight: relWeight, reps: set.reps, unit: settings.unit, singleArm: set.isOneLimbLine, group: exercise.muscleGroup))
                                 Text("(tot. \(Fmt.weight(set.weight, unit: settings.unit)))")
                                     .font(Theme.rounded(11, .medium))
                                     .foregroundStyle(Theme.textTertiary)
@@ -469,7 +490,7 @@ struct ExerciseDetailView: View {
                             .font(Theme.rounded(14, .semibold))
                             .foregroundStyle(Theme.textPrimary)
                         } else {
-                            Text(Fmt.setLine(weight: set.weight, reps: set.reps, unit: settings.unit, singleArm: set.singleArm, group: exercise.muscleGroup))
+                            Text(Fmt.setLine(weight: set.weight, reps: set.reps, unit: settings.unit, singleArm: set.isOneLimbLine, group: exercise.muscleGroup))
                                 .font(Theme.rounded(14, .semibold))
                                 .foregroundStyle(Theme.textPrimary)
                         }

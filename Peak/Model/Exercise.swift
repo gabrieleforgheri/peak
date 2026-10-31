@@ -45,6 +45,8 @@ final class Exercise {
     var plateLoaded: Bool = false
     /// Il peso si inserisce per un lato (totale = 2 x + sbarra); le serie restano salvate come totale.
     var perSide: Bool = false
+    /// Come si fa: "both", "one" o "either" (vedi `Limbs`). nil = di base (catalogo o nome): non si scrive nulla finché non lo scegli.
+    var limbsRaw: String?
 
     @Relationship(deleteRule: .cascade, inverse: \MaxRecord.exercise)
     var records: [MaxRecord]? = []
@@ -122,9 +124,10 @@ final class Exercise {
     var setList: [WorkoutSet] { sets ?? [] }
 
     /// I massimali a due braccia: la linea che mostra «il» massimale in tutta l'app.
-    /// Quelli a un braccio (`singleArm`) sono una linea a parte (`singleArmRecords`).
-    var twoArmRecords: [MaxRecord] { recordList.filter { !$0.singleArm } }
-    var singleArmRecords: [MaxRecord] { recordList.filter { $0.singleArm } }
+    /// Quelli a un braccio (`singleArm`, solo se il macchinario si fa in tutti e due i modi: `Limbs.lineArm`)
+    /// sono una linea a parte (`singleArmRecords`).
+    var twoArmRecords: [MaxRecord] { let l = limbs; return recordList.filter { !Limbs.lineArm(l, $0.singleArm) } }
+    var singleArmRecords: [MaxRecord] { let l = limbs; return recordList.filter { Limbs.lineArm(l, $0.singleArm) } }
 
     /// Storico dei massimali a due braccia dal più recente al più vecchio.
     var recordsByDateDesc: [MaxRecord] {
@@ -177,7 +180,10 @@ final class Exercise {
     func progression(range: ClosedRange<Int>, unit: WeightUnit = .kg) -> Progression.Suggestion? {
         let working = setList.filter { !$0.isWarmup && $0.workout?.endedAt != nil }
         guard let last = working.compactMap(\.workout).max(by: { $0.date < $1.date }) else { return nil }
-        let session = working.filter { $0.workout?.persistentModelID == last.persistentModelID }
+        // una sessione con serie a due e a un arto: si ragiona sulla linea dell'ultima serie fatta (i pesi non si mescolano)
+        let day = working.filter { $0.workout?.persistentModelID == last.persistentModelID }
+        let oneLimb = day.max { $0.createdAt < $1.createdAt }?.isOneLimbLine ?? false
+        let session = day.filter { $0.isOneLimbLine == oneLimb }
         let converted = session.map { (weight: (unit.fromKilograms($0.weight) * 100).rounded() / 100, reps: $0.reps) }
         guard let next = Progression.next(lastSession: converted, step: unit.displayStep(forKilograms: incrementStep), range: range) else {
             return nil

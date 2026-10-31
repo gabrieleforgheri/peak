@@ -38,7 +38,7 @@ struct HomeStats {
         var best = 0.0
         for e in used {
             for r in e.twoArmRecords { best = max(best, r.estimatedOneRepMax) }
-            for s in e.setList where !s.isWarmup && !s.singleArm { best = max(best, s.estimatedOneRepMax) }
+            for s in e.setList where !s.isWarmup && !s.isOneLimbLine { best = max(best, s.estimatedOneRepMax) }
         }
         bestOneRm = best
         var days: [Date: Int] = [:]

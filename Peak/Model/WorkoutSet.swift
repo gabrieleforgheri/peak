@@ -17,7 +17,7 @@ final class WorkoutSet {
     /// che hai eliminato dallo storico). La serie resta nell'allenamento e nel volume.
     var excludedFromRecords: Bool = false
     /// Serie fatta con un braccio solo: il peso è quello sul singolo manico, le ripetizioni sono per lato.
-    /// Ha una linea di massimali a parte e il volume conta il doppio.
+    /// Conta solo sui macchinari che si fanno in tutti e due i modi (`Limbs.either`): lì ha una linea di massimali a parte.
     var singleArm: Bool = false
 
     var exercise: Exercise?
@@ -45,7 +45,8 @@ final class WorkoutSet {
         self.workout = workout
     }
 
-    var volume: Double { weight * Double(reps) * (singleArm ? 2 : 1) }
+    /// Peso × ripetizioni, come l'attrezzo: un arto o due non cambia il conto.
+    var volume: Double { weight * Double(reps) }
 
     var estimatedOneRepMax: Double {
         OneRepMax.estimate(weight: weight, reps: reps)

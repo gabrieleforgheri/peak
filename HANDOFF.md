@@ -1,3 +1,22 @@
+# Uno o due arti, parte iPhone (31 ottobre 2026)
+
+Solo iPhone (Peak/, regole in `common/domain.ts`, commit dba9897). Codice scritto da un subagente Sonnet, da rivedere. `xcodebuild build` di Peak e PeakWatch ok, `build-for-testing` ok, `check-i18n-ios` 0 mancanti; test non eseguiti, non provato sul telefono né nel simulatore. Nessuna migrazione riscrive serie: le 4 serie di ieri (`singleArm` su macchinari «insieme» e «un arto») restano com'erano nel database, ma ora stanno sulla linea principale.
+
+| Fatto | Dove |
+|---|---|
+| `Limbs` (both/one/either), `defaultLimbs`, `limbsOf`, `lineArm`, `twoHandles` identici al TypeScript; estensioni `Exercise.limbs`, `setLimbs` (tiene `isUnilateral == (limbs == one)`), `isOneLimbLine` su serie e massimali | `Model/Limbs.swift` (nuovo), `Exercise.limbsRaw: String?` (opzionale, migrazione leggera) |
+| Linea a un arto solo sui macchinari «a scelta»: record, PR, massimo, «1 br/1 gb», quaderno, medaglie, progressione 1RM, amici, ultimi massimali. Ricalcolo record con il flag effettivo (`RecordRules` invariata) | `RecordService`, `Exercise.twoArmRecords/singleArmRecords`, `MedalsAt`, `MeSections`, `ProgressionCard`, `FriendProfileView`, `Insights`, viste che usano `Fmt.setLine` |
+| Volume = peso × ripetizioni (niente ×2) | `WorkoutSet.volume` |
+| Selettore «2 \| 1» solo su «a scelta»; nuove serie partono col selettore dell'ultima serie; a uno il peso si dimezza solo se non è `twoHandles` (manubri e cavi restano); sui macchinari «insieme»/«un arto» si salva sempre `singleArm` falso | `AddSetSheet`, `EditMaxSheet`, ripeti ultima in `WorkoutSessionView` |
+| Dettaglio macchinario: linea a un arto solo per «a scelta», confronto «Per gamba: 70 kg · a due 62,5 kg» se non `twoHandles`, badge «Un braccio/Una gamba» solo per «un arto» | `ExerciseDetailView` |
+| Editor: tre chip «Insieme / Un braccio (Una gamba) / A scelta» sotto «Come si fa», con riga di spiegazione, nascosti per il core; scrive `limbs` solo se lo scegli (nuovo macchinario: quello di base). Creazione da catalogo (primo avvio, scheda di un amico) imposta `limbs` | `ExerciseEditorView`, `Onboarding`, `FriendProfileView` |
+| Sync: `limbs` inviato solo se scelto, letto se valido, assente = resta il valore locale. Backup: chiave `limbs` come `server/backup.ts` | `SyncDocs`, `BackupDTO`, `BackupService` |
+| Testi inglesi in `Localizable.strings`; `Limbs.swift` nell'elenco `SKIP` di `check-i18n-ios.mjs` (contiene la regex dei nomi) | `Peak/en.lproj/Localizable.strings`, `scripts/check-i18n-ios.mjs` |
+| Test gemelli di «uno o due arti» e «due manici» (non eseguiti) | `PeakTests/LimbsTests.swift` |
+| Dal Watch le serie restano `singleArm` falso. Progressione (`Exercise.progression`): sulla linea dell'ultima serie della sessione. Non fatto: `ArmSwitch` per twoHandles non ha un test a parte | — |
+
+---
+
 # Correzioni web dalla prova nel browser (31 ottobre 2026, notte)
 
 Solo web. Scritto a mano (i subagenti avevano finito i limiti). Provato nel browser su build vera (:3416, dati di prova): campo numerico in inglese, percorsi sconosciuti, «Scorso» ricordato dopo il ricaricamento, recupero 1:00 dopo un riscaldamento con 120 s, modifica di un riscaldamento che resta tale, impostazione 0–100 %. Nessun errore in console né nel log del server.

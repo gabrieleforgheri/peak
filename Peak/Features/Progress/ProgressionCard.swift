@@ -10,7 +10,7 @@ enum Progression1RM {
         let cal = Calendar.current
         var best: [Date: Double] = [:]
         for r in exercise.twoArmRecords { best[cal.startOfDay(for: r.date), default: 0] = max(best[cal.startOfDay(for: r.date)] ?? 0, r.estimatedOneRepMax) }
-        for s in exercise.setList where !s.isWarmup && !s.singleArm && s.workout?.isActive == false {
+        for s in exercise.setList where !s.isWarmup && !s.isOneLimbLine && s.workout?.isActive == false {
             let d = cal.startOfDay(for: s.workout?.date ?? s.createdAt)
             best[d] = max(best[d] ?? 0, s.estimatedOneRepMax)
         }

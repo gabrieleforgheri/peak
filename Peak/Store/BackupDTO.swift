@@ -48,6 +48,8 @@ struct ExerciseDTO: Codable {
     var weightDisplay: String?
     var plateLoaded: Bool?
     var perSide: Bool?
+    /// Opzionale: come si fa il macchinario ("both", "one", "either"); assente = quello di base. Stessa chiave di server/backup.ts.
+    var limbs: String?
     var records: [MaxRecordDTO]
 }
 

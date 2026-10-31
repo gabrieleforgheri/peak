@@ -68,9 +68,10 @@ final class Insights {
                 return points.count >= 2 ? Series(exercise: e, points: points) : nil
             }
             .sorted { ($0.exercise.bestRecord?.estimatedOneRepMax ?? 0) > ($1.exercise.bestRecord?.estimatedOneRepMax ?? 0) }
-        var latest = FetchDescriptor<MaxRecord>(predicate: #Predicate { !$0.singleArm }, sortBy: [SortDescriptor(\.date, order: .reverse)])
-        latest.fetchLimit = 8
-        latestRecords = (try? context.fetch(latest)) ?? []
+        // la linea a un arto dipende dal macchinario (`Limbs.lineArm`): non si può filtrare nella query, si prendono un po' di più
+        var latest = FetchDescriptor<MaxRecord>(sortBy: [SortDescriptor(\.date, order: .reverse)])
+        latest.fetchLimit = 40
+        latestRecords = Array(((try? context.fetch(latest)) ?? []).filter { !$0.isOneLimbLine }.prefix(8))
         recentByExercise = exercises
             .compactMap { e in e.twoArmRecords.max { $0.date < $1.date }.map { (exercise: e, record: $0) } }
             .sorted { $0.record.date > $1.record.date }

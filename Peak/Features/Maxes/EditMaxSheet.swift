@@ -42,7 +42,7 @@ struct EditMaxSheet: View {
                         VStack(spacing: 18) {
                             HStack(alignment: .firstTextBaseline) {
                                 SectionHeader(title: "Carico")
-                                if exercise.muscleGroup.hasSides {
+                                if exercise.limbs == .either, exercise.muscleGroup.hasSides {
                                     SideSegment(singleArm: $singleArm, group: exercise.muscleGroup)
                                 }
                             }
@@ -150,7 +150,7 @@ struct EditMaxSheet: View {
             date: date,
             isEstimated: false,
             note: note,
-            singleArm: singleArm
+            singleArm: Limbs.lineArm(exercise.limbs, singleArm)
         )
         context.insert(record)
         record.exercise = exercise

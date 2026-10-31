@@ -15,7 +15,7 @@ extension Medals {
             records += rs.count
             if !rs.isEmpty || !ss.isEmpty { machines += 1 }
             for r in rs { best = max(best, r.estimatedOneRepMax) }
-            for s in ss where !s.singleArm { best = max(best, s.estimatedOneRepMax) }
+            for s in ss where !s.isOneLimbLine { best = max(best, s.estimatedOneRepMax) }
         }
         return list(MedalInput(
             sessions: done.count, records: records,

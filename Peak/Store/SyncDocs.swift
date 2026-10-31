@@ -118,6 +118,8 @@ enum SyncDocs {
                 "plateLoaded": exercise.plateLoaded,
                 "perSide": exercise.perSide
             ]
+            // solo se scelto: assente = di base, e un client vecchio non lo cancella (KEEP_IF_ABSENT)
+            if let limbs = exercise.limbsRaw { out[key("exercise", exercise.uuid)]?["limbs"] = limbs }
             // solo i massimali inseriti a mano: gli altri si ricalcolano dalle serie
             for record in exercise.recordList where !record.isEstimated {
                 out[key("record", record.uuid)] = [
@@ -290,6 +292,7 @@ enum SyncDocs {
                 if let wd = text(d, "weightDisplay"), ["absolute", "relative"].contains(wd) { exercise.weightDisplay = wd }
                 if let plate = d["plateLoaded"] as? Bool { exercise.plateLoaded = plate }
                 if let side = d["perSide"] as? Bool { exercise.perSide = side }
+                if let l = text(d, "limbs"), Limbs(rawValue: l) != nil { exercise.limbsRaw = l }
                 let sha = text(d, "photo") ?? ""
                 if sha.isEmpty { exercise.photo = nil }
                 else if let bytes = photos[sha] { exercise.photo = bytes }

@@ -304,7 +304,7 @@ struct WorkoutSummaryView: View {
                             Text(set.exercise?.displayName ?? "Esercizio rimosso")
                                 .font(Theme.rounded(14, .semibold))
                                 .foregroundStyle(Theme.textPrimary)
-                            Text(Fmt.setLine(weight: set.weight, reps: set.reps, unit: settings.unit, singleArm: set.singleArm, group: set.exercise?.muscleGroup))
+                            Text(Fmt.setLine(weight: set.weight, reps: set.reps, unit: settings.unit, singleArm: set.isOneLimbLine, group: set.exercise?.muscleGroup))
                                 .font(Theme.rounded(11, .medium))
                                 .foregroundStyle(Theme.textTertiary)
                         }

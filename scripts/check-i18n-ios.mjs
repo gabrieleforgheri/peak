@@ -5,7 +5,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 // codice che non è interfaccia: parole chiave, campi dell'API, regex, nomi di file
-const SKIP = ['Peak/Design/MachineGlyph.swift', 'Peak/Model/Plates.swift', 'Peak/Model/Programs.swift', 'Peak/Model/Catalog.swift',
+const SKIP = ['Peak/Design/MachineGlyph.swift', 'Peak/Model/Plates.swift', 'Peak/Model/Programs.swift', 'Peak/Model/Catalog.swift', 'Peak/Model/Limbs.swift',
 	'Peak/Store/PeakAPI.swift', 'Peak/Store/PeakSocial.swift', 'Peak/Store/PeakLogin.swift']
 
 const walk = (d) => readdirSync(d).flatMap((n) => { const f = join(d, n); return statSync(f).isDirectory() ? walk(f) : [f] })
