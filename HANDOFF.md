@@ -1,3 +1,21 @@
+# Uno o due arti: web (31 ottobre 2026)
+
+Solo web; le regole sono in `common/` (`limbsOf`, `lineArm`, `twoHandles`, `switchArm`). Il peso scritto è sempre quello sull'attrezzo, mai raddoppiato o dimezzato al salvataggio. Nessuna serie salvata è stata toccata: il segno `singleArm` viene normalizzato (`lineArm`) solo quando si costruisce il modello. Provato nel browser su build vera (:3516, dati di prova): gambe «A scelta» con selettore, 125 → 62,5 passando a una gamba; manubri «A scelta» con peso invariato; Cable Fly («Insieme») senza selettore e con la serie segnata a un braccio sulla linea principale, senza «1 br»; alzate a un braccio al cavo («Un braccio») senza selettore, badge sul dettaglio; selettore ricordato dall'ultima serie; volume = peso × rip.
+
+| Fatto | Dove |
+|---|---|
+| `Ex.limbs` già risolto (salvato o di base). `singleArm` di serie e massimali normalizzato con `lineArm` una volta sola nel modello: massimali, PR, «Scorso», righe del taccuino, riepilogo, medaglie, amici lo leggono già giusto | `store.svelte.ts`, `types.ts` |
+| Foglio serie: il selettore «2 \| 1» c'è solo su «A scelta»; la serie nuova parte dal selettore dell'ultima serie dell'esercizio (nell'allenamento, poi in archivio); su «Insieme»/«Un braccio» si salva sempre `singleArm` falso; passando a uno si dimezza sulla griglia solo se `!twoHandles` (manubri e cavi restano uguali) | `AddSetSheet.svelte` |
+| Aggiorna massimale: il selettore solo su «A scelta» | `EditMaxSheet.svelte` |
+| Prossimo carico: su «A scelta» si propone per la linea dell'ultima serie (a due o a uno), senza mescolarle | `derive.ts` |
+| Dettaglio: la linea «Massimale a un braccio/una gamba» resta solo su «A scelta»; su una pila sola (`!twoHandles`) sotto c'è «Per gamba: 70 kg · a due 62,5 kg»; il badge «Un braccio/Una gamba» solo per «Un braccio» (non più `isUnilateral`) | `ExerciseDetail.svelte` |
+| Modifica macchinario: «Come si fa» con «Insieme» / «Un braccio» (o «Una gamba») / «A scelta» e una riga che spiega la scelta; nascosto per il core. Salva `limbs` e `isUnilateral: limbs === 'one'` per i client vecchi | `ExerciseEditor.svelte` |
+| Macchinario nuovo dal catalogo: `limbs` da `defaultLimbs` | `catalog.ts`, `actions.ts` |
+| Stringhe inglesi | `en.json` |
+| Non provato: il passo guidato «nuovo macchinario dal catalogo» nel browser (solo il codice); `npm test` 134 verdi, `svelte-check` e `check-i18n` puliti | — |
+
+---
+
 # Correzioni web dalla prova nel browser (31 ottobre 2026, notte)
 
 Solo web. Scritto a mano (i subagenti avevano finito i limiti). Provato nel browser su build vera (:3416, dati di prova): campo numerico in inglese, percorsi sconosciuti, «Scorso» ricordato dopo il ricaricamento, recupero 1:00 dopo un riscaldamento con 120 s, modifica di un riscaldamento che resta tale, impostazione 0–100 %. Nessun errore in console né nel log del server.

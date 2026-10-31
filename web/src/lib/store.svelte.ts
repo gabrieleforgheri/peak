@@ -8,7 +8,7 @@ import { glyphOf } from '@common/glyph.ts'
 import { norm, type CatalogEntry } from '@common/catalog.ts'
 import { entryName, loadCatalog } from './catalog.ts'
 import type { Muscle, View } from '@common/muscle-info.ts'
-import { bestOf } from '@common/domain.ts'
+import { bestOf, lineArm, limbsOf } from '@common/domain.ts'
 import { deriveRecords, recordsByExercise } from '@common/records.ts'
 import { setVolume } from '@common/stats.ts'
 import * as idb from './idb.ts'
@@ -145,12 +145,16 @@ function compute(): Model {
 
 	const exIds = new Set(d.exercises.map((e) => e.uuid))
 	const wkIds = new Set(d.workouts.map((w) => w.uuid))
+	// come si fa ogni macchinario; il segno singleArm salvato conta solo dove si fa in tutti e due i modi (lineArm).
+	// Qui si normalizza una volta per tutte le schermate; i dati salvati non si toccano.
+	const limbsById = new Map(d.exercises.map((e) => [e.uuid, limbsOf(upgradeDoc('exercise', e.data))]))
+	const armOf = (exercise: string | null, singleArm: boolean | undefined) => lineArm(limbsById.get(exercise ?? '') ?? 'both', singleArm)
 	const manual = d.records.filter((r) => exIds.has(r.data.exercise))
-		.map((r) => ({ uuid: r.uuid, exercise: r.data.exercise, date: Date.parse(r.data.date), weight: r.data.weight, reps: r.data.reps, singleArm: r.data.singleArm === true }))
+		.map((r) => ({ uuid: r.uuid, exercise: r.data.exercise, date: Date.parse(r.data.date), weight: r.data.weight, reps: r.data.reps, singleArm: armOf(r.data.exercise, r.data.singleArm) }))
 	const recSets = d.sets.filter((s) => wkIds.has(s.data.workout)).map((s) => ({
 		uuid: s.uuid, exercise: s.data.exercise && exIds.has(s.data.exercise) ? s.data.exercise : null, workout: s.data.workout,
 		weight: s.data.weight, reps: s.data.reps, isWarmup: s.data.isWarmup, order: s.data.order,
-		createdAt: Date.parse(s.data.createdAt), noRecord: s.data.noRecord, singleArm: s.data.singleArm === true,
+		createdAt: Date.parse(s.data.createdAt), noRecord: s.data.noRecord, singleArm: armOf(s.data.exercise && exIds.has(s.data.exercise) ? s.data.exercise : null, s.data.singleArm),
 	}))
 	const { prSets, auto } = deriveRecords(manual, recSets, wkIds)
 	const byEx = recordsByExercise(manual, auto)
@@ -178,7 +182,7 @@ function compute(): Model {
 		const entry = x.catalog ? catalog.entries.get(x.catalog) : undefined
 		const stock = entry && [norm(entry.it), norm(entry.en)].includes(norm(x.name))
 		return {
-			...x, name: entry && stock ? entryName(entry) : x.name, aka: entry ? [entry.it, entry.en, ...entry.alias] : [],
+			...x, limbs: limbsById.get(e.uuid)!, name: entry && stock ? entryName(entry) : x.name, aka: entry ? [entry.it, entry.en, ...entry.alias] : [],
 			uuid: e.uuid, glyphName: glyphOf(x, catalog.glyphs.get(x.catalog)), records, best: bestOf(records), armRecords, armBest: bestOf(armRecords),
 			// la figura: quella della voce del catalogo se è collegato, altrimenti quella che hai toccato tu
 			figure: x.catalog ? (catalog.figures.get(x.catalog) ?? { muscles: [], view: '' as const }) : { muscles: x.muscles, view: x.view },

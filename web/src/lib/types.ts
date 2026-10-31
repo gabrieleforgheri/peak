@@ -1,4 +1,5 @@
 import type { AnyRecord } from '@common/records.ts'
+import type { Limbs } from '@common/domain.ts'
 import type { ExerciseDoc, GlyphName, ProgramDoc, TemplateDoc, WorkoutDoc } from '@common/docs.ts'
 import type { ACCENTS } from '@common/docs.ts'
 import type { Muscle, View } from '@common/muscle-info.ts'
@@ -9,6 +10,8 @@ export interface SetItem {
 }
 export interface Ex extends ExerciseDoc {
 	uuid: string
+	/** Come si fa, già risolto (salvato o di base): `ExerciseDoc.limbs` può mancare. */
+	limbs: Limbs
 	/** Gli altri nomi del catalogo (it, en, sinonimi) se è collegato, per la ricerca; `name` è già nella lingua dell'app. */
 	aka: string[]
 	/** null = macchinario personalizzato senza icona scelta. */
@@ -16,7 +19,7 @@ export interface Ex extends ExerciseDoc {
 	/** Massimali manuali + automatici, dal più recente. */
 	records: AnyRecord[]
 	best: AnyRecord | null
-	/** I massimali a un braccio, una linea a parte: `records` e `best` sono solo a due braccia. */
+	/** I massimali a un braccio, una linea a parte (solo dove `limbs` è 'either'): `records` e `best` sono solo a due braccia. */
 	armRecords: AnyRecord[]
 	armBest: AnyRecord | null
 	/** Serie degli allenamenti esistenti, dalla più recente. */

@@ -672,5 +672,13 @@
   "Brace": "Ember",
   "Ghiaccio": "Ice",
   "Viola": "Violet",
-  "Corallo": "Coral"
+  "Corallo": "Coral",
+  "Come si fa": "How it's done",
+  "Insieme": "Together",
+  "A scelta": "Your choice",
+  "Insieme: si usano sempre tutti e due gli arti.": "Together: both limbs are always used.",
+  "{0}: si lavora sempre un arto alla volta, il peso è quello sull'attrezzo.": "{0}: always one limb at a time, the weight is what's on the equipment.",
+  "A scelta: sulla serie scegli 2 o 1.": "Your choice: pick 2 or 1 on each set.",
+  "Per gamba: {0} · a due {1}": "Per leg: {0} · both {1}",
+  "Per braccio: {0} · a due {1}": "Per arm: {0} · both {1}"
 }

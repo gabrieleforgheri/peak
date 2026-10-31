@@ -223,8 +223,8 @@ export function saveExercise(id: string | null, d: Omit<ExerciseDoc, 'createdAt'
 export function addCatalogExercise(entry: CatalogEntry, sortIndex?: number): string {
 	const d = catalogDefaults(entry, getModel().settings.unit)
 	return saveExercise(null, {
-		name: d.name, muscleGroup: d.group, notes: d.notes, incrementStep: d.step, isArchived: false, glyph: '', photo: '', photoOffset: 0, isUnilateral: false, restSeconds: 0,
-		catalog: entry.id, hidden: false, custom: false, muscles: [], view: '', barWeight: d.barWeight, weightDisplay: 'absolute', plateLoaded: d.plateLoaded, perSide: false,
+		name: d.name, muscleGroup: d.group, notes: d.notes, incrementStep: d.step, isArchived: false, glyph: '', photo: '', photoOffset: 0, isUnilateral: d.limbs === 'one', restSeconds: 0,
+		limbs: d.limbs, catalog: entry.id, hidden: false, custom: false, muscles: [], view: '', barWeight: d.barWeight, weightDisplay: 'absolute', plateLoaded: d.plateLoaded, perSide: false,
 		...(sortIndex === undefined ? {} : { sortIndex }),
 	})
 }

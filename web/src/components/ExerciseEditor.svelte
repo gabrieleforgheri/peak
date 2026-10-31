@@ -2,9 +2,9 @@
 	import { GLYPHS, MUSCLE_GROUPS, type GlyphName, type MuscleGroup } from '@common/docs.ts'
 	import type { Muscle, View } from '@common/muscle-info.ts'
 	import { GLYPH_TITLES, glyphOf } from '@common/glyph.ts'
-	import { PhotoFraming, defaultBarWeightFor, guessPlateLoaded, round2 } from '@common/domain.ts'
+	import { LIMBS, PhotoFraming, defaultBarWeightFor, defaultLimbs, guessPlateLoaded, round2, type Limbs } from '@common/domain.ts'
 	import { deleteExercise, saveExercise, setSetting } from '../lib/actions.ts'
-	import { GROUP_NAMES, fromUnit, toUnit, unit } from '../lib/fmt.ts'
+	import { GROUP_NAMES, fromUnit, sideText, toUnit, unit } from '../lib/fmt.ts'
 	import { t } from '../lib/i18n.ts'
 	import { getModel } from '../lib/store.svelte.ts'
 	import { photoUrl, preparePhoto } from '../lib/photo.ts'
@@ -35,7 +35,8 @@
 	let glyph = $state<'' | GlyphName>(existing?.glyph ?? '')
 	let photo = $state(existing?.photo ?? '')
 	let offset = $state(existing?.photoOffset ?? 0)
-	let unilateral = $state(existing?.isUnilateral ?? false)
+	// come si fa: finché non si tocca, quello di base (dal catalogo o dal nome); un macchinario già salvato parte dal suo
+	let pickedLimbs = $state<Limbs | null>(existing?.limbs ?? null)
 	let rest = $state(existing?.restSeconds ?? 0)
 	let archived = $state(existing?.isArchived ?? false)
 	// i muscoli di un macchinario personalizzato: si tocca la figura. Collegato, valgono quelli della voce del catalogo
@@ -70,7 +71,7 @@
 			return
 		}
 		if (wasNew) {
-			own = false; muscles = []; glyph = ''
+			own = false; muscles = []; glyph = ''; pickedLimbs = null
 			// precompila: il nome si può cambiare subito con uno familiare
 			const d = catalogDefaults(e, m.settings.unit)
 			name = startName.trim() || d.name; group = d.group; step = d.step; notes = d.notes
@@ -109,12 +110,17 @@
 		view = (view || 'front') === 'front' ? 'back' : 'front'
 	}
 
+	const limbs = $derived<Limbs>(group === 'core' ? 'both' : pickedLimbs ?? defaultLimbs({ catalog, name, muscleGroup: group }))
+	const limbsLabel = (l: Limbs) => l === 'both' ? t('Insieme') : l === 'one' ? sideText(group, 'long') : t('A scelta')
+	const limbsHint = $derived(limbs === 'both' ? t('Insieme: si usano sempre tutti e due gli arti.')
+		: limbs === 'one' ? t('{0}: si lavora sempre un arto alla volta, il peso è quello sull\'attrezzo.', sideText(group, 'long'))
+		: t('A scelta: sulla serie scegli 2 o 1.'))
 	const valid = $derived(name.trim().length > 0)
 	function save() {
 		if (!valid) return
 		const uuid = saveExercise(id, {
 			name: name.trim(), muscleGroup: group, notes, incrementStep: step, isArchived: archived, glyph, photo,
-			photoOffset: Math.round(offset * 1000) / 1000, isUnilateral: unilateral, restSeconds: rest,
+			photoOffset: Math.round(offset * 1000) / 1000, isUnilateral: limbs === 'one', limbs, restSeconds: rest,
 			catalog, hidden, custom: !catalog && own, muscles, view,
 			barWeight: round2(fromUnit(Math.max(0, barWeight))),
 			weightDisplay, plateLoaded, perSide,
@@ -264,10 +270,13 @@
 			</div>
 		{/if}
 
+		{#if group !== 'core'}
 		<div class="field">
-			<span class="sec-title" style="margin:0 4px 6px">{t('Esecuzione')}</span>
-			<div class="seg"><button class:on={!unilateral} onclick={() => (unilateral = false)}>{group === 'gambe' ? t('Due gambe') : t('Due braccia')}</button><button class:on={unilateral} onclick={() => (unilateral = true)}>{group === 'gambe' ? t('Una gamba') : t('Un braccio')}</button></div>
+			<span class="sec-title" style="margin:0 4px 6px">{t('Come si fa')}</span>
+			<div class="seg">{#each LIMBS as l (l)}<button class:on={limbs === l} onclick={() => (pickedLimbs = l)}>{limbsLabel(l)}</button>{/each}</div>
+			<p class="muted small" style="margin:6px 4px 0">{limbsHint}</p>
 		</div>
+		{/if}
 
 		{#if m.settings.restTimerEnabled}
 			<div class="field">
