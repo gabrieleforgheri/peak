@@ -127,3 +127,10 @@ object Plan {
     fun differs(today: List<TemplateItem>, template: List<TemplateItem>, exists: (String) -> Boolean): Boolean =
         today.map { it.exercise } != template.filter { exists(it.exercise) }.map { it.exercise }
 }
+
+/** I gruppi scelti a inizio sessione («cosa alleni oggi»), come testo separato da virgola in ordine canonico (`cleanFocus` in common/docs.ts). */
+object WorkoutFocus {
+    fun decode(raw: String): Set<MuscleGroup> = raw.split(',').mapNotNull { MuscleGroup.of(it) }.toSet()
+
+    fun encode(groups: Set<MuscleGroup>): String = MuscleGroup.entries.filter { it in groups }.joinToString(",") { it.raw }
+}
