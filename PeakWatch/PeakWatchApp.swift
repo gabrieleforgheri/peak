@@ -24,4 +24,10 @@ final class AppDelegate: NSObject, WKApplicationDelegate {
         model.activate()
         model.startWorkout()
     }
+
+    /// Il sistema ha chiuso l'app durante l'allenamento e la riapre: si riprende la sessione.
+    func handleActiveWorkoutRecovery() {
+        model.activate()
+        model.workout.recover()
+    }
 }

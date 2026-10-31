@@ -477,7 +477,7 @@ struct ExerciseEditorView: View {
         group = entry.muscleGroup
         step = entry.step
         notes = entry.notes
-        barWeight = Plates.defaultBar(for: entry.machineGlyph, name: entry.name)
+        barWeight = Plates.defaultBar(for: entry.machineGlyph, name: entry.name, unit: settings.unit)
         plateLoaded = Plates.guessPlateLoaded(glyph: entry.machineGlyph, name: entry.name)
     }
 
@@ -848,9 +848,12 @@ struct ExerciseEditorView: View {
         // se l'oggetto venisse rimosso mentre una vista lo sta ancora leggendo,
         // SwiftUI si ritroverebbe con un modello svuotato tra le mani.
         let context = self.context
+        let uuid = exercise.uuid
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
             context.delete(exercise)
             try? context.save()
+            // se era quello mostrato sul Watch, il Watch passa al successivo (o si svuota)
+            Task { @MainActor in WatchBridge.shared.exerciseRemoved(uuid) }
         }
     }
 }

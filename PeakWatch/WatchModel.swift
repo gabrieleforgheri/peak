@@ -68,7 +68,8 @@ final class WatchModel: NSObject, WCSessionDelegate {
     /// Manda la serie all'iPhone: subito se raggiungibile, altrimenti in coda garantita.
     func send() {
         guard let exercise, reps > 0 else { return }
-        let set = WatchSet(exerciseUUID: exercise.uuid, weight: weight, reps: reps, isWarmup: isWarmup)
+        let set = WatchSet(exerciseUUID: exercise.uuid, weight: weight, reps: reps, isWarmup: isWarmup,
+                           id: UUID(), sentAt: Date())
         let payload = set.watchPayload(key: WatchSet.key)
         let session = WCSession.default
         if session.isReachable {

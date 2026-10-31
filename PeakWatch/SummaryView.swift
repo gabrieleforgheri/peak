@@ -7,7 +7,7 @@ struct SummaryView: View {
     var body: some View {
         let summary = model.workout.summary
         ScrollView {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(w("Riepilogo", "Summary"))
                     .font(.headline)
                     .foregroundStyle(Color.workoutEnergy)
@@ -24,13 +24,15 @@ struct SummaryView: View {
             }
             .padding(.horizontal, 6)
         }
+        // su 41 mm le righe non stanno tutte: la barra di scorrimento dice che c'è altro e «Fine» si raggiunge con la ghiera
+        .scrollIndicators(.visible)
     }
 
     private func row(_ title: String, _ value: String, _ color: Color) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(title).font(.caption2.weight(.semibold)).foregroundStyle(color)
             Text(value)
-                .font(.system(size: 26, weight: .semibold, design: .rounded))
+                .font(.system(size: 21, weight: .semibold, design: .rounded))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)

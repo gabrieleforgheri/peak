@@ -36,12 +36,15 @@ final class WatchBridge: NSObject, WCSessionDelegate {
     /// Mostra sul Watch l'esercizio, pronto per partire da lì.
     @MainActor
     func show(_ exercise: Exercise, in workout: Workout) {
+        // un allenamento già concluso (aperto dalla storia) non tocca il Watch
+        guard workout.isActive else { return }
         push(exercise: watchExercise(exercise, in: workout), start: false)
     }
 
     /// Apre l'app sul Watch (via HealthKit) e fa partire subito la serie.
     @MainActor
     func start(_ exercise: Exercise, in workout: Workout) {
+        guard workout.isActive else { return }
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = .traditionalStrengthTraining
         configuration.locationType = .indoor
@@ -54,6 +57,24 @@ final class WatchBridge: NSObject, WCSessionDelegate {
     @MainActor
     func clear() {
         push(exercise: nil, start: false)
+    }
+
+    /// L'esercizio mostrato sul Watch è stato eliminato o tolto dalla lista: si passa al primo che resta
+    /// nell'allenamento in corso, se non ce n'è si svuota il Watch.
+    @MainActor
+    func exerciseRemoved(_ uuid: UUID) {
+        guard lastContext?.exercise?.uuid == uuid, let container else { return }
+        let context = container.mainContext
+        var active = FetchDescriptor<Workout>(predicate: #Predicate { $0.endedAt == nil }, sortBy: [SortDescriptor(\.date, order: .reverse)])
+        active.fetchLimit = 1
+        let exercises = (try? context.fetch(FetchDescriptor<Exercise>())) ?? []
+        let known = Dictionary(exercises.map { ($0.uuid, $0) }, uniquingKeysWith: { first, _ in first })
+        if let workout = try? context.fetch(active).first,
+           let next = workout.items(exists: { $0 != uuid && known[$0] != nil }).first.flatMap({ known[$0.exercise] }) {
+            show(next, in: workout)
+        } else {
+            clear()
+        }
     }
 
     /// Acceso o spento dalle impostazioni: da spento il Watch torna in attesa e non riceve più nulla.
@@ -89,8 +110,9 @@ final class WatchBridge: NSObject, WCSessionDelegate {
     @MainActor
     private func watchExercise(_ exercise: Exercise, in workout: Workout) -> WatchExercise {
         let range = settings?.repRange ?? 8...12
+        let unit = settings?.unit ?? .kg
         let weight = workout.sets(for: exercise).last?.weight
-            ?? exercise.progression(range: range)?.weight
+            ?? exercise.progression(range: range, unit: unit)?.weight
             ?? exercise.setList.max(by: { $0.createdAt < $1.createdAt })?.weight
             ?? exercise.currentMax
             ?? exercise.incrementStep * 4
@@ -101,7 +123,8 @@ final class WatchBridge: NSObject, WCSessionDelegate {
             uuid: exercise.uuid,
             name: exercise.displayName,
             weight: weight,
-            step: exercise.incrementStep,
+            // passo nell'unità mostrata (5 lb, non 2,5 kg = 5,51 lb), riportato in kg per la ghiera
+            step: unit.toKilograms(unit.displayStep(forKilograms: exercise.incrementStep)),
             target: target(for: exercise, in: workout),
             restSeconds: rest,
             warmupRestSeconds: warmupRest
@@ -134,23 +157,57 @@ final class WatchBridge: NSObject, WCSessionDelegate {
         Task { @MainActor in self.record(set) }
     }
 
-    /// Registra la serie nella sessione in corso; se non ce n'è una, la apre.
+    /// Ultime serie già registrate (id), per scartare le consegne doppie del Watch.
+    private static let seenKey = "peak.watchSetIDs"
+
+    /// `true` se l'id è nuovo (e lo ricorda); i messaggi senza id (Watch vecchio) passano sempre.
+    private func isNew(_ id: UUID?) -> Bool {
+        guard let id else { return true }
+        var seen = UserDefaults.standard.stringArray(forKey: Self.seenKey) ?? []
+        guard !seen.contains(id.uuidString) else { return false }
+        seen.append(id.uuidString)
+        UserDefaults.standard.set(Array(seen.suffix(100)), forKey: Self.seenKey)
+        return true
+    }
+
+    /// Una serie rimasta in coda da più di tanto non apre un allenamento nuovo.
+    private static let freshSeconds: TimeInterval = 30 * 60
+
+    /// Registra la serie nella sessione in corso. Se non ce n'è una: una serie recente ne apre una,
+    /// una in ritardo va nell'allenamento concluso in cui è stata fatta, altrimenti si scarta.
     @MainActor
     private func record(_ watchSet: WatchSet) {
-        guard let container, let settings, watchSet.reps > 0 else { return }
+        guard let container, let settings, watchSet.reps > 0, isNew(watchSet.id) else { return }
         let context = container.mainContext
         let uuid = watchSet.exerciseUUID
-        guard let exercise = try? context.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { $0.uuid == uuid })).first
-        else { return }
+        // esercizio eliminato nel frattempo: la serie si salva lo stesso, finisce in «Esercizio rimosso»
+        let exercise = try? context.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { $0.uuid == uuid })).first
 
+        let sentAt = watchSet.sentAt ?? Date()
         var active = FetchDescriptor<Workout>(predicate: #Predicate { $0.endedAt == nil }, sortBy: [SortDescriptor(\.date, order: .reverse)])
         active.fetchLimit = 1
-        let workout: Workout
-        if let existing = try? context.fetch(active).first {
-            workout = existing
+        let current = try? context.fetch(active).first
+        var workout: Workout?
+        var isLive = true
+        if let current, sentAt >= current.date.addingTimeInterval(-60) {
+            workout = current
         } else {
-            workout = Workout()
-            context.insert(workout)
+            // inviata prima dell'allenamento in corso (o senza nessuno): cerca quello concluso che la contiene
+            let ended = FetchDescriptor<Workout>(predicate: #Predicate { $0.endedAt != nil }, sortBy: [SortDescriptor(\.date, order: .reverse)])
+            workout = (try? context.fetch(ended))?.prefix(20).first { done in
+                sentAt >= done.date && sentAt <= (done.endedAt ?? done.date).addingTimeInterval(5 * 60)
+            }
+            isLive = false
+            if workout == nil, current == nil, -sentAt.timeIntervalSinceNow < Self.freshSeconds {
+                let created = Workout()
+                context.insert(created)
+                workout = created
+                isLive = true
+            }
+        }
+        guard let workout else {
+            print("WatchBridge: serie dal Watch scartata (\(sentAt)), nessun allenamento a cui appartiene")
+            return
         }
 
         RecordService.addSet(
@@ -162,12 +219,16 @@ final class WatchBridge: NSObject, WCSessionDelegate {
             // dal Watch non si sceglie: le serie nuove partono a due
             context: context
         )
-        let rest = settings.restDuration(for: exercise, warmup: watchSet.isWarmup)
-        if settings.restTimerEnabled, rest > 0 {
-            RestTimer.shared.start(seconds: rest)
+        // una serie in ritardo per un allenamento chiuso non rimette in moto timer, Live Activity e Watch
+        guard isLive else { return }
+        if let exercise {
+            let rest = settings.restDuration(for: exercise, warmup: watchSet.isWarmup)
+            if settings.restTimerEnabled, rest > 0 {
+                RestTimer.shared.start(seconds: rest)
+            }
         }
         WorkoutActivity.start(for: workout, unit: settings.unit)
-        show(exercise, in: workout)
+        if let exercise { show(exercise, in: workout) }
     }
 
     // MARK: - Stato della sessione

@@ -148,7 +148,7 @@ final class SyncService {
             try await push(api, snapshot)
             try await pull(api)
             lastSync = Date()
-            lastError = nil
+            lastError = rejected.isEmpty ? nil : "Rifiutati dal server: \(rejected.count)"
         } catch PeakAPIError.unauthorized {
             state = .expired
         } catch {
@@ -261,7 +261,8 @@ final class SyncService {
     // MARK: - Push e pull
 
     private func push(_ api: PeakAPI, _ snapshot: SyncSnapshot) async throws {
-        let dirty = store.entries.filter { $0.value.dirty }.sorted { $0.key < $1.key }
+        // i documenti che il server ha scartato non si rimandano finché non cambiano (stessa `m`)
+        let dirty = store.entries.filter { $0.value.dirty && rejected[$0.key] != $0.value.m }.sorted { $0.key < $1.key }
         let batchSize = 500
         var index = 0
         while index < dirty.count {
@@ -279,13 +280,21 @@ final class SyncService {
             // pulito solo ciò che è davvero partito
             let sent = Set(docs.map(\.key))
             for (key, entry) in chunk where sent.contains(key) && !lost.contains(key) {
-                if var current = store.entries[key], current.m == entry.m { current.dirty = false; store.entries[key] = current }
+                if var current = store.entries[key], current.m == entry.m { current.dirty = false; store.entries[key] = current; rejected[key] = nil }
             }
-            for key in answer.discarded { store.entries[key]?.dirty = false }
+            // scartati dal server: restano sporchi (non si perdono), ma non si rimandano finché non cambiano
+            for key in answer.discarded {
+                guard let entry = store.entries[key], entry.dirty else { continue }
+                rejected[key] = entry.m
+                print("SyncService: documento scartato dal server: \(key)")
+            }
             // perso contro una versione più nuova: vale quella del server
             if !answer.rejected.isEmpty { try await applyRemote(answer.rejected, api: api, force: true) }
         }
     }
+
+    /// Documenti scartati dal server, con la `m` che ha rifiutato (solo in memoria, come sul web).
+    private var rejected: [String: Int64] = [:]
 
     private func pull(_ api: PeakAPI) async throws {
         let answer = try await api.pull(since: store.cursor)
@@ -296,10 +305,17 @@ final class SyncService {
     /// Applica documenti arrivati dal server. Un documento locale modificato dopo vince (e partirà
     /// al prossimo giro), a meno di `force`; uno uguale a quello che abbiamo già si salta.
     private func applyRemote(_ docs: [WireDoc], api: PeakAPI, force: Bool) async throws {
+        // Una modifica fatta dopo l'istantanea non è ancora "sporca" per lo stato: si vede dal documento
+        // locale di adesso, che non ha più l'hash registrato. Quel documento non si sovrascrive: parte al prossimo giro.
+        let current = force ? [:] : try encode()
         let wanted = docs.filter { doc in
             guard !force, let entry = store.entries[doc.key] else { return true }
             if entry.dirty && entry.m > doc.m { return false }
             if !entry.dirty && entry.m == doc.m && entry.deleted == doc.deleted { return false }
+            if !entry.dirty, !entry.deleted, !doc.deleted, let data = current[doc.key], SyncDocs.hash(data) != entry.h {
+                needsAnotherRound = true
+                return false
+            }
             return true
         }
         guard !wanted.isEmpty else { return }

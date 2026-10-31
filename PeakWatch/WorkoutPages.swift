@@ -5,13 +5,14 @@ import SwiftUI
 /// Tasti rotondi come nell'app Allenamento: Termina in rosso, Pausa in giallo, Nuova serie in verde.
 struct ControlsPage: View {
     @Environment(WatchModel.self) private var model
+    @State private var confirmingEnd = false
 
     var body: some View {
         let paused = model.workout.isPaused
         VStack(spacing: 8) {
             HStack(spacing: 14) {
                 RoundButton(title: w("Termina", "End"), symbol: "xmark", color: .red) {
-                    model.endWorkout()
+                    confirmingEnd = true
                 }
                 RoundButton(title: paused ? w("Riprendi", "Resume") : w("Pausa", "Pause"),
                             symbol: paused ? "play.fill" : "pause.fill", color: .yellow) {
@@ -23,6 +24,11 @@ struct ControlsPage: View {
             }
         }
         .padding(.bottom, 10)
+        // come Apple: Termina chiede conferma, per non chiudere con un tocco sbagliato
+        .confirmationDialog(w("Terminare l'allenamento?", "End workout?"), isPresented: $confirmingEnd) {
+            Button(w("Termina", "End"), role: .destructive) { model.endWorkout() }
+            Button(w("Annulla", "Cancel"), role: .cancel) {}
+        }
     }
 }
 

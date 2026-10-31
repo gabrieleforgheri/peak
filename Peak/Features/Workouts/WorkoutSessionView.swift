@@ -62,6 +62,13 @@ struct WorkoutSessionView: View {
         WorkoutActivity.update(for: workout, unit: settings.unit)
     }
 
+    /// Toglie l'esercizio dalla lista di oggi; se era quello in corso (e sul Watch), si passa a un altro.
+    private func removeFromPlan(_ exercise: Exercise) {
+        editPlan { Plan.removing($0, exercise.uuid) }
+        if currentExerciseID == exercise.persistentModelID { currentExerciseID = nil }
+        WatchBridge.shared.exerciseRemoved(exercise.uuid)
+    }
+
     var body: some View {
         // Una volta sola per ridisegno: il dizionario degli esercizi e la lista di oggi (decodifica il piano e ordina le serie).
         let known = exerciseByUUID
@@ -94,7 +101,7 @@ struct WorkoutSessionView: View {
                         recordTick: recordTick,
                         onMove: workout.isActive ? { step in editPlan { Plan.moving($0, exercise.uuid, by: step) } } : nil,
                         onReplace: workout.isActive && sets.isEmpty ? { replacing = exercise } : nil,
-                        onRemove: workout.isActive && sets.isEmpty ? { editPlan { Plan.removing($0, exercise.uuid) } } : nil,
+                        onRemove: workout.isActive && sets.isEmpty ? { removeFromPlan(exercise) } : nil,
                         isCurrent: exercise.persistentModelID == currentExerciseID,
                         onSelect: { select(exercise) },
                         onAddSet: { addSetTarget = exercise },

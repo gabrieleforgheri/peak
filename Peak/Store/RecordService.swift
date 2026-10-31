@@ -16,7 +16,7 @@ enum RecordService {
     @discardableResult
     static func addSet(
         to workout: Workout,
-        exercise: Exercise,
+        exercise: Exercise?,
         weight: Double,
         reps: Int,
         isWarmup: Bool,
@@ -28,7 +28,8 @@ enum RecordService {
         context.insert(set)
         set.exercise = exercise
         set.workout = workout
-        recompute(exercise, context: context)
+        // senza macchinario (eliminato mentre il Watch era in giro) non c'è nulla da ricalcolare
+        if let exercise { recompute(exercise, context: context) }
         save(context)
         return set.isPersonalRecord
     }

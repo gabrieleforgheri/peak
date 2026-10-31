@@ -43,6 +43,11 @@ struct WatchSet: Codable, Equatable {
     var weight: Double
     var reps: Int
     var isWarmup = false
+    /// Identificativo della serie e istante dell'invio: servono all'iPhone per scartare i doppioni
+    /// (sendMessage che fallisce e ripiega su transferUserInfo può consegnare due volte) e per non
+    /// aprire un allenamento nuovo con una serie rimasta in coda da ore. `nil` nei messaggi di un Watch vecchio.
+    var id: UUID? = nil
+    var sentAt: Date? = nil
 
     static let key = "set"
 }

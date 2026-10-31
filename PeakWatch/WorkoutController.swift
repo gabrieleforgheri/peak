@@ -120,6 +120,32 @@ final class WorkoutController: NSObject {
         Haptic.click()
     }
 
+    /// Dopo che il sistema ha ucciso l'app a metà allenamento: riprende la sessione in corso e riattacca builder e delegate.
+    /// Le pause fatte prima della chiusura non si sanno più: il tempo riparte dall'inizio vero della sessione.
+    func recover() {
+        guard phase == .idle, HKHealthStore.isHealthDataAvailable() else { return }
+        Task { @MainActor in
+            guard phase == .idle,
+                  let session = try? await health.recoverActiveWorkoutSession(),
+                  session.state == .running || session.state == .paused else { return }
+            let builder = session.associatedWorkoutBuilder()
+            session.delegate = self
+            builder.delegate = self
+            self.session = session
+            self.builder = builder
+            heartRate = nil
+            averageHeartRate = nil
+            activeKcal = 0
+            basalKcal = 0
+            summary = nil
+            pausedTotal = 0
+            startDate = session.startDate ?? Date()
+            isPaused = session.state == .paused
+            pauseStart = isPaused ? Date() : nil
+            phase = .active
+        }
+    }
+
     private func begin() {
         phase = .active
         startDate = Date()
