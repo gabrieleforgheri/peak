@@ -1,3 +1,24 @@
+# Android: fondamenta (31 ottobre 2026, fase 1 di PIANO-ANDROID.md)
+
+App nativa Kotlin + Compose in `android/` (la TWA non c'è più, stesso package). Compila con `cd android && ./gradlew test assembleDebug`: 133 prove JUnit sul JVM, tutte verdi; provata nell'emulatore (Pixel, Android 36 arm64) solo fino alle quattro schede vuote (screenshot in `android/docs/fase1.png`). Non provata su un telefono vero. Codice scritto da una sessione Sonnet, da rivedere. Dettagli in `android/README.md`.
+
+| Fatto | Dove |
+|---|---|
+| Progetto Gradle (Kotlin 2.1, Compose BOM 2025.05, Room 2.7, KSP, serializzazione), version catalog, `minSdk 26`, `target/compileSdk 36`, `versionCode 2`; il catalogo è `common/catalog.json` copiato negli asset da un task Gradle | `android/build.gradle.kts`, `app/build.gradle.kts`, `gradle/libs.versions.toml` |
+| Regole di dominio in Kotlin puro tradotte dagli Swift (`OneRepMax`, `MaxRanking`, `RecordRules`, `RecordService`, `Plates`, `Warmup`/`ArmSwitch`, `Progression`, `Medals` + `MedalsAt`, `Limbs`, `Programs`/`TemplateIcon`, `Plan`, `Onboarding`, `Stats`, `Catalog`, `Fmt`, impostazioni) | `android/app/src/main/java/.../domain/` |
+| `RecordService` è l'unico percorso di scrittura delle serie; il database sta dietro `RecordStorage` (Room in `data/RoomRecordStorage`, copia in memoria nei test) | `domain/RecordService.kt`, `data/` |
+| Modello Room come SwiftData: uuid maiuscoli, date in ms (ISO a secondi interi nei documenti con `PeakDates`), pesi in kg, righe di scheda/piano in JSON, impostazioni in una tabella chiave → JSON; `photo` tiene lo sha256, i byte non ci sono ancora | `data/Entities.kt`, `data/Daos.kt`, `app/schemas/` |
+| Tema e componenti da `Peak/Design/`: colori, forme, vetro, chip, badge, stepper, pulsanti, mesi, pittogrammi, figura dei muscoli con zoom e tocco, dischi, coriandoli e toast, movimento (rispetta «Riduci movimento» di Android), icone vettoriali | `design/` |
+| Testi: `tr("testo italiano")` come `.tr` su iPhone; `values/` italiano, `values-en/` inglese da `Localizable.strings` + `en.json` (1058 testi). Suoni in `res/raw/fx_*`, `SoundFX` e `Haptics` | `util/`, `res/` |
+| Script che rigenera pittogrammi, muscoli, testi e suoni dai dati condivisi: `node android/scripts/gen-assets.ts` | `android/scripts/gen-assets.ts` |
+| Guscio: `MainActivity` + `PeakRoot` con le stesse quattro schede e lo stesso ordine di `RootView` (Allenamento, Macchinari, Me, Amici), segnaposto vuoti | `ui/PeakRoot.kt` |
+| **Disaccordo Swift / TypeScript**: `Plates.defaultBar(for:name:)` (Swift) e `defaultBarWeightFor` (`common/domain.ts`) non danno la stessa sbarra: il web dà 20 kg ai pittogrammi `preacherBench` e `landmine` e 15 a `smithMachine` anche senza «smith» nel nome, Swift 0. Android segue Swift (test `defaultBarDisagreementWithTheWebIsKeptAsInSwift`); è lo stesso punto già aperto per Preacher Curl più sopra | `Plates.defaultBar`, `common/domain.ts` |
+| Altri punti da sapere (non bloccanti): `Fmt.delta` di Swift può dare «-0%» per variazioni minuscole negative, web e Android «0%» (non provato su iPhone); la frase del giorno (`Motivation.startIndex`) usa il giorno dell'era gregoriano, su iPhone quello del calendario (rotazione diversa, stesso scopo) | `domain/Fmt.kt`, `domain/Medals.kt` |
+| Non fatto: schermate vere (fase 3), account / sincronizzazione / backup (fase 2), notifica dell'allenamento, Health Connect, widget (fase 4), build firmata e `scripts/build_android.sh` per l'app nativa (fase 5, lo script parla ancora di TWA), prove su Room (servirebbe Robolectric), foto, `Celebrated`, scelta della lingua nell'app | — |
+| Attenzione: il `.gitignore` della radice ignora le cartelle `data/`; `android/.gitignore` le riabilita per il pacchetto Room (`!data/`) | `android/.gitignore` |
+
+---
+
 # Watch: gestire tutto dal polso (31 ottobre 2026)
 
 iPhone + Watch. Codice scritto da un subagente Sonnet, da rivedere. Compilano `Peak`, `PeakWatch` e `build-for-testing`, `check-i18n-ios` 0 mancanti. Nel simulatore iPhone (nessun simulatore watchOS, nessun orologio vero) provato solo il foglio «Terminare l'allenamento?» e la chiusura col riepilogo; il resto (Watch, comandi, avvio automatico) non è provato su dispositivo.

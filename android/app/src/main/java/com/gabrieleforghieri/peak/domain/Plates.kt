@@ -41,7 +41,7 @@ object Plates {
      *
      * DISACCORDO con common/domain.ts (`defaultBarWeightFor`), tradotto qui com'è in Swift: il web dà 20 kg anche ai
      * pittogrammi `landmine` e `preacherBench`, 15 a `smithMachine` anche se il nome non dice «smith»/«multipower», e non ha
-     * la riga «plate loaded → 0» di Swift. Vedi il resoconto della fase 1 e `PlatesTests.defaultBarDisagreement`.
+     * la riga «plate loaded → 0» di Swift. Vedi il resoconto della fase 1 e `PlatesTest.defaultBarDisagreementWithTheWebIsKeptAsInSwift`.
      */
     fun defaultBar(glyph: MachineGlyph?, name: String): Double {
         val n = name.lowercase()
