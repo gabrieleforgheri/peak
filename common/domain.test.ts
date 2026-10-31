@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   oneRepMax, beats, defaultBarWeightFor, warmupPlan, nearest, nextLoad, progressionFor, loadPlates, plateMode, toDisplay, toKg,
-  displayStep, snapToGrid, switchArm, restAfter, defaultPlates, defaultBar, barForUnit, settingsForUnitChange, PhotoFraming, KG_PER_LB,
+  displayStep, snapToGrid, switchArm, restAfter, defaultLimbs, limbsOf, lineArm, twoHandles, defaultPlates, defaultBar, barForUnit, settingsForUnitChange, PhotoFraming, KG_PER_LB,
 } from './domain.ts'
 import { suggestedGlyph, SHAPES, GLYPH_TITLES, glyphSvg, glyphOf, isGlyph } from './glyph.ts'
 import { GLYPHS } from './docs.ts'
@@ -317,13 +317,13 @@ test('i pittogrammi Swift sono generati da quelli del web e aggiornati', async (
   assert.equal(readFileSync(SWIFT_FILE, 'utf8'), swiftSource(), 'rilancia: node scripts/gen-glyphs.ts')
 })
 
-test('volume: una serie a un braccio conta il doppio, il riscaldamento zero', () => {
+test('volume: peso × ripetizioni anche a un braccio, il riscaldamento zero', () => {
   const w = { date: 0, sets: [
     { exercise: 'E', weight: 20, reps: 10, isWarmup: true },
     { exercise: 'E', weight: 40, reps: 8, isWarmup: false, singleArm: true },
     { exercise: 'E', weight: 30, reps: 10, isWarmup: false },
   ] }
-  assert.equal(workoutVolume(w), 40 * 8 * 2 + 30 * 10)
+  assert.equal(workoutVolume(w), 40 * 8 + 30 * 10)
 })
 
 test('da due bracci a uno: metà sulla griglia, pari verso il basso', () => {
@@ -373,4 +373,33 @@ test('recupero dopo il riscaldamento', () => {
   assert.equal(restAfter(120, true, 100), 120)
   assert.equal(restAfter(120, true, 0), 0)
   assert.equal(restAfter(15, true, 25), 5) // 3,75 s: minimo 5
+})
+
+test('uno o due arti: di base dal catalogo, come nei dati veri', () => {
+  const ex = (catalog: string, name = '', muscleGroup = 'petto') => ({ catalog, name, muscleGroup })
+  // Cable Fly basso di Stefano: si fa sempre insieme, il segno «1 braccio» di ieri non apre una linea a parte
+  assert.equal(defaultLimbs(ex('cable-fly')), 'both')
+  assert.equal(lineArm(limbsOf(ex('cable-fly')), true), false)
+  // alzate laterali a un braccio al cavo: sempre un arto, stessa linea per le serie vecchie (senza segno) e nuove
+  assert.equal(defaultLimbs(ex('lateral-raise-single-arm-cable', '', 'spalle')), 'one')
+  assert.equal(lineArm('one', true), false)
+  // leg extension: lo stesso macchinario a due o a una gamba
+  assert.equal(defaultLimbs(ex('leg-extension', '', 'gambe')), 'either')
+  assert.equal(lineArm('either', true), true)
+  assert.equal(lineArm('either', false), false)
+  assert.equal(defaultLimbs(ex('bench-press-barbell')), 'both')
+  assert.equal(defaultLimbs(ex('crunch', '', 'core')), 'both')
+  assert.equal(defaultLimbs(ex('', 'Curl a un braccio', 'braccia')), 'one')
+  assert.equal(defaultLimbs(ex('', 'Panca mia')), 'both')
+  // la scelta salvata vince; il vecchio isUnilateral vale «sempre uno»
+  assert.equal(limbsOf({ ...ex('cable-fly'), limbs: 'either' }), 'either')
+  assert.equal(limbsOf({ ...ex('bench-press-barbell'), isUnilateral: true }), 'one')
+})
+
+test('due manici: manubri e cavi non si dimezzano, la pila unica sì', () => {
+  assert.equal(twoHandles({ catalog: 'dumbbell-curl', name: '', glyph: '' }), true)
+  assert.equal(twoHandles({ catalog: 'cable-curl', name: '', glyph: '' }), true)
+  assert.equal(twoHandles({ catalog: 'leg-extension', name: '', glyph: 'legLever' }), false)
+  assert.equal(twoHandles({ catalog: '', name: 'Curl ai cavi', glyph: '' }), true)
+  assert.equal(twoHandles({ catalog: '', name: 'Leg extension', glyph: '' }), false)
 })

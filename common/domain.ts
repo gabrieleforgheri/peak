@@ -75,6 +75,47 @@ export function restAfter(baseSeconds: number, warmup: boolean, warmupPercent: n
   return warmupPercent > 0 ? Math.max(5, Math.round(baseSeconds * warmupPercent / 100)) : 0
 }
 
+// ---- uno o due arti ---------------------------------------------------------------------------
+// Il peso scritto è sempre quello sull'attrezzo (un manubrio, il perno della pila, il bilanciere intero).
+// Il macchinario dice come si fa: sempre insieme, sempre un arto alla volta, oppure tutti e due con il selettore
+// sulla serie. Solo nel terzo caso il flag `singleArm` della serie conta: apre la linea di massimali a parte.
+
+export type Limbs = 'both' | 'one' | 'either'
+export const LIMBS: readonly Limbs[] = ['both', 'one', 'either']
+
+/** Voci del catalogo che si fanno spesso in tutti e due i modi: lo stesso macchinario, a due o a uno. */
+const EITHER = new Set([
+  'leg-extension', 'seated-leg-curl', 'lying-leg-curl', 'standing-leg-curl', 'leg-curl-cable',
+  'leg-press-45', 'leg-press-horizontal', 'leg-press-vertical', 'leg-press-plate-loaded',
+  'dumbbell-curl', 'alternating-dumbbell-curl', 'hammer-curl', 'incline-dumbbell-curl', 'preacher-curl-dumbbell',
+  'preacher-curl-machine', 'curl-machine', 'cable-curl', 'dumbbell-row',
+  'lateral-raise', 'cable-lateral-raise', 'front-raise', 'front-raise-cable', 'rear-delt-fly-cable',
+  'triceps-kickback-dumbbell', 'cable-kickback', 'glute-kickback-cable', 'overhead-triceps-extension-dumbbell',
+])
+const ONE_NAME = /single|one[- ]?(arm|leg)|unilateral|singol|un braccio|una gamba/i
+
+/** Come si fa di base: dal catalogo, per i personalizzati dal nome. Core sempre insieme. */
+export function defaultLimbs(e: { catalog: string; name: string; muscleGroup: string }): Limbs {
+  if (e.muscleGroup === 'core') return 'both'
+  if (e.catalog) return /single/.test(e.catalog) || e.catalog === 'concentration-curl' || e.catalog === 'meadows-row' ? 'one' : EITHER.has(e.catalog) ? 'either' : 'both'
+  return ONE_NAME.test(e.name) ? 'one' : 'both'
+}
+
+/** La scelta salvata sul macchinario, altrimenti quella di base (`isUnilateral` è il vecchio segno «un braccio»). */
+export const limbsOf = (e: { limbs?: Limbs; isUnilateral?: boolean; catalog: string; name: string; muscleGroup: string }): Limbs =>
+  e.limbs ?? (e.isUnilateral ? 'one' : defaultLimbs(e))
+
+/** La serie va sulla linea «a un braccio/una gamba»: solo se il macchinario si fa in tutti e due i modi. */
+export const lineArm = (limbs: Limbs, singleArm: boolean | undefined): boolean => limbs === 'either' && singleArm === true
+
+const HANDLE_GLYPHS = new Set(['dumbbell', 'dumbbellBench', 'inclineDumbbell', 'cableStation', 'cableCross', 'cableRope', 'cablePushdown', 'kettlebell'])
+
+/** Manubri, cavi, kettlebell: il peso è già quello di un manico, passando a un arto non si dimezza (la pila unica sì). */
+export function twoHandles(e: { catalog: string; name: string; glyph: string }): boolean {
+  if (/dumbbell|cable|kettlebell/.test(e.catalog) || HANDLE_GLYPHS.has(e.glyph)) return true
+  return !e.catalog && /manubr|cav[io]\b|dumbbell|cable|kettlebell/i.test(e.name)
+}
+
 /** Il peso dopo un tocco sul selettore «2 | 1». A uno: metà, sulla griglia. Di nuovo a due: se il peso è ancora
  *  quello dimezzato torna esattamente il precedente, altrimenti il doppio sulla griglia. */
 export function switchArm(

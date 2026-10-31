@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { cleanItems, parseDoc, parseIso, upgradeDoc, LEGACY_SETTINGS, SETTING_DEFAULTS } from './docs.ts'
+import { cleanItems, parseDoc, parseIso, upgradeDoc, KEEP_IF_ABSENT, LEGACY_SETTINGS, SETTING_DEFAULTS } from './docs.ts'
 
 const U = (n: number) => `00000000-0000-0000-0000-${String(n).padStart(12, '0')}`
 const item = { exercise: U(1), sets: 4, repsMin: 8, repsMax: 10, weight: 60 }
@@ -81,4 +81,12 @@ test('date ISO: le date impossibili non scorrono al giorno dopo', () => {
   assert.equal(parseIso('2026-13-01T10:00:00Z'), null)
   assert.equal(parseIso('2026-01-01T24:00:00Z'), null)
   assert.equal(parseIso('2026-01-01T10:00:00.250Z'), Date.UTC(2026, 0, 1, 10))
+})
+
+test('macchinario: limbs valido o assente, e resta se un client vecchio non lo manda', () => {
+  const ex = { name: 'Leg ext', muscleGroup: 'gambe', incrementStep: 5, createdAt: '2026-10-01T08:00:00Z' }
+  assert.equal((parseDoc('exercise', U(1), { ...ex, limbs: 'either' }) as { data: { limbs?: string } }).data.limbs, 'either')
+  assert.equal((parseDoc('exercise', U(1), { ...ex, limbs: 'tre' }) as { data: { limbs?: string } }).data.limbs, undefined)
+  assert.equal((parseDoc('exercise', U(1), ex) as { data: { limbs?: string } }).data.limbs, undefined)
+  assert.ok(KEEP_IF_ABSENT.exercise?.includes('limbs'))
 })

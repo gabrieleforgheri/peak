@@ -2,7 +2,7 @@
 // niente tabelle di eventi. Gli esercizi e le schede nascosti, archiviati o cancellati non escono mai da qui.
 // ponytail: si rilegge tutto l'archivio dell'utente a ogni richiesta; una cache per utente se gli utenti diventano centinaia.
 
-import { oneRepMax } from '../common/domain.ts'
+import { limbsOf, lineArm, oneRepMax } from '../common/domain.ts'
 import { split, type LiveDoc } from '../common/docs.ts'
 import { setVolume, weeklyStreak } from '../common/stats.ts'
 
@@ -24,10 +24,13 @@ function bestPerExercise(docs: LiveDoc[]): { d: ReturnType<typeof split>; best: 
     const oneRm = oneRepMax(weight, reps)
     if (exercise && oneRm > 0) best.set(exercise, better(best.get(exercise), { oneRm, weight, reps, date }))
   }
-  for (const r of d.records) if (!r.data.singleArm) add(r.data.exercise, r.data.weight, r.data.reps, Date.parse(r.data.date))
+  // la linea «a un braccio» resta fuori; conta solo dove il macchinario si fa nei due modi (vedi lineArm)
+  const limbs = new Map(d.exercises.map((e) => [e.uuid, limbsOf(e.data)]))
+  const oneLine = (exercise: string | null, singleArm: boolean) => lineArm(limbs.get(exercise ?? '') ?? 'both', singleArm)
+  for (const r of d.records) if (!oneLine(r.data.exercise, r.data.singleArm)) add(r.data.exercise, r.data.weight, r.data.reps, Date.parse(r.data.date))
   for (const s of d.sets) {
     const x = s.data
-    if (x.isWarmup || x.noRecord || x.singleArm || !liveWk.has(x.workout)) continue
+    if (x.isWarmup || x.noRecord || oneLine(x.exercise, x.singleArm) || !liveWk.has(x.workout)) continue
     add(x.exercise, x.weight, x.reps, Date.parse(x.createdAt))
   }
   return { d, best }
@@ -80,7 +83,7 @@ export function activityOf(docs: LiveDoc[], now = Date.now()): Activity {
   const volumeOf = new Map<string, number>()
   // le serie di esercizi nascosti o archiviati non escono: il volume non deve tradirli
   const visible = new Set(d.exercises.filter(shown).map((e) => e.uuid))
-  for (const s of d.sets) if (!s.data.isWarmup && visible.has(s.data.exercise)) volumeOf.set(s.data.workout, (volumeOf.get(s.data.workout) ?? 0) + setVolume(s.data))
+  for (const s of d.sets) if (!s.data.isWarmup && visible.has(s.data.exercise ?? "")) volumeOf.set(s.data.workout, (volumeOf.get(s.data.workout) ?? 0) + setVolume(s.data))
   const done = d.workouts.filter((w) => w.data.endedAt).map((w) => ({ uuid: w.uuid, date: Date.parse(w.data.date) }))
   const recent = done.filter((w) => w.date >= now - 30 * 86_400_000)
   return {

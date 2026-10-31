@@ -189,12 +189,15 @@ test('lega: tu e gli amici con volume, allenamenti e settimane di fila; i non am
 test('a un braccio: non entra nel massimale mostrato agli amici', () => {
   const day = Date.now() - DAY
   const docs = [
-    { kind: 'exercise', uuid: U(1), data: { name: 'Row', muscleGroup: 'schiena', notes: '', incrementStep: 5, sortIndex: 0, isArchived: false, createdAt: iso(day), catalog: '', hidden: false } },
+    { kind: 'exercise', uuid: U(1), data: { name: 'Row', muscleGroup: 'schiena', notes: '', incrementStep: 5, sortIndex: 0, isArchived: false, createdAt: iso(day), catalog: '', hidden: false, limbs: 'either' } },
     { kind: 'workout', uuid: U(2), data: { date: iso(day), endedAt: iso(day + 3600_000), note: '', name: '', focus: '' } },
     { kind: 'set', uuid: U(3), data: { workout: U(2), exercise: U(1), weight: 60, reps: 5, rpe: null, isWarmup: false, order: 0, createdAt: iso(day), noRecord: false, singleArm: false } },
     { kind: 'set', uuid: U(4), data: { workout: U(2), exercise: U(1), weight: 90, reps: 8, rpe: null, isWarmup: false, order: 1, createdAt: iso(day), noRecord: false, singleArm: true } },
   ] as unknown as LiveDoc[]
   assert.deepEqual(sharedView(docs).maxes.map((m) => [m.weight, m.reps]), [[60, 5]])
+  // un macchinario che si fa sempre insieme: il segno «un braccio» non conta, la serie entra
+  ;(docs[0] as { data: { limbs: string } }).data.limbs = 'both'
+  assert.deepEqual(sharedView(docs).maxes.map((m) => [m.weight, m.reps]), [[90, 8]])
 })
 
 test('lega: il volume non conta le serie di esercizi nascosti o archiviati', async () => {

@@ -2,6 +2,7 @@
 // Solo sintassi cancellabile: gira sia nel server (Node, type stripping) sia nel client (Vite).
 
 import { isMuscle, type Muscle, type View } from './muscle-info.ts'
+import { LIMBS, type Limbs } from './domain.ts'
 
 export const MUSCLE_GROUPS = ['petto', 'schiena', 'gambe', 'spalle', 'braccia', 'core'] as const
 export type MuscleGroup = (typeof MUSCLE_GROUPS)[number]
@@ -77,6 +78,8 @@ export interface ExerciseDoc {
   plateLoaded: boolean
   /** Il peso si inserisce per un lato (totale = 2 x + sbarra); le serie restano salvate come totale. */
   perSide: boolean
+  /** Come si fa: sempre insieme, sempre un arto, o tutti e due col selettore (vedi `limbsOf` in domain.ts). Assente = di base. */
+  limbs?: Limbs
 }
 /** `singleArm`: massimale a un braccio, una linea di record a parte (il peso è quello sul singolo manico). */
 export interface RecordDoc { exercise: string; date: string; weight: number; reps: number; note: string; singleArm: boolean }
@@ -259,13 +262,14 @@ export function parseDoc(kind: Kind, uuid: string, d: unknown): Parsed<DocDataMa
       if (barWeight === null) return fail('barWeight')
       const weightDisplay = o.weightDisplay === 'relative' ? 'relative' : 'absolute'
       const plateLoaded = o.plateLoaded === true, perSide = o.perSide === true
+      const limbs = (LIMBS as readonly unknown[]).includes(o.limbs) ? o.limbs as Limbs : undefined
       return {
         data: {
           name, muscleGroup: o.muscleGroup as MuscleGroup, notes, incrementStep, sortIndex,
           isArchived: o.isArchived === true, createdAt: isoSec(createdAt), glyph: glyph as ExerciseDoc['glyph'],
           photo: photo as string, photoOffset, isUnilateral: o.isUnilateral === true, restSeconds,
           catalog: catalog as string, hidden: o.hidden === true, custom: o.custom === true,
-          muscles, view: view as ExerciseDoc['view'], barWeight, weightDisplay, plateLoaded, perSide,
+          muscles, view: view as ExerciseDoc['view'], barWeight, weightDisplay, plateLoaded, perSide, ...(limbs ? { limbs } : {}),
         },
       }
     }
@@ -368,7 +372,7 @@ export function upgradeDoc<T>(kind: Kind, data: T): T {
 }
 
 /** Campi aggiunti dopo la 2.1: un client vecchio non li manda, e il server non deve cancellarli. */
-export const KEEP_IF_ABSENT: Partial<Record<Kind, readonly string[]>> = { exercise: ['catalog', 'hidden', 'custom', 'muscles', 'view', 'barWeight', 'weightDisplay', 'plateLoaded', 'perSide'], template: ['hidden', 'icon', 'program', 'weekday'], set: ['singleArm'], record: ['singleArm'] }
+export const KEEP_IF_ABSENT: Partial<Record<Kind, readonly string[]>> = { exercise: ['catalog', 'hidden', 'custom', 'muscles', 'view', 'barWeight', 'weightDisplay', 'plateLoaded', 'perSide', 'limbs'], template: ['hidden', 'icon', 'program', 'weekday'], set: ['singleArm'], record: ['singleArm'] }
 
 /** Chiave unica di un documento, per mappe in memoria. */
 export const docKey = (kind: Kind, uuid: string): string => `${kind}:${uuid}`

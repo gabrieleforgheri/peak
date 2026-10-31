@@ -7,7 +7,7 @@ import {
   CATALOG_ID_RE, cleanFocus, isoSec, MAX_ITEMS, normUuid, parseDoc, parseIso, split, MUSCLE_GROUPS,
   type DocDataMap, type ExerciseDoc, type Kind, type LiveDoc, type MuscleGroup, type TemplateItem, isTemplateIcon, cleanMuscles } from '../common/docs.ts'
 import { deriveRecords, type RecManual, type RecSet } from '../common/records.ts'
-import { EPSILON } from '../common/domain.ts'
+import { EPSILON, LIMBS, type Limbs } from '../common/domain.ts'
 import { matchByName } from '../common/catalog.ts'
 import { isGlyph, suggestedGlyph } from '../common/glyph.ts'
 import { CATALOG } from './catalog.ts'
@@ -27,7 +27,7 @@ export interface ExerciseDTO {
   isArchived: boolean; createdAt: string; glyph?: string; photo?: string; photoOffset?: number
   isUnilateral?: boolean; restSeconds?: number; catalogID?: string; isHidden?: boolean; isCustom?: boolean
   /** La figura dei muscoli: solo per i macchinari personalizzati; assenti nei backup vecchi. */
-  muscles?: string[]; view?: string; barWeight?: number; weightDisplay?: string; plateLoaded?: boolean; perSide?: boolean; records: RecordDTO[]
+  muscles?: string[]; view?: string; barWeight?: number; weightDisplay?: string; plateLoaded?: boolean; perSide?: boolean; limbs?: string; records: RecordDTO[]
 }
 /** Riga di scheda; `weight` assente = si mostra l'ultimo usato. */
 export interface ItemDTO { exerciseUUID: string; sets: number; repsMin: number; repsMax: number; weight?: number }
@@ -101,6 +101,7 @@ export function exportBackup(docs: Iterable<LiveDoc>, photo: (sha: string) => Ui
       if (e.weightDisplay === 'relative') dto.weightDisplay = e.weightDisplay
       if (e.plateLoaded) dto.plateLoaded = true
       if (e.perSide) dto.perSide = true
+      if (e.limbs) dto.limbs = e.limbs
       return dto
     })
 
@@ -193,6 +194,7 @@ export function parseBackup(raw: unknown): ParseResult {
       barWeight: typeof e.barWeight === 'number' && e.barWeight >= 0 && e.barWeight <= 200 ? e.barWeight : undefined,
       weightDisplay: typeof e.weightDisplay === 'string' ? e.weightDisplay : undefined,
       plateLoaded: e.plateLoaded === true ? true : undefined, perSide: e.perSide === true ? true : undefined,
+      limbs: typeof e.limbs === 'string' ? e.limbs : undefined,
     })
   }
   /** Righe di scheda del file: tollerante, una riga rotta si scarta (non invalida tutto il backup). */
@@ -354,6 +356,7 @@ export function planImport(file: BackupFile, live: Iterable<LiveDoc>, mode: 'uni
       muscles: cleanMuscles(ex.muscles ?? []) ?? [], view: ex.view === 'front' || ex.view === 'back' ? ex.view : '',
       barWeight: ex.barWeight ?? 0, weightDisplay: ex.weightDisplay === 'relative' ? 'relative' : 'absolute',
       plateLoaded: ex.plateLoaded === true, perSide: ex.perSide === true,
+      ...((LIMBS as readonly unknown[]).includes(ex.limbs) ? { limbs: ex.limbs as Limbs } : {}),
     })
     let target = ex.uuid
     let isNew = true

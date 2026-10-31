@@ -16,7 +16,8 @@ export function weekStart(ms: number): number {
 const weeksBefore = (ms: number, n: number): number => { const d = new Date(ms); d.setDate(d.getDate() - 7 * n); return d.getTime() }
 
 /** Carico sollevato da una serie: a un braccio il peso è quello del singolo manico e le ripetizioni sono per lato, quindi conta il doppio. */
-export const setVolume = (s: { weight: number; reps: number; singleArm?: boolean }): number => s.weight * s.reps * (s.singleArm ? 2 : 1)
+/** Peso × ripetizioni, come l'attrezzo: un arto o due non cambia il conto (volume e medaglie restano confrontabili nel tempo). */
+export const setVolume = (s: { weight: number; reps: number }): number => s.weight * s.reps
 
 export const workoutVolume = (w: StatWorkout): number =>
   w.sets.reduce((sum, s) => sum + (s.isWarmup ? 0 : setVolume(s)), 0)
