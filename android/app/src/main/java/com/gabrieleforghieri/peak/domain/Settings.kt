@@ -91,3 +91,73 @@ data class AppSettings(
         return copy(unit = new, availablePlates = plates) to bar
     }
 }
+
+/**
+ * Le impostazioni da e verso il testo JSON del database, con gli stessi limiti di `cleanSetting` in common/docs.ts e di
+ * `applySetting` in SyncDocs.swift: un valore fuori scala o di un altro tipo si scarta e resta quello di prima.
+ */
+object SettingsCodec {
+    private val json = kotlinx.serialization.json.Json
+
+    private fun prim(text: String?) = text?.let { try { json.parseToJsonElement(it) as? kotlinx.serialization.json.JsonPrimitive } catch (_: Exception) { null } }
+    private fun int(text: String?, lo: Int, hi: Int) = prim(text)?.takeIf { !it.isString }?.content?.let { it.toIntOrNull() }?.takeIf { it in lo..hi }
+    private fun bool(text: String?) = prim(text)?.takeIf { !it.isString }?.content?.let { if (it == "true") true else if (it == "false") false else null }
+    private fun str(text: String?) = prim(text)?.takeIf { it.isString }?.content
+
+    /** Le impostazioni dai valori salvati (chiave → JSON). Le chiavi che mancano o non valgono prendono il valore di partenza. */
+    fun decode(values: Map<String, String>): AppSettings {
+        val d = AppSettings()
+        val plates = values[SettingKeys.AVAILABLE_PLATES]?.let {
+            try {
+                (json.parseToJsonElement(it) as? kotlinx.serialization.json.JsonArray)
+                    ?.map { e -> (e as kotlinx.serialization.json.JsonPrimitive).content.toDouble() }
+                    ?.takeIf { l -> l.size <= 20 && l.all { p -> p in 0.01..100.0 } }
+            } catch (_: Exception) { null }
+        }
+        return d.copy(
+            unit = WeightUnit.of(str(values[SettingKeys.UNIT])) ?: d.unit,
+            accent = AccentPalette.of(str(values[SettingKeys.ACCENT])) ?: d.accent,
+            restTimerEnabled = bool(values[SettingKeys.REST_TIMER_ENABLED]) ?: d.restTimerEnabled,
+            restSeconds = int(values[SettingKeys.REST_SECONDS], 15, 600) ?: d.restSeconds,
+            warmupRestPercent = int(values[SettingKeys.WARMUP_REST_PERCENT], 0, 100) ?: d.warmupRestPercent,
+            progressionEnabled = bool(values[SettingKeys.PROGRESSION_ENABLED]) ?: d.progressionEnabled,
+            repRangeMin = int(values[SettingKeys.REP_RANGE_MIN], 1, 30) ?: d.repRangeMin,
+            repRangeMax = int(values[SettingKeys.REP_RANGE_MAX], 1, 30) ?: d.repRangeMax,
+            plateCalculatorEnabled = bool(values[SettingKeys.PLATE_CALCULATOR_ENABLED]) ?: d.plateCalculatorEnabled,
+            availablePlates = plates ?: d.availablePlates,
+            tutorialDone = bool(values[SettingKeys.TUTORIAL_DONE]) ?: d.tutorialDone,
+            tourSeen = int(values[SettingKeys.TOUR_SEEN], 1, 10) ?: d.tourSeen,
+            machineTipsSeen = bool(values[SettingKeys.MACHINE_TIPS_SEEN]) ?: d.machineTipsSeen,
+            weeklyGoal = int(values[SettingKeys.WEEKLY_GOAL], 0, 7) ?: d.weeklyGoal,
+            language = str(values[SettingKeys.LANGUAGE])?.takeIf { it == "" || it == "it" || it == "en" } ?: d.language,
+            activeProgram = str(values[SettingKeys.ACTIVE_PROGRAM])?.let { if (it.isEmpty()) it else Uuids.normalize(it) } ?: d.activeProgram,
+            healthSyncEnabled = bool(values[SettingKeys.HEALTH_SYNC_ENABLED]) ?: d.healthSyncEnabled,
+            soundsEnabled = bool(values[SettingKeys.SOUNDS_ENABLED]) ?: d.soundsEnabled,
+            didSeeWelcome = bool(values[SettingKeys.DID_SEE_WELCOME]) ?: d.didSeeWelcome,
+        )
+    }
+
+    /** Il valore di una chiave, come testo JSON (la forma di `{value: …}` del documento `setting`). */
+    fun encode(key: String, s: AppSettings): String? = when (key) {
+        SettingKeys.UNIT -> "\"${s.unit.raw}\""
+        SettingKeys.ACCENT -> "\"${s.accent.name}\""
+        SettingKeys.REST_TIMER_ENABLED -> s.restTimerEnabled.toString()
+        SettingKeys.REST_SECONDS -> s.restSeconds.toString()
+        SettingKeys.WARMUP_REST_PERCENT -> s.warmupRestPercent.toString()
+        SettingKeys.PROGRESSION_ENABLED -> s.progressionEnabled.toString()
+        SettingKeys.REP_RANGE_MIN -> s.repRangeMin.toString()
+        SettingKeys.REP_RANGE_MAX -> s.repRangeMax.toString()
+        SettingKeys.PLATE_CALCULATOR_ENABLED -> s.plateCalculatorEnabled.toString()
+        SettingKeys.AVAILABLE_PLATES -> s.availablePlates.joinToString(",", "[", "]")
+        SettingKeys.TUTORIAL_DONE -> s.tutorialDone.toString()
+        SettingKeys.TOUR_SEEN -> s.tourSeen.toString()
+        SettingKeys.MACHINE_TIPS_SEEN -> s.machineTipsSeen.toString()
+        SettingKeys.WEEKLY_GOAL -> s.weeklyGoal.toString()
+        SettingKeys.LANGUAGE -> "\"${s.language}\""
+        SettingKeys.ACTIVE_PROGRAM -> "\"${s.activeProgram}\""
+        SettingKeys.HEALTH_SYNC_ENABLED -> s.healthSyncEnabled.toString()
+        SettingKeys.SOUNDS_ENABLED -> s.soundsEnabled.toString()
+        SettingKeys.DID_SEE_WELCOME -> s.didSeeWelcome.toString()
+        else -> null
+    }
+}
