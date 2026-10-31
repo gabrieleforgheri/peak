@@ -46,7 +46,23 @@ function commit() {
 	S.dirty = countDirty()
 	S.ver++
 	idb.writeRows(batch).catch((e) => { S.error = String(e) })
+	try { channel?.postMessage(batch) } catch { /* righe non clonabili: le altre schede le vedranno al prossimo avvio */ }
 	writeHook()
+}
+
+/** Le altre schede aperte dello stesso utente: senza, una scheda ferma riscrive (e fa risorgere) ciò che un'altra ha cancellato. */
+let channel: BroadcastChannel | null = null
+function listen(sub: string) {
+	channel?.close()
+	channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(`peak-${sub}`)
+	if (channel) channel.onmessage = (e: MessageEvent<idb.Row[]>) => {
+		let changed = false
+		for (const r of e.data) {
+			const local = rows.get(r.key)
+			if (!local || r.m > local.m) { rows.set(r.key, r); changed = true }
+		}
+		if (changed) { S.dirty = countDirty(); S.ver++ }
+	}
 }
 
 export const countDirty = (): number => { let n = 0; for (const r of rows.values()) if (r.dirty) n++; return n }
@@ -93,6 +109,7 @@ export async function load(sub: string) {
 	await idb.openDb(sub)
 	rows.clear()
 	for (const r of await idb.allRows()) rows.set(r.key, r)
+	listen(sub)
 	S.dirty = countDirty()
 	S.ver++
 }

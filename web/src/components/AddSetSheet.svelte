@@ -122,7 +122,7 @@
 					{#if hasSides(ex.muscleGroup)}<SideSegment bind:value={arm} group={ex.muscleGroup} onchange={onArm} />{/if}
 				</div>
 			</div>
-			<Stepper bind:value={weight} {step} min={0} max={5000} unit={unit()} />
+			<Stepper bind:value={weight} {step} min={0} max={Math.floor(toDisplayWeight(2000) * 100) / 100} unit={unit()} />
 			{#if side}<div class="small muted" style="margin-top:6px">{t('Totale')} <b class="num">{nf(absWeight)} {unit()}</b></div>{/if}
 
 			{#if mode?.bar && bar > 0 && !side}
@@ -170,7 +170,7 @@
 		<!-- CARD RIPETIZIONI -->
 		<div class="card">
 			<div class="sec-title" style="margin-top:0">{t('Ripetizioni')}</div>
-			<Stepper bind:value={reps} step={1} min={1} max={50} />
+			<Stepper bind:value={reps} step={1} min={1} max={50} integer />
 			<div class="chips" style="margin-top:8px">
 				{#each [1, 3, 5, 8, 10, 12] as q}<button class="chip" class:on={reps === q} onclick={() => (reps = q)}>{q}</button>{/each}
 			</div>
@@ -257,7 +257,7 @@
 			<button class="btn block" style="background:rgba(255,255,255,0.06);border-color:var(--stroke)" onclick={() => save(true)} disabled={!(absWeight > 0)}>
 				<Icon name="flame" size={17} />{t('Riscaldamento')}
 			</button>
-			<button class="btn primary block" onclick={() => save(false)} disabled={!(absWeight > 0)} data-tour="save">
+			<button class="btn primary block" onclick={() => save(set ? warm : false)} disabled={!(absWeight > 0)} data-tour="save">
 				<Icon name="plus" size={17} />{set ? t('Salva') : t('Aggiungi serie')}
 			</button>
 		</div>

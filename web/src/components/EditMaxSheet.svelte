@@ -46,7 +46,7 @@
 			</div>
 			<Stepper bind:value={weight} {step} min={0} max={maxShown} unit={unit()} />
 			<div class="sec-title">{t('Ripetizioni')}</div>
-			<Stepper bind:value={reps} step={1} min={1} max={50} />
+			<Stepper bind:value={reps} step={1} min={1} max={50} integer />
 		</div>
 		<div class="card">
 			<div class="row between">
@@ -56,7 +56,7 @@
 			{#if reps > 1}<div class="row between"><span class="muted">{t('1RM stimato')}</span><b class="num">≈ {W(est)}</b></div>{/if}
 			{#if best}<div class="row between"><span class="muted">{t('Precedente')}</span><span class="num">{setLine(best.weight, best.reps, arm, ex.muscleGroup)} · {dateLong(best.date)}</span></div>{/if}
 		</div>
-		<label class="field"><span>{t('Data')}</span><input class="input" type="date" bind:value={day} max={toDateInput(Date.now())} /></label>
+		<label class="field"><span>{t('Data')}</span><input class="input" type="date" bind:value={day} min="2000-01-01" max={toDateInput(Date.now())} /></label>
 		<label class="field"><span>{t('Nota')}</span><input class="input" bind:value={note} maxlength="500" placeholder={t('Facoltativa')} /></label>
 	</div>
 </Sheet>

@@ -11,6 +11,8 @@ function parse() {
 	// i nomi di prima della 3.0 (segnalibri, schermata aggiunta alla Home)
 	const renamed: Record<string, string> = { massimali: 'macchinari', allenamenti: 'allenamento', progressi: 'me', home: 'allenamento' }
 	if (parts[0] && renamed[parts[0]]) parts[0] = renamed[parts[0]]
+	// un percorso sconosciuto (#/foo/bar) porta alla scheda di partenza, non a «Allenamento non trovato»
+	if (parts[0] && !['allenamento', 'macchinari', 'me', 'amici', 'impostazioni', 'invito'].includes(parts[0])) parts.length = 0
 	// da dove arriva la pagina nuova: più in fondo di prima = avanti, meno = indietro (anche col tasto indietro del browser), stesso livello fra schede = cambio scheda
 	const from = depth(route.parts), to = depth(parts)
 	route.dir = to > from ? 'fwd' : to < from ? 'back' : to === 1 ? 'tab' : 'fwd'

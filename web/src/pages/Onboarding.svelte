@@ -49,7 +49,10 @@
 	let timer: ReturnType<typeof setTimeout> | undefined
 	onDestroy(() => clearTimeout(timer))
 
-	function go(to: number) { dir = to > step ? 1 : -1; step = to }
+	// il tasto della schermata nuova sta dove era quello di prima: un doppio tocco non deve saltarla
+	let movedAt = 0
+	const settled = () => Date.now() - movedAt > 400
+	function go(to: number) { dir = to > step ? 1 : -1; step = to; movedAt = Date.now() }
 	function back() {
 		clearTimeout(timer)
 		if (step === LAST && plan) { undoStarterPlan(plan); plan = null }
@@ -172,7 +175,7 @@
 							</div>
 						</div>
 					</div>
-					<div class="ob-foot"><div class="ob-col"><button class="btn primary block ob-cta" disabled={groups.size === 0} onclick={toMachines}>{t('Continua')}</button></div></div>
+					<div class="ob-foot"><div class="ob-col"><button class="btn primary block ob-cta" disabled={groups.size === 0} onclick={() => settled() && toMachines()}>{t('Continua')}</button></div></div>
 
 				{:else if step === 3}
 					<div class="ob-body">
@@ -210,7 +213,7 @@
 							<button class="btn block find" onclick={() => (searching = true)}><Icon name="search" size={20} />{t('Cerca nel catalogo')}</button>
 						</div>
 					</div>
-					<div class="ob-foot"><div class="ob-col"><button class="btn primary block ob-cta" disabled={total === 0} onclick={toReady}>{t('Continua')}</button></div></div>
+					<div class="ob-foot"><div class="ob-col"><button class="btn primary block ob-cta" disabled={total === 0} onclick={() => settled() && toReady()}>{t('Continua')}</button></div></div>
 
 				{:else}
 					<div class="ob-body">
@@ -227,7 +230,7 @@
 							</div>
 						</div>
 					</div>
-					<div class="ob-foot"><div class="ob-col"><button class="btn primary block ob-cta" onclick={onfinish}>{t('Fai il giro')}</button></div></div>
+					<div class="ob-foot"><div class="ob-col"><button class="btn primary block ob-cta" onclick={() => settled() && onfinish()}>{t('Fai il giro')}</button></div></div>
 				{/if}
 			</div>
 		{/key}

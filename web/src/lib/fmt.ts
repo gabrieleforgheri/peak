@@ -68,7 +68,8 @@ export const fromDateInput = (v: string): number => {
 	if (!y || !m || !d) return Date.now() // campo vuoto o incompleto
 	const now = new Date()
 	const same = y === now.getFullYear() && m === now.getMonth() + 1 && d === now.getDate()
-	return same ? now.getTime() : new Date(y, m - 1, d, 12).getTime()
+	// il server accetta dal 2000 a oggi: fuori da lì (digitato a mano) si riporta dentro
+	return same ? now.getTime() : Math.min(now.getTime(), Math.max(Date.UTC(2000, 0, 1, 12), new Date(y, m - 1, d, 12).getTime()))
 }
 
 /** Nome breve del giorno della settimana, 0 = lunedì. */

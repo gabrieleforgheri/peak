@@ -66,7 +66,8 @@
 		try {
 			await syncNow()
 			const res = await call(`/api/importa?modo=${mode}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: importing })
-			const out = await res.json()
+			// una risposta non JSON (proxy, errore del server) non è un problema di rete
+			const out = await res.json().catch(() => ({}))
 			if (res.status === 422) result = out.error === 'versione' ? t('Backup in versione {0}: serve una versione più recente di Peak.', out.version)
 				: out.error === 'scartati' ? tn(out.scartati, '1 elemento del file non è valido: non è stato sostituito nulla.', '{0} elementi del file non sono validi: non è stato sostituito nulla.')
 				: t('Il file non è un backup di Massimali valido.')
@@ -76,6 +77,8 @@
 				const c = out.conteggi
 				result = t('{0} macchinari e {1} allenamenti importati.', c.esercizi, c.allenamenti) + (out.orfani ? ' ' + tn(out.orfani, '1 massimale automatico senza serie è stato scartato.', '{0} massimali automatici senza serie sono stati scartati.') : '')
 					+ (out.scartati ? ' ' + tn(out.scartati, '1 elemento non valido è stato scartato.', '{0} elementi non validi sono stati scartati.') : '')
+				// resync rimonta la pagina e `result` si perde: l'esito va in un avviso che resta
+				toast(result, 6000)
 				await resync()
 			}
 		} catch { result = t('Serve la connessione.') }
@@ -154,10 +157,10 @@
 	{:else if cat.id === 'allenamento'}
 	<div class="card stack">
 		<div class="small muted">{t('Obiettivo della settimana')}</div>
-		<Stepper value={s.weeklyGoal || 3} step={1} min={1} max={7} unit={t('allenamenti')} onchange={(v) => setSetting('weeklyGoal', v)} />
+		<Stepper integer value={s.weeklyGoal || 3} step={1} min={1} max={7} unit={t('allenamenti')} onchange={(v) => setSetting('weeklyGoal', v)} />
 		<hr style="border:0;border-top:1px solid var(--stroke);width:100%;margin:0" />
 		<label class="row between"><span>{t('Timer di recupero')}</span><input class="toggle" type="checkbox" checked={s.restTimerEnabled} onchange={(e) => setSetting('restTimerEnabled', e.currentTarget.checked)} /></label>
-		{#if s.restTimerEnabled}<Stepper value={s.restSeconds} step={15} min={15} max={600} unit={t('secondi')} onchange={(v) => setSetting('restSeconds', v)} />
+		{#if s.restTimerEnabled}<Stepper integer value={s.restSeconds} step={15} min={15} max={600} unit={t('secondi')} onchange={(v) => setSetting('restSeconds', v)} />
 			<div><div>{t('Recupero dopo il riscaldamento')}</div><div class="small muted">{t('Percentuale del recupero normale')}</div></div>
 			<div class="seg">{#each [0, 25, 50, 75, 100] as p}<button class:on={s.warmupRestPercent === p} onclick={() => setSetting('warmupRestPercent', p)}>{p}%</button>{/each}</div>
 			{#if push !== 'unsupported'}
@@ -167,8 +170,8 @@
 		<hr style="border:0;border-top:1px solid var(--stroke);width:100%;margin:0" />
 		<label class="row between"><span>{t('Prossimo carico consigliato')}</span><input class="toggle" type="checkbox" checked={s.progressionEnabled} onchange={(e) => setSetting('progressionEnabled', e.currentTarget.checked)} /></label>
 		{#if s.progressionEnabled}
-			<div class="row"><div class="grow"><div class="small muted">{t('Ripetizioni minime')}</div><Stepper value={s.repRangeMin} step={1} min={1} max={30} onchange={(v) => { setSetting('repRangeMin', v); if (v > s.repRangeMax) setSetting('repRangeMax', v) }} /></div></div>
-			<div class="row"><div class="grow"><div class="small muted">{t('Ripetizioni massime')}</div><Stepper value={s.repRangeMax} step={1} min={s.repRangeMin} max={30} onchange={(v) => setSetting('repRangeMax', v)} /></div></div>
+			<div class="row"><div class="grow"><div class="small muted">{t('Ripetizioni minime')}</div><Stepper integer value={s.repRangeMin} step={1} min={1} max={30} onchange={(v) => { setSetting('repRangeMin', v); if (v > s.repRangeMax) setSetting('repRangeMax', v) }} /></div></div>
+			<div class="row"><div class="grow"><div class="small muted">{t('Ripetizioni massime')}</div><Stepper integer value={s.repRangeMax} step={1} min={s.repRangeMin} max={30} onchange={(v) => setSetting('repRangeMax', v)} /></div></div>
 		{/if}
 		<hr style="border:0;border-top:1px solid var(--stroke);width:100%;margin:0" />
 		<label class="row between"><span>{t('Calcolatore dischi')}</span><input class="toggle" type="checkbox" checked={s.plateCalculatorEnabled} onchange={(e) => setSetting('plateCalculatorEnabled', e.currentTarget.checked)} /></label>

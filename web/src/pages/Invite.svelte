@@ -11,7 +11,11 @@
 	// aprire il link vale come un sì: il codice si consuma qui
 	onMount(async () => {
 		const r = await useInvite(code)
-		if (r) { friend = r.amico; phase = 'ok'; void loadFriends() } else phase = 'bad'
+		if (r) {
+			friend = r.amico; phase = 'ok'; void loadFriends()
+			// il codice è consumato: ricaricando si apre il profilo, non «invito non valido»
+			history.replaceState(null, '', `/#/amici/${r.amico.id}`)
+		} else phase = 'bad'
 	})
 </script>
 

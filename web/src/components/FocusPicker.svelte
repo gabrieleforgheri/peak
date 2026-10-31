@@ -38,7 +38,7 @@
 			<div class="card list" data-tour="days">
 				{#each days as tpl (tpl.uuid)}
 					<button class="item" onclick={() => fromTemplate(tpl)}>
-						<div class="grow"><b class="ellipsis" style="display:block">{tpl.name}</b><span class="small muted">{tn(tpl.items.length, '1 esercizio', '{0} esercizi')}</span></div>
+						<div class="grow"><b class="ellipsis" style="display:block">{tpl.name}</b><span class="small muted">{tn(tpl.items.filter((i) => m.exById.has(i.exercise)).length, '1 esercizio', '{0} esercizi')}</span></div>
 						<Icon name="right" size={20} />
 					</button>
 				{/each}

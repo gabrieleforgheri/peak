@@ -115,7 +115,7 @@
 		{:else if today}
 			<button class="next" onclick={() => go(`allenamento/${startWorkout('', [], today)}`)} data-tour="start">
 				<span class="ni"><TemplateIconView icon={today.icon} name={today.name} size={26} /></span>
-				<span class="nt"><b>{t('Avvia {0}', today.name)}</b><span class="small muted">{tn(today.items.length, '1 esercizio', '{0} esercizi')}</span></span>
+				<span class="nt"><b>{t('Avvia {0}', today.name)}</b><span class="small muted">{tn(today.items.filter((i) => m.exById.has(i.exercise)).length, '1 esercizio', '{0} esercizi')}</span></span>
 				<Icon name="right" size={20} />
 			</button>
 			<button class="link small pick" onclick={() => (starting = true)}>{t('oppure scegli tu')}</button>
@@ -137,7 +137,7 @@
 				{#each days as tpl (tpl.uuid)}
 					<button class="item" onclick={() => (editing = tpl)} animate:flip={move()} in:rowIn>
 						<span class="ti"><TemplateIconView icon={tpl.icon} name={tpl.name} size={22} /></span>
-						<div class="grow"><b class="ellipsis" style="display:block">{tpl.name}</b><span class="small muted">{tn(tpl.items.length, '1 esercizio', '{0} esercizi')}</span></div>
+						<div class="grow"><b class="ellipsis" style="display:block">{tpl.name}</b><span class="small muted">{tn(tpl.items.filter((i) => m.exById.has(i.exercise)).length, '1 esercizio', '{0} esercizi')}</span></div>
 						{#if prog?.useDays}{#if tpl.weekday >= 0}<span class="badge accent">{weekdayName(tpl.weekday)}</span>{:else}<span class="small faint">{t('Nessuno')}</span>{/if}{/if}
 						<Icon name="right" size={20} />
 					</button>

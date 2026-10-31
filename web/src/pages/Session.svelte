@@ -3,7 +3,7 @@
 	import { flip } from 'svelte/animate'
 	import type { MuscleGroup } from '@common/docs.ts'
 	import { oneRepMax, restAfter } from '@common/domain.ts'
-	import { addSet, addToPlan, deleteWorkout, endWorkout, itemsFromWorkout, moveInPlan, patchWorkout, removeFromPlan, replaceInPlan, templateChanged, todayItems, updateTemplateFromWorkout } from '../lib/actions.ts'
+	import { addSet, addToPlan, deleteSet, deleteWorkout, endWorkout, itemsFromWorkout, moveInPlan, patchWorkout, removeFromPlan, replaceInPlan, templateChanged, todayItems, updateTemplateFromWorkout } from '../lib/actions.ts'
 	import { GROUP_NAMES, V, W, clock, dateShort, dateTime, duration, notebookLine, setLine, targetLine } from '../lib/fmt.ts'
 	import { t, tn } from '../lib/i18n.ts'
 	import { back, go } from '../lib/router.svelte.ts'
@@ -301,7 +301,7 @@
 		{#if orphanSets.length}
 			<div class="card">
 				<b class="muted">{t('Esercizio rimosso')}</b>
-				<div class="list" style="margin-top:8px">{#each orphanSets as s (s.uuid)}<div class="item num"><div class="grow">{setLine(s.weight, s.reps, s.singleArm)}</div>{#if s.isWarmup}<span class="badge">{t('risc.')}</span>{/if}</div>{/each}</div>
+				<div class="list" style="margin-top:8px">{#each orphanSets as s (s.uuid)}<div class="item num"><div class="grow">{setLine(s.weight, s.reps, s.singleArm)}</div>{#if s.isWarmup}<span class="badge">{t('risc.')}</span>{/if}<button class="icon-btn" aria-label={t('Elimina serie')} onclick={() => confirm(t('Elimina serie') + '?') && deleteSet(s.uuid)}><Icon name="trash" size={16} /></button></div>{/each}</div>
 			</div>
 		{/if}
 

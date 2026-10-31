@@ -10,7 +10,8 @@ export const lang: 'it' | 'en' = saved === 'it' || saved === 'en' ? saved : navi
 
 /** Ricorda la lingua su questo dispositivo (serve all'avvio, prima che arrivino le impostazioni) e ricarica: i testi sono calcolati all'avvio. */
 export function applyLang(l: 'it' | 'en') {
-	try { localStorage.setItem(KEY, l) } catch { /* senza archivio resta la lingua del browser */ }
+	// senza archivio la scelta non sopravvive al ricaricamento: ricaricare darebbe un giro infinito
+	try { localStorage.setItem(KEY, l) } catch { return }
 	location.reload()
 }
 document.documentElement.lang = lang

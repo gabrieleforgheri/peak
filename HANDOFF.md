@@ -1,3 +1,23 @@
+# Correzioni web dalla prova nel browser (31 ottobre 2026, notte)
+
+Solo web. Scritto a mano (i subagenti avevano finito i limiti). Provato nel browser su build vera (:3416, dati di prova): campo numerico in inglese, percorsi sconosciuti, «Scorso» ricordato dopo il ricaricamento, recupero 1:00 dopo un riscaldamento con 120 s, modifica di un riscaldamento che resta tale, impostazione 0–100 %. Nessun errore in console né nel log del server.
+
+| Fatto | Dove |
+|---|---|
+| Campo numerico in inglese: toccando «72.6» e scrivendo 80 veniva «7280,6». Ora il testo da modificare ha lo stesso separatore di quello mostrato, senza separatore delle migliaia, e si seleziona tutto | `Stepper.svelte` (`plain`) |
+| Opzione `integer` dello Stepper: ripetizioni, obiettivo, recuperi e intervallo rip. sono interi (il server rifiutava 8,5 rip) | `Stepper.svelte`, `AddSetSheet`, `EditMaxSheet`, `Settings.svelte`, `ExerciseEditor` |
+| Peso della serie al massimo 2000 kg (limite del server) nell'unità del campo; date fra il 2000 e oggi | `AddSetSheet.svelte`, `fmt.ts` `fromDateInput`, `EditMaxSheet`, `BodyWeightSheet` |
+| Modificare una serie di riscaldamento la lascia di riscaldamento (come su iPhone) | `AddSetSheet.svelte` |
+| Conteggio esercizi dei giorni senza i macchinari eliminati; serie orfane eliminabili | `Workouts.svelte`, `FocusPicker.svelte`, `Session.svelte` |
+| Import: l'esito va in un avviso (il resync rimontava la pagina e il messaggio spariva); risposta non JSON non è più «Serve la connessione» | `Settings.svelte` |
+| Invito: dopo l'accettazione l'indirizzo diventa il profilo dell'amico, ricaricare non dice più «invito non valido» | `Invite.svelte` |
+| Più schede aperte: le righe scritte passano alle altre schede (`BroadcastChannel` per utente), una scheda ferma non fa più risorgere ciò che un'altra ha cancellato | `store.svelte.ts` |
+| Primo avvio: un doppio tocco su «Continua» non salta «Tutto pronto» (400 ms dopo il cambio di passo) | `Onboarding.svelte` |
+| Percorso sconosciuto (#/foo/bar) → scheda di partenza, non «Allenamento non trovato»; cambio lingua senza archivio non ricarica all'infinito | `router.svelte.ts`, `i18n.ts` |
+| Aperti: utente in cache per l'avvio offline (nome «—», amici vuoti), riscaldamento in lb con valori strani (65,35 lb), «klb» nel volume, «Altro»→«Other» | — |
+
+---
+
 # Correzioni iPhone dopo l'audit (31 ottobre 2026)
 
 Solo iPhone. Codice scritto da un subagente Sonnet, da rivedere. Build `xcodebuild build` ok, `check-i18n-ios` 0 mancanti; non provato sul telefono né nel simulatore.

@@ -272,7 +272,7 @@
 		{#if m.settings.restTimerEnabled}
 			<div class="field">
 				<span class="sec-title" style="margin:0 4px 6px">{t('Recupero')}</span>
-				<Stepper bind:value={rest} step={15} min={0} max={600} unit={rest === 0 ? t('Come le impostazioni') : t('secondi')} />
+				<Stepper integer bind:value={rest} step={15} min={0} max={600} unit={rest === 0 ? t('Come le impostazioni') : t('secondi')} />
 			</div>
 		{/if}
 

@@ -29,7 +29,7 @@
 	{#snippet action()}<button class="btn primary small" onclick={save} disabled={!ok}>{t('Salva')}</button>{/snippet}
 	<div class="stack">
 		<div class="card"><Stepper bind:value={weight} step={BODYWEIGHT_STEP[m.settings.unit]} min={0} max={Math.floor(toUnit(400) * 10) / 10} unit={unit()} /></div>
-		<label class="field"><span>{t('Data')}</span><input class="input" type="date" bind:value={day} max={toDateInput(Date.now())} /></label>
+		<label class="field"><span>{t('Data')}</span><input class="input" type="date" bind:value={day} min="2000-01-01" max={toDateInput(Date.now())} /></label>
 		{#if entry}<button class="btn danger block" onclick={() => { deleteBodyWeight(entry.uuid); onclose() }}>{t('Elimina pesata')}</button>{/if}
 	</div>
 </Sheet>
