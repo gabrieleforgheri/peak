@@ -4,6 +4,12 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.gabrieleforghieri.peak.data.dao.FriendsDao
+import com.gabrieleforghieri.peak.data.dao.MachinesDao
+import com.gabrieleforghieri.peak.data.dao.MeDao
+import com.gabrieleforghieri.peak.data.dao.SettingsDao
+import com.gabrieleforghieri.peak.data.dao.StartDao
+import com.gabrieleforghieri.peak.data.dao.WorkoutsDao
 
 @Database(
     entities = [
@@ -22,6 +28,14 @@ abstract class PeakDatabase : RoomDatabase() {
     abstract fun templates(): TemplateDao
     abstract fun programs(): ProgramDao
     abstract fun settings(): SettingDao
+
+    // Un DAO per area della fase 3 (`data/dao/`), vuoti: ogni area ci aggiunge le sue query senza toccare questo file.
+    abstract fun areaWorkouts(): WorkoutsDao
+    abstract fun areaMachines(): MachinesDao
+    abstract fun areaMe(): MeDao
+    abstract fun areaFriends(): FriendsDao
+    abstract fun areaStart(): StartDao
+    abstract fun areaSettings(): SettingsDao
 
     companion object {
         @Volatile private var instance: PeakDatabase? = null

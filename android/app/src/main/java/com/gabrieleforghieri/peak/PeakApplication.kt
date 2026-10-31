@@ -7,6 +7,7 @@ import com.gabrieleforghieri.peak.data.ImageStore
 import com.gabrieleforghieri.peak.data.KeystoreCredentialStore
 import com.gabrieleforghieri.peak.data.MediaStoreBackupFiles
 import com.gabrieleforghieri.peak.data.PeakDatabase
+import com.gabrieleforghieri.peak.data.PeakRepository
 import com.gabrieleforghieri.peak.data.PrefsPendingLogin
 import com.gabrieleforghieri.peak.data.RoomSyncStorage
 import com.gabrieleforghieri.peak.sync.BackupService
@@ -34,6 +35,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 class PeakApplication : Application() {
     val database by lazy { PeakDatabase.get(this) }
     val settings by lazy { SettingsRepository(database.settings()) }
+    /** La lettura comune per le schermate (vedi `data/PeakRepository.kt`). */
+    val repository by lazy { PeakRepository(database) }
     val records by lazy { RecordService(RoomRecordStorage(database)) }
     val photos by lazy { ImageStore(File(filesDir, "photos")) }
     val syncStorage by lazy { RoomSyncStorage(database, records) }

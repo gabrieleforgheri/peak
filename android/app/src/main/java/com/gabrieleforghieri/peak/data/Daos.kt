@@ -22,6 +22,9 @@ interface ExerciseDao {
     @Query("SELECT * FROM exercise WHERE uuid = :uuid")
     suspend fun get(uuid: String): ExerciseEntity?
 
+    @Query("SELECT * FROM exercise WHERE uuid = :uuid")
+    fun observe(uuid: String): Flow<ExerciseEntity?>
+
     @Query("SELECT uuid FROM exercise")
     suspend fun allUuids(): List<String>
 
@@ -49,6 +52,9 @@ interface MaxRecordDao {
     @Query("SELECT * FROM max_record WHERE uuid = :uuid")
     suspend fun get(uuid: String): MaxRecordEntity?
 
+    @Query("SELECT * FROM max_record WHERE exerciseUuid = :exercise ORDER BY date DESC")
+    fun observeOfExercise(exercise: String): Flow<List<MaxRecordEntity>>
+
     @Upsert
     suspend fun upsert(record: MaxRecordEntity)
 
@@ -69,6 +75,13 @@ interface WorkoutDao {
 
     @Query("SELECT * FROM workout WHERE uuid = :uuid")
     suspend fun get(uuid: String): WorkoutEntity?
+
+    @Query("SELECT * FROM workout WHERE uuid = :uuid")
+    fun observe(uuid: String): Flow<WorkoutEntity?>
+
+    /** L'allenamento in corso (`endedAt` vuoto), il più recente se per un errore ce n'è più d'uno. */
+    @Query("SELECT * FROM workout WHERE endedAt IS NULL ORDER BY date DESC LIMIT 1")
+    fun observeActive(): Flow<WorkoutEntity?>
 
     @Upsert
     suspend fun upsert(workout: WorkoutEntity)
@@ -97,6 +110,18 @@ interface WorkoutSetDao {
 
     @Query("SELECT * FROM workout_set WHERE uuid = :uuid")
     suspend fun get(uuid: String): WorkoutSetEntity?
+
+    /** Le serie di tutti gli allenamenti che esistono ancora. */
+    @Query("SELECT * FROM workout_set WHERE workoutUuid IS NOT NULL")
+    fun observeLive(): Flow<List<WorkoutSetEntity>>
+
+    /** Le serie di un macchinario in allenamenti che esistono ancora, dalla più recente. */
+    @Query("SELECT * FROM workout_set WHERE exerciseUuid = :exercise AND workoutUuid IS NOT NULL ORDER BY createdAt DESC")
+    fun observeLiveOfExercise(exercise: String): Flow<List<WorkoutSetEntity>>
+
+    /** Le ultime serie svolte (`@Query` con `fetchLimit` del selettore di esercizi). */
+    @Query("SELECT * FROM workout_set WHERE exerciseUuid IS NOT NULL ORDER BY createdAt DESC LIMIT :limit")
+    fun observeRecent(limit: Int): Flow<List<WorkoutSetEntity>>
 
     @Query("SELECT COALESCE(MAX(setOrder), -1) FROM workout_set WHERE workoutUuid = :workout")
     suspend fun maxOrder(workout: String): Int
@@ -155,6 +180,9 @@ interface TemplateDao {
     @Query("SELECT * FROM workout_template WHERE uuid = :uuid")
     suspend fun get(uuid: String): WorkoutTemplateEntity?
 
+    @Query("SELECT * FROM workout_template WHERE uuid = :uuid")
+    fun observe(uuid: String): Flow<WorkoutTemplateEntity?>
+
     @Upsert
     suspend fun upsert(template: WorkoutTemplateEntity)
 
@@ -175,6 +203,9 @@ interface ProgramDao {
 
     @Query("SELECT * FROM workout_program WHERE uuid = :uuid")
     suspend fun get(uuid: String): WorkoutProgramEntity?
+
+    @Query("SELECT * FROM workout_program WHERE uuid = :uuid")
+    fun observe(uuid: String): Flow<WorkoutProgramEntity?>
 
     @Upsert
     suspend fun upsert(program: WorkoutProgramEntity)
