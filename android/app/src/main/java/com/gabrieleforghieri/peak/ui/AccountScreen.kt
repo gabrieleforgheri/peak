@@ -1,6 +1,8 @@
 package com.gabrieleforghieri.peak.ui
 
+import android.content.ActivityNotFoundException
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
@@ -108,8 +110,11 @@ fun AccountScreen(padding: PaddingValues) {
                         }
                         SecondaryButton(tr("Importa un backup"), { importForConnection.launch(arrayOf("*/*")) })
                         Spacer(Modifier.height(8.dp))
-                        SecondaryButton(tr("Parti da zero"), { scope.launch { sync.connect.startEmpty() } })
-                        Spacer(Modifier.height(8.dp))
+                        // «Parti da zero» sostituirebbe i dati del telefono con un account vuoto: solo se non ce ne sono
+                        if (!(stage as Stage.EmptyServer).hasLocalData) {
+                            SecondaryButton(tr("Parti da zero"), { scope.launch { sync.connect.startEmpty() } })
+                            Spacer(Modifier.height(8.dp))
+                        }
                         SecondaryButton(tr("Annulla"), { sync.connect.cancel() })
                     }
                     stage is Stage.Conflict -> {
@@ -137,7 +142,14 @@ fun AccountScreen(padding: PaddingValues) {
                             {
                                 scope.launch {
                                     val url = sync.connect.begin() ?: return@launch
-                                    CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(url))
+                                    Log.i("PeakLogin", "Custom Tab: $url")
+                                    try {
+                                        CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(url))
+                                    } catch (_: ActivityNotFoundException) {
+                                        // nessun browser sul telefono
+                                        sync.connect.cancel()
+                                        note = context.tr("Non trovo un browser per il login.")
+                                    }
                                 }
                             },
                         )

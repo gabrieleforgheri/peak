@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
  *
  *   adb shell am broadcast -n com.gabrieleforghieri.peak/.DebugCommands --es cmd connect --es token T --es sub S
  *
- * Comandi: connect (token, sub, nome), choice (which = upload|empty|server|merge), sync, seed, rename (uuid, nome), delete-exercise (uuid),
+ * Comandi: disconnect, connect (token, sub, nome), choice (which = upload|empty|server|merge), sync, seed, rename (uuid, nome), delete-exercise (uuid),
  * restore (file, mode = merge|replace), export (file), dump. Il risultato va nel log con il tag PeakDebug.
  */
 class DebugCommands : BroadcastReceiver() {
@@ -55,7 +55,8 @@ class DebugCommands : BroadcastReceiver() {
                 }
                 Log.i(TAG, "OK choice stage=${c.stage.value}")
             }
-            "sync" -> { sync.syncNow(); Log.i(TAG, "OK sync ${sync.engine.status.value}") }
+            "sync" -> { sync.syncNow(); sync.engine.status.value.let { Log.i(TAG, "OK sync state=${it.state} error=${it.lastError} pending=${it.pendingCount}") } }
+            "disconnect" -> { sync.engine.disconnect(); Log.i(TAG, "OK disconnect") }
             "seed" -> seed(app)
             "rename" -> {
                 val db = app.database

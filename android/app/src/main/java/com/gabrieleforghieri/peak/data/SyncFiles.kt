@@ -54,6 +54,7 @@ class PrefsPendingLogin(context: Context) : PendingLogin {
     override fun take(): String? {
         val sealed = prefs.getString(KEY, null)
         prefs.edit().remove(KEY).commit()
+        android.util.Log.i("PeakLogin", "verifier PKCE ${if (sealed != null) "trovato" else "assente"}")
         return sealed?.let { box.open(Base64.decode(it, Base64.NO_WRAP)) }?.decodeToString()
     }
 
