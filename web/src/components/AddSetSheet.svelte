@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { type ArmMemo, beats, bestOf, defaultBarWeightFor, oneRepMax, plateMode, round2, switchArm, toDisplay } from '@common/domain.ts'
+	import { type ArmMemo, beats, bestOf, defaultBarWeightFor, oneRepMax, plateMode, round2, switchArm, toDisplay, twoHandles } from '@common/domain.ts'
 	import { addSet, deleteSet, patchSet } from '../lib/actions.ts'
 	import { stepOf, warmupFor } from '../lib/derive.ts'
 	import { W, fromUnit, hasSides, relDay, setLine, toUnit, unit } from '../lib/fmt.ts'
@@ -49,8 +49,11 @@
 	let weight = $state(init.w)
 	let reps = $state(init.r)
 	let warm = $state(set?.isWarmup ?? false)
-	// a un braccio (o una gamba): la serie stessa; una serie nuova parte sempre a due
-	let arm = $state(set ? set.singleArm : false)
+	// il selettore «2 | 1» c'è solo sui macchinari che si fanno in tutti e due i modi; sugli altri il segno non conta e si salva falso.
+	// Una serie nuova riparte dal selettore dell'ultima di questo esercizio (in questo allenamento, altrimenti in archivio)
+	const either = ex.limbs === 'either' && hasSides(ex.muscleGroup)
+	const lastWork = [...workout.sets].reverse().find((s) => s.exercise === ex.uuid && !s.isWarmup) ?? ex.sets.find((s) => !s.isWarmup)
+	let arm = $state(either && (set ? set.singleArm : lastWork?.singleArm === true))
 	// il peso di prima del dimezzamento (totale, unità scelta): se non lo si tocca, tornando a due bracci si rimette identico
 	let armMemo: ArmMemo | null = null
 	let showRecent = $state(false)
@@ -86,7 +89,9 @@
 
 	// solo il tocco sul selettore (non il caricamento di una serie): metà o doppio, sulla griglia sbarra + k × passo
 	// (per lato il totale sale di due passi alla volta)
+	// manubri e cavi (twoHandles): il peso è già quello di un manico, resta com'è
 	function onArm(toSingle: boolean) {
+		if (twoHandles({ catalog: ex.catalog, name: ex.name, glyph: ex.glyphName ?? ex.glyph })) return
 		const grid = side || isRel || mode?.bar ? bar : 0
 		const r = switchArm(toSingle, absWeight, armMemo, grid, side ? step * 2 : step)
 		armMemo = r.memo
@@ -119,7 +124,7 @@
 					{#if mode?.bar && bar > 0}
 						<span class="small badge muted">{t('Sbarra')} {nf(bar)} {unit()}</span>
 					{/if}
-					{#if hasSides(ex.muscleGroup)}<SideSegment bind:value={arm} group={ex.muscleGroup} onchange={onArm} />{/if}
+					{#if either}<SideSegment bind:value={arm} group={ex.muscleGroup} onchange={onArm} />{/if}
 				</div>
 			</div>
 			<Stepper bind:value={weight} {step} min={0} max={Math.floor(toDisplayWeight(2000) * 100) / 100} unit={unit()} />

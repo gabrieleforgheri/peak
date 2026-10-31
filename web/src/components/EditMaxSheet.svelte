@@ -42,7 +42,7 @@
 		<div class="card">
 			<div class="row between" style="align-items:baseline">
 				<div class="sec-title" style="margin-top:0">{t('Carico')}</div>
-				{#if hasSides(ex.muscleGroup)}<SideSegment bind:value={arm} group={ex.muscleGroup} />{/if}
+				{#if ex.limbs === 'either' && hasSides(ex.muscleGroup)}<SideSegment bind:value={arm} group={ex.muscleGroup} />{/if}
 			</div>
 			<Stepper bind:value={weight} {step} min={0} max={maxShown} unit={unit()} />
 			<div class="sec-title">{t('Ripetizioni')}</div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { oneRepMax, toDisplay, round2 } from '@common/domain.ts'
+	import { oneRepMax, toDisplay, round2, twoHandles } from '@common/domain.ts'
 	import { GROUP_NAMES, W, dateLong, dateShort, delta, relDay, setLine, toUnit, unit } from '../lib/fmt.ts'
 	import { deleteRecord } from '../lib/actions.ts'
 	import { deltaOf, stepOf, suggestionFor, warmupFor } from '../lib/derive.ts'
@@ -90,7 +90,7 @@
 					<div class="grow" style="min-width:0">
 						<div class="row wrap" style="gap:6px">
 							<span class="badge" style="color:var(--{ex.muscleGroup});background:color-mix(in srgb, var(--{ex.muscleGroup}) 16%, transparent)">{GROUP_NAMES[ex.muscleGroup]}</span>
-							{#if ex.isUnilateral}<span class="badge">{ex.muscleGroup === 'gambe' ? t('Una gamba') : t('Un braccio')}</span>{/if}
+							{#if ex.limbs === 'one'}<span class="badge">{ex.muscleGroup === 'gambe' ? t('Una gamba') : t('Un braccio')}</span>{/if}
 							{#if ex.perSide}<span class="badge">{t('Per lato')}</span>{/if}
 							{#if (ex.barWeight ?? 0) > 0}<span class="badge">{t('Sbarra')} {nf(toUnit(ex.barWeight))} {unit()}</span>{/if}
 							{#if (ex.barWeight ?? 0) > 0 && ex.weightDisplay === 'relative' && !ex.perSide}<span class="badge">{t('Dischi')}</span>{/if}
@@ -211,6 +211,10 @@
 					</div>
 				{/each}
 			</div>
+			<!-- una pila sola: il peso a un arto è circa la metà di quello a due; si confronta con il massimale a due -->
+			{#if ex.armBest && ex.best && !twoHandles({ catalog: ex.catalog, name: ex.name, glyph: ex.glyphName ?? ex.glyph })}
+				<p class="small muted num" style="margin:6px 4px 0">{ex.muscleGroup === 'gambe' ? t('Per gamba: {0} · a due {1}', W(ex.armBest.weight), W(ex.best.weight / 2)) : t('Per braccio: {0} · a due {1}', W(ex.armBest.weight), W(ex.best.weight / 2))}</p>
+			{/if}
 		{/if}
 
 		{#if ex.sets.length}

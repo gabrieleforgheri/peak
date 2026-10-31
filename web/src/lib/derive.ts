@@ -16,7 +16,9 @@ export function suggestionFor(ex: Ex, m: Model): Suggestion | null {
 	if (!m.settings.progressionEnabled) return null
 	const unit = m.settings.unit
 	const range: [number, number] = [m.settings.repRangeMin, Math.max(m.settings.repRangeMin, m.settings.repRangeMax)]
-	const sets = ex.sets.map((s) => {
+	// dove si fa in tutti e due i modi, si propone per la linea dell'ultima serie (a due o a uno), non un miscuglio
+	const lastWork = ex.sets.find((s) => !s.isWarmup)
+	const sets = ex.sets.filter((s) => ex.limbs !== 'either' || !lastWork || s.singleArm === lastWork.singleArm).map((s) => {
 		const wk = m.wkById.get(s.workout)!
 		return { weight: round2(toDisplay(s.weight, unit)), reps: s.reps, isWarmup: s.isWarmup, workout: s.workout, workoutDate: wk.dateMs, workoutEnded: !wk.isActive }
 	})
