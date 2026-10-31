@@ -537,3 +537,9 @@ pagamento (TestFlight/App Store) o se AltStore risolve le issue #229 e #684.
 3. Ricordare che aggiornare Massimali da AltStore toglie il Watch: dopo, rilanciare
    `install_device.sh`.
 4. Eventuale: countdown del recupero anche sul Watch, vibrazione a fine recupero al polso.
+
+## Sincronizzazione iPhone: due correzioni (da provare sul telefono)
+
+- `SyncService.downloadPhotos`: una foto che il server non ha (404) viene saltata, il macchinario resta senza; prima l'errore bloccava ogni giro. Gli altri errori di rete fermano ancora il giro.
+- `SyncService.push`: i documenti scartati dal server (`scartati`) non vengono più segnati puliti, restano sporchi come sul web e non si rimandano finché non cambia la loro `m`.
+- Non provato sul telefono: giro con una foto assente sul server, e documento scartato che resta in coda (`pendingCount`).
