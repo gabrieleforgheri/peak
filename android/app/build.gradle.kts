@@ -25,9 +25,15 @@ android {
         versionName = "3.4"
     }
 
+    // L'indirizzo del server è fisso (https://peak.yrb4g.com). Solo nei build di debug si può cambiare, per provare con un server locale:
+    // ./gradlew assembleDebug -PpeakBaseUrl=http://10.0.2.2:3416   (dall'emulatore il Mac è 10.0.2.2)
     buildTypes {
+        debug {
+            buildConfigField("String", "PEAK_BASE_URL", "\"${(findProperty("peakBaseUrl") as String?) ?: "https://peak.yrb4g.com"}\"")
+        }
         release {
             isMinifyEnabled = false
+            buildConfigField("String", "PEAK_BASE_URL", "\"https://peak.yrb4g.com\"")
         }
     }
 
@@ -38,6 +44,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/catalog"))
@@ -70,6 +77,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.browser)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.foundation)

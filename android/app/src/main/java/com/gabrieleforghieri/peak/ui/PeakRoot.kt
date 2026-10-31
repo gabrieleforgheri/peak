@@ -82,7 +82,10 @@ fun PeakRoot() {
         },
     ) { padding ->
         NavHost(nav, startDestination = Tab.workouts.route, modifier = Modifier.fillMaxSize()) {
-            for (tab in Tab.entries) composable(tab.route) { TabPlaceholder(tab, padding) }
+            for (tab in Tab.entries) composable(tab.route) {
+                // la scheda Me ha, per ora, la schermata provvisoria dell'account (fase 2); le altre sono segnaposto
+                if (tab == Tab.me) AccountScreen(padding) else TabPlaceholder(tab, padding)
+            }
         }
     }
 }

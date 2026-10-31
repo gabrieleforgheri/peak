@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Solo nei build di debug: il server locale della prova (10.0.2.2:3416) è in HTTP, e i comandi di prova arrivano da adb. -->
+    <application android:usesCleartextTraffic="true">
+        <receiver android:name=".DebugCommands" android:exported="true" />
+    </application>
+</manifest>
