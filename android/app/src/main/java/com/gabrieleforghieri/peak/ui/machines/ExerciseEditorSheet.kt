@@ -609,10 +609,10 @@ private fun MusclesContent(form: EditorForm, onForm: (EditorForm) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.Start) {
         if (entry != null) {
             Text(tr("Sono quelli dell'attrezzo del catalogo."), style = PeakTheme.rounded(13, FontWeight.Medium), color = PeakTheme.textTertiary)
-            MuscleFigureView(entry.muscleIDs, Modifier.fillMaxWidth().widthIn(max = 220.dp), view = AnatomyView.entries.firstOrNull { it.name == entry.view }, zoom = false)
+            MuscleFigureView(entry.muscleIDs, Modifier.widthIn(max = 220.dp).fillMaxWidth(), view = AnatomyView.entries.firstOrNull { it.name == entry.view }, zoom = false)
         } else {
             Text(tr("Tocca i muscoli che lavorano sulla figura."), style = PeakTheme.rounded(13, FontWeight.Medium), color = PeakTheme.textTertiary)
-            MuscleFigureView(form.muscles, Modifier.fillMaxWidth().widthIn(max = 220.dp), view = form.figureSide, zoom = false, onTap = { onForm(form.toggleMuscle(it)) })
+            MuscleFigureView(form.muscles, Modifier.widthIn(max = 220.dp).fillMaxWidth(), view = form.figureSide, zoom = false, onTap = { onForm(form.toggleMuscle(it)) })
             Text(
                 tr(if (form.figureSide == AnatomyView.front) "Vedi di schiena" else "Vedi di fronte"),
                 Modifier.background(PeakTheme.cardStrong, RoundedCornerShape(10.dp)).pressable {

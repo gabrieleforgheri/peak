@@ -190,7 +190,8 @@ private fun SwipeToArchive(onArchive: () -> Unit, content: @Composable () -> Uni
     SwipeToDismissBox(
         state, enableDismissFromStartToEnd = false,
         backgroundContent = {
-            Row(
+            // solo mentre si trascina: a riposo le card (semitrasparenti) lascerebbero vedere lo sfondo
+            if (state.dismissDirection == SwipeToDismissBoxValue.EndToStart) Row(
                 Modifier.fillMaxSize().background(WarningOrange, RoundedCornerShape(PeakTheme.radius)).padding(end = 22.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically,
             ) {

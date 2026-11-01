@@ -160,7 +160,7 @@ fun ExerciseDetailContent(
                                 if (best != null) {
                                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            CountText(best.weight, style = PeakTheme.display(52), format = { Fmt.weight(it, unit, includeSymbol = false) })
+                                            CountText(best.weight, style = PeakTheme.display(52).copy(color = PeakTheme.textPrimary), format = { Fmt.weight(it, unit, includeSymbol = false) })
                                             Text(unit.symbol, Modifier.padding(bottom = 8.dp), style = PeakTheme.rounded(18, FontWeight.SemiBold), color = PeakTheme.textSecondary)
                                             Text("× ${best.reps}", Modifier.padding(bottom = 8.dp), style = PeakTheme.rounded(18, FontWeight.SemiBold), color = PeakTheme.textSecondary)
                                         }

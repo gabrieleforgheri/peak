@@ -168,7 +168,7 @@ fun MachineTip(target: String, show: Boolean, title: String, text: String, onNex
         Box(
             Modifier.offset(with(density) { left.toDp() }, with(density) { top.toDp() })
                 .size(with(density) { width.toDp() }, with(density) { height.toDp() })
-                .shadow(14.dp, RoundedCornerShape(16.dp), ambientColor = accent, spotColor = accent)
+                .border(6.dp, accent.copy(alpha = 0.18f), RoundedCornerShape(16.dp))
                 .border(2.dp, accent, RoundedCornerShape(16.dp)),
         )
         val gap = with(density) { 12.dp.toPx() }
