@@ -23,7 +23,7 @@ class ShareSheetTest {
     @Test fun withoutTheProviderInTheManifestSharingIsNotAvailable() {
         // finché chi unisce le aree non dichiara il FileProvider, la pagina Backup ripiega sul «salva con nome»
         assertEquals("${context.packageName}.fileprovider", ShareSheet.authority(context))
-        assertFalse(ShareSheet.isAvailable(context))
+        assertTrue(ShareSheet.isAvailable(context))
     }
 
     @Test fun datesUseTheLocaleOfTheCaller() {

@@ -28,5 +28,13 @@
                 <data android:scheme="peak" android:host="login" />
             </intent-filter>
         </activity>
+        <!-- La condivisione del backup (ui/settings/ShareSheet.kt): solo cache/share/, letto da chi riceve il file -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>

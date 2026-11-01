@@ -38,17 +38,12 @@ abstract class PeakDatabase : RoomDatabase() {
     abstract fun areaSettings(): SettingsDao
 
     companion object {
-        @Volatile private var instance: PeakDatabase? = null
-
         /** Il database vero non si è aperto e si lavora su uno in memoria: la sincronizzazione e i backup restano spenti, per non spingere un «tutto cancellato». */
         @Volatile var isFallback = false
             private set
 
-        fun get(context: Context): PeakDatabase = instance ?: synchronized(this) {
-            instance ?: open(context.applicationContext).also { instance = it }
-        }
-
-        private fun open(context: Context): PeakDatabase {
+        /** Lo apre `PeakApplication`, una volta: niente copia statica, così nelle prove (un'applicazione per test) ognuna ha il suo database. */
+        fun open(context: Context): PeakDatabase {
             val real = Room.databaseBuilder(context, PeakDatabase::class.java, "peak.db").build()
             return try {
                 real.openHelper.writableDatabase // si apre (e si migra) adesso, non alla prima lettura

@@ -56,6 +56,7 @@
     <string name="t_aggiornato_c8e195e5">Aggiornato %1$s</string>
     <string name="t_aggiornato_lld_92530159">Aggiornato %1$d</string>
     <string name="t_aggiunge_i_dati_di_questo_iphone_a_quell_d5e36a34">Aggiunge i dati di questo iPhone a quelli di Peak. I macchinari con lo stesso nome si uniscono.</string>
+    <string name="t_aggiunge_i_dati_di_questo_telefono_a_que_69e2016b">Aggiunge i dati di questo telefono a quelli di Peak. I macchinari con lo stesso nome si uniscono.</string>
     <string name="t_aggiunge_solo_cio_che_manca_i_macchinari_59cd1442">Aggiunge solo ciò che manca: i macchinari con lo stesso nome si uniscono, gli allenamenti già presenti si saltano.</string>
     <string name="t_aggiungi_54cd6a8e">Aggiungi</string>
     <string name="t_aggiungi_amici_dcad52ff">Aggiungi amici</string>
@@ -98,6 +99,7 @@
     <string name="t_aprine_uno_modifica_collega_cosi_entra_n_518e00c1">%1$s: aprine uno → Modifica → Collega, così entra nelle classifiche con gli amici.</string>
     <string name="t_aprine_uno_modifica_collega_cosi_entra_n_b18d0fae">Aprine uno → Modifica → Collega: così entra nelle classifiche con gli amici.</string>
     <string name="t_archivia_ca670a70">Archivia</string>
+    <string name="t_archiviare_il_macchinario_08321a53">Archiviare il macchinario?</string>
     <string name="t_archiviati_a410c63f">Archiviati</string>
     <string name="t_archiviato_a210c319">Archiviato</string>
     <string name="t_argento_1f986411">Argento</string>
@@ -157,12 +159,14 @@
     <string name="t_cancellare_tutti_i_dati_98013271">Cancellare tutti i dati?</string>
     <string name="t_cancellare_tutti_i_dati_spariscono_anche_e077dbfc">Cancellare tutti i dati? Spariscono anche da yrb4g.com e da ogni dispositivo collegato. Il backup che hai esportato resta.</string>
     <string name="t_carica_i_dati_di_questo_iphone_80102684">Carica i dati di questo iPhone</string>
+    <string name="t_carica_i_dati_di_questo_telefono_b03ff4d5">Carica i dati di questo telefono</string>
     <string name="t_carico_2ee96a6a">Carico</string>
     <string name="t_carico_a_dischi_67eb6a11">Carico a dischi</string>
     <string name="t_carico_assoluto_totale_397838a6">Carico assoluto (totale)</string>
     <string name="t_carico_assoluto_totale_con_sbarra_4b43f7a5">Carico assoluto (totale con sbarra)</string>
     <string name="t_carico_dischi_d2ae59b8">Carico dischi</string>
     <string name="t_carico_i_dati_di_questo_iphone_80a78456">Carico i dati di questo iPhone…</string>
+    <string name="t_carico_i_dati_di_questo_telefono_20f61681">Carico i dati di questo telefono…</string>
     <string name="t_carico_i_tuoi_dati_ec0a606c">Carico i tuoi dati…</string>
     <string name="t_carico_relativo_dischi_bd706639">Carico relativo (dischi)</string>
     <string name="t_catalogo_266c7375">Catalogo</string>
@@ -214,6 +218,7 @@
     <string name="t_come_si_usa_8297e0a4">Come si usa</string>
     <string name="t_con_il_triangolo_o_la_presa_supina_030e0e2e">Con il triangolo o la presa supina.</string>
     <string name="t_con_l_account_yg_i_tuoi_dati_si_sincroni_111aacea">Con l\'account yG i tuoi dati si sincronizzano con il web e restano al sicuro sul server. Senza, Peak funziona solo su questo iPhone.</string>
+    <string name="t_con_l_account_yg_i_tuoi_dati_si_sincroni_5005f065">Con l\'account yG i tuoi dati si sincronizzano con il web e restano al sicuro sul server. Senza, Peak funziona solo su questo telefono.</string>
     <string name="t_con_la_barra_o_la_corda_al_cavo_alto_63bcd797">Con la barra o la corda al cavo alto.</string>
     <string name="t_concluso_d8d277e5">CONCLUSO</string>
     <string name="t_condividi_062d67be">Condividi</string>
@@ -223,6 +228,7 @@
     <string name="t_conta_le_ripetizioni_sul_polso_e_registr_12e1513b">Conta le ripetizioni sul polso e registra la serie sull\'iPhone.</string>
     <string name="t_continua_a743d018">Continua</string>
     <string name="t_continua_ad_allenarti_c2a7adcd">Continua ad allenarti</string>
+    <string name="t_controlla_l_ortografia_o_prova_una_nuova_d9a90795">Controlla l\'ortografia o prova una nuova ricerca.</string>
     <string name="t_controllo_i_dati_su_peak_b9058af9">Controllo i dati su Peak…</string>
     <string name="t_copia_il_link_e0556e80">Copia il link</string>
     <string name="t_copia_nelle_mie_schede_01217794">Copia nelle mie schede</string>
@@ -362,10 +368,15 @@
     <string name="t_home_52f50eae">Home</string>
     <string name="t_i_dati_restano_sempre_salvati_in_chilogr_f523495e">I dati restano sempre salvati in chilogrammi: cambia solo come vengono mostrati.</string>
     <string name="t_i_dati_restano_su_questo_iphone_e_su_pea_0528f90d">I dati restano su questo iPhone e su Peak, ma non si sincronizzano più. Per togliere l\'accesso a questo iPhone usa anche yrb4g.com/account/peak.</string>
+    <string name="t_i_dati_restano_su_questo_telefono_e_su_p_09dac375">I dati restano su questo telefono e su Peak, ma non si sincronizzano più. Per togliere l\'accesso a questo telefono usa anche yrb4g.com/account/peak.</string>
     <string name="t_i_dati_sono_anche_su_peak_sul_server_un_3e4fa122">I dati sono anche su Peak, sul server. Un file ogni tanto, su iCloud Drive, resta comunque una copia in più.</string>
+    <string name="t_i_dati_sono_anche_su_peak_sul_server_un_f02e322b">I dati sono anche su Peak, sul server. Un file ogni tanto, su Google Drive, resta comunque una copia in più.</string>
     <string name="t_i_dati_sono_solo_su_questo_iphone_colleg_b25d556b">I dati sono solo su questo iPhone. Collegati per averli anche sul web e al sicuro sul server.</string>
+    <string name="t_i_dati_sono_solo_su_questo_telefono_coll_69af621a">I dati sono solo su questo telefono. Collegati per averli anche sul web e al sicuro sul server.</string>
     <string name="t_i_dati_sono_su_peak_e_su_questo_iphone_25822e23">I dati sono su Peak e su questo iPhone.</string>
+    <string name="t_i_dati_sono_su_peak_e_su_questo_telefono_687b5ba4">I dati sono su Peak e su questo telefono.</string>
     <string name="t_i_dati_vivono_solo_su_questo_iphone_espo_c202738b">I dati vivono solo su questo iPhone. Esporta un file ogni tanto e tienilo su iCloud Drive: è l\'unico modo per non perderli se l\'app viene disinstallata.</string>
+    <string name="t_i_dati_vivono_solo_su_questo_telefono_es_ab09abb1">I dati vivono solo su questo telefono. Esporta un file ogni tanto e tienilo su Google Drive o sul computer: è l\'unico modo per non perderli se l\'app viene disinstallata.</string>
     <string name="t_i_tuoi_dati_restano_qui_ma_non_si_sincro_bfb7ae63">I tuoi dati restano qui, ma non si sincronizzano più finché non accedi di nuovo.</string>
     <string name="t_i_tuoi_dati_sono_al_sicuro_sul_telefono_f77aecfe">I tuoi dati sono al sicuro sul telefono; accedi di nuovo per sincronizzarli.</string>
     <string name="t_i_tuoi_giorni_8302c0f9">I tuoi giorni</string>
@@ -384,6 +395,7 @@
     <string name="t_il_castello_appeso_sugli_avambracci_port_9a7ad731">Il castello: appeso sugli avambracci, porti le ginocchia al petto.</string>
     <string name="t_il_catalogo_non_si_carica_serve_la_conne_1926656a">Il catalogo non si carica: serve la connessione.</string>
     <string name="t_il_collegamento_a_yg_e_scaduto_collega_d_ba5aa7f0">Il collegamento a yG è scaduto: collega di nuovo.</string>
+    <string name="t_il_collegamento_con_health_connect_per_l_b797aaa5">Il collegamento con Health Connect, per leggere il peso corporeo e registrare gli allenamenti, arriverà con un prossimo aggiornamento. Per ora i tuoi dati restano in Peak.</string>
     <string name="t_il_collegamento_e_scaduto_i_dati_restano_c5f42b48">Il collegamento è scaduto: i dati restano qui ma non si sincronizzano.</string>
     <string name="t_il_collegamento_e_scaduto_riprova_309355b9">Il collegamento è scaduto: riprova.</string>
     <string name="t_il_collegamento_non_e_stato_fatto_puoi_r_4b6bc77d">Il collegamento non è stato fatto. Puoi riprovare quando vuoi.</string>
@@ -502,7 +514,9 @@
     <string name="t_lld_lld_vedi_tutto_b21d0469">%1$d / %2$d · Vedi tutto</string>
     <string name="t_lld_macchinari_85170a37">%1$d macchinari</string>
     <string name="t_lld_macchinari_con_massimale_su_lld_0e56f904">%1$d macchinari con massimale su %2$d</string>
+    <string name="t_lld_macchinari_e_lld_allenamenti_dal_0b29d62f">%1$d macchinari e %2$d allenamenti dal %3$s.</string>
     <string name="t_lld_macchinari_e_lld_allenamenti_dal_lld_3d07536b">%1$d macchinari e %2$d allenamenti dal %3$d.</string>
+    <string name="t_lld_macchinari_fuori_catalogo_a06b1bf0">%1$d macchinari fuori catalogo</string>
     <string name="t_lld_massimali_25e3fa0e">%1$d massimali</string>
     <string name="t_lld_min_76014590">%1$d min</string>
     <string name="t_lld_modifiche_in_attesa_di_essere_inviat_ea1fffe1">%1$d modifiche in attesa di essere inviate</string>
@@ -517,6 +531,7 @@
     <string name="t_lld_sopra_di_te_ea84e873">%1$d%% sopra di te</string>
     <string name="t_lld_sotto_di_te_147f67a6">%1$d%% sotto di te</string>
     <string name="t_lld_sotto_di_te_fdf966e3">%1$d%% sotto di te</string>
+    <string name="t_lld_su_lld_a364dee9">%1$d su %2$d</string>
     <string name="t_lo_nasconde_dalle_liste_senza_perdere_lo_de03a46e">Lo nasconde dalle liste senza perdere lo storico.</string>
     <string name="t_lo_trovi_in_file_sul_mio_iphone_peak_03f68737">Lo trovi in File › Sul mio iPhone › Peak › %1$s</string>
     <string name="t_lo_trovi_in_file_sul_mio_iphone_peak_lld_236f484b">Lo trovi in File › Sul mio iPhone › Peak › %1$d</string>
@@ -530,6 +545,7 @@
     <string name="t_macchinari_e_allenamenti_dal_92f91cd7">%1$s macchinari e %2$s allenamenti dal %3$s.</string>
     <string name="t_macchinari_e_allenamenti_importati_aceb5dfe">%1$s macchinari e %2$s allenamenti importati.</string>
     <string name="t_macchinari_fuori_catalogo_60829d8c">%1$s macchinari fuori catalogo</string>
+    <string name="t_macchinari_massimali_allenamenti_e_pesat_96fd05e5">Macchinari, massimali, allenamenti e pesate verranno eliminati da questo telefono, da Peak sul server e da ogni dispositivo collegato. Esporta un backup prima di procedere.</string>
     <string name="t_macchinari_massimali_allenamenti_e_pesat_c3bfc274">Macchinari, massimali, allenamenti e pesate verranno eliminati. Esporta un backup prima di procedere.</string>
     <string name="t_macchinari_massimali_allenamenti_e_pesat_f3fb6562">Macchinari, massimali, allenamenti e pesate verranno eliminati da questo iPhone, da Peak sul server e da ogni dispositivo collegato. Esporta un backup prima di procedere.</string>
     <string name="t_macchinario_mio_non_e_nel_catalogo_c8adc487">Macchinario mio, non è nel catalogo</string>
@@ -595,7 +611,9 @@
     <string name="t_nessun_massimale_la_prima_serie_lo_stabi_39b4a8a3">Nessun massimale: la prima serie lo stabilisce.</string>
     <string name="t_nessun_massimale_registrato_191ec053">Nessun massimale registrato</string>
     <string name="t_nessun_record_dei_tuoi_amici_negli_ultim_e96e4d5f">Nessun record dei tuoi amici negli ultimi giorni.</string>
+    <string name="t_nessun_risultato_2038c314">Nessun risultato</string>
     <string name="t_nessun_risultato_f35b544e">Nessun risultato.</string>
+    <string name="t_nessun_risultato_per_62c5fb58">Nessun risultato per «%1$s»</string>
     <string name="t_nessun_utente_con_questo_username_a3198e77">Nessun utente con questo username.</string>
     <string name="t_nessuna_0_394c04cb">Nessuna (0)</string>
     <string name="t_nessuna_pesata_registrata_44ebe168">Nessuna pesata registrata</string>
@@ -607,6 +625,7 @@
     <string name="t_niente_scuse_solo_serie_2dfe3090">Niente scuse, solo serie.</string>
     <string name="t_nome_20569a90">Nome</string>
     <string name="t_nome_facoltativo_81c4b769">Nome (facoltativo)</string>
+    <string name="t_non_ancora_disponibile_su_android_42790b81">Non ancora disponibile su Android</string>
     <string name="t_non_ancora_eseguito_d3d1dc17">Non ancora eseguito</string>
     <string name="t_non_c_e_crea_un_macchinario_personalizza_cf46705a">Non c\'è: crea un macchinario personalizzato</string>
     <string name="t_non_cercare_scorciatoie_la_salita_fa_par_18bba3db">Non cercare scorciatoie, la salita fa parte del viaggio.</string>
@@ -619,6 +638,7 @@
     <string name="t_non_riesco_a_caricare_questo_profilo_91377bba">Non riesco a caricare questo profilo.</string>
     <string name="t_non_sei_collegato_a_yg_95377be0">Non sei collegato a yG</string>
     <string name="t_non_serve_essere_perfetti_basta_essere_c_32c4009e">Non serve essere perfetti, basta essere costanti.</string>
+    <string name="t_non_trovo_un_browser_per_il_login_0c188c6e">Non trovo un browser per il login.</string>
     <string name="t_nota_1040bb11">Nota</string>
     <string name="t_nota_facoltativa_b88e7a4e">Nota (facoltativa)</string>
     <string name="t_note_1440c15d">Note</string>
@@ -701,6 +721,7 @@
     <string name="t_per_lato_792d5a59"> %1$s per lato</string>
     <string name="t_per_lato_8199680b"> (%1$s%2$s per lato)</string>
     <string name="t_per_lato_96816c7e">per lato</string>
+    <string name="t_per_scegliere_la_lingua_dell_app_serve_a_48080f25">Per scegliere la lingua dell\'app serve Android 13 o più recente: qui Peak usa quella del telefono.</string>
     <string name="t_percentuale_del_recupero_normale_90aa7e99">Percentuale del recupero normale</string>
     <string name="t_personalizzato_2881c886">Personalizzato</string>
     <string name="t_pesata_f2b9a319">Pesata</string>
@@ -727,6 +748,7 @@
     <string name="t_pressa_ca4bd26f">Pressa</string>
     <string name="t_prestazione_608e242f">Prestazione</string>
     <string name="t_prima_di_continuare_una_copia_dei_dati_d_2d8e2633">Prima di continuare una copia dei dati di questo iPhone resta nell\'app File (Peak-prima-del-collegamento.json).</string>
+    <string name="t_prima_di_continuare_una_copia_dei_dati_d_c40d2c4d">Prima di continuare una copia dei dati di questo telefono resta nella cartella Download/Peak (Peak-prima-del-collegamento.json).</string>
     <string name="t_prima_serie_fatta_ab06d180">Prima serie fatta</string>
     <string name="t_primo_massimale_a3ed484b">primo massimale: %1$s</string>
     <string name="t_primo_massimale_lld_07bbf617">primo massimale: %1$d</string>
@@ -740,8 +762,10 @@
     <string name="t_proviamo_298dfed0">Proviamo</string>
     <string name="t_punta_i_piedi_leggermente_verso_l_estern_225fda72">Punta i piedi leggermente verso l\'esterno.</string>
     <string name="t_puoi_cambiarla_anche_da_impostazioni_del_69bb903e">Puoi cambiarla anche da Impostazioni dell\'iPhone › Peak.</string>
+    <string name="t_puoi_cambiarla_anche_da_impostazioni_di_c543d0d8">Puoi cambiarla anche da Impostazioni di Android › App › Peak.</string>
     <string name="t_puoi_collegarti_anche_dopo_da_impostazio_b752508a">Puoi collegarti anche dopo, da Impostazioni.</string>
     <string name="t_puoi_portarci_i_dati_di_questo_iphone_op_4f839eac">Puoi portarci i dati di questo iPhone oppure partire da un backup.</string>
+    <string name="t_puoi_portarci_i_dati_di_questo_telefono_a7895f57">Puoi portarci i dati di questo telefono oppure partire da un backup.</string>
     <string name="t_push_1_c38328e2">Push 1</string>
     <string name="t_quadricipiti_c4f62323">Quadricipiti</string>
     <string name="t_quando_aggiungi_un_esercizio_vedrai_solo_221ce6de">Quando aggiungi un esercizio vedrai solo questi gruppi.</string>
@@ -762,6 +786,7 @@
     <string name="t_questa_settimana_lld_d21091a7">questa settimana: %1$d</string>
     <string name="t_questo_invito_non_vale_piu_16b3ee1f">Questo invito non vale più.</string>
     <string name="t_questo_iphone_riparte_dai_dati_di_peak_87563386">Questo iPhone riparte dai dati di Peak.</string>
+    <string name="t_questo_telefono_riparte_dai_dati_di_peak_4cc20b07">Questo telefono riparte dai dati di Peak.</string>
     <string name="t_qui_alleni_avvia_il_giorno_di_oggi_o_sce_2eeb96f3">Qui alleni: avvia il giorno di oggi o scegline uno a mano, e registra le serie una per una.</string>
     <string name="t_qui_alleni_scegli_un_giorno_della_scheda_759cd6d2">Qui alleni: scegli un giorno della scheda o parti a mano e registra le serie una per una.</string>
     <string name="t_qui_alleni_scegli_un_giorno_o_parti_a_ma_b6f1d71c">Qui alleni: scegli un giorno o parti a mano e registra le serie una per una.</string>
@@ -854,6 +879,7 @@
     <string name="t_scatta_foto_0da5fe05">Scatta foto</string>
     <string name="t_scegli_cosa_alleni_e_registra_le_serie_u_3fbc53d7">Scegli cosa alleni e registra le serie una per una.</string>
     <string name="t_scegli_dal_rullino_90249766">Scegli dal rullino</string>
+    <string name="t_scegli_dalla_galleria_f2bb3d2b">Scegli dalla galleria</string>
     <string name="t_scegli_dalla_lista_38693b29">Scegli dalla lista</string>
     <string name="t_scegli_esercizio_dc6e64f3">Scegli esercizio</string>
     <string name="t_scegli_i_gruppi_poi_inizia_fc621f84">Scegli i gruppi, poi Inizia</string>
@@ -874,8 +900,10 @@
     <string name="t_schiena_appoggiata_alla_panca_bilanciere_757713a8">Schiena appoggiata alla panca, bilanciere sul bacino.</string>
     <string name="t_scollega_1d7d99df">Scollega</string>
     <string name="t_scollega_questo_iphone_8774ca73">Scollega questo iPhone</string>
+    <string name="t_scollega_questo_telefono_83ae92ce">Scollega questo telefono</string>
     <string name="t_scollegare_questo_dispositivo_cc84c981">Scollegare questo dispositivo?</string>
     <string name="t_scollegare_questo_iphone_b42129fb">Scollegare questo iPhone?</string>
+    <string name="t_scollegare_questo_telefono_1d69c608">Scollegare questo telefono?</string>
     <string name="t_scorso_1a0bba8a">Scorso:</string>
     <string name="t_scorso_20be99b4">Scorso</string>
     <string name="t_scorso_c3f806f3">Scorso: %1$s</string>
@@ -990,6 +1018,7 @@
     <string name="t_togliere_dagli_amici_f45c3b80">Togliere %1$s dagli amici?</string>
     <string name="t_togliere_lld_dagli_amici_4d8a2ca4">Togliere @%1$d dagli amici?</string>
     <string name="t_tonnellate_a85df88d">Tonnellate</string>
+    <string name="t_tot_4f822408">(tot. %1$s)</string>
     <string name="t_tot_9180ac7a">tot.</string>
     <string name="t_totale_591f1d68">Totale</string>
     <string name="t_totale_daa23885">Totale %1$s</string>

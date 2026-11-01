@@ -27,13 +27,14 @@ import com.gabrieleforghieri.peak.domain.RecordService
 import com.gabrieleforghieri.peak.util.Haptics
 import com.gabrieleforghieri.peak.util.SoundFX
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * L'app: tiene in un punto solo il database, il catalogo, le impostazioni e il servizio dei record (l'unico percorso di scrittura delle serie).
  * Niente contenitore di dipendenze: sono pochi oggetti e vivono quanto il processo.
  */
 class PeakApplication : Application() {
-    val database by lazy { PeakDatabase.get(this) }
+    val database by lazy { PeakDatabase.open(this) }
     val settings by lazy { SettingsRepository(database.settings()) }
     /** La lettura comune per le schermate (vedi `data/PeakRepository.kt`). */
     val repository by lazy { PeakRepository(database) }
@@ -67,6 +68,8 @@ class PeakApplication : Application() {
         super.onCreate()
         // il catalogo vero è un asset copiato da common/catalog.json a ogni build (vedi app/build.gradle.kts)
         assets.open("catalog.json").use { Catalog.install(it.readBytes().toString(Charsets.UTF_8)) }
+        // l'interruttore dei suoni vale anche dopo un riavvio
+        mainScope.launch { settings.settings.collect { soundsOn.value = it.soundsEnabled } }
         sync.start()
     }
 }

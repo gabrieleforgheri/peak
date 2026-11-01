@@ -56,6 +56,7 @@
     <string name="t_aggiornato_c8e195e5">Updated %1$s</string>
     <string name="t_aggiornato_lld_92530159">Updated %1$d</string>
     <string name="t_aggiunge_i_dati_di_questo_iphone_a_quell_d5e36a34">Adds this iPhone\'s data to Peak\'s. Machines with the same name are merged.</string>
+    <string name="t_aggiunge_i_dati_di_questo_telefono_a_que_69e2016b">Adds this phone\'s data to the data on Peak. Machines with the same name are merged.</string>
     <string name="t_aggiunge_solo_cio_che_manca_i_macchinari_59cd1442">Only adds what\'s missing: machines with the same name are joined, workouts already there are skipped.</string>
     <string name="t_aggiungi_54cd6a8e">Add</string>
     <string name="t_aggiungi_amici_dcad52ff">Add friends</string>
@@ -98,6 +99,7 @@
     <string name="t_aprine_uno_modifica_collega_cosi_entra_n_518e00c1">%1$s: open one → Edit → Link, so it joins the rankings with your friends.</string>
     <string name="t_aprine_uno_modifica_collega_cosi_entra_n_b18d0fae">Open one → Edit → Link: that way it joins the leaderboards with friends.</string>
     <string name="t_archivia_ca670a70">Archive</string>
+    <string name="t_archiviare_il_macchinario_08321a53">Archive this machine?</string>
     <string name="t_archiviati_a410c63f">Archived</string>
     <string name="t_archiviato_a210c319">Archived</string>
     <string name="t_argento_1f986411">Silver</string>
@@ -157,12 +159,14 @@
     <string name="t_cancellare_tutti_i_dati_98013271">Delete all data?</string>
     <string name="t_cancellare_tutti_i_dati_spariscono_anche_e077dbfc">Erase all data? It also disappears from yrb4g.com and from every connected device. The backup you exported stays.</string>
     <string name="t_carica_i_dati_di_questo_iphone_80102684">Upload this iPhone\'s data</string>
+    <string name="t_carica_i_dati_di_questo_telefono_b03ff4d5">Upload this phone\'s data</string>
     <string name="t_carico_2ee96a6a">Weight</string>
     <string name="t_carico_a_dischi_67eb6a11">Plate loaded</string>
     <string name="t_carico_assoluto_totale_397838a6">Absolute weight (total)</string>
     <string name="t_carico_assoluto_totale_con_sbarra_4b43f7a5">Absolute weight (total with bar)</string>
     <string name="t_carico_dischi_d2ae59b8">Plates weight</string>
     <string name="t_carico_i_dati_di_questo_iphone_80a78456">Uploading this iPhone\'s data…</string>
+    <string name="t_carico_i_dati_di_questo_telefono_20f61681">Uploading this phone\'s data…</string>
     <string name="t_carico_i_tuoi_dati_ec0a606c">Loading your data…</string>
     <string name="t_carico_relativo_dischi_bd706639">Relative weight (plates)</string>
     <string name="t_catalogo_266c7375">Catalog</string>
@@ -214,6 +218,7 @@
     <string name="t_come_si_usa_8297e0a4">How to use it</string>
     <string name="t_con_il_triangolo_o_la_presa_supina_030e0e2e">With the triangle or supinated grip.</string>
     <string name="t_con_l_account_yg_i_tuoi_dati_si_sincroni_111aacea">With a yG account your data syncs with the web and stays safe on the server. Without it, Peak only works on this iPhone.</string>
+    <string name="t_con_l_account_yg_i_tuoi_dati_si_sincroni_5005f065">With a yG account your data syncs with the web and stays safe on the server. Without one, Peak only works on this phone.</string>
     <string name="t_con_la_barra_o_la_corda_al_cavo_alto_63bcd797">With the straight bar or rope on high cable.</string>
     <string name="t_concluso_d8d277e5">DONE</string>
     <string name="t_condividi_062d67be">Share</string>
@@ -223,6 +228,7 @@
     <string name="t_conta_le_ripetizioni_sul_polso_e_registr_12e1513b">Counts reps on your wrist and logs the set on the iPhone.</string>
     <string name="t_continua_a743d018">Continue</string>
     <string name="t_continua_ad_allenarti_c2a7adcd">Keep training</string>
+    <string name="t_controlla_l_ortografia_o_prova_una_nuova_d9a90795">Check the spelling or try a new search.</string>
     <string name="t_controllo_i_dati_su_peak_b9058af9">Checking the data on Peak…</string>
     <string name="t_copia_il_link_e0556e80">Copy the link</string>
     <string name="t_copia_nelle_mie_schede_01217794">Copy to my plans</string>
@@ -362,10 +368,15 @@
     <string name="t_home_52f50eae">Home</string>
     <string name="t_i_dati_restano_sempre_salvati_in_chilogr_f523495e">Data is always stored in kilograms: only how it is shown changes.</string>
     <string name="t_i_dati_restano_su_questo_iphone_e_su_pea_0528f90d">Data stays on this iPhone and on Peak, but no longer syncs. To remove this iPhone\'s access also use yrb4g.com/account/peak.</string>
+    <string name="t_i_dati_restano_su_questo_telefono_e_su_p_09dac375">Your data stays on this phone and on Peak, but stops syncing. To remove this phone\'s access, also use yrb4g.com/account/peak.</string>
     <string name="t_i_dati_sono_anche_su_peak_sul_server_un_3e4fa122">Your data is also on Peak, on the server. A file now and then, on iCloud Drive, is still an extra copy.</string>
+    <string name="t_i_dati_sono_anche_su_peak_sul_server_un_f02e322b">Your data is also on Peak, on the server. A file now and then, on Google Drive, is still one more copy.</string>
     <string name="t_i_dati_sono_solo_su_questo_iphone_colleg_b25d556b">Data is only on this iPhone. Link to have it on the web too and safe on the server.</string>
+    <string name="t_i_dati_sono_solo_su_questo_telefono_coll_69af621a">Your data is only on this phone. Connect to have it on the web too, and safe on the server.</string>
     <string name="t_i_dati_sono_su_peak_e_su_questo_iphone_25822e23">The data is on Peak and on this iPhone.</string>
+    <string name="t_i_dati_sono_su_peak_e_su_questo_telefono_687b5ba4">Your data is on Peak and on this phone.</string>
     <string name="t_i_dati_vivono_solo_su_questo_iphone_espo_c202738b">Data only lives on this iPhone. Export a file now and then and keep it on iCloud Drive: it is the only way not to lose it if the app is uninstalled.</string>
+    <string name="t_i_dati_vivono_solo_su_questo_telefono_es_ab09abb1">Your data lives only on this phone. Export a file now and then and keep it on Google Drive or your computer: it\'s the only way not to lose it if the app is uninstalled.</string>
     <string name="t_i_tuoi_dati_restano_qui_ma_non_si_sincro_bfb7ae63">Your data stays here, but no longer syncs until you sign in again.</string>
     <string name="t_i_tuoi_dati_sono_al_sicuro_sul_telefono_f77aecfe">Your data is safe on this device; sign in again to sync it.</string>
     <string name="t_i_tuoi_giorni_8302c0f9">Your plans</string>
@@ -384,6 +395,7 @@
     <string name="t_il_castello_appeso_sugli_avambracci_port_9a7ad731">Captain\'s chair: supported on forearms, bring knees to chest.</string>
     <string name="t_il_catalogo_non_si_carica_serve_la_conne_1926656a">The catalog did not load: you need a connection.</string>
     <string name="t_il_collegamento_a_yg_e_scaduto_collega_d_ba5aa7f0">The yG link has expired: link again.</string>
+    <string name="t_il_collegamento_con_health_connect_per_l_b797aaa5">The Health Connect link, to read your body weight and log your workouts, will arrive in a later update. For now your data stays in Peak.</string>
     <string name="t_il_collegamento_e_scaduto_i_dati_restano_c5f42b48">The link has expired: data stays here but does not sync.</string>
     <string name="t_il_collegamento_e_scaduto_riprova_309355b9">The link has expired: try again.</string>
     <string name="t_il_collegamento_non_e_stato_fatto_puoi_r_4b6bc77d">The link was not made. You can try again whenever you want.</string>
@@ -502,7 +514,9 @@
     <string name="t_lld_lld_vedi_tutto_b21d0469">%1$d / %2$d · See all</string>
     <string name="t_lld_macchinari_85170a37">%1$d machines</string>
     <string name="t_lld_macchinari_con_massimale_su_lld_0e56f904">%1$d machines with a max out of %2$d</string>
+    <string name="t_lld_macchinari_e_lld_allenamenti_dal_0b29d62f">%1$d machines and %2$d workouts from %3$s.</string>
     <string name="t_lld_macchinari_e_lld_allenamenti_dal_lld_3d07536b">%1$d machines and %2$d workouts from %3$d.</string>
+    <string name="t_lld_macchinari_fuori_catalogo_a06b1bf0">%1$d machines outside the catalogue</string>
     <string name="t_lld_massimali_25e3fa0e">%1$d maxes</string>
     <string name="t_lld_min_76014590">%1$d min</string>
     <string name="t_lld_modifiche_in_attesa_di_essere_inviat_ea1fffe1">%1$d changes waiting to be sent</string>
@@ -517,6 +531,7 @@
     <string name="t_lld_sopra_di_te_ea84e873">%1$d%% above you</string>
     <string name="t_lld_sotto_di_te_147f67a6">%1$d%% below you</string>
     <string name="t_lld_sotto_di_te_fdf966e3">%1$d%% below you</string>
+    <string name="t_lld_su_lld_a364dee9">%1$d of %2$d</string>
     <string name="t_lo_nasconde_dalle_liste_senza_perdere_lo_de03a46e">Hides it from the lists without losing the history.</string>
     <string name="t_lo_trovi_in_file_sul_mio_iphone_peak_03f68737">You find it in Files › On My iPhone › Peak › %1$s</string>
     <string name="t_lo_trovi_in_file_sul_mio_iphone_peak_lld_236f484b">You find it in Files › On My iPhone › Peak › %1$d</string>
@@ -530,6 +545,7 @@
     <string name="t_macchinari_e_allenamenti_dal_92f91cd7">%1$s machines and %2$s workouts from %3$s.</string>
     <string name="t_macchinari_e_allenamenti_importati_aceb5dfe">%%1$s machines and %%2$s workouts imported.</string>
     <string name="t_macchinari_fuori_catalogo_60829d8c">%%1$s machines outside the catalog</string>
+    <string name="t_macchinari_massimali_allenamenti_e_pesat_96fd05e5">Machines, maxes, workouts and weigh-ins will be deleted from this phone, from Peak on the server and from every connected device. Export a backup first.</string>
     <string name="t_macchinari_massimali_allenamenti_e_pesat_c3bfc274">Machines, maxes, workouts and weigh-ins will be deleted. Export a backup before you proceed.</string>
     <string name="t_macchinari_massimali_allenamenti_e_pesat_f3fb6562">Machines, maxes, workouts and weigh-ins will be deleted from this iPhone, from Peak on the server and from every linked device. Export a backup before you proceed.</string>
     <string name="t_macchinario_mio_non_e_nel_catalogo_c8adc487">My own machine, not in the catalog</string>
@@ -595,7 +611,9 @@
     <string name="t_nessun_massimale_la_prima_serie_lo_stabi_39b4a8a3">No max yet: the first set sets it.</string>
     <string name="t_nessun_massimale_registrato_191ec053">No max recorded</string>
     <string name="t_nessun_record_dei_tuoi_amici_negli_ultim_e96e4d5f">No records from your friends in the last days.</string>
+    <string name="t_nessun_risultato_2038c314">No results</string>
     <string name="t_nessun_risultato_f35b544e">No results.</string>
+    <string name="t_nessun_risultato_per_62c5fb58">No results for \"%1$s\"</string>
     <string name="t_nessun_utente_con_questo_username_a3198e77">No user with this username.</string>
     <string name="t_nessuna_0_394c04cb">None (0)</string>
     <string name="t_nessuna_pesata_registrata_44ebe168">No weigh-in recorded</string>
@@ -607,6 +625,7 @@
     <string name="t_niente_scuse_solo_serie_2dfe3090">No excuses, just sets.</string>
     <string name="t_nome_20569a90">Name</string>
     <string name="t_nome_facoltativo_81c4b769">Name (optional)</string>
+    <string name="t_non_ancora_disponibile_su_android_42790b81">Not yet available on Android</string>
     <string name="t_non_ancora_eseguito_d3d1dc17">Not done yet</string>
     <string name="t_non_c_e_crea_un_macchinario_personalizza_cf46705a">Not there: create a custom machine</string>
     <string name="t_non_cercare_scorciatoie_la_salita_fa_par_18bba3db">Do not look for shortcuts, the climb is part of the journey.</string>
@@ -619,6 +638,7 @@
     <string name="t_non_riesco_a_caricare_questo_profilo_91377bba">I cannot load this profile.</string>
     <string name="t_non_sei_collegato_a_yg_95377be0">You are not linked to yG</string>
     <string name="t_non_serve_essere_perfetti_basta_essere_c_32c4009e">You do not need to be perfect, just consistent.</string>
+    <string name="t_non_trovo_un_browser_per_il_login_0c188c6e">I can\'t find a browser for the sign-in.</string>
     <string name="t_nota_1040bb11">Note</string>
     <string name="t_nota_facoltativa_b88e7a4e">Note (optional)</string>
     <string name="t_note_1440c15d">Notes</string>
@@ -701,6 +721,7 @@
     <string name="t_per_lato_792d5a59"> %1$s per side</string>
     <string name="t_per_lato_8199680b"> (%1$s%2$s per side)</string>
     <string name="t_per_lato_96816c7e">per side</string>
+    <string name="t_per_scegliere_la_lingua_dell_app_serve_a_48080f25">Choosing the app language needs Android 13 or newer: here Peak uses the phone\'s language.</string>
     <string name="t_percentuale_del_recupero_normale_90aa7e99">Percentage of the normal rest</string>
     <string name="t_personalizzato_2881c886">Custom</string>
     <string name="t_pesata_f2b9a319">Weigh-in</string>
@@ -727,6 +748,7 @@
     <string name="t_pressa_ca4bd26f">Leg press</string>
     <string name="t_prestazione_608e242f">Performance</string>
     <string name="t_prima_di_continuare_una_copia_dei_dati_d_2d8e2633">Before continuing, a copy of this iPhone\'s data stays in the Files app (Peak-prima-del-collegamento.json).</string>
+    <string name="t_prima_di_continuare_una_copia_dei_dati_d_c40d2c4d">Before continuing, a copy of this phone\'s data stays in the Download/Peak folder (Peak-prima-del-collegamento.json).</string>
     <string name="t_prima_serie_fatta_ab06d180">First set done</string>
     <string name="t_primo_massimale_a3ed484b">first max: %1$s</string>
     <string name="t_primo_massimale_lld_07bbf617">first max: %1$d</string>
@@ -740,8 +762,10 @@
     <string name="t_proviamo_298dfed0">Try it</string>
     <string name="t_punta_i_piedi_leggermente_verso_l_estern_225fda72">Point your toes slightly outward.</string>
     <string name="t_puoi_cambiarla_anche_da_impostazioni_del_69bb903e">You can also change it in iPhone Settings › Peak.</string>
+    <string name="t_puoi_cambiarla_anche_da_impostazioni_di_c543d0d8">You can also change it in Android Settings › Apps › Peak.</string>
     <string name="t_puoi_collegarti_anche_dopo_da_impostazio_b752508a">You can link later, from Settings.</string>
     <string name="t_puoi_portarci_i_dati_di_questo_iphone_op_4f839eac">You can bring this iPhone\'s data here or start from a backup.</string>
+    <string name="t_puoi_portarci_i_dati_di_questo_telefono_a7895f57">You can bring this phone\'s data over, or start from a backup.</string>
     <string name="t_push_1_c38328e2">Push 1</string>
     <string name="t_quadricipiti_c4f62323">Quads</string>
     <string name="t_quando_aggiungi_un_esercizio_vedrai_solo_221ce6de">When you add an exercise you will only see these groups.</string>
@@ -762,6 +786,7 @@
     <string name="t_questa_settimana_lld_d21091a7">this week: %1$d</string>
     <string name="t_questo_invito_non_vale_piu_16b3ee1f">This invite is no longer valid.</string>
     <string name="t_questo_iphone_riparte_dai_dati_di_peak_87563386">This iPhone starts again from Peak\'s data.</string>
+    <string name="t_questo_telefono_riparte_dai_dati_di_peak_4cc20b07">This phone starts over from the data on Peak.</string>
     <string name="t_qui_alleni_avvia_il_giorno_di_oggi_o_sce_2eeb96f3">This is where you train: start today\'s plan or pick one by hand, and log your sets one by one.</string>
     <string name="t_qui_alleni_scegli_un_giorno_della_scheda_759cd6d2">This is where you train: pick a plan from the program or start by hand and log your sets one by one.</string>
     <string name="t_qui_alleni_scegli_un_giorno_o_parti_a_ma_b6f1d71c">This is where you train: pick a plan or start by hand and log your sets one by one.</string>
@@ -854,6 +879,7 @@
     <string name="t_scatta_foto_0da5fe05">Take photo</string>
     <string name="t_scegli_cosa_alleni_e_registra_le_serie_u_3fbc53d7">Choose what you train and log the sets one by one.</string>
     <string name="t_scegli_dal_rullino_90249766">Choose from the library</string>
+    <string name="t_scegli_dalla_galleria_f2bb3d2b">Choose from gallery</string>
     <string name="t_scegli_dalla_lista_38693b29">Pick from the list</string>
     <string name="t_scegli_esercizio_dc6e64f3">Choose exercise</string>
     <string name="t_scegli_i_gruppi_poi_inizia_fc621f84">Pick groups, then Start</string>
@@ -874,8 +900,10 @@
     <string name="t_schiena_appoggiata_alla_panca_bilanciere_757713a8">Back against the bench, barbell over hips.</string>
     <string name="t_scollega_1d7d99df">Disconnect</string>
     <string name="t_scollega_questo_iphone_8774ca73">Unlink this iPhone</string>
+    <string name="t_scollega_questo_telefono_83ae92ce">Disconnect this phone</string>
     <string name="t_scollegare_questo_dispositivo_cc84c981">Disconnect this device?</string>
     <string name="t_scollegare_questo_iphone_b42129fb">Unlink this iPhone?</string>
+    <string name="t_scollegare_questo_telefono_1d69c608">Disconnect this phone?</string>
     <string name="t_scorso_1a0bba8a">Last:</string>
     <string name="t_scorso_20be99b4">Last</string>
     <string name="t_scorso_c3f806f3">Last: %1$s</string>
@@ -990,6 +1018,7 @@
     <string name="t_togliere_dagli_amici_f45c3b80">Remove %%1$s from your friends?</string>
     <string name="t_togliere_lld_dagli_amici_4d8a2ca4">Remove @%1$d from your friends?</string>
     <string name="t_tonnellate_a85df88d">Tonnes</string>
+    <string name="t_tot_4f822408">(total %1$s)</string>
     <string name="t_tot_9180ac7a">tot.</string>
     <string name="t_totale_591f1d68">Total</string>
     <string name="t_totale_daa23885">Total %1$s</string>
