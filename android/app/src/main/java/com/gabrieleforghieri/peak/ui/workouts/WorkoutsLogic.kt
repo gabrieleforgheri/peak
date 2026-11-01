@@ -181,8 +181,6 @@ fun todayTemplate(program: WorkoutProgramEntity?, templates: List<WorkoutTemplat
     return templates.firstOrNull { it.uuid == ref.uuid }
 }
 
-fun exerciseCountText(count: Int): String = if (count == 1) "1 esercizio" else "$count esercizi"
-
 // ---- l'inserimento di una serie ---------------------------------------------------------------
 
 /**

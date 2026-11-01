@@ -144,3 +144,7 @@ fun rememberTr(): (String) -> String {
 @Composable
 fun setLineText(weight: Double, reps: Int, unit: WeightUnit, singleArm: Boolean = false, group: MuscleGroup? = null): String =
     Fmt.setLine(weight, reps, unit, singleArm, group, side = rememberTr())
+
+/** «1 esercizio» / «5 esercizi», nella lingua del telefono. */
+@Composable
+fun exerciseCountLabel(count: Int): String = if (count == 1) tr("1 esercizio") else tr("%lld esercizi", count)

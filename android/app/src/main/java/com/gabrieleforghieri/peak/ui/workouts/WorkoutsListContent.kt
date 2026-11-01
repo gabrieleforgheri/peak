@@ -97,6 +97,7 @@ fun WorkoutsListContent(
     celebrated: Celebrated? = null,
     feedback: WorkoutFeedback = WorkoutFeedback.None,
     hour: Int = java.time.LocalTime.now().hour,
+    phraseIndex: Int = com.gabrieleforghieri.peak.domain.Motivation.startIndex(),
 ) {
     val accent = LocalAccent.current
     val context = LocalContext.current
@@ -108,7 +109,7 @@ fun WorkoutsListContent(
             data.stats?.let { s ->
                 item("hero") {
                     Box(Modifier.appear(0)) {
-                        WorkoutHero(data.name, s.streak, s.weekSessions, s.goal, events.onAvatar, events.onChangeGoal, celebrated = celebrated, feedback = feedback, hour = hour)
+                        WorkoutHero(data.name, s.streak, s.weekSessions, s.goal, events.onAvatar, events.onChangeGoal, celebrated = celebrated, feedback = feedback, hour = hour, phraseIndex = phraseIndex)
                     }
                 }
             }
@@ -197,7 +198,7 @@ private fun StartCard(data: WorkoutsListData, unit: WeightUnit, events: Workouts
         }
         today != null -> Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             NextWorkoutBar(
-                tr("Avvia %@", today.name), tr(exerciseCountText(today.itemList.size)), WorkoutsIcons.template(TemplateIcon.resolved(today.icon, today.name)),
+                tr("Avvia %@", today.name), exerciseCountLabel(today.itemList.size), WorkoutsIcons.template(TemplateIcon.resolved(today.icon, today.name)),
                 Modifier.tourTarget("start"),
             ) { events.onStartTemplate(today) }
             Text(tr("oppure scegli tu"), Modifier.clickableText(events.onPickFocus), style = PeakTheme.rounded(13, FontWeight.Bold), color = accent)
@@ -214,7 +215,7 @@ private fun DayRow(template: WorkoutTemplateEntity, program: WorkoutProgramEntit
             Box(Modifier.size(30.dp), contentAlignment = Alignment.Center) { TemplateIconView(template.icon, template.name, size = 20) }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 Text(template.name, style = PeakTheme.rounded(15, FontWeight.Bold), color = PeakTheme.textPrimary)
-                Text(tr(exerciseCountText(template.itemList.size)), style = PeakTheme.rounded(11, FontWeight.Medium), color = PeakTheme.textTertiary)
+                Text(exerciseCountLabel(template.itemList.size), style = PeakTheme.rounded(11, FontWeight.Medium), color = PeakTheme.textTertiary)
             }
             if (program?.useDays == true) {
                 Text(
@@ -238,8 +239,11 @@ private fun WorkoutRow(workout: WorkoutEntity, sets: List<WorkoutSetEntity>, exe
     SwipeToDismissBox(
         state, enableDismissFromStartToEnd = false,
         backgroundContent = {
-            Box(Modifier.fillMaxSize().background(PeakTheme.negative, RoundedCornerShape(PeakTheme.radius)).padding(end = 22.dp), contentAlignment = Alignment.CenterEnd) {
-                Icon(WorkoutsIcons.trash, tr("Elimina"), Modifier.size(22.dp), tint = Color.White)
+            // il fondo rosso si vede solo mentre si scorre: la card di vetro è un po' trasparente
+            if (state.dismissDirection != SwipeToDismissBoxValue.Settled) {
+                Box(Modifier.fillMaxSize().background(PeakTheme.negative, RoundedCornerShape(PeakTheme.radius)).padding(end = 22.dp), contentAlignment = Alignment.CenterEnd) {
+                    Icon(WorkoutsIcons.trash, tr("Elimina"), Modifier.size(22.dp), tint = Color.White)
+                }
             }
         },
     ) {

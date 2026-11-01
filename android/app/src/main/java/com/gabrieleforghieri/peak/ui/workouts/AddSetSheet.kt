@@ -150,7 +150,7 @@ fun AddSetContent(
 
     // il flag che si salva: conta solo dove il macchinario si fa in tutti e due i modi
     val oneLimb = Limbs.lineArm(exercise.limbsMode, singleArm)
-    val warmupPlan = exercise.let { Warmup.plan((if (oneLimb) records.filter { r -> exercise.isOneLimbLine(r.singleArm) } else twoArmRecords).let { l -> bestWeight(l) }, exercise.incrementStep, unit) }
+    val warmupPlan = Warmup.plan(bestWeight(records.filter { exercise.isOneLimbLine(it.singleArm) == oneLimb }), exercise.incrementStep, unit)
     val reference = referenceRecord(exercise, records, singleArm, editing?.set?.uuid)
     val isRecord = beatsRecord(weight, reps, isWarmup, reference)
     val previousWeight = (mode as? SetMode.Add)?.lastSet?.takeIf { exercise.isOneLimbLine(it.singleArm) == oneLimb }?.weight

@@ -111,7 +111,7 @@ fun FocusPickerContent(
                             Box(Modifier.size(26.dp), contentAlignment = Alignment.Center) { TemplateIconView(template.icon, template.name, size = 18) }
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                                 Text(template.name, style = PeakTheme.rounded(16, FontWeight.SemiBold), color = PeakTheme.textPrimary)
-                                Text(tr(exerciseCountText(template.itemList.size)), style = PeakTheme.rounded(11, FontWeight.Medium), color = PeakTheme.textTertiary)
+                                Text(exerciseCountLabel(template.itemList.size), style = PeakTheme.rounded(11, FontWeight.Medium), color = PeakTheme.textTertiary)
                             }
                             Icon(PeakIcons.chevronRight, null, Modifier.size(14.dp), tint = PeakTheme.textTertiary)
                         }

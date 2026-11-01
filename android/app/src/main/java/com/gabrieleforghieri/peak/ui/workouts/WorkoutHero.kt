@@ -94,6 +94,7 @@ fun WorkoutHero(
     celebrated: Celebrated? = null,
     feedback: WorkoutFeedback = WorkoutFeedback.None,
     hour: Int = LocalTime.now().hour,
+    phraseIndex: Int = Motivation.startIndex(),
 ) {
     val accent = LocalAccent.current
     val reduce = LocalReduceMotion.current
@@ -102,7 +103,7 @@ fun WorkoutHero(
     val resumed = rememberResumed()
     val weekStart = Stats.weekStart(System.currentTimeMillis())
 
-    var index by remember { mutableIntStateOf(Motivation.startIndex()) }
+    var index by remember { mutableIntStateOf(phraseIndex) }
     var shownWeek by remember { mutableIntStateOf(minOf(weekSessions, celebrated?.week(weekStart) ?: weekSessions)) }
     var shownStreak by remember { mutableIntStateOf(minOf(streak, celebrated?.streak ?: streak)) }
     var flameTick by remember { mutableIntStateOf(0) }
