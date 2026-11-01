@@ -35,7 +35,9 @@ import org.robolectric.annotation.GraphicsMode
 class ScreenshotTest {
     @get:Rule val compose = createComposeRule()
 
-    private val squat = ExerciseEntity("E1", name = "Squat", muscleGroup = "gambe", catalogID = "")
+    // del catalogo: il pittogramma di un macchinario viene dalla sua voce (o da quello scelto a mano). Senza catalogID e senza glyph,
+    // come su iPhone, resta il riquadro colorato vuoto: era così il primo esempio, e lo screenshot sembrava rotto.
+    private val squat = ExerciseEntity("E1", name = "Squat", muscleGroup = "gambe", catalogID = "squat-barbell")
 
     @Test fun designComponents() = compose.screenshot("componenti") {
         var arm by remember { mutableStateOf(false) }
