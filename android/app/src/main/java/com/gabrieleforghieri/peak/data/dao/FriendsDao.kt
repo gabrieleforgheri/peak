@@ -1,13 +1,31 @@
 package com.gabrieleforghieri.peak.data.dao
 
 import androidx.room.Dao
+import androidx.room.Transaction
+import androidx.room.Upsert
+import com.gabrieleforghieri.peak.data.ExerciseEntity
+import com.gabrieleforghieri.peak.data.WorkoutProgramEntity
+import com.gabrieleforghieri.peak.data.WorkoutTemplateEntity
 
 /**
- * Le query dell'area Amici (`Features/Friends/`): amici e classifiche (per lo più dal server). Proprietario: l'area friends.
+ * Le query dell'area Amici (`Features/Friends/`): amici e classifiche vengono dal server (niente tabelle); qui sta solo la scrittura di
+ * «Copia nelle mie schede». Proprietario: l'area friends. Si prende da `PeakDatabase.areaFriends()`.
  *
- * Nasce vuoto. L'area ci aggiunge le query che le servono (`@Query`, `@Transaction`, `Flow`) senza toccare `Daos.kt`,
- * `PeakDatabase.kt` né lo schema: le tabelle e le entità sono quelle di `Entities.kt` e non cambiano nella fase 3.
- * Si prende da `PeakDatabase.areaFriends()`; una prova di query si scrive come `RoomDaoTest`.
+ * Una classe astratta e non un'interfaccia perché ha un metodo con corpo (`@Transaction`).
  */
 @Dao
-interface FriendsDao
+abstract class FriendsDao {
+    @Upsert protected abstract suspend fun upsertExercise(exercise: ExerciseEntity)
+
+    @Upsert protected abstract suspend fun upsertTemplate(template: WorkoutTemplateEntity)
+
+    @Upsert protected abstract suspend fun upsertProgram(program: WorkoutProgramEntity)
+
+    /** I macchinari nuovi, la scheda se non c'era e il giorno copiato: tutto o niente. */
+    @Transaction
+    open suspend fun addSharedDay(exercises: List<ExerciseEntity>, program: WorkoutProgramEntity?, template: WorkoutTemplateEntity) {
+        exercises.forEach { upsertExercise(it) }
+        if (program != null) upsertProgram(program)
+        upsertTemplate(template)
+    }
+}
