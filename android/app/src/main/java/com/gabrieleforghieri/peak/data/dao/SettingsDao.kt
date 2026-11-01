@@ -1,13 +1,30 @@
 package com.gabrieleforghieri.peak.data.dao
 
 import androidx.room.Dao
+import androidx.room.Query
+import androidx.room.Transaction
 
 /**
- * Le query dell'area Impostazioni (`Features/Settings/`): impostazioni, dati, archivio. Proprietario: l'area settings.
- *
- * Nasce vuoto. L'area ci aggiunge le query che le servono (`@Query`, `@Transaction`, `Flow`) senza toccare `Daos.kt`,
- * `PeakDatabase.kt` né lo schema: le tabelle e le entità sono quelle di `Entities.kt` e non cambiano nella fase 3.
- * Si prende da `PeakDatabase.areaSettings()`; una prova di query si scrive come `RoomDaoTest`. Attenzione: non è [SettingDao] (al singolare), che legge e scrive la tabella `setting` e resta in `Daos.kt`.
+ * Le query dell'area Impostazioni (`Features/Settings/`): archivio dei macchinari e cancellazione dei dati. Proprietario: l'area settings.
+ * Non è [com.gabrieleforghieri.peak.data.SettingDao] (al singolare), che legge e scrive la tabella `setting` e resta in `Daos.kt`.
  */
 @Dao
-interface SettingsDao
+interface SettingsDao {
+    /** «Ripristina» di `ArchivedExercisesView`: il macchinario torna nelle liste. */
+    @Query("UPDATE exercise SET isArchived = 0 WHERE uuid = :uuid")
+    suspend fun unarchive(uuid: String)
+
+    @Query("DELETE FROM workout_set") suspend fun deleteSets()
+    @Query("DELETE FROM workout") suspend fun deleteWorkouts()
+    @Query("DELETE FROM max_record") suspend fun deleteRecords()
+    @Query("DELETE FROM exercise") suspend fun deleteExercises()
+    @Query("DELETE FROM body_weight") suspend fun deleteBodyWeights()
+    @Query("DELETE FROM workout_template") suspend fun deleteTemplates()
+    @Query("DELETE FROM workout_program") suspend fun deletePrograms()
+
+    /** «Cancella tutti i dati» di `DataSettingsView`: tutto tranne le impostazioni, in una transazione sola. */
+    @Transaction
+    suspend fun eraseAll() {
+        deleteSets(); deleteWorkouts(); deleteRecords(); deleteExercises(); deleteBodyWeights(); deleteTemplates(); deletePrograms()
+    }
+}
