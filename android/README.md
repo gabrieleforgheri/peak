@@ -1,7 +1,7 @@
 # Peak per Android (app nativa)
 
 Kotlin + Jetpack Compose, dati locali con Room, `minSdk 26`, `targetSdk`/`compileSdk 36`. Package `com.gabrieleforghieri.peak`, `versionCode 2`
-(sostituisce la TWA di Bubblewrap: stesso package e stessa chiave). Il piano e le fasi sono in `../PIANO-ANDROID.md`; la **fase 1 (fondamenta)** e la **fase 2 (account, sincronizzazione, backup)** sono fatte.
+(sostituisce la TWA di Bubblewrap: stesso package e stessa chiave). Il piano e le fasi sono in `../PIANO-ANDROID.md`; la **fase 1 (fondamenta)**, la **fase 2 (account, sincronizzazione, backup)** e la **base della fase 3** (navigazione per aree, componenti, dati, prove) sono fatte. Come lavorano le sei aree della fase 3: `AREE.md`.
 
 ## Come si compila
 
@@ -25,10 +25,10 @@ Il catalogo (`common/catalog.json`) lo copia Gradle negli asset a ogni build (`c
 | Cartella | Cosa c'è | Da cosa deriva |
 |---|---|---|
 | `domain/` | Regole in Kotlin puro, senza Android: `OneRepMax`, `MaxRanking`, `RecordRules`, `RecordService` (l'unico percorso di scrittura delle serie, sopra l'interfaccia `RecordStorage`), `Plates`, `Warmup`/`ArmSwitch`, `Progression`, `Medals`, `Limbs`, `Programs`/`TemplateIcon`, `Plan`, `Onboarding`, `Stats`, `Catalog`, `Fmt`, `Settings`, `PeakDates` | `Peak/Model`, `Peak/Store/RecordService`, `Peak/Utils`, `common/*.ts` |
-| `data/` | Room: entità (`Entities.kt`), DAO, `PeakDatabase`, `RoomRecordStorage`, `SettingsRepository` | modelli SwiftData + `common/docs.ts` |
-| `design/` | `PeakTheme` (colori, forme, font), `GlassCard`, `Components`, `MachineGlyphView`, `MuscleFigureView`, `PlateBarView`, `Celebration`, `Motion`, `PeakIcons` | `Peak/Design/` |
+| `data/` | Room: entità (`Entities.kt`), DAO (`Daos.kt`, e un DAO vuoto per area in `dao/`), `PeakDatabase`, `PeakRepository` (un `Flow` per ogni `@Query` dell'iPhone), `ExerciseExt` (le proprietà derivate di `Exercise.swift`), `RoomRecordStorage`, `SettingsRepository` | modelli SwiftData + `common/docs.ts` |
+| `design/` | `PeakTheme` (colori, forme, font), `GlassCard`, `Components`, `MachineGlyphView`, `MuscleFigureView`, `PlateBarView`, `Celebration`, `Motion`, `PeakIcons`; fase 3: `PeakSheet` (l'unico foglio in basso), `ConfirmSheet`, `SideSegment`, `WarningBanner`, `ExerciseThumbnail`, `ExerciseCardBackground` (+ `ExercisePhoto`), `SearchField`, `ScreenPlaceholder` | `Peak/Design/` |
 | `util/` | `Strings` (`tr("testo italiano")`), `SoundFX`, `Haptics` | `Utils/Lang`, `SoundFX`, `Haptics` |
-| `ui/` | `PeakRoot`: le quattro schede (Allenamento, Macchinari, Me, Amici); tre segnaposto e, in Me, `AccountScreen` (provvisoria: account, collega, sincronizza, backup) | `Features/Root/RootView.swift` |
+| `ui/` | `PeakRoot`: barra delle schede e navigazione, che chiama le sei `<Area>Destinations`; `nav/` (rotte, contratto `PeakNav`, ambiente); una cartella per area (`workouts/`, `machines/`, `me/`, `friends/`, `start/`, `settings/`) con le schermate (per ora segnaposto) e i fogli condivisi; `AccountScreen` (provvisoria, dentro Impostazioni: account, collega, sincronizza, backup) | `Features/` |
 | `sync/` | Fase 2, Kotlin senza Android: `PeakApi` (+ `HttpPeakApi`, errori), `PeakLogin` (PKCE), `SyncDocs` (righe ⇄ documenti, hash), `SyncEngine` (push/pull, conflitti, guardie), `ConnectFlow` (scelte del primo collegamento), `BackupService`/`BackupCodec` (JSON dell'iPhone), `SyncService` (quando sincronizzare), `Snapshot`/`Changes` | `PeakAPI`, `PeakLogin`, `SyncService`, `SyncDocs`, `ConnectFlow`, `BackupService`, `BackupDTO` |
 | `data/` (fase 2) | `RoomSyncStorage`, `SecretBox` + `KeystoreCredentialStore` (token cifrato con una chiave dell'Android Keystore), `ImageStore` (foto: byte in `files/photos/<sha256>.jpg`, lo sha nel database), `MediaStoreBackupFiles` (copie in Download/Peak) | `PeakKeychain`, `ImageStore`, `BackupService` |
 
@@ -51,11 +51,25 @@ Avvia `PORT=3416 DATA_DIR=<cartella temporanea> node server/index.ts`, crea un t
 
 ## Test
 
-`app/src/test/` ha 216 prove JUnit sul JVM: tradotte da `PeakTests/` e da `common/*.test.ts`, più i vettori condivisi `common/fixtures/records.json` e il catalogo vero. Quelle di `sync/` (83) provano documenti e hash, regole di vittoria e conflitti con due telefoni finti su un server finto (`SyncTestSupport.kt`), il backup in andata e ritorno su un file scritto dal vero `server/backup.ts`, la rete contro un piccolo server HTTP locale, e le scelte del primo collegamento.
-`RecordService` si prova con un database in memoria (`InMemoryStorage`); `RoomRecordStorage` e il database non hanno prove (servirebbe Robolectric o un test strumentato).
+`app/src/test/` ha le prove JUnit sul JVM: tradotte da `PeakTests/` e da `common/*.test.ts`, più i vettori condivisi `common/fixtures/records.json` e il catalogo vero. Quelle di `sync/` provano documenti e hash, regole di vittoria e conflitti con due telefoni finti su un server finto (`SyncTestSupport.kt`), il backup in andata e ritorno su un file scritto dal vero `server/backup.ts`, la rete contro un piccolo server HTTP locale, e le scelte del primo collegamento.
+`RecordService` si prova con un database in memoria (`InMemoryStorage`).
+
+**Room e schermate sul JVM, senza emulatore** (Robolectric + Roborazzi, fase 3):
+
+- `data/RoomDaoTest.kt`: Room in memoria sotto Robolectric; esempio per provare le query di un DAO.
+- `ui/ScreenshotTest.kt` + `ScreenshotSupport.kt`: `compose.screenshot("nome") { …schermata… }` disegna la schermata col tema e l'ambiente dell'app e salva il PNG in `android/docs/screens/nome.png`.
+
+```bash
+cd android
+./gradlew recordRoborazziDebug     # (ri)registra gli screenshot in docs/screens/
+./gradlew verifyRoborazziDebug     # controlla che gli screenshot non siano cambiati (fallisce se sì)
+./gradlew test                     # tutte le prove (gli screenshot non si rigenerano)
+```
+
+La prima volta Robolectric scarica nella cache Maven (`~/.m2`) il suo android-all di Android 15 (circa 200 MB); le prove usano `sdk=35` (`src/test/resources/robolectric.properties`) perché è quello che Robolectric 4.16 conosce. I fogli (`PeakSheet`) stanno in una finestra a parte e non compaiono negli screenshot.
 
 ## Cosa manca
 
-- Tutte le schermate vere (fase 3; in Me c'è solo la schermata provvisoria dell'account), la notifica dell'allenamento, Health Connect e i widget (fase 4), la build firmata (fase 5).
+- Tutte le schermate vere (fase 3: le sei aree hanno la rotta, un segnaposto e i fogli condivisi in versione semplice; le impostazioni mostrano ancora la schermata provvisoria dell'account), la notifica dell'allenamento, Health Connect e i widget (fase 4), la build firmata (fase 5).
 - Scelta e ritaglio delle foto (`ImageStore.prepare` c'è, nessuna schermata la usa), backup automatico (`backup-latest.json`), `Celebrated` (le feste già fatte), lingua scelta nell'app (ora segue il telefono).
 - Il vetro smerigliato di iOS non c'è: `GlassCard` usa un velo bianco al 5,5 % sullo sfondo scuro. Il font «tondo» di iOS non c'è: si usa quello di sistema con le cifre tabellari.

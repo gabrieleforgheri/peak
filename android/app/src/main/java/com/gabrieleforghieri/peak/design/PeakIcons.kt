@@ -12,12 +12,27 @@ import com.gabrieleforghieri.peak.domain.MuscleGroup
  * Material Symbols, Apache 2.0) scritti come percorsi. Si tingono con `tint` e crescono senza sgranare.
  */
 object PeakIcons {
-    private fun icon(name: String, vararg paths: String): ImageVector {
+    /**
+     * Costruisce un'icona 24 × 24 da percorsi SVG. Pubblico: un'area che ha bisogno di un'icona sua la dichiara nel proprio file
+     * (`ui/<area>/<Area>Icons.kt`) con questa funzione, senza toccare questo.
+     */
+    fun icon(name: String, vararg paths: String): ImageVector {
         val b = ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)
         for (d in paths) b.addPath(PathParser().parsePathString(d).toNodes(), fill = SolidColor(Color.Black))
         return b.build()
     }
 
+    val close = icon("close", "M19,6.41L17.59,5 12,10.59 6.41,5 5,6.41 10.59,12 5,17.59 6.41,19 12,13.41 17.59,19 19,17.59 13.41,12z")
+    val warning = icon("warning", "M1,21h22L12,2 1,21zM13,18h-2v-2h2v2zM13,14h-2v-4h2v4z")
+    val search = icon(
+        "search",
+        "M15.5,14h-0.79l-0.28,-0.27C15.41,12.59 16,11.11 16,9.5 16,5.91 13.09,3 9.5,3S3,5.91 3,9.5 5.91,16 9.5,16c1.61,0 3.09,-0.59 4.23,-1.57l0.27,0.28v0.79l5,4.99L20.49,19l-4.99,-5zM9.5,14C7.01,14 5,11.99 5,9.5S7.01,5 9.5,5 14,7.01 14,9.5 11.99,14 9.5,14z",
+    )
+    val check = icon("check", "M9,16.17L4.83,12l-1.42,1.41L9,19 21,7l-1.41,-1.41z")
+    val zoom = icon(
+        "zoom",
+        "M15.5,14h-0.79l-0.28,-0.27C15.41,12.59 16,11.11 16,9.5 16,5.91 13.09,3 9.5,3S3,5.91 3,9.5 5.91,16 9.5,16c1.61,0 3.09,-0.59 4.23,-1.57l0.27,0.28v0.79l5,4.99L20.49,19l-4.99,-5zM9.5,14C7.01,14 5,11.99 5,9.5S7.01,5 9.5,5 14,7.01 14,9.5 11.99,14 9.5,14zM12,10h-2v2H9v-2H7V9h2V7h1v2h2v1z",
+    )
     val plus = icon("plus", "M19,13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z")
     val minus = icon("minus", "M19,13H5v-2h14v2z")
     val chevronRight = icon("chevron_right", "M10,6L8.59,7.41 13.17,12l-4.58,4.59L10,18l6,-6z")

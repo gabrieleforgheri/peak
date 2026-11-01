@@ -5,7 +5,7 @@
 //   - res/values/strings.xml, res/values-en/strings.xml   da Peak/en.lproj/Localizable.strings + web/src/lib/en.json
 //   - res/raw/fx_*.m4a               da Peak/Sounds/
 // Uso (dalla radice del repo): node android/scripts/gen-assets.ts
-import { copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { GLYPHS } from '../../common/docs.ts'
 import { GLYPH_TITLES, SHAPES, type Shape } from '../../common/glyph.ts'
@@ -142,6 +142,13 @@ function strings(): { it: string; en: string; count: number } {
   for (const [k, v] of Object.entries(web)) if (!k.includes('|')) table.set(k.replace(/\{\d\}/g, '%@'), v)
   for (const [k, v] of ios) table.set(k, v)
   for (const [k, v] of Object.entries(ANDROID_ONLY)) table.set(k, v)
+  // i testi nuovi delle schermate, uno per area: android/texts/<area>.json, {"italiano": "english"} (vedi AREE.md)
+  const dir = root('android/texts')
+  if (existsSync(dir)) {
+    for (const f of readdirSync(dir).filter((n) => n.endsWith('.json')).sort()) {
+      for (const [k, v] of Object.entries(JSON.parse(readFileSync(`${dir}/${f}`, 'utf8')) as Record<string, string>)) table.set(k, v)
+    }
+  }
   // i nomi dei gruppi e delle tessere, usati dal codice con .tr
   const names = new Map<string, string>()
   for (const [k, v] of table) {

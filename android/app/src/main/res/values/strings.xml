@@ -175,6 +175,7 @@
     <string name="t_cerca_macchinario_b24c7a11">Cerca macchinario</string>
     <string name="t_cerca_nel_catalogo_05209a0a">Cerca nel catalogo</string>
     <string name="t_cerca_nel_catalogo_e_aggiungi_il_primo_m_813f92f7">Cerca nel catalogo e aggiungi il primo macchinario: poi gli puoi dare un nome tuo.</string>
+    <string name="t_cerca_un_macchinario_fddae270">Cerca un macchinario</string>
     <string name="t_cerca_un_username_e13f06d4">Cerca un username</string>
     <string name="t_che_muscoli_lavora_337b68ad">Che muscoli lavora?</string>
     <string name="t_chi_si_allena_oggi_ringrazia_domani_0168d601">Chi si allena oggi ringrazia domani.</string>
@@ -188,6 +189,7 @@
     <string name="t_collega_al_catalogo_e9bfdf7d">Collega al catalogo</string>
     <string name="t_collega_e957c196">Collega</string>
     <string name="t_collega_il_tuo_account_yg_allenamenti_e_38266336">Collega il tuo account yG: allenamenti e massimali si sincronizzano con peak.yrb4g.com e restano al sicuro sul server.</string>
+    <string name="t_collega_il_tuo_account_yg_e768c4e0">Collega il tuo account yG</string>
     <string name="t_collega_l_account_yg_per_vedere_i_record_70d5aac2">Collega l\'account yG per vedere i record dei tuoi amici.</string>
     <string name="t_collega_peak_a_yg_potrai_invitare_gli_am_006ba270">Collega Peak a yG: potrai invitare gli amici, vedere i loro massimali e fare la classifica.</string>
     <string name="t_collegamento_a_yg_scaduto_da860303">Collegamento a yG scaduto</string>
@@ -209,12 +211,14 @@
     <string name="t_come_le_impostazioni_89504bae">Come le impostazioni</string>
     <string name="t_come_le_impostazioni_lld_0c12038a">Come le impostazioni (%1$d)</string>
     <string name="t_come_si_fa_3fbfee3c">Come si fa</string>
+    <string name="t_come_si_usa_8297e0a4">Come si usa</string>
     <string name="t_con_il_triangolo_o_la_presa_supina_030e0e2e">Con il triangolo o la presa supina.</string>
     <string name="t_con_l_account_yg_i_tuoi_dati_si_sincroni_111aacea">Con l\'account yG i tuoi dati si sincronizzano con il web e restano al sicuro sul server. Senza, Peak funziona solo su questo iPhone.</string>
     <string name="t_con_la_barra_o_la_corda_al_cavo_alto_63bcd797">Con la barra o la corda al cavo alto.</string>
     <string name="t_concluso_d8d277e5">CONCLUSO</string>
     <string name="t_condividi_062d67be">Condividi</string>
     <string name="t_consigli_e_setup_c93c5831">Consigli e setup</string>
+    <string name="t_consigliati_lld_02db0c26">Consigliati: %1$d</string>
     <string name="t_consigliato_bdd23733">Consigliato</string>
     <string name="t_conta_le_ripetizioni_sul_polso_e_registr_12e1513b">Conta le ripetizioni sul polso e registra la serie sull\'iPhone.</string>
     <string name="t_continua_a743d018">Continua</string>
@@ -315,6 +319,7 @@
     <string name="t_fai_il_giro_9d9b0d93">Fai il giro</string>
     <string name="t_fallo_per_continuare_1adbe91e">Fallo per continuare</string>
     <string name="t_fatica_oggi_orgoglio_domani_3e866a5b">Fatica oggi, orgoglio domani.</string>
+    <string name="t_fatto_c7f2d2fd">Fatto</string>
     <string name="t_femorali_2e50b30a">Femorali</string>
     <string name="t_fidati_del_processo_i_risultati_arrivera_cde6c91a">Fidati del processo, i risultati arriveranno.</string>
     <string name="t_figure_dei_muscoli_8345ac41">Figure dei muscoli</string>
@@ -330,6 +335,7 @@
     <string name="t_gestione_account_ab292894">Gestione account</string>
     <string name="t_ghiaccio_cd1a6ec6">Ghiaccio</string>
     <string name="t_gia_aggiornato_819cc5af">Già aggiornato.</string>
+    <string name="t_gia_aggiunto_cb885e20">Già aggiunto</string>
     <string name="t_gia_in_salute_4bef256f">Già in Salute</string>
     <string name="t_giorni_fissi_della_settimana_a24901ed">Giorni fissi della settimana</string>
     <string name="t_giorni_in_cui_ti_sei_allenato_ea337171">Giorni in cui ti sei allenato</string>
@@ -696,6 +702,7 @@
     <string name="t_per_lato_8199680b"> (%1$s%2$s per lato)</string>
     <string name="t_per_lato_96816c7e">per lato</string>
     <string name="t_percentuale_del_recupero_normale_90aa7e99">Percentuale del recupero normale</string>
+    <string name="t_personalizzato_2881c886">Personalizzato</string>
     <string name="t_pesata_f2b9a319">Pesata</string>
     <string name="t_pesate_4db4492c">%1$s pesate</string>
     <string name="t_pesi_sulla_griglia_del_macchinario_a_pas_02abc49d">Pesi sulla griglia del macchinario, a passi di %1$s %2$s.</string>
@@ -746,6 +753,7 @@
     <string name="t_quasi_tutti_i_giorni_f43e9d65">Quasi tutti i giorni.</string>
     <string name="t_quattro_sezioni_3558eca6">Quattro sezioni</string>
     <string name="t_questa_scheda_e_in_costruzione_2341dae7">Questa scheda è in costruzione.</string>
+    <string name="t_questa_schermata_e_in_costruzione_24533871">Questa schermata è in costruzione.</string>
     <string name="t_questa_serie_72b0d660">QUESTA SERIE</string>
     <string name="t_questa_serie_di_1rm_688ee735">questa serie ≈ %1$s di 1RM</string>
     <string name="t_questa_serie_lld_di_1rm_e53a9221">questa serie ≈ %1$d di 1RM</string>
@@ -763,6 +771,7 @@
     <string name="t_qui_trovi_la_tua_settimana_le_medaglie_e_3b7fc455">Qui trovi la tua settimana, le medaglie e le novità dei tuoi amici. Il pulsante sotto la montagna ti fa partire con il prossimo giorno.</string>
     <string name="t_rack_0ce99e92">Rack</string>
     <string name="t_raggiungi_l_obiettivo_e_allunga_la_serie_7ebdbdf5">Raggiungi l\'obiettivo e allunga la serie di settimane.</string>
+    <string name="t_recenti_f50f05b5">Recenti</string>
     <string name="t_record_593058cc">record</string>
     <string name="t_record_9f4565ec">Record</string>
     <string name="t_record_della_giornata_77952741">Record della giornata</string>
@@ -947,6 +956,7 @@
     <string name="t_sul_web_e_sull_iphone_sempre_in_sincrono_71c09852">Sul web e sull\'iPhone.\nSempre in sincrono.</string>
     <string name="t_suoni_6a72024b">Suoni</string>
     <string name="t_supera_i_tuoi_limiti_un_chilo_alla_volta_b1df3181">Supera i tuoi limiti, un chilo alla volta.</string>
+    <string name="t_svuota_e496b96b">Svuota</string>
     <string name="t_telefono_3786a589">Telefono</string>
     <string name="t_tempo_di_pausa_dopo_ogni_serie_su_questo_99b9f761">Tempo di pausa dopo ogni serie su questo macchinario.</string>
     <string name="t_termina_631e58e7">Termina</string>
