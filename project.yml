@@ -17,6 +17,8 @@ attributes:
 settings:
   base:
     SWIFT_VERSION: "5.0"
+    # avvisi, non errori: il linguaggio resta Swift 5; vedi CLAUDE.md
+    SWIFT_STRICT_CONCURRENCY: complete
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: HKR6AKCLPA
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"

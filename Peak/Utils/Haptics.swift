@@ -1,6 +1,7 @@
 import UIKit
 
 /// Feedback tattile, tenuto in un punto solo per non spargere UIKit nelle viste.
+@MainActor
 enum Haptics {
 
     static func tap() {
