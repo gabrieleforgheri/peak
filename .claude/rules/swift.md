@@ -1,0 +1,15 @@
+---
+paths:
+  - "Peak/**/*.swift"
+  - "PeakWatch/**/*.swift"
+  - "PeakWidgets/**/*.swift"
+  - "Shared/**/*.swift"
+  - "WatchShared/**/*.swift"
+---
+- API moderne: `@Observable`, `NavigationStack`, `foregroundStyle`, `clipShape`, `async/await`. Non reintrodurre `ObservableObject`, `NavigationView`, `foregroundColor`, `cornerRadius`; `DispatchQueue.main` solo dove non c'è alternativa (il ratchet li conta).
+- Concorrenza: `SWIFT_STRICT_CONCURRENCY = complete` è attivo come avvisi in modo Swift 5. Non aggiungere nuovi avvisi di concorrenza; per i vecchi, correggi il tipo (`Sendable`, isolamento a un attore) invece di silenziare.
+- SwiftData: i modelli stanno in `Peak/Model`, lo schema versionato in `Peak/Store/PeakSchema.swift`. Un rename è una cancellazione più una creazione: usa `@Attribute(originalName:)`. Non versionare cambi che SwiftData gestisce da solo (errore «Duplicate version checksums»).
+- Con `AppStore.isFallback` (store in memoria) niente esce dall'app: né backup né sync. Ogni nuovo percorso di scrittura verso l'esterno controlla il flag.
+- Le viste non scrivono SwiftData direttamente se esiste un servizio in `Peak/Store` (RecordService, WorkoutFinisher): estendi il servizio.
+- Log: `Log.<categoria>`, mai `print`; niente dati dell'utente in chiaro nei messaggi.
+- Compilazione: vedi `CLAUDE.md`, solo typecheck con `swiftc`; non lanciare i test Xcode.

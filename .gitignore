@@ -17,6 +17,11 @@ studio-clips/shots/
 studio-clips/schermata-*.html
 
 # Scratch & tool outputs
-.claude/
+# .claude: si versionano solo le regole condivise (settings.json, rules/, hooks/); il resto è locale
+.claude/*
+!.claude/settings.json
+!.claude/rules/
+!.claude/hooks/
+CLAUDE.local.md
 brag-output*/
 graphify-out/
