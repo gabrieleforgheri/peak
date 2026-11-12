@@ -78,7 +78,7 @@ struct FriendsView: View {
                 .buttonStyle(PrimaryButtonStyle(tint: settings.accentColor))
                 .tourTarget("invite")
             Text("Il link vale una volta sola: chi lo apre diventa tuo amico subito.")
-                .font(Theme.Text.micro.weight(.medium)).foregroundStyle(Theme.textTertiary)
+                .mutedCaption()
 
             HStack {
                 Image(systemName: "magnifyingglass").foregroundStyle(Theme.textTertiary)
@@ -90,7 +90,7 @@ struct FriendsView: View {
 
             if !searched.isEmpty, !query.isEmpty {
                 if found.isEmpty {
-                    Text("Nessun utente con questo username.").font(Theme.Text.footnote.weight(.medium)).foregroundStyle(Theme.textTertiary)
+                    Text("Nessun utente con questo username.").mutedCaption(Theme.Text.footnote)
                 } else {
                     GlassCard(padding: Theme.Space.xs) {
                         VStack(spacing: 0) {
@@ -101,8 +101,8 @@ struct FriendsView: View {
                                     switch state {
                                     case .none: Button("Aggiungi") { Task { await ask(person) } }.font(Theme.Text.footnote.weight(.bold)).foregroundStyle(settings.accentColor)
                                     case .received: Button("Accetta") { Task { await ask(person) } }.font(Theme.Text.footnote.weight(.bold)).foregroundStyle(settings.accentColor)
-                                    case .friends: Text("Amici").font(Theme.Text.caption.weight(.medium)).foregroundStyle(Theme.textTertiary)
-                                    case .sent: Text("Richiesta inviata").font(Theme.Text.caption.weight(.medium)).foregroundStyle(Theme.textTertiary)
+                                    case .friends: Text("Amici").mutedCaption(Theme.Text.caption)
+                                    case .sent: Text("Richiesta inviata").mutedCaption(Theme.Text.caption)
                                     }
                                 }
                                 .padding(Theme.Space.m)
@@ -192,14 +192,7 @@ struct FriendsView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: Theme.Space.s) {
                             ForEach(Metric.allCases) { m in
-                                Button { metric = m } label: {
-                                    Text(m.rawValue).font(Theme.Text.footnote)
-                                        .foregroundStyle(metric == m ? Color.black.opacity(0.85) : Theme.textSecondary)
-                                        .padding(.horizontal, Theme.Space.m).padding(.vertical, Theme.Space.s)
-                                        .background(Capsule().fill(metric == m ? settings.accentColor : Theme.card))
-                                        .animation(Motion.out(Motion.fade), value: metric)
-                                }
-                                .buttonStyle(PressStyle())
+                                SelectablePill(isOn: metric == m, tint: settings.accentColor, action: { metric = m }) { Text(m.rawValue) }
                             }
                         }
                     }
@@ -219,7 +212,7 @@ struct FriendsView: View {
                             if !r.isMe, let person = social.friends?.friends.first(where: { $0.id == r.id }) { path.append(person) }
                         } label: {
                             HStack(alignment: .top, spacing: Theme.Space.m) {
-                                Text("\(i + 1)").font(Theme.Text.footnote.weight(.heavy)).foregroundStyle(r.isMe ? settings.accentColor : Theme.textTertiary).frame(width: 22)
+                                RankNumber(i + 1, tint: r.isMe ? settings.accentColor : nil)
                                 VStack(alignment: .leading, spacing: Theme.Space.xs) {
                                     HStack {
                                         Text(r.isMe ? "Tu" : "@\(r.username)").font(Theme.Text.subhead.weight(.bold))
@@ -231,7 +224,7 @@ struct FriendsView: View {
                                         Image(systemName: "flame.fill").font(Theme.Text.micro)
                                         Text("\(r.streak) · \(r.last.map { Fmt.relativeDay($0) } ?? "Mai allenato")")
                                     }
-                                    .font(Theme.Text.micro.weight(.medium)).foregroundStyle(Theme.textTertiary)
+                                    .mutedCaption()
                                 }
                             }
                             .padding(Theme.Space.m)
@@ -255,35 +248,30 @@ struct FriendsView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: Theme.Space.s) {
                             ForEach(linkedMine) { e in
-                                Button { pick = e.catalogID } label: {
-                                    Text(verbatim: Catalog.entry(id: e.catalogID)?.name ?? e.name).font(Theme.Text.footnote)
-                                        .foregroundStyle(current == e.catalogID ? Color.black.opacity(0.85) : Theme.textSecondary)
-                                        .padding(.horizontal, Theme.Space.m).padding(.vertical, Theme.Space.s)
-                                        .background(Capsule().fill(current == e.catalogID ? settings.accentColor : Theme.card))
-                                        .animation(Motion.out(Motion.fade), value: current)
+                                SelectablePill(isOn: current == e.catalogID, tint: settings.accentColor, action: { pick = e.catalogID }) {
+                                    Text(verbatim: Catalog.entry(id: e.catalogID)?.name ?? e.name)
                                 }
-                                .buttonStyle(PressStyle())
                             }
                         }
                     }
                     if let board {
                         if board.count < 2 {
-                            Text("Nessun amico ha ancora questo esercizio.").font(Theme.Text.footnote.weight(.medium)).foregroundStyle(Theme.textTertiary)
+                            Text("Nessun amico ha ancora questo esercizio.").mutedCaption(Theme.Text.footnote)
                         } else {
                             let top = max(1, board.map(\.oneRm).max() ?? 1)
                             ForEach(Array(board.enumerated()), id: \.element.id) { i, r in
                                 VStack(alignment: .leading, spacing: Theme.Space.xs) {
                                     HStack {
-                                        Text("\(i + 1)").font(Theme.Text.footnote.weight(.heavy)).foregroundStyle(i == 0 ? Theme.gold : Theme.textTertiary).frame(width: 22, alignment: .leading)
+                                        RankNumber(i + 1, tint: i == 0 ? Theme.gold : nil, alignment: .leading)
                                         Text(r.isMe ? "Tu" : "@\(r.username)").font(Theme.Text.footnote.weight(r.isMe ? .heavy : .semibold))
                                         Spacer()
                                         Text(Fmt.weight(r.oneRm, unit: settings.unit)).font(Theme.Text.footnote.weight(.heavy))
-                                        Text(Fmt.setLine(weight: r.weight, reps: r.reps, unit: settings.unit)).font(Theme.Text.micro.weight(.medium)).foregroundStyle(Theme.textTertiary)
+                                        Text(Fmt.setLine(weight: r.weight, reps: r.reps, unit: settings.unit)).mutedCaption()
                                     }
                                     ProgressBar(fraction: Podium.barFraction(r.oneRm, top: top), tint: r.isMe ? settings.accentColor : Color.white.opacity(0.35))
                                 }
                             }
-                            Text("1RM stimato dalle serie migliori.").font(Theme.Text.micro.weight(.medium)).foregroundStyle(Theme.textTertiary)
+                            Text("1RM stimato dalle serie migliori.").mutedCaption()
                         }
                     } else {
                         ProgressView().tint(settings.accentColor).frame(maxWidth: .infinity)
@@ -308,7 +296,7 @@ struct FriendsView: View {
                 }
             }
         } else {
-            Text("Nessun record dei tuoi amici negli ultimi giorni.").font(Theme.Text.footnote.weight(.medium)).foregroundStyle(Theme.textTertiary).frame(maxWidth: .infinity)
+            Text("Nessun record dei tuoi amici negli ultimi giorni.").mutedCaption(Theme.Text.footnote).frame(maxWidth: .infinity)
         }
     }
 }
@@ -415,7 +403,7 @@ struct NewsRow: View {
         HStack {
             VStack(alignment: .leading, spacing: 1) {
                 Text("@\(event.username) · \(Catalog.entry(id: event.catalog)?.name ?? event.name)").font(Theme.Text.footnote.weight(.bold)).lineLimit(1)
-                Text(Fmt.relativeDay(event.date)).font(Theme.Text.micro.weight(.medium)).foregroundStyle(Theme.textTertiary)
+                Text(Fmt.relativeDay(event.date)).mutedCaption()
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {

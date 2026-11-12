@@ -28,7 +28,7 @@ struct InviteSheet: View {
                     Button { UIPasteboard.general.url = link; Haptics.success() } label: { Label("Copia il link", systemImage: "doc.on.doc") }
                         .buttonStyle(SecondaryButtonStyle())
                 } else if failed {
-                    Text("Serve la connessione. Riprova.").font(Theme.Text.footnote.weight(.medium)).foregroundStyle(Theme.textTertiary)
+                    Text("Serve la connessione. Riprova.").mutedCaption(Theme.Text.footnote)
                 } else {
                     ProgressView().tint(settings.accentColor).padding(.top, 40)
                 }

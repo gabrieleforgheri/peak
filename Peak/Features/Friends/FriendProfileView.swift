@@ -86,7 +86,7 @@ struct FriendProfileView: View {
     }
 
     private func note(_ text: String) -> some View {
-        Text(text).font(Theme.Text.footnote.weight(.medium)).foregroundStyle(Theme.textTertiary).frame(maxWidth: .infinity).padding(.vertical, Theme.Space.m)
+        Text(text).mutedCaption(Theme.Text.footnote).frame(maxWidth: .infinity).padding(.vertical, Theme.Space.m)
     }
 
     private func maxRow(_ m: SharedMax) -> some View {
@@ -98,13 +98,13 @@ struct FriendProfileView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: entry?.name ?? m.name).font(Theme.Text.subhead.weight(.bold)).lineLimit(1)
                 Text((entry != nil && entry?.name != m.name ? "\(m.name) · " : "") + Fmt.relativeDay(m.date))
-                    .font(Theme.Text.micro.weight(.medium)).foregroundStyle(Theme.textTertiary).lineLimit(1)
+                    .mutedCaption().lineLimit(1)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
                 Text(Fmt.setLine(weight: m.weight, reps: m.reps, unit: settings.unit)).font(Theme.Text.footnote.weight(.bold))
                 if let diff, diff != 0 {
-                    Text(diff > 0 ? "\(diff)% sopra di te" : "\(-diff)% sotto di te").font(Theme.Text.micro.weight(.medium)).foregroundStyle(Theme.textTertiary)
+                    Text(diff > 0 ? "\(diff)% sopra di te" : "\(-diff)% sotto di te").mutedCaption()
                 }
             }
         }
@@ -117,7 +117,7 @@ struct FriendProfileView: View {
                 HStack {
                     Text(t.name).font(Theme.Text.subhead.weight(.bold))
                     Spacer()
-                    Text(t.rows.count == 1 ? "1 esercizio" : "\(t.rows.count) esercizi").font(Theme.Text.micro.weight(.medium)).foregroundStyle(Theme.textTertiary)
+                    Text(t.rows.count == 1 ? "1 esercizio" : "\(t.rows.count) esercizi").mutedCaption()
                 }
                 ForEach(Array(t.rows.enumerated()), id: \.offset) { _, r in
                     HStack {

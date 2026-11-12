@@ -188,6 +188,20 @@ private struct GalleryComponents: View {
             }
         }
 
+        GallerySection(title: "Pillole, testo secondario, posizione") {
+            HStack(spacing: Theme.Space.s) {
+                SelectablePill(isOn: true, tint: Theme.positive, action: {}) { Text(verbatim: "Volume 30 giorni") }
+                SelectablePill(isOn: false, tint: Theme.positive, action: {}) { Text(verbatim: "Settimane di fila") }
+            }
+            Text(verbatim: "Ultimo allenamento ieri").mutedCaption()
+            Text(verbatim: "Nessun record negli ultimi giorni").mutedCaption(Theme.Text.footnote)
+            HStack(spacing: Theme.Space.m) {
+                RankNumber(1, tint: Theme.gold)
+                RankNumber(2)
+                RankNumber(3, alignment: .leading)
+            }
+        }
+
         GallerySection(title: "Schede") {
             GlassCard {
                 Text(verbatim: "GlassCard")
