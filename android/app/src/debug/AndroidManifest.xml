@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <!-- Solo nei build di debug: il server locale della prova (10.0.2.2:3416) è in HTTP, e i comandi di prova arrivano da adb.
-         DUMP ce l'ha la shell di adb e nessuna app normale: un'altra app sul telefono non può collegare Peak a un suo account. -->
-    <application android:usesCleartextTraffic="true">
-        <receiver android:name=".DebugCommands" android:exported="true" android:permission="android.permission.DUMP" />
-    </application>
-</manifest>

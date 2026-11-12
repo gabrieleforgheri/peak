@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- I file che Peak condivide (il backup): `cache/share/`. Vedi ui/settings/ShareSheet.kt: serve il <provider> FileProvider nel manifest. -->
-<paths>
-    <cache-path name="share" path="share/" />
-</paths>

@@ -8,6 +8,6 @@ paths:
 ---
 - La logica di dominio esiste in Swift (`Peak/Model`) e in TypeScript (`common/`). Prima di cambiarne una, cerca la gemella con `graphify query` o `grep` e cambia entrambe nello stesso commit.
 - Ogni regola ha una fixture in `common/fixtures/*.json`, eseguita da `common/*.test.ts` e da `scripts/check_records/` (Swift). Cambia la regola = cambia la fixture; una regola senza fixture non si riscrive in una terza lingua.
-- Cambiando `common/docs.ts` (formato di sync): aggiorna `parseDoc`, `Peak/Store/SyncDocs.swift`, `web/src/lib/sync.ts` e, se esiste, il codice Android, e rilascia prima il server.
+- Cambiando `common/docs.ts` (formato di sync): aggiorna `parseDoc`, `Peak/Store/SyncDocs.swift`, `web/src/lib/sync.ts`, e rilascia prima il server. L'app Android nativa è archiviata (tag `archive/android-fase3`): se si riprende, ha una sua copia di `SyncDocs` da riallineare.
 - Il server rifiuta ciò che `parseDoc` non riconosce: ogni nuovo campo ha un default e non rompe i client vecchi.
 - Test del server (`server/*.test.ts`) con documenti completi: se `ExerciseDoc` o un altro tipo di `common/docs.ts` ottiene un campo nuovo, aggiornalo anche nei letterali dei test (`typecheck` lo segnala e deve restare a zero).
