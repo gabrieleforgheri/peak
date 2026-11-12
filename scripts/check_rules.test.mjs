@@ -101,15 +101,15 @@ test('--update non alza la baseline, la abbassa; --force la alza', async () => {
 	assert.equal(baseline(root)['swift-padding-literal']['Peak/Features/New.swift'], undefined)
 })
 
-test('il controllo versione segnala la differenza (avviso di default, errore con --version=error)', async () => {
+test('il controllo versione segnala la differenza (errore di default, avviso con --version=warn)', async () => {
 	const root = await repo({ 'web/package.json': '{ "version": "2.0.0" }' })
 	run(root, '--update')
-	const warn = run(root)
-	assert.equal(warn.code, 0)
-	assert.match(warn.out, /AVVISO version: .*2\.0\.0.*1\.0/)
-	const err = run(root, '--version=error')
+	const err = run(root)
 	assert.equal(err.code, 1)
-	assert.match(err.out, /ERRORE version/)
+	assert.match(err.out, /ERRORE version: .*2\.0\.0.*1\.0/)
+	const warn = run(root, '--version=warn')
+	assert.equal(warn.code, 0)
+	assert.match(warn.out, /AVVISO version/)
 	// 1.0 e 1.0.0 sono la stessa versione: nessun avviso
 	const same = run(await repo(), '--update')
 	assert.doesNotMatch(same.out, /AVVISO/)

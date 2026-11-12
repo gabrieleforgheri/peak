@@ -76,7 +76,7 @@ const flag = (n) => args.includes(n)
 const opt = (n) => { const i = args.findIndex((a) => a === n || a.startsWith(n + '=')); return i < 0 ? null : args[i].includes('=') ? args[i].split('=')[1] : args[i + 1] }
 const root = opt('--root') ?? join(import.meta.dirname, '..')
 const quiet = flag('--quiet')
-const versionMode = opt('--version') ?? 'warn' // ponytail: avviso finché non si decide di allineare web e project.yml; poi --version=error o cambiare il default
+const versionMode = opt('--version') ?? 'error' // web e project.yml sono allineati: una differenza è un errore (--version=warn per un avviso)
 const baselinePath = join(root, 'scripts', 'rules-baseline.json')
 
 const walk = (d) => {
