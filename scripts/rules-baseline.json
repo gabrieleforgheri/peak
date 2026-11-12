@@ -1,6 +1,6 @@
 {
   "swift-color-hex": {
-    "Peak/Features/Friends/FriendsView.swift": 7,
+    "Peak/Features/Friends/FriendsView.swift": 6,
     "Peak/Features/Progress/MeSections.swift": 9,
     "Peak/Features/Progress/MeView.swift": 2,
     "Peak/Features/Root/IdeasView.swift": 13,
@@ -9,7 +9,6 @@
     "PeakWidgets/WorkoutLiveActivity.swift": 1
   },
   "swift-font-size": {
-    "Peak/Features/Friends/FriendsView.swift": 4,
     "Peak/Features/Maxes/ExerciseDetailView.swift": 2,
     "Peak/Features/Maxes/ExerciseEditorView.swift": 1,
     "Peak/Features/Maxes/MaxesListView.swift": 2,
@@ -46,9 +45,8 @@
     "Peak/Features/Workouts/WorkoutSessionView.swift": 1
   },
   "swift-padding-literal": {
-    "Peak/Features/Friends/FriendProfileView.swift": 8,
-    "Peak/Features/Friends/FriendsView.swift": 18,
-    "Peak/Features/Friends/InviteSheet.swift": 3,
+    "Peak/Features/Friends/FriendProfileView.swift": 1,
+    "Peak/Features/Friends/InviteSheet.swift": 1,
     "Peak/Features/Maxes/CatalogPickerSheet.swift": 2,
     "Peak/Features/Maxes/EditMaxSheet.swift": 2,
     "Peak/Features/Maxes/ExerciseDetailView.swift": 9,
@@ -86,8 +84,6 @@
     "PeakWidgets/WorkoutLiveActivity.swift": 1
   },
   "swift-radius-literal": {
-    "Peak/Features/Friends/FriendsView.swift": 1,
-    "Peak/Features/Friends/InviteSheet.swift": 1,
     "Peak/Features/Maxes/CatalogPickerSheet.swift": 2,
     "Peak/Features/Maxes/ExerciseDetailView.swift": 2,
     "Peak/Features/Maxes/ExerciseEditorView.swift": 9,

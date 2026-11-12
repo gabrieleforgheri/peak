@@ -28,13 +28,13 @@ struct FriendProfileView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: Theme.Space.l) {
                 if let profile {
                     SectionHeader(title: "Massimali")
                     if profile.maxes.isEmpty {
                         note("Ancora nessun massimale.")
                     } else {
-                        GlassCard(padding: 6) {
+                        GlassCard(padding: Theme.Space.xs) {
                             VStack(spacing: 0) {
                                 ForEach(Array(profile.maxes.enumerated()), id: \.offset) { i, m in
                                     maxRow(m)
@@ -45,7 +45,7 @@ struct FriendProfileView: View {
                         .appear(0)
                     }
 
-                    SectionHeader(title: "Schede").padding(.top, 8)
+                    SectionHeader(title: "Schede").padding(.top, Theme.Space.s)
                     if profile.templates.isEmpty {
                         note("Nessuna scheda condivisa.")
                     } else {
@@ -53,15 +53,15 @@ struct FriendProfileView: View {
                     }
 
                     Button(role: .destructive) { confirmRemove = true } label: { Label("Togli dagli amici", systemImage: "person.badge.minus") }
-                        .buttonStyle(SecondaryButtonStyle()).padding(.top, 14)
+                        .buttonStyle(SecondaryButtonStyle()).padding(.top, Theme.Space.m)
                 } else if failed {
                     note("Non riesco a caricare questo profilo.")
                 } else {
                     ProgressView().tint(settings.accentColor).frame(maxWidth: .infinity).padding(.top, 60)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 28)
+            .padding(.horizontal, Theme.Space.l)
+            .padding(.bottom, Theme.Space.xl)
         }
         .screenBackground(settings.accentColor)
         .navigationTitle("@\(person.username)")
@@ -86,44 +86,44 @@ struct FriendProfileView: View {
     }
 
     private func note(_ text: String) -> some View {
-        Text(text).font(Theme.rounded(13, .medium)).foregroundStyle(Theme.textTertiary).frame(maxWidth: .infinity).padding(.vertical, 14)
+        Text(text).font(Theme.Text.footnote.weight(.medium)).foregroundStyle(Theme.textTertiary).frame(maxWidth: .infinity).padding(.vertical, Theme.Space.m)
     }
 
     private func maxRow(_ m: SharedMax) -> some View {
         let entry = Catalog.entry(id: m.catalog)
         let me = m.catalog.isEmpty ? nil : mine[m.catalog]
         let diff = me.map { Int(((m.oneRm - $0) / $0 * 100).rounded()) }
-        return HStack(spacing: 10) {
+        return HStack(spacing: Theme.Space.m) {
             Circle().fill((entry?.muscleGroup ?? .core).tint).frame(width: 10, height: 10)
             VStack(alignment: .leading, spacing: 1) {
-                Text(verbatim: entry?.name ?? m.name).font(Theme.rounded(15, .bold)).lineLimit(1)
+                Text(verbatim: entry?.name ?? m.name).font(Theme.Text.subhead.weight(.bold)).lineLimit(1)
                 Text((entry != nil && entry?.name != m.name ? "\(m.name) · " : "") + Fmt.relativeDay(m.date))
-                    .font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary).lineLimit(1)
+                    .font(Theme.Text.micro.weight(.medium)).foregroundStyle(Theme.textTertiary).lineLimit(1)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
-                Text(Fmt.setLine(weight: m.weight, reps: m.reps, unit: settings.unit)).font(Theme.rounded(14, .bold))
+                Text(Fmt.setLine(weight: m.weight, reps: m.reps, unit: settings.unit)).font(Theme.Text.footnote.weight(.bold))
                 if let diff, diff != 0 {
-                    Text(diff > 0 ? "\(diff)% sopra di te" : "\(-diff)% sotto di te").font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
+                    Text(diff > 0 ? "\(diff)% sopra di te" : "\(-diff)% sotto di te").font(Theme.Text.micro.weight(.medium)).foregroundStyle(Theme.textTertiary)
                 }
             }
         }
-        .padding(.horizontal, 8).padding(.vertical, 8)
+        .padding(.horizontal, Theme.Space.s).padding(.vertical, Theme.Space.s)
     }
 
     private func templateCard(_ t: SharedTemplate) -> some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Theme.Space.s) {
                 HStack {
-                    Text(t.name).font(Theme.rounded(16, .bold))
+                    Text(t.name).font(Theme.Text.subhead.weight(.bold))
                     Spacer()
-                    Text(t.rows.count == 1 ? "1 esercizio" : "\(t.rows.count) esercizi").font(Theme.rounded(11, .medium)).foregroundStyle(Theme.textTertiary)
+                    Text(t.rows.count == 1 ? "1 esercizio" : "\(t.rows.count) esercizi").font(Theme.Text.micro.weight(.medium)).foregroundStyle(Theme.textTertiary)
                 }
                 ForEach(Array(t.rows.enumerated()), id: \.offset) { _, r in
                     HStack {
-                        Text(verbatim: Catalog.entry(id: r.catalog)?.name ?? r.name).font(Theme.rounded(13, .medium)).lineLimit(1)
+                        Text(verbatim: Catalog.entry(id: r.catalog)?.name ?? r.name).font(Theme.Text.footnote.weight(.medium)).lineLimit(1)
                         Spacer()
-                        Text(target(r)).font(Theme.rounded(12, .semibold)).foregroundStyle(Theme.textSecondary)
+                        Text(target(r)).font(Theme.Text.caption).foregroundStyle(Theme.textSecondary)
                     }
                 }
                 Button("Copia nelle mie schede") { copy(t) }.buttonStyle(SecondaryButtonStyle())

@@ -11,14 +11,14 @@ struct InviteSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 18) {
+            VStack(spacing: Theme.Space.l) {
                 Text("Fagli inquadrare il QR, oppure mandagli il link. Vale una volta sola e per sette giorni.")
-                    .font(Theme.rounded(13, .medium)).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center)
+                    .font(Theme.Text.footnote.weight(.medium)).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center)
 
                 if let link, let image = Self.qr(link.absoluteString) {
                     Image(uiImage: image)
                         .interpolation(.none).resizable().scaledToFit()
-                        .padding(14).background(Color.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .padding(Theme.Space.m).background(Color.white, in: RoundedRectangle(cornerRadius: Theme.Radius.m, style: .continuous))
                         .frame(maxWidth: 280)
                         .accessibilityLabel("Codice QR dell'invito")
                     ShareLink(item: link, message: Text("Aggiungimi su Peak:")) {
@@ -28,13 +28,13 @@ struct InviteSheet: View {
                     Button { UIPasteboard.general.url = link; Haptics.success() } label: { Label("Copia il link", systemImage: "doc.on.doc") }
                         .buttonStyle(SecondaryButtonStyle())
                 } else if failed {
-                    Text("Serve la connessione. Riprova.").font(Theme.rounded(14, .medium)).foregroundStyle(Theme.textTertiary)
+                    Text("Serve la connessione. Riprova.").font(Theme.Text.footnote.weight(.medium)).foregroundStyle(Theme.textTertiary)
                 } else {
                     ProgressView().tint(settings.accentColor).padding(.top, 40)
                 }
                 Spacer()
             }
-            .padding(20)
+            .padding(Theme.Space.xl)
             .screenBackground(settings.accentColor)
             .navigationTitle("Invita un amico")
             .navigationBarTitleDisplayMode(.inline)
