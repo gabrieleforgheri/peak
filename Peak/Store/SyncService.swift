@@ -291,7 +291,7 @@ final class SyncService {
             for key in answer.discarded {
                 guard let entry = store.entries[key], entry.dirty else { continue }
                 rejected[key] = entry.m
-                print("SyncService: documento scartato dal server: \(key)")
+                Log.sync.notice("Documento scartato dal server: \(key, privacy: .private)")
             }
             // perso contro una versione più nuova: vale quella del server
             if !answer.rejected.isEmpty { try await applyRemote(answer.rejected, api: api, force: true) }

@@ -6,6 +6,8 @@ struct PeakApp: App {
     @State private var settings = AppSettings()
     private let container = AppStore.sharedContainer()
 
+    init() { Diagnostics.shared.start() }
+
     var body: some Scene {
         WindowGroup {
             RootView()

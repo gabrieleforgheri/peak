@@ -279,7 +279,7 @@ final class WatchBridge: NSObject, WCSessionDelegate {
             }
         }
         guard let workout else {
-            print("WatchBridge: serie dal Watch scartata (\(sentAt)), nessun allenamento a cui appartiene")
+            Log.watch.notice("Serie dal Watch scartata (\(sentAt.description, privacy: .public)), nessun allenamento a cui appartiene")
             return
         }
 
