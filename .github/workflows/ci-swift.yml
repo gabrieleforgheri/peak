@@ -1,0 +1,32 @@
+# I runner macOS costano più minuti: per questo il filtro sui percorsi.
+name: CI Swift
+
+on:
+  push:
+    paths:
+      - "Peak/Model/**"
+      - "common/fixtures/**"
+      - "scripts/check_records/**"
+      - "scripts/check_records.sh"
+      - ".github/workflows/ci-swift.yml"
+  pull_request:
+    paths:
+      - "Peak/Model/**"
+      - "common/fixtures/**"
+      - "scripts/check_records/**"
+      - "scripts/check_records.sh"
+      - ".github/workflows/ci-swift.yml"
+
+concurrency:
+  group: ci-swift-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  records:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./scripts/check_records.sh
