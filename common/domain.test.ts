@@ -168,7 +168,7 @@ test('unità: conversione e passi nativi in lb', () => {
 test('cambio unità: dischi e bilanciere di serie seguono, quelli personalizzati restano', () => {
   const a = settingsForUnitChange('kg', 'lb', defaultPlates('kg'), defaultBar('kg'))
   assert.deepEqual(a.availablePlates, defaultPlates('lb'))
-  near(a.barWeight, defaultBar('lb'), 1e-9)
+  near(a.barWeight ?? NaN, defaultBar('lb'), 1e-9)
   const b = settingsForUnitChange('kg', 'lb', [20, 10], 15)
   assert.deepEqual(b, { availablePlates: [20, 10], barWeight: 15 })
 })
