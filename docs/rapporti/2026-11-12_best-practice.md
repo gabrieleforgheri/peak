@@ -50,7 +50,7 @@ Le [fonti](#fonti) sono in fondo.
 - Protezione del dato locale: `isFallback` blocca backup e sync con lo store d'emergenza, più `backup-latest.json`.
 - `typecheck` pulito fuori dai test (gli errori sono nei file di test), `svelte-check` a zero errori.
 - Documentazione per cartella e un rapporto di deriva fatto a mano: la disciplina c'è.
-- I due problemi gravi del [rapporto di deriva del 25/10](2026-10-25_DRIFT_REPORT.md) risultano **risolti**: `/auth/dev` ora richiede `!cfg && local` (`server/auth.ts:171`) e `writeAutoBackup` ha la guardia `isFallback` (`BackupService.swift:199`). Il rapporto, non tracciato, è in parte superato.
+- I due problemi gravi del [rapporto di deriva del 25/10](2026-10-25_deriva-contratti.md) risultano **risolti**: `/auth/dev` ora richiede `!cfg && local` (`server/auth.ts:171`) e `writeAutoBackup` ha la guardia `isFallback` (`BackupService.swift:199`). Il rapporto, non tracciato, è in parte superato.
 
 ---
 
