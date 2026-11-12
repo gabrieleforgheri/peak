@@ -11,15 +11,8 @@ import SwiftData
 /// relazioni sono opzionali, che è ciò che CloudKit richiede.
 enum AppStore {
 
-    static let schema = Schema([
-        Exercise.self,
-        MaxRecord.self,
-        Workout.self,
-        WorkoutSet.self,
-        BodyWeightEntry.self,
-        WorkoutTemplate.self,
-        WorkoutProgram.self
-    ])
+    /// Derivato dallo schema versionato corrente: l'elenco dei modelli sta solo in `PeakSchema.swift`.
+    static let schema = Schema(versionedSchema: PeakSchemaV1.self)
 
     static func makeContainer(inMemory: Bool = false) throws -> ModelContainer {
         let configuration = ModelConfiguration(
@@ -28,7 +21,7 @@ enum AppStore {
             isStoredInMemoryOnly: inMemory,
             cloudKitDatabase: .none
         )
-        return try ModelContainer(for: schema, configurations: [configuration])
+        return try ModelContainer(for: schema, migrationPlan: PeakMigrationPlan.self, configurations: [configuration])
     }
 
     /// Contenitore usato dall'app. Se lo store esistente non è apribile (schema cambiato
