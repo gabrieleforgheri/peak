@@ -5,7 +5,8 @@
   "engines": { "node": ">=24" },
   "scripts": {
     "start": "node server/index.ts",
-    "test": "node --test common/ server/",
+    "test": "node --test common/ server/ scripts/*.test.mjs",
+    "rules": "node scripts/check_rules.mjs",
     "typecheck": "tsc --noEmit",
     "build": "npm --prefix web run build"
   },
