@@ -16,6 +16,24 @@
 	--r: 20px;
 	--r-s: 14px;
 	--pad: 16px;
+	/* scala di spaziatura, raggi e testo: gli stessi gradini e valori di Theme.Space, Theme.Radius e Theme.Text (Peak/Design/Theme.swift); nuovi componenti usano questi, non px grezzi */
+	--s-xs: 4px;
+	--s-s: 8px;
+	--s-m: 12px;
+	--s-l: 16px;
+	--s-xl: 24px;
+	--s-xxl: 32px;
+	--r-xs: 10px;
+	/* Radius.s e Radius.m esistono già: --r-s (14px) e --r (20px) */
+	--r-l: 28px;
+	--fs-micro: 11px;
+	--fs-caption: 12px;
+	--fs-footnote: 13px;
+	--fs-subhead: 15px;
+	--fs-body: 17px;
+	--fs-headline: 17px; /* come body, in grassetto */
+	--fs-title: 20px;
+	--fs-display: 34px;
 	/* barra in basso: le schede (52px) e, sotto, il posto per l'indicatore di casa. Dell'inset si tolgono 12px (l'indicatore sta nei più bassi) ma mai sotto 8px */
 	--tabbar: 52px;
 	--tabpad: max(calc(env(safe-area-inset-bottom, 0px) - 12px), 8px);

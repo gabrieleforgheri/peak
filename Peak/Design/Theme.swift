@@ -44,6 +44,50 @@ enum Theme {
     static let radiusSmall: CGFloat = 14
     static let padding: CGFloat = 16
 
+    // MARK: Spaziatura, raggi, testo
+    // Nuove viste usano questi, non valori grezzi; lo fa rispettare scripts/check_rules.mjs.
+    // La provenienza dei gradini viene da un conteggio nelle viste (Peak/Features, PeakWatch, PeakWidgets).
+
+    /// Spaziatura: `.padding`, `spacing:` degli stack, scarti. Griglia da 4 pt.
+    /// Da dove migrare (valori vecchi, in ordine di frequenza): 8 -> s; 12 -> m; 10 -> s o m; 14 -> m o l; 6 -> xs o s;
+    /// 16 -> l (è `Theme.padding`); 4 -> xs; 2 e 3 (filetti, spazi tra icona e testo) -> xs; 18, 20 -> l o xl; 24 -> xl; 28, 30 -> xl o xxl.
+    /// Sopra i 32 pt (40, 52, 60, 84) non è spaziatura ma geometria di una vista: resta un valore locale.
+    enum Space {
+        static let xs: CGFloat = 4
+        static let s: CGFloat = 8
+        static let m: CGFloat = 12
+        static let l: CGFloat = Theme.padding   // 16
+        static let xl: CGFloat = 24
+        static let xxl: CGFloat = 32
+    }
+
+    /// Raggi degli angoli (sempre con `style: .continuous`).
+    /// Da dove migrare: 9, 10, 11 -> xs; 12, 13, 14 -> s (è `radiusSmall`); 16, 18, 20, 22 -> m (è `radius`); 24, 28 -> l.
+    /// Le pillole sono `Capsule()`, non un raggio.
+    enum Radius {
+        static let xs: CGFloat = 10
+        static let s: CGFloat = Theme.radiusSmall   // 14
+        static let m: CGFloat = Theme.radius        // 20
+        static let l: CGFloat = 28
+    }
+
+    /// Scala tipografica: ogni voce è uno stile di sistema (`Font.TextStyle`) in design `.rounded`, quindi segue Dynamic Type.
+    /// La dimensione tra parentesi è quella a dimensione testo «Large» (l'impostazione predefinita), uguale ai valori vecchi.
+    /// Il peso predefinito è semibold come `Theme.rounded`; per cambiarlo `.weight(.bold)`, per le cifre `.monospacedDigit()`.
+    /// Da dove migrare (`Theme.rounded(N)` o `.system(size: N)`): 8, 9, 10, 11 -> micro; 12 -> caption; 13, 14 -> footnote;
+    /// 15, 16 -> subhead; 17 -> body (o headline se è un titolo di riga); 18, 19, 20, 22, 24 -> title; 28 e più -> display.
+    /// I numeri enormi (38, 42, 52, 96...) restano `Theme.display(size)`: sono grafica, non testo da ingrandire.
+    enum Text {
+        static let micro = Font.system(.caption2, design: .rounded).weight(.semibold)        // 11
+        static let caption = Font.system(.caption, design: .rounded).weight(.semibold)       // 12
+        static let footnote = Font.system(.footnote, design: .rounded).weight(.semibold)     // 13
+        static let subhead = Font.system(.subheadline, design: .rounded).weight(.semibold)   // 15
+        static let body = Font.system(.body, design: .rounded).weight(.medium)               // 17
+        static let headline = Font.system(.headline, design: .rounded).weight(.bold)         // 17
+        static let title = Font.system(.title3, design: .rounded).weight(.bold)              // 20
+        static let display = Font.system(.largeTitle, design: .rounded).weight(.bold).monospacedDigit() // 34
+    }
+
     /// Sfondo dell'app: nero bluastro con due aloni dell'accento in alto.
     static func background(accent: Color) -> some View {
         ZStack {
