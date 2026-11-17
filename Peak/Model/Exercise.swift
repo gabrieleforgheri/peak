@@ -190,7 +190,7 @@ final class Exercise {
         guard let next = Progression.next(lastSession: converted, step: unit.displayStep(forKilograms: incrementStep), range: range) else {
             return nil
         }
-        return Progression.Suggestion(weight: unit.toKilograms(next.weight), reps: next.reps)
+        return Progression.Suggestion(weight: unit.toKilograms(next.weight), reps: next.reps, up: next.up)
     }
 
     /// Miglior carico registrato prima di una certa data, per i badge di variazione.

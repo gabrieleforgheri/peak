@@ -1,0 +1,265 @@
+[
+ {
+  "name": "tutte in cima: si sale",
+  "lastSession": [
+   {
+    "weight": 60,
+    "reps": 12
+   },
+   {
+    "weight": 60,
+    "reps": 12
+   },
+   {
+    "weight": 60,
+    "reps": 13
+   }
+  ],
+  "step": 2.5,
+  "range": [
+   8,
+   12
+  ],
+  "expected": {
+   "weight": 62.5,
+   "reps": 8,
+   "up": true
+  }
+ },
+ {
+  "name": "una serie corta: si resta e si aggiunge una ripetizione",
+  "lastSession": [
+   {
+    "weight": 60,
+    "reps": 12
+   },
+   {
+    "weight": 60,
+    "reps": 10
+   }
+  ],
+  "step": 2.5,
+  "range": [
+   8,
+   12
+  ],
+  "expected": {
+   "weight": 60,
+   "reps": 12,
+   "up": false
+  }
+ },
+ {
+  "name": "conta solo il carico piu pesante (back-off ignorato)",
+  "lastSession": [
+   {
+    "weight": 60,
+    "reps": 12
+   },
+   {
+    "weight": 50,
+    "reps": 6
+   }
+  ],
+  "step": 2.5,
+  "range": [
+   8,
+   12
+  ],
+  "expected": {
+   "weight": 62.5,
+   "reps": 8,
+   "up": true
+  }
+ },
+ {
+  "name": "sotto il range: si resta al fondo del range",
+  "lastSession": [
+   {
+    "weight": 80,
+    "reps": 5
+   }
+  ],
+  "step": 5,
+  "range": [
+   8,
+   12
+  ],
+  "expected": {
+   "weight": 80,
+   "reps": 8,
+   "up": false
+  }
+ },
+ {
+  "name": "ultima sessione 5 ripetizioni su 8-12: resta, fondo del range",
+  "lastSession": [
+   {
+    "weight": 60,
+    "reps": 5
+   },
+   {
+    "weight": 60,
+    "reps": 5
+   }
+  ],
+  "step": 2.5,
+  "range": [
+   8,
+   12
+  ],
+  "expected": {
+   "weight": 60,
+   "reps": 8,
+   "up": false
+  }
+ },
+ {
+  "name": "a meta range: una ripetizione in piu",
+  "lastSession": [
+   {
+    "weight": 60,
+    "reps": 9
+   },
+   {
+    "weight": 60,
+    "reps": 9
+   }
+  ],
+  "step": 2.5,
+  "range": [
+   8,
+   12
+  ],
+  "expected": {
+   "weight": 60,
+   "reps": 10,
+   "up": false
+  }
+ },
+ {
+  "name": "nessuna serie: nessun consiglio",
+  "lastSession": [],
+  "step": 2.5,
+  "range": [
+   8,
+   12
+  ],
+  "expected": null
+ },
+ {
+  "name": "range stretto 8-8: a 8 si sale",
+  "lastSession": [
+   {
+    "weight": 50,
+    "reps": 8
+   },
+   {
+    "weight": 50,
+    "reps": 8
+   }
+  ],
+  "step": 2.5,
+  "range": [
+   8,
+   8
+  ],
+  "expected": {
+   "weight": 52.5,
+   "reps": 8,
+   "up": true
+  }
+ },
+ {
+  "name": "range stretto 8-8: sotto si resta",
+  "lastSession": [
+   {
+    "weight": 50,
+    "reps": 8
+   },
+   {
+    "weight": 50,
+    "reps": 6
+   }
+  ],
+  "step": 2.5,
+  "range": [
+   8,
+   8
+  ],
+  "expected": {
+   "weight": 50,
+   "reps": 8,
+   "up": false
+  }
+ },
+ {
+  "name": "range 6-10: tutte a 10 si sale e si riparte da 6",
+  "lastSession": [
+   {
+    "weight": 100,
+    "reps": 10
+   },
+   {
+    "weight": 100,
+    "reps": 10
+   },
+   {
+    "weight": 100,
+    "reps": 11
+   }
+  ],
+  "step": 5,
+  "range": [
+   6,
+   10
+  ],
+  "expected": {
+   "weight": 105,
+   "reps": 6,
+   "up": true
+  }
+ },
+ {
+  "name": "range 6-10: sotto il fondo si sale al fondo",
+  "lastSession": [
+   {
+    "weight": 100,
+    "reps": 4
+   }
+  ],
+  "step": 5,
+  "range": [
+   6,
+   10
+  ],
+  "expected": {
+   "weight": 100,
+   "reps": 6,
+   "up": false
+  }
+ },
+ {
+  "name": "range 6-10: all'ultima ripetizione prima della cima",
+  "lastSession": [
+   {
+    "weight": 100,
+    "reps": 9
+   },
+   {
+    "weight": 100,
+    "reps": 8
+   }
+  ],
+  "step": 5,
+  "range": [
+   6,
+   10
+  ],
+  "expected": {
+   "weight": 100,
+   "reps": 10,
+   "up": false
+  }
+ }
+]

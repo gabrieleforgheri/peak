@@ -144,7 +144,8 @@ export function warmupPlan(base: number | null | undefined, step: number): Warmu
 
 // ---- doppia progressione -----------------------------------------------------------------------------
 
-export interface Suggestion { weight: number; reps: number }
+/** `up`: si sale di carico (tutte le serie al carico massimo hanno raggiunto la cima del range); altrimenti si resta. */
+export interface Suggestion { weight: number; reps: number; up: boolean }
 
 export function nextLoad(
   lastSession: { weight: number; reps: number }[], step: number, range: [number, number],
@@ -152,9 +153,9 @@ export function nextLoad(
   const top = Math.max(0, ...lastSession.map((s) => s.weight))
   if (!(top > 0)) return null
   const topReps = lastSession.filter((s) => Math.abs(s.weight - top) < EPSILON).map((s) => s.reps)
-  if (topReps.every((r) => r >= range[1])) return { weight: top + step, reps: range[0] }
+  if (topReps.every((r) => r >= range[1])) return { weight: top + step, reps: range[0], up: true }
   const reps = Math.min(Math.max(Math.max(...topReps) + 1, range[0]), range[1])
-  return { weight: top, reps }
+  return { weight: top, reps, up: false }
 }
 
 export interface ProgressionSet {

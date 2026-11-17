@@ -14,10 +14,10 @@ Attenzione, non confondere: `common/` (TypeScript, questa cartella) non e' `Shar
 - `catalog.ts` + `catalog.json`: tipo `CatalogEntry`, `matchByName`, `searchCatalog`, `norm`. `catalog.json` e' la fonte unica del catalogo (id slug mai cambiati ne' riusati); `server/catalog.ts` lo legge e lo serve.
 - `muscle-info.ts` (`MUSCLES`, `MUSCLE_INFO`, `isMuscle`), `muscles.ts` (`figureFor`, `viewFor`, `zoomFor`, `pieces`, `groupOf`), `anatomy.ts` (contorni, GENERATO da `scripts/gen-anatomy.ts`: non modificarlo a mano).
 - `glyph.ts` (`SHAPES`, `suggestedGlyph`, `isGlyph`, `glyphOf`, `glyphSvg`), `template-icon.ts` (`suggestTemplateIcon`), `medals.ts` (`medals`, `medalTotals`), `format.ts` (`weight`, `volume`, `duration`, `byMonth`...), `install.ts` (`installTarget`), `qr.ts` (`qrMatrix`, `qrSvg`, versioni 1-10).
-- `fixtures/`: vettori di prova condivisi con Swift (`records.json`), non codice.
+- `fixtures/`: vettori di prova condivisi con Swift (`records.json`, `progression.json`), non codice.
 
 ## Invariants
-- Invariante di allineamento con Swift: la stessa regola esiste due volte (TS qui, Swift in `Peak/`) e deve dare gli stessi risultati. Per i record e' verificato: `common/fixtures/records.json` e' letto sia da `records.test.ts` sia da `scripts/check_records.sh` (compila `Peak/Model/RecordRules.swift` con `swiftc`, senza Xcode). Per le altre regole l'allineamento e' per convenzione: cambiando una regola si cambia anche lo Swift gemello.
+- Invariante di allineamento con Swift: la stessa regola esiste due volte (TS qui, Swift in `Peak/`) e deve dare gli stessi risultati. Per i record e' verificato: `common/fixtures/records.json` e' letto sia da `records.test.ts` sia da `scripts/check_records.sh` (compila `Peak/Model/RecordRules.swift` con `swiftc`, senza Xcode). Lo stesso vale per la doppia progressione (`nextLoad` -> `{weight, reps, up}`, `up` = si sale di carico): `progression.json` e' letto da `domain.test.ts` e da `scripts/check_records.sh` (compila anche `Peak/Model/Progression.swift`). Per le altre regole l'allineamento e' per convenzione: cambiando una regola si cambia anche lo Swift gemello.
 - I record automatici e il flag PR delle serie non si sincronizzano mai: si ricalcolano con `deriveRecords`, uguale su web, server e iPhone.
 - I pesi sono sempre in kg nei dati; la conversione in lb avviene solo ai bordi (`toDisplay`/`toKg`).
 - `parseDoc` e' l'unico confine di fiducia dei documenti in ingresso; i campi nati dopo un client vecchio stanno in `KEEP_IF_ABSENT` perche' non spariscano.

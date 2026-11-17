@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   oneRepMax, beats, defaultBarWeightFor, warmupPlan, nearest, nextLoad, progressionFor, loadPlates, plateMode, toDisplay, toKg,
-  displayStep, snapToGrid, switchArm, restAfter, defaultLimbs, limbsOf, lineArm, twoHandles, defaultPlates, defaultBar, barForUnit, settingsForUnitChange, PhotoFraming, KG_PER_LB,
+  displayStep, snapToGrid, switchArm, restAfter, defaultLimbs, limbsOf, lineArm, twoHandles, defaultPlates, defaultBar, barForUnit, settingsForUnitChange, PhotoFraming, KG_PER_LB, type Suggestion,
 } from './domain.ts'
 import { suggestedGlyph, SHAPES, GLYPH_TITLES, glyphSvg, glyphOf, isGlyph } from './glyph.ts'
 import { GLYPHS } from './docs.ts'
@@ -79,20 +79,17 @@ test('riscaldamento', () => {
   }
 })
 
-test('doppia progressione', () => {
-  const range: [number, number] = [8, 12]
-  assert.deepEqual(nextLoad([{ weight: 60, reps: 12 }, { weight: 60, reps: 12 }, { weight: 60, reps: 13 }], 2.5, range), { weight: 62.5, reps: 8 })
-  assert.deepEqual(nextLoad([{ weight: 60, reps: 12 }, { weight: 60, reps: 10 }], 2.5, range), { weight: 60, reps: 12 })
-  assert.deepEqual(nextLoad([{ weight: 60, reps: 12 }, { weight: 50, reps: 6 }], 2.5, range), { weight: 62.5, reps: 8 })
-  assert.deepEqual(nextLoad([{ weight: 80, reps: 5 }], 5, range), { weight: 80, reps: 8 })
-  assert.equal(nextLoad([], 2.5, range), null)
+test('doppia progressione (fixture condivisa con Swift)', () => {
+  const vectors: { name: string; lastSession: { weight: number; reps: number }[]; step: number; range: [number, number]; expected: Suggestion | null }[] =
+    JSON.parse(readFileSync(new URL('./fixtures/progression.json', import.meta.url), 'utf8'))
+  for (const v of vectors) assert.deepEqual(nextLoad(v.lastSession, v.step, v.range), v.expected, v.name)
 })
 
 test('progressione: solo l\'ultima sessione conclusa, senza riscaldamento', () => {
   const s = (workout: string, workoutDate: number, weight: number, reps: number, over: Partial<{ isWarmup: boolean; workoutEnded: boolean }> = {}) =>
     ({ weight, reps, isWarmup: false, workout, workoutDate, workoutEnded: true, ...over })
   const sets = [s('A', 1, 50, 12), s('B', 2, 60, 12), s('B', 2, 20, 20, { isWarmup: true }), s('C', 3, 90, 5, { workoutEnded: false })]
-  assert.deepEqual(progressionFor(sets, 2.5, [8, 12]), { weight: 62.5, reps: 8 })
+  assert.deepEqual(progressionFor(sets, 2.5, [8, 12]), { weight: 62.5, reps: 8, up: true })
   assert.equal(progressionFor([s('C', 3, 90, 5, { workoutEnded: false })], 2.5, [8, 12]), null)
 })
 

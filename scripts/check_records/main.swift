@@ -1,5 +1,6 @@
-// Esegue i vettori di prova condivisi (common/fixtures/records.json) sulla regola Swift dei
-// record, senza simulatore né Xcode: la compila e la lancia scripts/check_records.sh.
+// Esegue i vettori di prova condivisi sulle regole Swift, senza simulatore né Xcode:
+// common/fixtures/records.json (record) e common/fixtures/progression.json (doppia progressione).
+// La compila e la lancia scripts/check_records.sh.
 import Foundation
 
 struct Vector: Decodable {
@@ -51,4 +52,31 @@ for vector in vectors {
     }
 }
 print(failed == 0 ? "\n\(vectors.count) vettori passati." : "\n\(failed) vettori falliti.")
-exit(failed == 0 ? 0 : 1)
+
+// Doppia progressione: stesso file di common/domain.test.ts.
+struct ProgressionVector: Decodable {
+    struct Entry: Decodable { let weight: Double; let reps: Int }
+    struct Expected: Decodable { let weight: Double; let reps: Int; let up: Bool }
+    let name: String
+    let lastSession: [Entry]
+    let step: Double
+    let range: [Int]
+    let expected: Expected?
+}
+
+let progressionPath = CommandLine.arguments.count > 2 ? CommandLine.arguments[2] : "common/fixtures/progression.json"
+let progressionVectors = try JSONDecoder().decode([ProgressionVector].self, from: Data(contentsOf: URL(fileURLWithPath: progressionPath)))
+var progressionFailed = 0
+for vector in progressionVectors {
+    let got = Progression.next(lastSession: vector.lastSession.map { (weight: $0.weight, reps: $0.reps) },
+                               step: vector.step, range: vector.range[0]...vector.range[1])
+    let want = vector.expected.map { Progression.Suggestion(weight: $0.weight, reps: $0.reps, up: $0.up) }
+    if got == want {
+        print("  ok  progressione: \(vector.name)")
+    } else {
+        progressionFailed += 1
+        print("FAIL  progressione: \(vector.name): attesi \(String(describing: want)), ottenuti \(String(describing: got))")
+    }
+}
+print(progressionFailed == 0 ? "\n\(progressionVectors.count) vettori di progressione passati." : "\n\(progressionFailed) vettori di progressione falliti.")
+exit(failed + progressionFailed == 0 ? 0 : 1)
