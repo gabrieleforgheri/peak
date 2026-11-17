@@ -680,5 +680,7 @@
   "{0}: si lavora sempre un arto alla volta, il peso è quello sull'attrezzo.": "{0}: always one limb at a time, the weight is what's on the equipment.",
   "A scelta: sulla serie scegli 2 o 1.": "Your choice: pick 2 or 1 on each set.",
   "Per gamba: {0} · a due {1}": "Per leg: {0} · both {1}",
-  "Per braccio: {0} · a due {1}": "Per arm: {0} · both {1}"
+  "Per braccio: {0} · a due {1}": "Per arm: {0} · both {1}",
+  "Sali a {0} · {1} rip": "Go up to {0} · {1} reps",
+  "Resta a {0} · punta a {1} rip": "Stay at {0} · aim for {1} reps"
 }

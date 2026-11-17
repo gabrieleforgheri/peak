@@ -86,6 +86,9 @@ struct WorkoutSessionView: View {
                 ForEach(Array(list.enumerated()), id: \.element.id) { index, item in
                     if let exercise = known[item.exercise] {
                     let sets = workout.sets(for: exercise)
+                    // consiglio di carico sul range della riga della scheda, solo se ha minimo e massimo
+                    let hint = settings.progressionEnabled && item.repsMin > 0 && item.repsMax >= item.repsMin
+                        ? exercise.progression(range: item.repsMin...item.repsMax, unit: settings.unit) : nil
                     ExerciseSessionCard(
                         exercise: exercise,
                         tourFirst: item.exercise == list.first?.exercise,
@@ -95,6 +98,7 @@ struct WorkoutSessionView: View {
                             lastKilograms: nil,
                             settings: settings
                         ),
+                        hint: hint,
                         previousSets: previousWorkingSets(for: exercise),
                         previousDays: previousDays(for: exercise),
                         sets: sets,
@@ -643,6 +647,8 @@ private struct ExerciseSessionCard: View {
     let tourFirst: Bool
     /// Obiettivo della scheda («2/4 serie · 8–10 rip · 60 kg»), vuoto se non c'è.
     let goal: String
+    /// Consiglio di carico (kg) sul range della scheda, `nil` se non c'è.
+    let hint: Progression.Suggestion?
     let previousSets: [WorkoutSet]
     /// Gli ultimi 3 allenamenti, per la seconda pagina di «Scorso».
     let previousDays: [(date: Date, sets: [WorkoutSet])]
@@ -698,6 +704,16 @@ private struct ExerciseSessionCard: View {
                             Text(goal)
                                 .font(Theme.rounded(12, .semibold))
                                 .foregroundStyle(Theme.textSecondary)
+                        }
+
+                        if let hint {
+                            // senza il peso della sbarra se la card mostra i carichi «relativi», come le righe di «Scorso»
+                            let relative = exercise.weightDisplay == "relative" && !exercise.perSide && exercise.barWeight > 0
+                            let weight = Fmt.weight(relative ? max(0, hint.weight - exercise.barWeight) : hint.weight, unit: settings.unit)
+                            Label(hint.up ? "Sali a \(weight) · \(hint.reps) rip".tr : "Resta a \(weight) · punta a \(hint.reps) rip".tr,
+                                  systemImage: hint.up ? "arrow.up" : "equal")
+                                .font(Theme.Text.caption)
+                                .foregroundStyle(Theme.textPrimary)
                         }
 
                         // Scorso: due pagine da scorrere, le ultime serie (fino a 3) e gli ultimi 3 allenamenti in riga da taccuino
