@@ -9,7 +9,7 @@ Logica non visuale di Peak: stato locale offline-first, sincronizzazione col ser
 - `sync.ts`: `boot()`, `syncNow()`, `resync()`, `call` (fetch con gestione sessione). Giro: foto in coda, push dei documenti sporchi (`POST /api/sync`), pull (`GET /api/sync?dopo=`), download foto.
 - `actions.ts`: tutte le scritture (`startWorkout`, `addSet`, `saveTemplate`, `saveProgram`, `saveExercise`, `addRecord`, `setSetting`, `changeUnit`, `eraseAll`, ...).
 - `idb.ts`: IndexedDB (`docs`, `meta`, `photos`); `photo.ts`: `preparePhoto`, `photoUrl`.
-- `derive.ts`: suggerimenti, riscaldamento, programma attivo, giorno successivo. `catalog.ts`: `loadCatalog()` (import dinamico di `common/catalog.json`), `entryName`. `medalinfo.ts`, `fmt.ts` (pesi/date nell'unità e nella lingua scelte).
+- `derive.ts`: suggerimenti (`suggestionFor(ex, m, range?)`: senza `range` quello delle impostazioni), riscaldamento, programma attivo, giorno successivo. `catalog.ts`: `loadCatalog()` (import dinamico di `common/catalog.json`), `entryName`. `medalinfo.ts`, `fmt.ts` (pesi/date nell'unità e nella lingua scelte).
 - `i18n.ts`: `t`, `tn`, `lang`, `locale`, `applyLang`; traduzioni in `en.json`.
 - `router.svelte.ts`: `route`, `go`, `back` (percorsi a hash `#/...`).
 - `social.svelte.ts` (amici, lega, classifiche via `/api/amici`, `/api/lega`, ...), `push.ts` (Web Push, promemoria recupero), `timer.svelte.ts` (recupero), `install.svelte.ts` (installazione PWA), `toast.svelte.ts`, `fx.ts` (animazioni, coriandoli), `sound.ts`.

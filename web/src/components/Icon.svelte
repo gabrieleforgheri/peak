@@ -26,6 +26,8 @@
 		flame: '<path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/>',
 		repeat: '<path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/>',
 		up: '<path d="M6 15l6-6 6 6"/>',
+		'arrow-up': '<path d="M12 19V5M6 11l6-6 6 6"/>',
+		equal: '<path d="M5 9h14M5 15h14"/>',
 		down: '<path d="M6 9l6 6 6-6"/>',
 		list: '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
 		more: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',

@@ -13,11 +13,11 @@ export function warmupFor(ex: Ex, m: Model, arm = false): WarmupStep[] {
 	return warmupPlan(best ? round2(toDisplay(best.weight, m.settings.unit)) : null, stepOf(ex, m))
 }
 
-/** Doppia progressione sull'ultima sessione conclusa; pesi nell'unità scelta. */
-export function suggestionFor(ex: Ex, m: Model): Suggestion | null {
+/** Doppia progressione sull'ultima sessione conclusa; pesi nell'unità scelta. `range`: quello della riga della scheda, al posto di quello delle impostazioni. */
+export function suggestionFor(ex: Ex, m: Model, range?: [number, number]): Suggestion | null {
 	if (!m.settings.progressionEnabled) return null
 	const unit = m.settings.unit
-	const range: [number, number] = [m.settings.repRangeMin, Math.max(m.settings.repRangeMin, m.settings.repRangeMax)]
+	range ??= [m.settings.repRangeMin, Math.max(m.settings.repRangeMin, m.settings.repRangeMax)]
 	// dove si fa in tutti e due i modi, si propone per la linea dell'ultima serie (a due o a uno), non un miscuglio
 	const lastWork = ex.sets.find((s) => !s.isWarmup)
 	const sets = ex.sets.filter((s) => ex.limbs !== 'either' || !lastWork || s.singleArm === lastWork.singleArm).map((s) => {

@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import { flip } from 'svelte/animate'
-	import type { MuscleGroup } from '@common/docs.ts'
+	import type { MuscleGroup, TemplateItem } from '@common/docs.ts'
 	import { oneRepMax, restAfter } from '@common/domain.ts'
 	import { addSet, addToPlan, deleteSet, deleteWorkout, endWorkout, itemsFromWorkout, moveInPlan, patchWorkout, removeFromPlan, replaceInPlan, templateChanged, todayItems, updateTemplateFromWorkout } from '../lib/actions.ts'
-	import { GROUP_NAMES, V, W, clock, dateShort, dateTime, duration, notebookLine, setLine, targetLine } from '../lib/fmt.ts'
+	import { GROUP_NAMES, V, W, clock, dateShort, dateTime, duration, fromUnit, notebookLine, setLine, targetLine } from '../lib/fmt.ts'
+	import { suggestionFor } from '../lib/derive.ts'
 	import { t, tn } from '../lib/i18n.ts'
 	import { back, go } from '../lib/router.svelte.ts'
 	import { getModel } from '../lib/store.svelte.ts'
@@ -133,6 +134,16 @@
 		return { main: setLine(weightKg, reps, singleArm, ex.muscleGroup) }
 	}
 
+	// il consiglio di carico sul range della riga della scheda (solo se ha minimo e massimo); come «Scorso», senza il peso della sbarra se è relativo
+	function loadHint(it: TemplateItem, ex: Ex): { up: boolean; text: string } | null {
+		if (!(it.repsMin > 0 && it.repsMax >= it.repsMin)) return null
+		const next = suggestionFor(ex, m, [it.repsMin, it.repsMax])
+		if (!next) return null
+		let kg = fromUnit(next.weight)
+		if (ex.weightDisplay === 'relative' && !ex.perSide && (ex.barWeight ?? 0) > 0) kg = Math.max(0, kg - ex.barWeight)
+		return { up: next.up, text: next.up ? t('Sali a {0} · {1} rip', W(kg), next.reps) : t('Resta a {0} · punta a {1} rip', W(kg), next.reps) }
+	}
+
 	function repeat(ex: Ex) {
 		const last = [...(wk?.sets ?? [])].reverse().find((s) => s.exercise === ex.uuid)
 		if (!last || !wk) return
@@ -201,6 +212,7 @@
 			{@const ex = m.exById.get(it.exercise)!}
 			{@const sets = wk.sets.filter((s) => s.exercise === ex.uuid)}
 			{@const goal = targetLine(it, sets.filter((s) => !s.isWarmup).length, null)}
+			{@const hint = loadHint(it, ex)}
 			{@const prevSets = previousWorkingSets(ex, wk).slice(0, 3)}
 			{@const prevDays = previousDays(ex, wk)}
 			<div class="card session-ex-card" style={current === ex.uuid && wk.isActive ? 'border-color:rgba(var(--accent-rgb),.45)' : ''} in:rowIn animate:flip={move()}>
@@ -222,6 +234,10 @@
 
 							{#if goal}
 								<div class="small muted num" style="font-weight:600">{goal}</div>
+							{/if}
+
+							{#if hint}
+								<div class="row small num" style="gap:var(--s-xs);align-items:center;font-weight:600"><Icon name={hint.up ? 'arrow-up' : 'equal'} size={14} />{hint.text}</div>
 							{/if}
 
 							<!-- Scorso: due pagine da scorrere, le ultime serie (fino a 3) e gli ultimi 3 allenamenti in riga da taccuino -->

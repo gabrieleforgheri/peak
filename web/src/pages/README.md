@@ -18,7 +18,7 @@ Percorso -> pagina:
 - Il remount avviene a ogni cambio di percorso (`{#key route.parts.join('/')}` in `App.svelte`).
 
 ## Side Effects
-- `Session` avvia il timer di recupero, suoni e Web Push; `Summary` e `Me` usano coriandoli e animazioni (`fx.ts`).
+- `Session` mostra sotto l'obiettivo di ogni card il consiglio di carico (`suggestionFor` col range della riga della scheda, solo se ha minimo e massimo); `Session` avvia il timer di recupero, suoni e Web Push; `Summary` e `Me` usano coriandoli e animazioni (`fx.ts`).
 - `Friends`, `FriendProfile`, `Invite` chiamano le API sociali del server in `server/`.
 - `Settings` può cambiare lingua (ricarica la pagina), esportare/importare dati e cancellare tutto (`eraseAll`).
 
