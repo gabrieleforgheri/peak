@@ -136,7 +136,7 @@
 
 	// il consiglio di carico sul range della riga della scheda (solo se ha minimo e massimo); come «Scorso», senza il peso della sbarra se è relativo
 	function loadHint(it: TemplateItem, ex: Ex): { up: boolean; text: string } | null {
-		if (!(it.repsMin > 0 && it.repsMax >= it.repsMin)) return null
+		if (!wk?.isActive || !(it.repsMin > 0 && it.repsMax >= it.repsMin)) return null
 		const next = suggestionFor(ex, m, [it.repsMin, it.repsMax])
 		if (!next) return null
 		let kg = fromUnit(next.weight)

@@ -87,7 +87,7 @@ struct WorkoutSessionView: View {
                     if let exercise = known[item.exercise] {
                     let sets = workout.sets(for: exercise)
                     // consiglio di carico sul range della riga della scheda, solo se ha minimo e massimo
-                    let hint = settings.progressionEnabled && item.repsMin > 0 && item.repsMax >= item.repsMin
+                    let hint = workout.isActive && settings.progressionEnabled && item.repsMin > 0 && item.repsMax >= item.repsMin
                         ? exercise.progression(range: item.repsMin...item.repsMax, unit: settings.unit) : nil
                     ExerciseSessionCard(
                         exercise: exercise,
