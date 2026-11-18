@@ -198,3 +198,18 @@ final class Exercise {
         twoArmRecords.filter { $0.date < date }.map(\.weight).max()
     }
 }
+
+extension Exercise {
+    /// Un macchinario nuovo dal catalogo, già inserito nel contesto: nome, gruppo, passo, note, arti, bilanciere e dischi come di base.
+    /// Non salva: lo fa chi chiama.
+    @MainActor
+    static func fromCatalog(_ entry: CatalogEntry, sortIndex: Int, unit: WeightUnit, in context: ModelContext) -> Exercise {
+        let ex = Exercise(name: entry.name, muscleGroup: entry.muscleGroup, incrementStep: entry.step, notes: entry.notes, sortIndex: sortIndex)
+        context.insert(ex)
+        ex.catalogID = entry.id
+        ex.setLimbs(ex.limbs) // come si fa di base, dal catalogo
+        ex.barWeight = Plates.defaultBar(for: entry.machineGlyph, name: entry.name, unit: unit)
+        ex.plateLoaded = Plates.guessPlateLoaded(glyph: entry.machineGlyph, name: entry.name)
+        return ex
+    }
+}

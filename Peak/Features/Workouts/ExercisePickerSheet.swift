@@ -5,6 +5,7 @@ import SwiftData
 struct ExercisePickerSheet: View {
     @Environment(AppSettings.self) private var settings
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
 
     @Query(sort: \Exercise.sortIndex) private var allExercises: [Exercise]
     /// Le ultime serie svolte, per proporre in cima quello che usi davvero.
@@ -63,6 +64,56 @@ struct ExercisePickerSheet: View {
         }
     }
 
+    /// Voci del catalogo che combaciano con la ricerca e che non hai già (non archiviate), con lo stesso filtro dei gruppi di oggi.
+    private var catalogResults: [CatalogEntry] {
+        guard !search.isEmpty else { return [] }
+        let owned = Set(allExercises.filter { !$0.isArchived }.map(\.catalogID))
+        return Catalog.search(search)
+            .filter { !owned.contains($0.id) && (!isFiltering || focus.contains($0.muscleGroup)) }
+            .prefix(20).map { $0 }
+    }
+
+    /// Crea il macchinario dal catalogo, lo salva e lo sceglie.
+    private func pick(_ entry: CatalogEntry) {
+        let top = allExercises.map(\.sortIndex).max() ?? -1
+        let exercise = Exercise.fromCatalog(entry, sortIndex: top + 1, unit: settings.unit, in: context)
+        try? context.save()
+        onSelect(exercise)
+        dismiss()
+    }
+
+    private func catalogRow(_ entry: CatalogEntry) -> some View {
+        Button {
+            pick(entry)
+        } label: {
+            HStack(spacing: Theme.Space.m) {
+                VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                    Text(verbatim: entry.name)
+                        .font(Theme.Text.subhead)
+                        .foregroundStyle(Theme.textPrimary)
+                    Text("\(entry.otherName) · \(entry.muscleGroup.title.tr)")
+                        .font(Theme.Text.caption)
+                        .foregroundStyle(Theme.textTertiary)
+                }
+                Spacer()
+                Image(systemName: "plus")
+                    .foregroundStyle(settings.accentColor)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, Theme.Space.s)
+        .padding(.horizontal, Theme.Space.m)
+        .glassSurface(radius: Theme.Radius.s)
+        .plainListRow()
+    }
+
+    private func listHeader(_ title: String) -> some View {
+        SectionHeader(title: title)
+            .textCase(nil)
+            .padding(.horizontal, 2)
+    }
+
     @ViewBuilder
     private func exerciseRow(_ exercise: Exercise) -> some View {
         // La miniatura sta fuori dal bottone: toccarla apre la foto, non sceglie.
@@ -105,9 +156,7 @@ struct ExercisePickerSheet: View {
                             exerciseRow(exercise)
                         }
                     } header: {
-                        SectionHeader(title: "Usati di recente")
-                            .textCase(nil)
-                            .padding(.horizontal, 2)
+                        listHeader("Usati di recente")
                     }
                 }
 
@@ -120,6 +169,16 @@ struct ExercisePickerSheet: View {
                         MuscleGroupChip(group: section.group)
                             .textCase(nil)
                             .padding(.horizontal, 2)
+                    }
+                }
+
+                if !catalogResults.isEmpty {
+                    Section {
+                        ForEach(catalogResults) { entry in
+                            catalogRow(entry)
+                        }
+                    } header: {
+                        listHeader("Dal catalogo")
                     }
                 }
 
