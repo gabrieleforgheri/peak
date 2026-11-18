@@ -19,8 +19,10 @@ export function catalogDefaults(e: CatalogEntry, unit: Unit = 'kg') {
 	return { name, group: e.group, step: e.step, notes: e.notes, barWeight: barForUnit(defaultBarWeightFor(e.glyph, name), unit), plateLoaded: guessPlateLoaded(e.glyph, name), limbs: defaultLimbs({ catalog: e.id, name, muscleGroup: e.group }) }
 }
 
-/** La ricerca fra i propri macchinari: nome e altri nomi del catalogo, senza maiuscole né accenti. */
+/** La ricerca fra i propri macchinari: nome e altri nomi del catalogo, senza maiuscole né accenti. Ogni parola deve stare in un nome, in qualsiasi ordine (come `Exercise.matches` su iPhone). */
 export const exMatches = (ex: { name: string; aka: string[] }, query: string): boolean => {
 	const q = norm(query)
-	return !q || [ex.name, ...ex.aka].some((n) => norm(n).includes(q))
+	if (!q) return true
+	const hay = [ex.name, ...ex.aka].map(norm)
+	return q.split(' ').every((w) => hay.some((h) => h.includes(w)))
 }
