@@ -126,6 +126,7 @@ squat-box: quadriceps gluteal
 squat-pause: quadriceps gluteal
 squat-overhead: quadriceps gluteal
 squat-goblet: quadriceps gluteal
+squat-dumbbell: quadriceps gluteal
 squat-zercher: quadriceps gluteal
 squat-safety-bar: quadriceps gluteal
 squat-machine: quadriceps gluteal
@@ -163,6 +164,7 @@ overhead-press-dumbbell: deltoids triceps
 overhead-press-smith: deltoids triceps
 arnold-press: deltoids
 lateral-raise: deltoids
+lateral-raise-reverse-grip: deltoids
 cable-lateral-raise: deltoids
 lateral-raise-machine: deltoids
 front-raise: deltoids
